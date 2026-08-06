@@ -1,0 +1,27 @@
+<script>
+  
+function executarExclusao(table, id) {
+    if (!id) {
+      alert("Nenhum registro selecionado.");
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler((resposta) => {
+        if (resposta && resposta.sucesso === false) {
+          alert(resposta.mensagem);
+        } else {
+          consultar();
+        }
+      })
+      .withFailureHandler((err) => {
+        console.error('Erro ao desativar marca:', err);
+        alert('Erro ao conectar com o servidor.');
+      })
+      .ExcluirRegistro(table, id);
+  }
+
+
+
+
+</script>

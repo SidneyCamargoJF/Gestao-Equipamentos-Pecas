@@ -1,0 +1,315 @@
+
+
+      async function renderPecasView() { // 06/08/2026
+
+        await inicializarPecas()
+
+        consultarPecas()
+
+        document.getElementById('filtro-nome').focus();
+
+      }
+
+      
+      // ===== CARREGAR MARCAS =====
+      async function loadBrands() {
+        try {
+          console.log("Iniciando chamada ao servidor ReadBrands...");
+          
+          // O código pausa aqui até que a função 'minhaFuncaoDoServidor' termine
+          const res = await runServerFunction("ReadBrands");
+
+          return res.map(line => line[1])
+          
+        } catch (error) {
+          console.error("Erro ao executar a função:", error);
+        }
+      }
+
+      // ===== CARREGAR LOCALIZACAO =====
+      async function loadLocations() {
+        try {
+          console.log("Iniciando chamada ao servidor ReadLocations...");
+          
+          // O código pausa aqui até que a função 'minhaFuncaoDoServidor' termine
+          const res = await runServerFunction("ReadLocations");
+
+          return res.map(line => line[1])
+          
+        } catch (error) {
+          console.error("Erro ao executar a função:", error);
+        }
+      }
+
+      // ===== CARREGAR LOCALIZACAO =====
+      async function loadSuppliers() {
+        try {
+          console.log("Iniciando chamada ao servidor ReadSuppliers...");
+          
+          // O código pausa aqui até que a função 'minhaFuncaoDoServidor' termine
+          const res = await runServerFunction("ReadSuppliers");
+
+          return res.map(line => line[1])
+          
+        } catch (error) {
+          console.error("Erro ao executar a função:", error);
+        }
+      }
+
+      // ===== SEARCH =====
+      function initSearch(inputId, dropdownId, wrapperId, opcoes) {
+
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        const wrapper = document.getElementById(wrapperId);
+
+        function renderLista(filtro) {
+          const f = (filtro || '').toLowerCase();
+          const itens = opcoes.filter(o => o.toLowerCase().includes(f));
+          dropdown.innerHTML = '';
+          if (itens.length === 0) {
+            dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+          } else {
+            itens.forEach(o => {
+              const div = document.createElement('div');
+              div.className = 'search-option';
+              div.textContent = o;
+              div.addEventListener('click', () => {
+                input.value = o;
+                dropdown.classList.remove('visible');
+              });
+              dropdown.appendChild(div);
+            });
+          }
+        }
+
+        input.addEventListener('focus', () => {
+          renderLista(input.value);
+          dropdown.classList.add('visible');
+        });
+
+        input.addEventListener('input', () => {
+          renderLista(input.value);
+          if (!dropdown.classList.contains('visible')) {
+            dropdown.classList.add('visible');
+          }
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); consultarPecas(); dropdown.classList.remove('visible'); }
+          if (e.key === 'Escape') dropdown.classList.remove('visible');
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+        });
+      }
+
+      // ===== FORMATAÇÃO =====
+      function formatarValor(v) {
+        if (v == null) {
+          return ''
+        }
+
+        return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      }
+
+      function formatarGarantia(g) {
+        const map = { ativa:'Ativa', vencida:'Vencida', sim:'Sim', nao:'Não', vencendo:'Vencendo' };
+        return map[g] || g;
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      }
+
+      // ===== ORDENAÇÃO =====
+      function ordenar(coluna) {
+        if (sortState.coluna === coluna) {
+          sortState.direcao = sortState.direcao === 'asc' ? 'desc' : 'asc';
+        } else {
+          sortState.coluna = coluna;
+          sortState.direcao = 'asc';
+        }
+        atualizarIndicadores();
+        filtrar();
+      }
+
+      function atualizarIndicadores() {
+        document.querySelectorAll('.data-table th').forEach(th => {
+          th.classList.remove('sorted');
+          const span = th.querySelector('.sort-arrow');
+          if (span) span.textContent = '';
+        });
+        const ths = document.querySelectorAll('.data-table th');
+        const indices = { nome:0, marca:1, modelo:2, localizacao:3, valor:4, garantia:5 };
+        const idx = indices[sortState.coluna];
+        if (idx !== undefined && ths[idx]) {
+          ths[idx].classList.add('sorted');
+          const span = ths[idx].querySelector('.sort-arrow');
+          if (span) span.textContent = sortState.direcao === 'asc' ? '▲' : '▼';
+        }
+      }
+
+      function aplicarOrdenacao(lista) {
+        if (!sortState.coluna) return lista;
+        const col = sortState.coluna;
+        const dir = sortState.direcao === 'asc' ? 1 : -1;
+        const arr = lista.slice();
+        arr.sort((a, b) => {
+          let va = a[col], vb = b[col];
+          if (col === 'garantia') {
+            va = garantiaOrdem[va] || 99;
+            vb = garantiaOrdem[vb] || 99;
+            return (va - vb) * dir;
+          }
+          if (col === 'valor') return (va - vb) * dir;
+          va = String(va).toLowerCase();
+          vb = String(vb).toLowerCase();
+          return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;
+        });
+        return arr;
+      }
+
+      // ===== CONSULTAR, FILTRAR E RENDERIZAR =====
+      function consultarPecas() {
+        const nome = document.getElementById('filtro-nome').value.trim().toLowerCase();
+        const marca = document.getElementById('marcaSearch').value.trim().toLowerCase();
+        const localizacao = document.getElementById('localizacaoSearch').value.trim().toLowerCase();
+        const fornecedor = document.getElementById('fornecedorSearch').value.trim().toLowerCase();
+        const garantia = document.getElementById('filtro-garantia').value;
+
+        const criterios = {
+          nome: nome,
+          marca: marca,
+          localizacao: localizacao,
+          fornecedor: fornecedor,
+          garantia: garantia
+        }
+
+        google.script.run.withSuccessHandler(ReturnPecas).FiltrarPecas(criterios)
+
+      }
+
+      function ReturnPecas(objPecas) {
+
+        pecas = aplicarOrdenacao(objPecas);
+
+        console.log(pecas)
+
+        renderTabela(pecas);        
+
+      }
+
+      function filtrar() {
+        const nome = document.getElementById('filtro-nome').value.trim().toLowerCase();
+        const marca = document.getElementById('marcaSearch').value.trim().toLowerCase();
+        const localizacao = document.getElementById('localizacaoSearch').value.trim().toLowerCase();
+        const fornecedor = document.getElementById('fornecedorSearch').value.trim().toLowerCase();
+        const garantia = document.getElementById('filtro-garantia').value;
+
+        listaFiltrada = pecas.filter(p => {
+          if (nome && !p.nome.toLowerCase().includes(nome)) return false;
+          if (marca && !p.marca.toLowerCase().includes(marca)) return false;
+          if (localizacao && !p.localizacao.toLowerCase().includes(localizacao)) return false;
+          if (garantia && p.garantia !== garantia) return false;
+          return true;
+        });
+
+        listaFiltrada = aplicarOrdenacao(listaFiltrada);
+        renderTabela(listaFiltrada);
+      }
+
+      function renderTabela(lista) {
+        const tbody = document.getElementById('bodyPecasView');
+        tbody.innerHTML = '';
+        
+        if (!lista || lista.length === 0) {
+          tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhuma peça encontrada com os filtros informados.</td></tr>';
+          return;
+        }
+        lista.forEach(p => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(p.nome)}</td>
+            <td>${escapeHtml(p.marca)}</td>
+            <td>${escapeHtml(p.modelo)}</td>
+            <td>${escapeHtml(p.localizacao)}</td>
+            <td>${formatarValor(p.valor)}</td>
+            <td><span class="garantia-badge ${p.garantia}">${formatarGarantia(p.garantia)}</span></td>
+            <td>${escapeHtml(p.dt_garantia)}</td>
+            <td>${escapeHtml(p.sei_num)}</td>
+            <td>
+              <button class="btn-acao btn-editar-linha" title="Editar" onclick="editarPeca(${p.id})">✏️</button>
+              <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusao(${p.id})">🗑️</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // ===== AÇÕES =====
+      function limparFiltros() {
+        document.getElementById('filtro-nome').value = '';
+        document.getElementById('marcaSearch').value = '';
+        document.getElementById('localizacaoSearch').value = '';
+        document.getElementById('fornecedorSearch').value = '';
+        document.getElementById('filtro-garantia').value = '';
+        sortState = { coluna: null, direcao: 'asc' };
+        atualizarIndicadores();
+        filtrar();
+        document.getElementById('filtro-nome').focus();
+      }
+
+      function editarPeca(id) {
+        window.location.href = 'cadastro-pecas.html?id=' + encodeURIComponent(id);
+      }
+
+      function confirmarExclusao(id) {
+        idExclusao = id;
+        document.getElementById('modalExclusao').classList.add('aberto');
+      }
+
+      function fecharModalExclusao() {
+        idExclusao = null;
+        document.getElementById('modalExclusao').classList.remove('aberto');
+      }
+
+      function executarExclusao() {
+        if (idExclusao !== null) {
+          const idx = pecas.findIndex(p => p.id === idExclusao);
+          if (idx >= 0) pecas.splice(idx, 1);
+          fecharModalExclusao();
+          filtrar();
+        }
+      }
+
+      // ===== INICIALIZAÇÃO =====
+
+      // document.addEventListener('DOMContentLoaded', inicializarPagina)
+
+      async function inicializarPecas() {
+
+        opcoesMarca = await loadBrands()
+        opcoesLocalizacao = await loadLocations()
+        opcoesFornecedor = await loadSuppliers()
+
+        initSearch('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca);
+        initSearch('localizacaoSearch', 'localizacaoDropdown', 'localizacaoWrapper', opcoesLocalizacao);
+        initSearch('fornecedorSearch', 'fornecedorDropdown', 'fornecedorWrapper', opcoesFornecedor);
+
+        document.getElementById('filtro-nome').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); filtrar(); }
+        });
+
+        document.getElementById('modalExclusao').addEventListener('click', (e) => {
+          if (e.target.classList.contains('modal-overlay')) fecharModalExclusao();
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') fecharModalExclusao();
+        });
+
+        filtrar();
+      };
+

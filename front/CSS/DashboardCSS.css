@@ -1,0 +1,235 @@
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+
+/* ===== MENU HORIZONTAL ===== */
+.top-menu {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.15);
+  position: sticky;
+  z-index: 100;
+}
+
+.menu-item {
+  padding: 0.5rem 1rem;
+  transition: all 0.15s ease;
+}
+
+.menu-item:hover { color: #e2e8f0; background: rgba(255,255,255,0.08); }
+.menu-item.active { color: #fff; background: #3b82f6; }
+.menu-item svg { width: 1.125rem; height: 1.125rem; }
+
+.menu-user .avatar {
+  width: 2rem;
+  height: 2rem;
+  background: #3b82f6;
+  font-size: 0.75rem;
+}
+
+/* ===== MAIN LAYOUT ===== */
+.main-container {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+}
+
+/* ===== PAGE HEADER ===== */
+
+.page-header .date-badge {
+  background: #fff;
+  border: 0.0625rem solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ===== CARDS DE MÉTRICAS ===== */
+.metrics-grid {
+  gap: 1rem;
+}
+
+.metric-card {
+  box-shadow: 0 0.0625rem 0.25rem rgba(0,0,0,0.05);
+  border: 0.0625rem solid #e2e8f0;
+}
+
+.metric-card:hover {
+  transform: translateY(-0.125rem);
+  box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.08);
+}
+
+.metric-label {
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.metric-sub {
+  margin-top: 0.25rem;
+}
+
+/* ===== GRID DE CONTEÚDO ===== */
+
+@media (min-width: 64rem) {
+  .content-grid {
+    grid-template-columns: 1.5fr 1fr;
+  }
+}
+
+.panel {
+  box-shadow: 0 0.0625rem 0.25rem rgba(0,0,0,0.05);
+  border: 0.0625rem solid #e2e8f0;
+}
+
+.panel-header {
+  border-bottom: 0.0625rem solid #f1f5f9;
+}
+
+.panel-header .badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+thead th {
+  padding: 0.5rem 0.5rem 0.5rem 0;
+  color: #94a3b8;
+  border-bottom: 0.0625rem solid #f1f5f9;
+}
+
+tbody td {
+  padding: 0.625rem 0.5rem 0.625rem 0;
+  border-bottom: 0.0625rem solid #f8fafc;
+}
+
+.status-pill {
+  gap: 0.25rem;
+  padding: 0.1875rem 0.5rem;
+  font-weight: 600;
+}
+
+.btn-small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border: 0.0625rem solid #e2e8f0;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+
+/* ===== LISTA EQUIPAMENTOS PENDENTES ===== */
+.equip-item {
+  transition: background 0.15s ease;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #94a3b8;
+}
+
+.empty-state svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.4;
+}
+
+.empty-state p { font-size: 0.875rem; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  background: rgba(15, 23, 42, 0.55);
+  z-index: 200;
+}
+
+.modal {
+  box-shadow: 0 1.25rem 3.75rem rgba(0,0,0,0.25);
+}
+
+.modal-header {
+  padding: 1.25rem 1.5rem 0.75rem;
+}
+
+.modal-close {
+  border: 0.0625rem solid #e2e8f0;
+}
+
+.modal-close svg { width: 1.125rem; height: 1.125rem; }
+
+.modal-body { padding: 0.75rem 1.5rem 1.25rem; }
+
+.modal-body table { width: 100%; font-size: 0.875rem; }
+.modal-body thead th { padding: 0.5rem 0.75rem; }
+.modal-body tbody td { padding: 0.5rem 0.75rem; }
+
+/* ===== MINI GRÁFICO EM BARRA ===== */
+.mini-chart {
+  height: 3rem;
+  margin-top: 0.5rem;
+}
+
+.mini-bar {
+  border-radius: 0.1875rem 0.1875rem 0 0;
+  position: relative;
+}
+
+.mini-bar:hover { opacity: 0.8; }
+.bar-blue { background: #2563eb; }
+.bar-gray { background: #cbd5e1; }
+
+/* ===== DROPDOWN MENU ===== */
+.menu-dropdown {
+  cursor: pointer;
+}
+
+.dropdown-content {
+  background: #1e293b;
+  border: 0.0625rem solid #334155;
+  border-radius: 0 0.5rem 0.5rem 0.5rem;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.3);
+  z-index: 200;
+  padding: 0.375rem;
+  /* Ponte invisível para evitar perda de hover */
+  margin-top: -0.375rem;
+}
+
+/* Mantém o dropdown visível ao passar mouse sobre ele */
+.menu-dropdown:hover .dropdown-content,
+.dropdown-content:hover {
+  display: block;
+}
+
+/* Impede que o hover do pai feche quando estiver sobre o dropdown */
+.dropdown-content {
+  pointer-events: auto;
+}
+
+.dropdown-item {
+  padding: 0.5rem 0.75rem;
+}
+
+.dropdown-item:hover {
+  background: #334155;
+  color: #fff;
+}
+
+.dropdown-item:hover svg {
+  color: #94a3b8;
+}
+
+</style>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Integrado de Manutenção</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <?!= include('ConsultaPecasFormCSS'); ?>
+
+  <style>
+
+    <?!= include('IndexCSS'); ?>
+    <?!= include('actionsCSS'); ?>
+    <?!= include('botoesCSS'); ?>
+    <?!= include('colorCSS'); ?>
+    <?!= include('crudCSS'); ?>
+    <?!= include('DashboardCSS'); ?>
+    <?!= include('fieldCSS'); ?>
+    <?!= include('filtersCSS'); ?>
+    <?!= include('formCSS'); ?>
+    <?!= include('headerCSS'); ?>
+    <?!= include('modalCSS'); ?>
+    <?!= include('responsiveCSS'); ?>
+    <?!= include('searchCSS'); ?>
+    <?!= include('tableCSS'); ?>
+
+
+    <?!= include('CadastroContratosFormCSS'); ?>
+
+  </style>
+</head>
+<body>
+
+  <?!= include('MainMenu'); ?>
+
+  <!-- MAIN SPA CONTENT CONTAINER -->
+  <main class="main-container">
+
+    <?!= include('DashboardHtml'); ?>
+    <?!= include('AgendaHtml'); ?>
+
+    <?!= include('ConsultaPecasFormH'); ?>
+    <?!= include('CadastroPecasFormH'); ?>
+
+    <?!= include("CadastroContratosForm") ?>
+
+
+    <?!= include('Pages'); ?>
+
+  </main>
+
+<!-- ===== MODAL DETALHES ===== -->
+
+  <?!= include('Modal'); ?>
+  <?!= include('IndexModalDetalhes'); ?>
+  <?!= include('ConsultaContratoModal'); ?>
+
+<!-- ===== JAVASCRIPT LOGIC ===== -->
+
+  <?!= include("GlobalVarsJS") ?>  
+  <?!= include("ModalJS") ?>
+  <?!= include("SearchJS") ?>
+  <?!= include("CrudJS") ?>
+
+  <?!= include("IndexSPAJS") ?>
+  <?!= include("HelperJS") ?>
+
+  <?!= include("StateStoreDataJS") ?>
+
+  <?!= include("ConsultaPecasFormJS") ?>
+  <?!= include("CadastroPecasFormJS") ?>
+
+  <?!= include("CadastroContratosFormJS") ?>
+
+  <?!= include("IndexPagesJS") ?>
+  <?!= include("IndexJS") ?>  
+
+
+<script>
+    // Modal backdrop click handler
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('aberto');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('aberto'));
+      }
+    });
+
+  </script>
+</body>
+</html>
