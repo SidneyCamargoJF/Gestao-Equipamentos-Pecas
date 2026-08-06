@@ -1,0 +1,227 @@
+
+    
+ <section id="page-fornecedor-form" class="spa-page">
+
+
+  <div class="page-header">
+          <div class="actions-bar">
+            <h1>🚚 Fornecedores</h1>
+          </div>
+          <div class="actions-bar">
+            <button type="button" class="btn-secondary" onclick="history.back()">Cancelar</button>
+            <button type="button" class="btn-danger" onclick="limparFornecedor()"> <!-- filtrar() -->
+              🧹Limpar
+            </button>
+            <button type="button" class="btn-success" onclick="salvarFornecedor()">💾 Salvar</button>
+          </div>   
+        </div>
+
+  <div class="card">
+      <!-- HEADER -->
+      <div class="form-header">
+        <h2 class="form-titulo" id="formTitulo">Novo Fornecedor</h2>
+        <!-- <span class="form-status" id="formStatus">Rascunho</span> --> 
+      </div>
+ 
+      <form autocomplete="off" onsubmit="return false;">
+ 
+        <!-- ============================================= -->
+        <!-- PARTE 1: INFORMAÇÕES PRINCIPAIS               -->
+        <!-- ============================================= -->
+        <fieldset class="fieldset-principal">
+          <legend class="fieldset-legend">Informações Principais</legend>
+ 
+          <div class="form-grid-3">
+ 
+            <div class="field">
+              <label class="field__label" for="codigo">Código</label>
+              <input class="field__input" type="text" id="codigo" placeholder="FORN-XXX" readonly autofocus>
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="razaoSocial">Razão Social *</label>
+              <input class="field__input" type="text" id="razaoSocial" placeholder="Ex: Empresa Comércio e Serviços Ltda" required>
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="nomeFantasia">Nome Fantasia *</label>
+              <input class="field__input" type="text" id="nomeFantasia" placeholder="Ex: Empresa Serviços" required>
+            </div>
+ 
+          </div>
+ 
+          <div class="form-grid-3">
+ 
+            <div class="field">
+              <label class="field__label" for="cnpj">CNPJ *</label>
+              <input class="field__input" type="text" id="cnpj" placeholder="00.000.000/0000-00" required>
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="inscricaoEstadual">Inscrição Estadual *</label>
+              <input class="field__input" type="text" id="inscricaoEstadual" placeholder="000/0000000" required>
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="inscricaoMunicipal">Inscrição Municipal *</label>
+              <input class="field__input" type="text" id="inscricaoMunicipal" placeholder="0000000000" required>
+            </div>
+ 
+          </div>
+ 
+          <div class="form-grid-3">
+ 
+            <!--><div class="field">
+              <label class="field__label" for="situacao">Situação</label>
+              <select class="field__select" id="situacao">
+                <option value="ativo">Ativo</option>
+                <option value="inativo">Inativo</option>
+                <option value="bloqueado">Bloqueado</option>
+              </select>
+            </div> --> 
+ 
+          </div>
+        </fieldset>
+ 
+        <!-- ============================================= -->
+        <!-- PARTE 2: CONTATO                              -->
+        <!-- ============================================= -->
+        <fieldset class="fieldset-principal">
+          <legend class="fieldset-legend">Contato</legend>
+ 
+          <div class="form-grid-2">
+ 
+            <div class="field">
+              <label class="field__label" for="email">E-mail</label>
+              <input class="field__input" type="email" id="email" placeholder="contato@empresa.com.br">
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="whatsapp">WhatsApp</label>
+              <input class="field__input" type="text" id="whatsapp" placeholder="(51) 99999-9999">
+            </div>
+ 
+          </div>
+ 
+          <div class="form-grid-2">
+ 
+            <div class="field">
+              <label class="field__label" for="telefoneFixo">Telefone Fixo</label>
+              <input class="field__input" type="text" id="telefoneFixo" placeholder="(51) 3333-3333">
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="telefoneCelular">Telefone Celular</label>
+              <input class="field__input" type="text" id="telefoneCelular" placeholder="(51) 99999-9999">
+            </div>
+ 
+          </div>
+        </fieldset>
+ 
+        <!-- ============================================= -->
+        <!-- PARTE 3: ENDEREÇO                              -->
+        <!-- ============================================= -->
+        <fieldset class="fieldset-principal">
+          <legend class="fieldset-legend">Endereço</legend>
+ 
+          <div class="form-grid-3">
+ 
+            <div class="field">
+              <label class="field__label" for="cep">CEP *</label>
+              <div class="cep-wrapper">
+                <input class="field__input" type="text" id="cep" placeholder="00000-000" required>
+                <button type="button" class="btn-secondary btn-buscar-cep" onclick="buscarCEP()">Buscar</button>
+              </div>
+            </div>
+ 
+            <div class="field field-full-2">
+              <label class="field__label" for="ruaAvenida">Rua/Avenida *</label>
+              <input class="field__input" type="text" id="ruaAvenida" placeholder="Ex: Av. Brasil" required>
+            </div>
+ 
+          </div>
+ 
+          <div class="form-grid-3">
+ 
+            <div class="field">
+              <label class="field__label" for="numero">Número *</label>
+              <input class="field__input" type="text" id="numero" placeholder="Ex: 1234" required>
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="bairro">Bairro *</label>
+              <input class="field__input" type="text" id="bairro" placeholder="Ex: Centro" required>
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="complemento">Complemento</label>
+              <input class="field__input" type="text" id="complemento" placeholder="Ex: Sala 2, Bloco B">
+            </div>
+ 
+          </div>
+ 
+          <div class="form-grid-3">
+ 
+            <div class="field">
+              <label class="field__label" for="cidade">Cidade *</label>
+              <input class="field__input" type="text" id="cidade" placeholder="Ex: Porto Alegre" required>
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="estado">Estado *</label>
+              <select class="field__select" id="estado" required>
+                <option value="">Selecione...</option>
+                <option value="AC">AC</option>
+                <option value="AL">AL</option>
+                <option value="AP">AP</option>
+                <option value="AM">AM</option>
+                <option value="BA">BA</option>
+                <option value="CE">CE</option>
+                <option value="DF">DF</option>
+                <option value="ES">ES</option>
+                <option value="GO">GO</option>
+                <option value="MA">MA</option>
+                <option value="MT">MT</option>
+                <option value="MS">MS</option>
+                <option value="MG">MG</option>
+                <option value="PA">PA</option>
+                <option value="PB">PB</option>
+                <option value="PR">PR</option>
+                <option value="PE">PE</option>
+                <option value="PI">PI</option>
+                <option value="RJ">RJ</option>
+                <option value="RN">RN</option>
+                <option value="RS">RS</option>
+                <option value="RO">RO</option>
+                <option value="RR">RR</option>
+                <option value="SC">SC</option>
+                <option value="SP">SP</option>
+                <option value="SE">SE</option>
+                <option value="TO">TO</option>
+              </select>
+            </div>
+ 
+          </div>
+        </fieldset>
+ 
+        <!-- ============================================= -->
+        <!-- BOTÕES DE AÇÃO                                -->
+        <!-- ============================================= -->
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="history.back()">Cancelar</button>
+          <button type="button" class="btn-danger" onclick="limparFornecedor()"> <!-- filtrar() -->
+              🧹Limpar
+            </button>
+          <button type="button" class="btn-success" onclick="salvarFornecedor()">
+            💾
+            Salvar 
+          </button>
+        </div>
+ 
+      </form>
+ 
+
+    </div>
+    
+  </section>
+  
