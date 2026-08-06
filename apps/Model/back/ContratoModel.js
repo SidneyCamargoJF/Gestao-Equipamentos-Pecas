@@ -23,3 +23,4 @@ function  findContractId(id) {
   
   return FindContext(contractTableName, id, firstLineContracts, numColumnscontracts)
 }
+
