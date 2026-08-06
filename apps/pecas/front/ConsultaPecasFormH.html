@@ -1,79 +1,145 @@
-function ConsultaPecasHtml() {
-    return HtmlService.createHtmlOutputFromFile('ConsultaPecasForm').getContent();
-}
+    <!-- PAGE 3: PEÇAS & ESTOQUE old -->
+    <!--
+    <section id="page-pecas-old" class="spa-page">
+      <div class="page-header">
+        <h1>⚙️ Peças & Estoque</h1>
+        <button class="btn btn-primary" onclick="alert('Cadastro de Peça em breve!')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar Peça
+        </button>
+      </div>
 
-function showPecas() {
-  const form = HtmlService.createTemplateFromFile("ConsultaPecasForm");
+      <div class="panel">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descrição do Item</th>
+                <th>Categoria</th>
+                <th>Estoque Atual</th>
+                <th>Mínimo</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="bodyPecasView"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
-  const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);
+    -->
 
-  showForm.setTitle("Consulta de Peças").setHeight(900).setWidth(1600)
 
-  Logger.log('Tela')
+      <section id="page-pecas-view" class="spa-page">
 
-  SpreadsheetApp.getUi().showModalDialog(showForm, "Consulta de Peças")
-}
+      <div class="page-header">
+        <div class="actions-bar">
+          <h1>⚙️ Peças & Estoque</h1>
+        </div>
+        <div class="actions-bar">
+          <button type="button" class="btn-secondary" onclick="limparFiltros()">Limpar</button>
+          <button type="button" class="btn-success" onclick="adicionarPeca()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Adicionar
+          </button>
+          <button type="button" class="btn-primary" onclick="consultarPecas()"> <!-- filtrar() -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Consultar
+          </button>
+        </div>   
+      </div>
 
-function FiltrarPecas(criterios) {
+      <div class="panel">
 
-  let dados = ReadParts()
+        <!-- FILTROS -->
+        <form autocomplete="off" onsubmit="return false;">
+          <div class="filters-primary">
+            <div class="field">
+              <label class="field__label" for="filtro-nome">Nome da Peça</label>
+              <input class="field__input" type="text" id="filtro-nome" placeholder="Digite o nome..." autofocus>
+            </div>
 
-  const dataAtual = new Date();
+            <div class="field">
+              <label class="field__label">Marca</label>
+              <div class="search-wrapper" id="marcaWrapper">
+                <span class="search-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                </span>
+                <input class="search-input" type="text" id="marcaSearch" placeholder="Selecione a marca..." autocomplete="off">
+                <div class="search-dropdown" id="marcaDropdown"></div>
+              </div>
+            </div>
 
-  let res = [];
+            <div class="field">
+              <label class="field__label">Localização</label>
+              <div class="search-wrapper" id="localizacaoWrapper">
+                <span class="search-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                </span>
+                <input class="search-input" type="text" id="localizacaoSearch" placeholder="Selecione a localização..." autocomplete="off">
+                <div class="search-dropdown" id="localizacaoDropdown"></div>
+              </div>
+            </div>
 
-  for (l = 0; l < dados.length -1; l++) {
-    let colNome        = String(dados[l][1]).trim().toLowerCase();
+            <div class="field">
+              <label class="field__label">Fornecedor</label>
+              <div class="search-wrapper" id="fornecedorWrapper">
+                <span class="search-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                </span>
+                <input class="search-input" type="text" id="fornecedorSearch" placeholder="Selecione o fornecedor..." autocomplete="off">
+                <div class="search-dropdown" id="fornecedorDropdown"></div>
+              </div>
+            </div>
 
-    // Ler tabela de marcas para comparação
-    // letColMarca     = FindBrand('nome ou codigo da marca)
-    let colMarca       = String(dados[l][2]).trim().toLowerCase();
-
-    // Ler tabela de Localização para comparação
-    // letColLocalizacao  = FindLocalizacao('nome ou codigo da localização)
-    let colLocalizacao = String(dados[l][6]).trim().toLowerCase();
-
-    // Ler tabela de Fornecedor para comparação
-    // letColFornecedor  = FindFornecedor('nome ou codigo do fornecedor) 
-    let colFornecedor  = String(dados[l][7]).trim().toLowerCase();
-
-    let colGarantia    = String(dados[l][11]).trim().toLowerCase();
-
-    let cNome        = (criterios.nome === "" | colNome.includes(criterios.nome))
-    let cMarca       = (criterios.marca === "" | colMarca.includes(criterios.marca))
-    let cLocalizacao = (criterios.localizacao === "" | colLocalizacao.includes(criterios.localizacao))
-    let cFornecedor  = (criterios.fornecedor === "" | colFornecedor.includes(criterios.fornecedor))
-    let cGarantia    = (criterios.garantia === "" | colGarantia.includes(criterios.garantia))
-
-    if(cNome && cMarca && cLocalizacao && cFornecedor && cGarantia) {
-
-      diasGarantia = calculaDias(dados[l][partsDtGarantiaCol], new Date())
-      // diasGarantia = 10
-
-      objRes = {
-        id: dados[l][partsIdCol],
-        nome: dados[l][partsNameCol],
-        marca: dados[l][partsBrandCol],
-        modelo: dados[l][partsModelCol],
-        fornecedor: dados[l][partsSuplierCol],
-        localizacao: dados[l][partsLocalCol],
-        garantia: statusGarantia(diasGarantia),
-        dt_garantia: dateToString(dados[l][partsDtGarantiaCol]),
-        dias_garantia: diasGarantia,
-        valor: dados[l][partsValueCol],
-        sei_num: dados[l][partsSEINumCol]
-      }
-
-      res.push(objRes);
-    }
-  }
-
-  if (res.length === 0) {
-    return "NoData"
-  }
-
-  return res
+            <div class="field">
+              <label class="field__label" for="filtro-garantia">Garantia</label>
+              <select class="field__select" id="filtro-garantia">
+                <option value="">Todas</option>
+                <option value="ativa">Ativa</option>
+                <option value="vencida">Vencida</option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+                <option value="vencendo">Vencendo</option>
+              </select>
+            </div>
+          </div>
    
-}
+        </form>
+
+        <!-- TABELA -->
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th onclick="ordenar('nome')">NOME <span class="sort-arrow"></span></th>
+                <th onclick="ordenar('marca')">MARCA <span class="sort-arrow"></span></th>
+                <th onclick="ordenar('modelo')">MODELO <span class="sort-arrow"></span></th>
+                <th onclick="ordenar('localizacao')">LOCALIZAÇÃO <span class="sort-arrow"></span></th>
+                <th onclick="ordenar('valor')">VALOR <span class="sort-arrow"></span></th>
+                <th onclick="ordenar('garantia')">GARANTIA <span class="sort-arrow"></span></th>
+                <th onclick="ordenar('dtgarantia')">DATA GARANTIA<span class="sort-arrow"></span></th>
+                <th onclick="ordenar('seinumero')">SEI Nº<span class="sort-arrow"></span></th>
+                <th style="cursor:default;">AÇÕES</th>
+              </tr>
+            </thead>
+            <tbody id="bodyPecasView"></tbody>
+          </table>
+        </div>
 
 
+      </div>
+
+
+      </section>

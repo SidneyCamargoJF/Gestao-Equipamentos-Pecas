@@ -11,7 +11,7 @@
   }
 
   // ===== CONSULTAR, FILTRAR E RENDERIZAR =====
-  function consultarMarca() {
+  function consultarMarcas() {
     const marcaInput = document.getElementById('marcaSearch');
     const marca = marcaInput ? marcaInput.value.trim().toLowerCase() : '';
 
@@ -34,7 +34,7 @@
     renderTabela(listaFiltrada);
   }
 
-  function filtrar() {
+  function filtrarMarca() {
     const marcaInput = document.getElementById('marcaSearch');
     const marca = marcaInput ? marcaInput.value.trim().toLowerCase() : '';
     
@@ -47,9 +47,7 @@
     renderTabela(listaFiltrada);
   }
 
-
-
-  function limparFiltros() {
+  function limparFiltrosMarca() {
     const inputMarca = document.getElementById('marcaSearch');
     if (inputMarca) inputMarca.value = '';
     
@@ -66,7 +64,7 @@
     if (inputMarca) inputMarca.focus();
 
     // Carrega os dados iniciais
-    consultar();
+    consultarMarcas();
 
     // Eventos de clique fora para fechar os modais
     ['modalExclusao', 'modalEdicao', 'modalCadastro'].forEach(idModal => {
@@ -193,5 +191,26 @@
       })
       .cadastrarMarca(nomeMarca);
   }
+
+  // ===== INICIALIZAÇÃO =====
+
+  // document.addEventListener('DOMContentLoaded', inicializarPagina)
+
+  async function inicializarMarcas() {
+
+    document.getElementById('filtro-nome').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); filtrar(); }
+    });
+
+    document.getElementById('modalExclusao').addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) fecharModalExclusao();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') fecharModalExclusao();
+    });
+
+    filtrar();
+  };
 
 </script>

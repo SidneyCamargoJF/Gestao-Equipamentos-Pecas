@@ -1,27 +1,5 @@
 <script>
 
-// ========================================
-// DADOS MOCK — Manutenção de Equipamentos
-// ========================================
-
-const equipamentosMock = [
-  { id: 1, nome:'Split Hi-Wall 9000 BTUs', patrimonio:'AC-001', marca:'LG', localizacao:'Sala 101' },
-  { id: 2, nome:'Split Hi-Wall 12000 BTUs', patrimonio:'AC-002', marca:'Samsung', localizacao:'Sala 102' },
-  { id: 3, nome:'Cassete 18000 BTUs', patrimonio:'AC-003', marca:'Midea', localizacao:'Salão Reuniões' },
-  { id: 4, nome:'Piso Teto 24000 BTUs', patrimonio:'AC-004', marca:'Carrier', localizacao:'Auditório' },
-  { id: 5, nome:'Split Hi-Wall 12000 BTUs', patrimonio:'AC-005', marca:'Elgin', localizacao:'Sala 103' },
-  { id: 6, nome:'Janela 7500 BTUs', patrimonio:'AC-006', marca:'Consul', localizacao:'Copa' },
-  { id: 7, nome:'Multi Split 18000 BTUs', patrimonio:'AC-009', marca:'LG', localizacao:'Diretoria' },
-  { id: 8, nome:'Cassete 36000 BTUs', patrimonio:'AC-008', marca:'Toshiba', localizacao:'Salão Principal' },
-  { id: 9, nome:'VRF 60000 BTUs', patrimonio:'AC-020', marca:'Daikin', localizacao:'Central' },
-  { id: 10, nome:'Split Hi-Wall 24000 BTUs', patrimonio:'AC-010', marca:'Samsung', localizacao:'Sala 201' },
-  { id: 11, nome:'Piso Teto 30000 BTUs', patrimonio:'AC-011', marca:'Carrier', localizacao:'Salão 2' },
-  { id: 12, nome:'Cassete 48000 BTUs', patrimonio:'AC-017', marca:'Toshiba', localizacao:'Salão Nobre' },
-  { id: 13, nome:'Split Hi-Wall 18000 BTUs', patrimonio:'AC-018', marca:'Elgin', localizacao:'Sala 301' },
-  { id: 14, nome:'Split Hi-Wall 9000 BTUs', patrimonio:'AC-012', marca:'Midea', localizacao:'Sala 202' },
-  { id: 15, nome:'Split Hi-Wall 12000 BTUs', patrimonio:'AC-015', marca:'Fujitsu', localizacao:'Sala 203' }
-];
-
     function renderDashboard() {
       const mensais = gerarPreventivasMensais();
       const totalEquip = equipamentosMock.length;
