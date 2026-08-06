@@ -1,0 +1,865 @@
+<script>
+
+  function renderContratosForm() {
+    const tbody = document.getElementById('bodyPecasView');
+    tbody.innerHTML = pecasMock.map(p => `
+      <tr>
+        <td><strong>${p.codigo}</strong></td>
+        <td>${p.desc}</td>
+        <td>${p.cat}</td>
+        <td><strong>${p.qtd}</strong></td>
+        <td>${p.min}</td>
+        <td><span class="status-pill ${p.status === 'OK' ? 'pill-green' : 'pill-red'}">${p.status}</span></td>
+      </tr>
+    `).join('');
+  }
+
+
+
+// CRUD arrays
+let equipamentos = [];
+let servicos = [];
+let produtos = [];
+let checklist = [];
+
+// Edit indexes
+let servicoEditIdx = -1;
+let checklistEditIdx = -1;
+
+// Variáveis globais para busca
+let equipamentoSelecionado = null;
+let servicoSelecionado = null;
+let produtoSelecionado = null;
+let checklistItemSelecionado = null;
+
+// 
+// SEARCH (com mínimo de 2 caracteres)
+// 
+function initSearch(inputId, dropdownId, wrapperId, opcoes) {
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+  const wrapper = document.getElementById(wrapperId);
+
+  function renderLista(filtro) {
+    const f = (filtro || '').toLowerCase();
+    dropdown.innerHTML = '';
+    if (f.length < 2) {
+      dropdown.innerHTML = '<div class="search-no-result">Digite pelo menos 2 caracteres...</div>';
+      return;
+    }
+    const itens = opcoes.filter(o => o.toLowerCase().includes(f));
+    if (itens.length === 0) {
+      dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+    } else {
+      itens.forEach(o => {
+        const div = document.createElement('div');
+        div.className = 'search-option';
+        div.textContent = o;
+        div.addEventListener('click', () => {
+          input.value = o;
+          dropdown.classList.remove('visible');
+        });
+        dropdown.appendChild(div);
+      });
+    }
+  }
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      dropdown.classList.add('visible');
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      if (!dropdown.classList.contains('visible')) dropdown.classList.add('visible');
+    } else {
+      dropdown.classList.remove('visible');
+    }
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') dropdown.classList.remove('visible');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+  });
+}
+
+// 
+// ABAS
+// 
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      const tabId = 'tab-' + this.dataset.tab;
+      const panel = document.getElementById(tabId);
+      if (panel) panel.classList.add('active');
+    });
+  });
+}
+
+// 
+// MÁSCARA DE TELEFONE
+// 
+function mascaraTelefone(input) {
+  input.addEventListener('input', function() {
+    let valor = this.value.replace(/\D/g, '');
+    if (valor.length > 11) valor = valor.slice(0, 11);
+
+    if (valor.length <= 10) {
+      if (valor.length > 6) {
+        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 6) + '-' + valor.slice(6);
+      } else if (valor.length > 2) {
+        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
+      } else if (valor.length > 0) {
+        this.value = '(' + valor;
+      } else {
+        this.value = '';
+      }
+    } else {
+      if (valor.length > 7) {
+        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 7) + '-' + valor.slice(7);
+      } else if (valor.length > 2) {
+        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
+      } else if (valor.length > 0) {
+        this.value = '(' + valor;
+      } else {
+        this.value = '';
+      }
+    }
+  });
+}
+
+// 
+// BUSCA E VINCULAÇÃO DE EQUIPAMENTOS (BASE → CONTRATO)
+// 
+
+function initBuscaEquipNome() {
+  const input = document.getElementById('eqBuscaNome');
+  const dropdown = document.getElementById('eqBuscaNomeDropdown');
+  const wrapper = document.getElementById('eqBuscaNomeWrapper');
+
+  function renderLista(filtro) {
+    const f = (filtro || '').toLowerCase();
+    dropdown.innerHTML = '';
+    if (f.length < 2) {
+      dropdown.innerHTML = '<div class="search-no-result">Digite pelo menos 2 caracteres...</div>';
+      return;
+    }
+    const itens = baseEquipamentos
+      .filter(e => e.nome.toLowerCase().includes(f))
+      .slice(0, 10)
+      .map(e => ({ label: e.nome + ' | ' + e.patrimonio, value: e }));
+
+    if (itens.length === 0) {
+      dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+    } else {
+      itens.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'search-option';
+        div.textContent = item.label;
+        div.addEventListener('click', () => {
+          input.value = item.value.nome;
+          dropdown.classList.remove('visible');
+          equipamentoSelecionado = item.value;
+          mostrarResultadoBusca(item.value);
+        });
+        dropdown.appendChild(div);
+      });
+    }
+  }
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      dropdown.classList.add('visible');
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      if (!dropdown.classList.contains('visible')) dropdown.classList.add('visible');
+    } else {
+      dropdown.classList.remove('visible');
+    }
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); dropdown.classList.remove('visible'); buscarEquipamentoBase(); }
+    if (e.key === 'Escape') dropdown.classList.remove('visible');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+  });
+}
+
+function buscarEquipamentoBase() {
+  const pat = document.getElementById('eqBuscaPat').value.trim().toUpperCase();
+  const nome = document.getElementById('eqBuscaNome').value.trim();
+  let encontrado = null;
+
+  if (pat) {
+    encontrado = baseEquipamentos.find(e => e.patrimonio.toUpperCase() === pat);
+    if (!encontrado) encontrado = baseEquipamentos.find(e => e.patrimonio.toUpperCase().includes(pat));
+  } else if (nome) {
+    if (nome.length < 2) { alert('Digite pelo menos 2 caracteres para buscar.'); return; }
+    encontrado = baseEquipamentos.find(e => e.nome.toLowerCase() === nome.toLowerCase());
+    if (!encontrado) encontrado = baseEquipamentos.find(e => e.nome.toLowerCase().includes(nome.toLowerCase()));
+  } else {
+    alert('Informe um patrimônio ou nome para buscar.'); return;
+  }
+
+  if (encontrado) {
+    equipamentoSelecionado = encontrado;
+    mostrarResultadoBusca(encontrado);
+  } else {
+    equipamentoSelecionado = null;
+    document.getElementById('eqResultado').style.display = 'none';
+    document.getElementById('eqVazio').style.display = 'block';
+  }
+}
+
+function mostrarResultadoBusca(eq) {
+  document.getElementById('eqResultNome').textContent = eq.nome;
+  document.getElementById('eqResultDet').textContent =
+    (eq.capacidade ? eq.capacidade + ' | ' : '') +
+    eq.marca + ' | ' + eq.modelo + ' | Pat: ' + eq.patrimonio + ' | ' + eq.localizacao;
+  document.getElementById('eqResultado').style.display = 'block';
+  document.getElementById('eqVazio').style.display = 'none';
+}
+
+function addEquipContrato() {
+  if (!equipamentoSelecionado) { alert('Nenhum equipamento selecionado.'); return; }
+  const eq = equipamentoSelecionado;
+  if (equipamentos.some(e => e.patrimonio === eq.patrimonio)) { alert('Este equipamento já está vinculado ao contrato.'); return; }
+  equipamentos.push({
+    equipamento: eq.nome,
+    capacidade: eq.capacidade,
+    marca: eq.marca,
+    modelo: eq.modelo,
+    patrimonio: eq.patrimonio,
+    localizacao: eq.localizacao
+  });
+  renderizarEquipamentos();
+  limparBuscaEquipamento();
+  alert('Equipamento vinculado ao contrato com sucesso!');
+}
+
+function limparBuscaEquipamento() {
+  document.getElementById('eqBuscaPat').value = '';
+  document.getElementById('eqBuscaNome').value = '';
+  document.getElementById('eqResultado').style.display = 'none';
+  document.getElementById('eqVazio').style.display = 'none';
+  equipamentoSelecionado = null;
+  document.getElementById('eqBuscaPat').focus();
+}
+
+function removerEquipamentoContrato(idx) {
+  if (confirm('Remover este equipamento do contrato?')) { equipamentos.splice(idx, 1); renderizarEquipamentos(); }
+}
+
+function renderizarEquipamentos() {
+  const tbody = document.getElementById('bodyEquipamentos');
+  if (equipamentos.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhum equipamento vinculado ao contrato.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = equipamentos.map((e, i) => '<tr>' +
+    '<td>' + escapeHtml(e.equipamento) + '</td>' +
+    '<td>' + escapeHtml(e.capacidade || '—') + '</td>' +
+    '<td>' + escapeHtml(e.marca) + '</td>' +
+    '<td>' + escapeHtml(e.modelo) + '</td>' +
+    '<td>' + escapeHtml(e.patrimonio) + '</td>' +
+    '<td>' + escapeHtml(e.localizacao) + '</td>' +
+    '<td class="acao-cell">' +
+      '<button class="btn-acao btn-excluir-linha" title="Remover do contrato" onclick="removerEquipamentoContrato(' + i + ')">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
+        '</svg>' +
+      '</button>' +
+    '</td>' +
+  '</tr>').join('');
+}
+
+// 
+// BUSCA E VINCULAÇÃO DE SERVIÇOS (BASE → CONTRATO)
+// 
+
+function initBuscaServicoNome() {
+  const input = document.getElementById('servicoBuscaNome');
+  const dropdown = document.getElementById('servicoBuscaNomeDropdown');
+  const wrapper = document.getElementById('servicoBuscaNomeWrapper');
+
+  function renderLista(filtro) {
+    const f = (filtro || '').toLowerCase();
+    dropdown.innerHTML = '';
+    if (f.length < 2) {
+      dropdown.innerHTML = '<div class="search-no-result">Digite pelo menos 2 caracteres...</div>';
+      return;
+    }
+    const itens = baseServicos.filter(s => s.nome.toLowerCase().includes(f)).slice(0, 10);
+    if (itens.length === 0) {
+      dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+    } else {
+      itens.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'search-option';
+        div.textContent = item.nome;
+        div.addEventListener('click', () => {
+          input.value = item.nome;
+          dropdown.classList.remove('visible');
+          servicoSelecionado = item;
+          mostrarResultadoBuscaServico(item);
+        });
+        dropdown.appendChild(div);
+      });
+    }
+  }
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      dropdown.classList.add('visible');
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      if (!dropdown.classList.contains('visible')) dropdown.classList.add('visible');
+    } else {
+      dropdown.classList.remove('visible');
+    }
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); dropdown.classList.remove('visible'); buscarServicoBase(); }
+    if (e.key === 'Escape') dropdown.classList.remove('visible');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+  });
+}
+
+function buscarServicoBase() {
+  const nome = document.getElementById('servicoBuscaNome').value.trim();
+  if (!nome) { alert('Informe o nome do serviço para buscar.'); return; }
+  if (nome.length < 2) { alert('Digite pelo menos 2 caracteres para buscar.'); return; }
+
+  let encontrado = baseServicos.find(s => s.nome.toLowerCase() === nome.toLowerCase());
+  if (!encontrado) encontrado = baseServicos.find(s => s.nome.toLowerCase().includes(nome.toLowerCase()));
+
+  if (encontrado) {
+    servicoSelecionado = encontrado;
+    mostrarResultadoBuscaServico(encontrado);
+  } else {
+    servicoSelecionado = null;
+    document.getElementById('servicoResultado').style.display = 'none';
+    document.getElementById('servicoVazio').style.display = 'block';
+  }
+}
+
+function mostrarResultadoBuscaServico(sv) {
+  document.getElementById('servicoResultNome').textContent = sv.nome;
+  document.getElementById('servicoResultDet').textContent = sv.nome;
+  document.getElementById('servicoPeriodicidade').value = 'mensal';
+  document.getElementById('servicoValor').value = '';
+  document.getElementById('servicoResultado').style.display = 'block';
+  document.getElementById('servicoVazio').style.display = 'none';
+  document.getElementById('servicoPeriodicidade').focus();
+}
+
+function addServicoContrato() {
+  if (!servicoSelecionado) { alert('Nenhum serviço selecionado.'); return; }
+
+  const sv = servicoSelecionado;
+  const periodicidade = document.getElementById('servicoPeriodicidade').value;
+  const valorStr = document.getElementById('servicoValor').value.trim();
+  const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.')) || 0;
+
+  if (!periodicidade) { alert('Selecione a periodicidade.'); return; }
+  if (valor < 0) { alert('Informe um valor válido.'); return; }
+
+  if (servicos.some(s => s.nome === sv.nome)) { alert('Este serviço já está vinculado ao contrato.'); return; }
+
+  servicos.push({ servico: sv.nome, periodicidade: periodicidade, valor: valor });
+  renderizarServicos();
+  limparBuscaServico();
+  alert('Serviço vinculado ao contrato com sucesso!');
+}
+
+function limparBuscaServico() {
+  document.getElementById('servicoBuscaNome').value = '';
+  document.getElementById('servicoResultado').style.display = 'none';
+  document.getElementById('servicoVazio').style.display = 'none';
+  servicoSelecionado = null;
+  document.getElementById('servicoBuscaNome').focus();
+}
+
+function removerServicoContrato(idx) {
+  if (confirm('Remover este serviço do contrato?')) {
+    servicos.splice(idx, 1);
+    if (servicoEditIdx === idx) servicoEditIdx = -1;
+    else if (servicoEditIdx > idx) servicoEditIdx--;
+    renderizarServicos();
+  }
+}
+
+function renderizarServicos() {
+  const tbody = document.getElementById('bodyServicos');
+  if (servicos.length === 0) {
+    servicoEditIdx = -1;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Nenhum serviço vinculado ao contrato.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = servicos.map((s, i) => {
+    const valorStr = s.valor ? s.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
+
+    if (servicoEditIdx === i) {
+      return '<tr class="editing-row">' +
+        '<td>' + escapeHtml(s.servico) + '</td>' +
+        '<td>' +
+          '<select class="field__select inline-edit-select" id="inlineEditServPer">' +
+            '<option value="unica"' + (s.periodicidade === 'unica' ? ' selected' : '') + '>Única</option>' +
+            '<option value="diaria"' + (s.periodicidade === 'diaria' ? ' selected' : '') + '>Diária</option>' +
+            '<option value="semanal"' + (s.periodicidade === 'semanal' ? ' selected' : '') + '>Semanal</option>' +
+            '<option value="quinzenal"' + (s.periodicidade === 'quinzenal' ? ' selected' : '') + '>Quinzenal</option>' +
+            '<option value="mensal"' + (s.periodicidade === 'mensal' ? ' selected' : '') + '>Mensal</option>' +
+            '<option value="bimestral"' + (s.periodicidade === 'bimestral' ? ' selected' : '') + '>Bimestral</option>' +
+            '<option value="trimestral"' + (s.periodicidade === 'trimestral' ? ' selected' : '') + '>Trimestral</option>' +
+            '<option value="semestral"' + (s.periodicidade === 'semestral' ? ' selected' : '') + '>Semestral</option>' +
+            '<option value="anual"' + (s.periodicidade === 'anual' ? ' selected' : '') + '>Anual</option>' +
+            '<option value="sob-demanda"' + (s.periodicidade === 'sob-demanda' ? ' selected' : '') + '>Sob Demanda</option>' +
+          '</select>' +
+        '</td>' +
+        '<td><input class="field__input inline-edit-input" type="text" id="inlineEditServValor" value="' + s.valor.toFixed(2).replace('.', ',') + '"></td>' +
+        '<td class="acao-cell">' +
+          '<button class="btn-acao" title="Salvar" style="color:#10b981" onclick="salvarEdicaoServicoInline(' + i + ')">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '</button>' +
+          '<button class="btn-acao btn-excluir-linha" title="Cancelar" onclick="cancelarEdicaoServico()">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button>' +
+        '</td>' +
+      '</tr>';
+    }
+
+    return '<tr>' +
+      '<td>' + escapeHtml(s.servico) + '</td>' +
+      '<td>' + formatarPeriodicidade(s.periodicidade) + '</td>' +
+      '<td>' + valorStr + '</td>' +
+      '<td class="acao-cell">' +
+        '<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarServicoContrato(' + i + ')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+        '</button>' +
+        '<button class="btn-acao btn-excluir-linha" title="Remover do contrato" onclick="removerServicoContrato(' + i + ')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
+          '</svg>' +
+        '</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function editarServicoContrato(idx) {
+  servicoEditIdx = idx;
+  renderizarServicos();
+}
+
+function cancelarEdicaoServico() {
+  servicoEditIdx = -1;
+  renderizarServicos();
+}
+
+function salvarEdicaoServicoInline(idx) {
+  const periodicidade = document.getElementById('inlineEditServPer').value;
+  const valorStr = document.getElementById('inlineEditServValor').value.trim();
+  const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
+
+  if (!periodicidade) { alert('Selecione a periodicidade.'); return; }
+  if (isNaN(valor) || valor < 0) { alert('Informe um valor válido.'); return; }
+
+  servicos[idx].periodicidade = periodicidade;
+  servicos[idx].valor = valor;
+  servicoEditIdx = -1;
+  renderizarServicos();
+}
+
+function formatarPeriodicidade(p) {
+  const map = {
+    unica:'Única', diaria:'Diária', semanal:'Semanal', quinzenal:'Quinzenal',
+    mensal:'Mensal', bimestral:'Bimestral', trimestral:'Trimestral',
+    semestral:'Semestral', anual:'Anual', 'sob-demanda':'Sob Demanda'
+  };
+  return map[p] || p;
+}
+
+// 
+// BUSCA E VINCULAÇÃO DE PRODUTOS (BASE → CONTRATO)
+// 
+
+function initBuscaProdutoNome() {
+  const input = document.getElementById('produtoBuscaNome');
+  const dropdown = document.getElementById('produtoBuscaNomeDropdown');
+  const wrapper = document.getElementById('produtoBuscaNomeWrapper');
+
+  function renderLista(filtro) {
+    const f = (filtro || '').toLowerCase();
+    dropdown.innerHTML = '';
+    if (f.length < 2) {
+      dropdown.innerHTML = '<div class="search-no-result">Digite pelo menos 2 caracteres...</div>';
+      return;
+    }
+    const itens = baseProdutos.filter(p => p.nome.toLowerCase().includes(f)).slice(0, 10);
+    if (itens.length === 0) {
+      dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+    } else {
+      itens.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'search-option';
+        div.textContent = item.nome;
+        div.addEventListener('click', () => {
+          input.value = item.nome;
+          dropdown.classList.remove('visible');
+          produtoSelecionado = item;
+          mostrarResultadoBuscaProduto(item);
+        });
+        dropdown.appendChild(div);
+      });
+    }
+  }
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      dropdown.classList.add('visible');
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      if (!dropdown.classList.contains('visible')) dropdown.classList.add('visible');
+    } else {
+      dropdown.classList.remove('visible');
+    }
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); dropdown.classList.remove('visible'); buscarProdutoBase(); }
+    if (e.key === 'Escape') dropdown.classList.remove('visible');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+  });
+}
+
+function buscarProdutoBase() {
+  const nome = document.getElementById('produtoBuscaNome').value.trim();
+  if (!nome) { alert('Informe o nome do produto para buscar.'); return; }
+  if (nome.length < 2) { alert('Digite pelo menos 2 caracteres para buscar.'); return; }
+
+  let encontrado = baseProdutos.find(p => p.nome.toLowerCase() === nome.toLowerCase());
+  if (!encontrado) encontrado = baseProdutos.find(p => p.nome.toLowerCase().includes(nome.toLowerCase()));
+
+  if (encontrado) {
+    produtoSelecionado = encontrado;
+    mostrarResultadoBuscaProduto(encontrado);
+  } else {
+    produtoSelecionado = null;
+    document.getElementById('produtoResultado').style.display = 'none';
+    document.getElementById('produtoVazio').style.display = 'block';
+  }
+}
+
+function mostrarResultadoBuscaProduto(pd) {
+  document.getElementById('produtoResultNome').textContent = pd.nome;
+  document.getElementById('produtoResultDet').textContent = pd.nome;
+  document.getElementById('produtoResultado').style.display = 'block';
+  document.getElementById('produtoVazio').style.display = 'none';
+}
+
+function addProdutoContrato() {
+  if (!produtoSelecionado) { alert('Nenhum produto selecionado.'); return; }
+  const pd = produtoSelecionado;
+  if (produtos.some(p => p.nome === pd.nome)) { alert('Este produto já está vinculado ao contrato.'); return; }
+  produtos.push({ nome: pd.nome });
+  renderizarProdutos();
+  limparBuscaProduto();
+  alert('Produto vinculado ao contrato com sucesso!');
+}
+
+function limparBuscaProduto() {
+  document.getElementById('produtoBuscaNome').value = '';
+  document.getElementById('produtoResultado').style.display = 'none';
+  document.getElementById('produtoVazio').style.display = 'none';
+  produtoSelecionado = null;
+  document.getElementById('produtoBuscaNome').focus();
+}
+
+function removerProdutoContrato(idx) {
+  if (confirm('Remover este produto do contrato?')) { produtos.splice(idx, 1); renderizarProdutos(); }
+}
+
+function renderizarProdutos() {
+  const tbody = document.getElementById('bodyProdutos');
+  if (produtos.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="2">Nenhum produto vinculado ao contrato.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = produtos.map((p, i) => '<tr>' +
+    '<td>' + escapeHtml(p.nome) + '</td>' +
+    '<td class="acao-cell">' +
+      '<button class="btn-acao btn-excluir-linha" title="Remover do contrato" onclick="removerProdutoContrato(' + i + ')">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
+        '</svg>' +
+      '</button>' +
+    '</td>' +
+  '</tr>').join('');
+}
+
+// 
+// BUSCA E VINCULAÇÃO DE ITENS DE CHECKLIST (BASE → CONTRATO)
+// 
+
+function initBuscaChecklist() {
+  const input = document.getElementById('checklistBusca');
+  const dropdown = document.getElementById('checklistBuscaDropdown');
+  const wrapper = document.getElementById('checklistBuscaWrapper');
+
+  function renderLista(filtro) {
+    const f = (filtro || '').toLowerCase();
+    dropdown.innerHTML = '';
+    if (f.length < 2) {
+      dropdown.innerHTML = '<div class="search-no-result">Digite pelo menos 2 caracteres...</div>';
+      return;
+    }
+    const itens = baseChecklist.filter(i => i.descricao.toLowerCase().includes(f)).slice(0, 10);
+    if (itens.length === 0) {
+      dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+    } else {
+      itens.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'search-option';
+        div.textContent = item.descricao;
+        div.addEventListener('click', () => {
+          input.value = item.descricao;
+          dropdown.classList.remove('visible');
+          checklistItemSelecionado = item;
+          mostrarResultadoBuscaChecklist(item);
+        });
+        dropdown.appendChild(div);
+      });
+    }
+  }
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      dropdown.classList.add('visible');
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      if (!dropdown.classList.contains('visible')) dropdown.classList.add('visible');
+    } else {
+      dropdown.classList.remove('visible');
+    }
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); dropdown.classList.remove('visible'); buscarItemChecklist(); }
+    if (e.key === 'Escape') dropdown.classList.remove('visible');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+  });
+}
+
+function buscarItemChecklist() {
+  const descricao = document.getElementById('checklistBusca').value.trim();
+  if (!descricao) { alert('Informe a descrição do item para buscar.'); return; }
+  if (descricao.length < 2) { alert('Digite pelo menos 2 caracteres para buscar.'); return; }
+
+  let encontrado = baseChecklist.find(i => i.descricao.toLowerCase() === descricao.toLowerCase());
+  if (!encontrado) encontrado = baseChecklist.find(i => i.descricao.toLowerCase().includes(descricao.toLowerCase()));
+
+  if (encontrado) {
+    checklistItemSelecionado = encontrado;
+    mostrarResultadoBuscaChecklist(encontrado);
+  } else {
+    checklistItemSelecionado = null;
+    document.getElementById('checklistResultado').style.display = 'none';
+    document.getElementById('checklistVazio').style.display = 'block';
+  }
+}
+
+function mostrarResultadoBuscaChecklist(item) {
+  document.getElementById('checklistResultNome').textContent = item.descricao;
+  document.getElementById('checklistResultDet').textContent = item.descricao;
+  document.getElementById('checklistItemPeriodicidade').value = 'mensal';
+  document.getElementById('checklistResultado').style.display = 'block';
+  document.getElementById('checklistVazio').style.display = 'none';
+}
+
+function addItemChecklistContrato() {
+  if (!checklistItemSelecionado) { alert('Nenhum item selecionado.'); return; }
+
+  const item = checklistItemSelecionado;
+  const periodicidade = document.getElementById('checklistItemPeriodicidade').value;
+
+  if (checklist.some(i => i.descricao === item.descricao)) {
+    alert('Este item já está vinculado ao contrato.');
+    return;
+  }
+
+  checklist.push({ descricao: item.descricao, periodicidade: periodicidade });
+  renderizarChecklist();
+  limparBuscaChecklist();
+  alert('Item vinculado ao contrato com sucesso!');
+}
+
+function limparBuscaChecklist() {
+  document.getElementById('checklistBusca').value = '';
+  document.getElementById('checklistResultado').style.display = 'none';
+  document.getElementById('checklistVazio').style.display = 'none';
+  checklistItemSelecionado = null;
+  document.getElementById('checklistBusca').focus();
+}
+
+function removerItemChecklistContrato(idx) {
+  if (confirm('Remover este item do contrato?')) {
+    checklist.splice(idx, 1);
+    if (checklistEditIdx === idx) checklistEditIdx = -1;
+    else if (checklistEditIdx > idx) checklistEditIdx--;
+    renderizarChecklist();
+  }
+}
+
+function editarItemChecklist(idx) {
+  checklistEditIdx = idx;
+  renderizarChecklist();
+}
+
+function cancelarEdicaoChecklist() {
+  checklistEditIdx = -1;
+  renderizarChecklist();
+}
+
+function salvarEdicaoInline(idx) {
+  const desc = document.getElementById('inlineEditDesc').value.trim();
+  const per = document.getElementById('inlineEditPer').value;
+  if (!desc) { alert('Informe a descrição.'); return; }
+  checklist[idx] = { descricao: desc, periodicidade: per };
+  checklistEditIdx = -1;
+  renderizarChecklist();
+}
+
+function renderizarChecklist() {
+  const tbody = document.getElementById('bodyChecklist');
+  if (checklist.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Nenhum item vinculado ao contrato.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = checklist.map((item, i) => {
+    if (checklistEditIdx === i) {
+      return '<tr class="editing-row">' +
+        '<td><input class="field__input inline-edit-input" type="text" id="inlineEditDesc" value="' + escapeHtml(item.descricao) + '"></td>' +
+        '<td>' +
+          '<select class="field__select inline-edit-select" id="inlineEditPer">' +
+            '<option value="mensal"' + (item.periodicidade === 'mensal' ? ' selected' : '') + '>Mensal</option>' +
+            '<option value="bimestral"' + (item.periodicidade === 'bimestral' ? ' selected' : '') + '>Bimestral</option>' +
+            '<option value="trimestral"' + (item.periodicidade === 'trimestral' ? ' selected' : '') + '>Trimestral</option>' +
+            '<option value="semestral"' + (item.periodicidade === 'semestral' ? ' selected' : '') + '>Semestral</option>' +
+            '<option value="anual"' + (item.periodicidade === 'anual' ? ' selected' : '') + '>Anual</option>' +
+          '</select>' +
+        '</td>' +
+        '<td class="acao-cell">' +
+          '<button class="btn-acao" title="Salvar" style="color:#10b981" onclick="salvarEdicaoInline(' + i + ')">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '</button>' +
+          '<button class="btn-acao btn-excluir-linha" title="Cancelar" onclick="cancelarEdicaoChecklist()">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button>' +
+        '</td>' +
+      '</tr>';
+    }
+    return '<tr>' +
+      '<td>' + escapeHtml(item.descricao) + '</td>' +
+      '<td>' + formatarPeriodicidade(item.periodicidade) + '</td>' +
+      '<td class="acao-cell">' +
+        '<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarItemChecklist(' + i + ')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+        '</button>' +
+        '<button class="btn-acao btn-excluir-linha" title="Remover" onclick="removerItemChecklistContrato(' + i + ')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' +
+        '</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+// 
+// UTILITÁRIOS
+// 
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function salvarRascunho() { alert('Contrato salvo como rascunho!'); }
+
+function salvarContrato() {
+  alert('Contrato salvo com sucesso!\n\n' +
+    'Equipamentos: ' + equipamentos.length + '\n' +
+    'Serviços: ' + servicos.length + '\n' +
+    'Produtos: ' + produtos.length + '\n' +
+    'Checklist: ' + checklist.length + ' itens');
+}
+
+// 
+// INICIALIZAÇÃO
+// 
+document.addEventListener('DOMContentLoaded', () => {
+  initTabs();
+  initSearch('empresaSearch', 'empresaDropdown', 'empresaWrapper', opcoesEmpresa);
+  initBuscaEquipNome();
+  initBuscaServicoNome();
+  initBuscaProdutoNome();
+  initBuscaChecklist();
+
+  // Máscara de telefone
+  const telField = document.getElementById('telefone');
+  if (telField) mascaraTelefone(telField);
+
+  // Enter no campo patrimônio
+  const patField = document.getElementById('eqBuscaPat');
+  if (patField) {
+    patField.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); buscarEquipamentoBase(); }
+    });
+  }
+
+  renderizarEquipamentos();
+  renderizarServicos();
+  renderizarProdutos();
+  renderizarChecklist();
+});
+
+</script>

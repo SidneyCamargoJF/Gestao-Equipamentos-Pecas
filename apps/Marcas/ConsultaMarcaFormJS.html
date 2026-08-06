@@ -1,0 +1,198 @@
+<script>
+
+  async function renderMarcasView() {
+
+    await inicializarMarcas()
+
+    consultarMarcas()
+
+    document.getElementById('filtro-nome').focus();
+
+  }
+
+
+  // ===== CONSULTAR, FILTRAR E RENDERIZAR =====
+  function consultarMarca() {
+    const marcaInput = document.getElementById('marcaSearch');
+    const marca = marcaInput ? marcaInput.value.trim().toLowerCase() : '';
+
+    const criterios = { marca: marca };
+
+    google.script.run
+      .withSuccessHandler(RetornoMarcas)
+      .withFailureHandler(err => console.error('Erro ao consultar: ', err))
+      .filtrarMarcas(criterios);
+  }
+
+  function RetornoMarcas(objmarcas) {
+    marcas = Array.isArray(objmarcas) ? objmarcas : [];
+    listaFiltrada = aplicarOrdenacao(marcas);
+    
+    // Atualiza opções do dropdown de busca
+    const opcoesMarca = [...new Set(marcas.map(m => m.marca).filter(Boolean))];
+    initSearch('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca);
+
+    renderTabela(listaFiltrada);
+  }
+
+  function filtrar() {
+    const marcaInput = document.getElementById('marcaSearch');
+    const marca = marcaInput ? marcaInput.value.trim().toLowerCase() : '';
+    
+    listaFiltrada = marcas.filter(m => {
+      if (marca && !(m.marca || '').toLowerCase().includes(marca)) return false;
+      return true;
+    });
+
+    listaFiltrada = aplicarOrdenacao(listaFiltrada);
+    renderTabela(listaFiltrada);
+  }
+
+
+
+  function limparFiltros() {
+    const inputMarca = document.getElementById('marcaSearch');
+    if (inputMarca) inputMarca.value = '';
+    
+    sortState = { coluna: null, direcao: 'asc' };
+    atualizarIndicadores();
+    consultar();
+    
+    if (inputMarca) inputMarca.focus();
+  }
+
+  // ===== INICIALIZAÇÃO SEGURA =====
+  document.addEventListener('DOMContentLoaded', () => {
+    const inputMarca = document.getElementById('marcaSearch');
+    if (inputMarca) inputMarca.focus();
+
+    // Carrega os dados iniciais
+    consultar();
+
+    // Eventos de clique fora para fechar os modais
+    ['modalExclusao', 'modalEdicao', 'modalCadastro'].forEach(idModal => {
+      const elModal = document.getElementById(idModal);
+      if (elModal) {
+        elModal.addEventListener('click', (e) => {
+          if (e.target.classList.contains('modal-overlay')) {
+            fecharModalExclusao();
+            fecharModalEdicao();
+            fecharModalCadastro();
+          }
+        });
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        fecharModalExclusao();
+        fecharModalEdicao();
+        fecharModalCadastro();
+      }
+    });
+  });
+
+  // === MODAL DE EDIÇÃO === 
+  function abrirModalEdicao(id) {
+    const marcaEncontrada = marcas ? marcas.find(m => String(m.id) === String(id)) : null;
+
+    document.getElementById('editMarcaId').value = id;
+    document.getElementById('editMarcaNome').value = marcaEncontrada ? marcaEncontrada.marca : '';
+
+    const modal = document.getElementById('modalEdicao');
+    if (modal) modal.classList.add('aberto');
+  }
+
+  function fecharModalEdicao() {
+    document.getElementById('editMarcaId').value = '';
+    document.getElementById('editMarcaNome').value = '';
+
+    const modal = document.getElementById('modalEdicao');
+    if (modal) modal.classList.remove('aberto');
+  }
+
+  function executarEdicao() {
+    const id = document.getElementById('editMarcaId').value;
+    const novoNome = document.getElementById('editMarcaNome').value;
+
+    if (!novoNome || !novoNome.trim()) {
+      alert("Por favor, digite o nome da marca.");
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler((resposta) => {
+        if (resposta && resposta.sucesso) {
+          fecharModalEdicao();
+          consultar();
+        } else {
+          alert(resposta ? resposta.mensagem : "Erro ao atualizar a marca.");
+        }
+      })
+      .withFailureHandler((err) => {
+        console.error('Erro ao editar marca: ', err);
+        alert('Erro de comunicação com o servidor.');
+      })
+      .editarMarca(id, novoNome.trim());
+  }
+
+  function executarExclusaoMarca() {
+    if (!idExclusao) {
+      alert("Nenhum registro selecionado.");
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler((resposta) => {
+        if (resposta && resposta.sucesso === false) {
+          alert(resposta.mensagem);
+        } else {
+          fecharModalExclusao();
+          consultar();
+        }
+      })
+      .withFailureHandler((err) => {
+        console.error('Erro ao desativar marca:', err);
+        alert('Erro ao conectar com o servidor.');
+      })
+      .ExcluirRegistro(table_name, idExclusao);
+  }
+
+  // ==== MODAL DE CADASTRO DE MARCA ====
+  function abrirModalCadastro() {
+    const input = document.getElementById('novaMarcaNome');
+    if (input) input.value = '';
+
+    const modal = document.getElementById('modalCadastro');
+    if (modal) {
+      modal.classList.add('aberto');
+      setTimeout(() => input && input.focus(), 100);
+    }
+  }
+
+  function salvarNovaMarca() {
+    const input = document.getElementById('novaMarcaNome');
+    const nomeMarca = input ? input.value.trim() : '';
+
+    if (!nomeMarca) {
+      alert('Por favor, digite o nome da marca.');
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler((resposta) => {
+        if (resposta && resposta.sucesso) {
+          fecharModalCadastro();
+          consultar();
+        } else {
+          alert(resposta ? resposta.mensagem : 'Erro ao cadastrar marca.');
+        }
+      })
+      .withFailureHandler((err) => {
+        console.error('Erro ao cadastrar marca:', err);
+        alert('Ocorreu um erro no script: ' + (err.message || err));
+      })
+      .cadastrarMarca(nomeMarca);
+  }
+
+</script>

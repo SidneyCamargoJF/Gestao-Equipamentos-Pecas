@@ -1,0 +1,148 @@
+<script>
+
+    // Calculations & Dynamic Rendering Functions
+    function gerarPreventivasMensais() {
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mes = hoje.getMonth();
+
+      return equipamentosMock.map(eq => {
+        const dia = (eq.id * 7 % 20) + 1;
+        const data = new Date(ano, mes, dia);
+        const diff = Math.floor((data - hoje) / (1000 * 60 * 60 * 24));
+        
+        let status = diff < 0 ? 'Vencida' : diff <= 5 ? 'Programada' : 'Agendada';
+        let statusClass = diff < 0 ? 'pill-red' : diff <= 5 ? 'pill-amber' : 'pill-green';
+
+        return {
+          equipamento: eq.nome,
+          patrimonio: eq.patrimonio,
+          data: data,
+          dataStr: data.toLocaleDateString('pt-BR'),
+          status: status,
+          statusClass: statusClass,
+          diasRestantes: diff,
+          equipamentoId: eq.id
+        };
+      }).sort((a, b) => a.data - b.data);
+    }
+
+    function renderEquipamentos() {
+      const tbody = document.getElementById('bodyEquipamentosView');
+      tbody.innerHTML = equipamentosMock.map(eq => `
+        <tr>
+          <td><strong>${eq.patrimonio}</strong></td>
+          <td>${eq.nome}</td>
+          <td>${eq.marca}</td>
+          <td>${eq.localizacao}</td>
+          <td>
+            <button class="btn btn-secondary btn-small" onclick="verDetalhes(${eq.id})">Ver Histórico</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+/**
+    function renderPecas() {
+      const tbody = document.getElementById('bodyPecasView');
+      tbody.innerHTML = pecasMock.map(p => `
+        <tr>
+          <td><strong>${p.codigo}</strong></td>
+          <td>${p.desc}</td>
+          <td>${p.cat}</td>
+          <td><strong>${p.qtd}</strong></td>
+          <td>${p.min}</td>
+          <td><span class="status-pill ${p.status === 'OK' ? 'pill-green' : 'pill-red'}">${p.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+*/
+    function renderChamados() {
+      const tbody = document.getElementById('bodyChamadosView');
+      tbody.innerHTML = chamadosMock.map(c => `
+        <tr>
+          <td><strong>${c.id}</strong></td>
+          <td>${c.req}</td>
+          <td>${c.eq}</td>
+          <td><span class="status-pill ${c.prio === 'Alta' ? 'pill-red' : 'pill-amber'}">${c.prio}</span></td>
+          <td><span class="status-pill ${c.status === 'Concluído' ? 'pill-green' : 'pill-blue'}">${c.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderOrdens() {
+      const tbody = document.getElementById('bodyOrdensView');
+      tbody.innerHTML = `
+        <tr><td><strong>OS-2026-01</strong></td><td>Preventiva</td><td>Split Hi-Wall 9000 BTUs</td><td>Técnico João</td><td><span class="status-pill pill-amber">Em Execução</span></td></tr>
+        <tr><td><strong>OS-2026-02</strong></td><td>Corretiva</td><td>VRF 60000 BTUs</td><td>Técnico Roberto</td><td><span class="status-pill pill-green">Finalizada</span></td></tr>
+      `;
+    }
+
+    function renderAgenda() {
+      const tbody = document.getElementById('bodyAgendaView');
+      const mensais = gerarPreventivasMensais();
+      tbody.innerHTML = mensais.map(m => `
+        <tr>
+          <td><strong>${m.dataStr}</strong></td>
+          <td>${m.equipamento}</td>
+          <td>Limpeza e Higienização de Filtros</td>
+          <td>Equipe A</td>
+        </tr>
+      `).join('');
+    }
+
+    function filtrarEquipamentos() {
+      const q = document.getElementById('searchEquip').value.toLowerCase();
+      const rows = document.querySelectorAll('#bodyEquipamentosView tr');
+      rows.forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }
+
+    // Modal Operations
+    function verDetalhes(id) {
+      const eq = equipamentosMock.find(e => e.id === id);
+      if (!eq) return;
+
+      document.getElementById('modalTitulo').textContent = `${eq.nome} (${eq.patrimonio})`;
+      document.getElementById('modalBody').innerHTML = `
+        <div style="margin-bottom: 1rem; line-height: 1.6;">
+          <p><strong>Marca:</strong> ${eq.marca}</p>
+          <p><strong>Localização:</strong> ${eq.localizacao}</p>
+          <p><strong>Status Operacional:</strong> <span class="status-pill pill-green">Ativo / Operacional</span></p>
+        </div>
+        <h4 style="font-size:0.875rem; font-weight:700; margin-bottom:0.5rem; color:#0f172a;">Histórico de Manutenções</h4>
+        <table>
+          <thead><tr><th>Data</th><th>Tipo</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>15/06/2026</td><td>Preventiva Mensal</td><td><span class="status-pill pill-green">Concluída</span></td></tr>
+            <tr><td>12/01/2026</td><td>Preventiva Anual</td><td><span class="status-pill pill-green">Concluída</span></td></tr>
+          </tbody>
+        </table>
+      `;
+
+      document.getElementById('modalDetalhes').classList.add('aberto');
+    }
+
+    function abrirModalNovoEquipamento() {
+      document.getElementById('modalNovoEquipamento').classList.add('aberto');
+    }
+
+    function salvarNovoEquipamento(e) {
+      e.preventDefault();
+      const novo = {
+        id: equipamentosMock.length + 1,
+        nome: document.getElementById('inputNomeEq').value,
+        patrimonio: document.getElementById('inputPatrimonioEq').value,
+        marca: document.getElementById('inputMarcaEq').value,
+        localizacao: document.getElementById('inputLocalEq').value
+      };
+
+      equipamentosMock.push(novo);
+      fecharModal('modalNovoEquipamento');
+      renderEquipamentos();
+      renderDashboard();
+    }
+
+</script>

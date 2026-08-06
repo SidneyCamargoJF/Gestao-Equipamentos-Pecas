@@ -1,0 +1,59 @@
+<script>
+
+  function runServerFunction(nomeFuncao, ...args) {
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler(resolve) // Sucesso retorna o valor
+        .withFailureHandler(reject)  // Erro rejeita a Promise
+        [nomeFuncao](...args);
+    });
+  }
+
+  function isEmpty(v) {
+    if (v== "" || v === null) {
+      return true
+    }
+    return false
+  }
+
+  function colorStatusGarantia (status) {
+    if (status === "vencendo") 
+       { return '#fff3cd' } // amarelo claro
+    if (status === "vencida")  
+       { return '#f8d7da'} // vermelho claro
+
+    return '#d4edda' // verde claro
+    
+  }
+
+  function montaStatusGarantia (data, status) {
+    let color = colorStatusGarantia(status)
+  }
+
+    function showMsgBox(m,tipo) {
+    document.getElementById('modalMsgBox').classList.add('aberto');
+  }
+
+  function closeMsgBox() {
+    idExclusao = null;
+    document.getElementById('modalMsgBox').classList.remove('aberto');
+  }
+
+  function caixaMsgBox(m) {
+    CaixaMsg.style.display = "block";
+    TituloMsg.innerHTML = "AVISO";
+    CorpoMsg.innerHTML = m;
+
+    RodapeMsg.innerHTML = BtnFechar;
+  }
+
+  // ===== ESCAPAR HTML =====
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+
+
+
+
+</script>

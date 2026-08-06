@@ -1,0 +1,131 @@
+    <!-- PAGE 2: EQUIPAMENTOS -->
+    <section id="page-equipamentos" class="spa-page">
+      <div class="page-header">
+        <h1>🖥️ Gestão de Equipamentos</h1>
+        <button class="btn btn-primary" onclick="abrirModalNovoEquipamento()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo Equipamento
+        </button>
+      </div>
+
+      <div class="panel">
+        <div class="controls-bar">
+          <div class="search-box">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="searchEquip" placeholder="Buscar por nome, patrimônio ou marca..." onkeyup="filtrarEquipamentos()">
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Patrimônio</th>
+                <th>Equipamento</th>
+                <th>Marca</th>
+                <th>Localização</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="bodyEquipamentosView"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- PAGE 4: CHAMADOS -->
+    <section id="page-chamados" class="spa-page">
+      <div class="page-header">
+        <h1>📩 Chamados de Assistência</h1>
+        <button class="btn btn-primary" onclick="abrirModalNovoChamado()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Abrir Chamado
+        </button>
+      </div>
+
+      <div class="panel">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Protocolo</th>
+                <th>Solicitante</th>
+                <th>Equipamento</th>
+                <th>Prioridade</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="bodyChamadosView"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 5: ORDENS DE SERVIÇO -->
+    <section id="page-ordens" class="spa-page">
+      <div class="page-header">
+        <h1>📈 Ordens de Serviço (O.S.)</h1>
+      </div>
+      <div class="panel">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>O.S. nº</th>
+                <th>Tipo</th>
+                <th>Equipamento</th>
+                <th>Técnico</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="bodyOrdensView"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 7: RELATÓRIOS -->
+    <section id="page-relatorios" class="spa-page">
+      <div class="page-header">
+        <h1>📊 Relatórios & KPIs</h1>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">MTBF (Média Falhas)</div>
+          <div class="metric-value">142h</div>
+          <div class="metric-sub ok">+12h que mês anterior</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">MTTR (Média Reparo)</div>
+          <div class="metric-value">2.4h</div>
+          <div class="metric-sub ok">-15% tempo de parada</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Conclusão de O.S.</div>
+          <div class="metric-value">94%</div>
+          <div class="metric-sub ok">Dentro do SLA</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 8: CONFIGURAÇÕES -->
+    <section id="page-configuracoes" class="spa-page">
+      <div class="page-header">
+        <h1>⚙️ Configurações do Sistema</h1>
+      </div>
+      <div class="panel">
+        <div class="form-group" style="max-width:24rem;">
+          <label>Nome do Estabelecimento</label>
+          <input type="text" value="Unidade Central de Manutenção">
+        </div>
+        <div class="form-group" style="max-width:24rem;">
+          <label>Notificações por E-mail</label>
+          <select>
+            <option>Ativadas (Diário)</option>
+            <option>Desativadas</option>
+          </select>
+        </div>
+        <button class="btn btn-primary">Salvar Alterações</button>
+      </div>
+    </section>
+

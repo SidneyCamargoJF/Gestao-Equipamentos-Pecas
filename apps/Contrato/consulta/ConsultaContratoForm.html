@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <?!=Chamar("ConsultaContratoFormCSS") ?>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulta de Contratos</title>
+  <link rel="stylesheet" href="consulta-contratos.css">
+</head>
+<body>
+
+  <main class="main-container">
+    <section class="card">
+
+      <!-- FILTROS -->
+      <form autocomplete="off" onsubmit="return false;">
+        <div class="filters-primary">
+          <div class="field">
+            <label class="field__label" for="filtro-numero">Número</label>
+            <input class="field__input" type="text" id="filtro-numero" placeholder="Nº do contrato" autofocus>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="filtro-contrato">Contrato</label>
+            <input class="field__input" type="text" id="filtro-contrato" placeholder="Nome do contrato">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="filtro-sei">SEI</label>
+            <input class="field__input" type="text" id="filtro-sei" placeholder="Nº do SEI">
+          </div>
+
+          <div class="field">
+            <label class="field__label">Empresa</label>
+            <div class="search-wrapper" id="empresaWrapper">
+              <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
+              <input class="search-input" type="text" id="empresaSearch" placeholder="Selecione a empresa..." autocomplete="off">
+              <div class="search-dropdown" id="empresaDropdown"></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="filtro-situacao">Situação</label>
+            <select class="field__select" id="filtro-situacao">
+              <option value="">Todas</option>
+              <option value="ativo">Ativo</option>
+              <option value="vencendo">Vencendo</option>
+              <option value="vencido">Vencido</option>
+              <option value="renovado">Renovado</option>
+              <option value="encerrado">Encerrado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions-bar">
+          <button type="button" class="btn-secondary" onclick="limparFiltros()">Limpar</button>
+          <button type="button" class="btn-success" onclick="adicionarContrato()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Adicionar
+          </button>
+          <button type="button" class="btn-primary" onclick="filtrar()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Consultar
+          </button>
+        </div>
+      </form>
+
+      <!-- TABELA -->
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th onclick="ordenar('numero')">NÚMERO <span class="sort-arrow"></span></th>
+              <th onclick="ordenar('contrato')">CONTRATO <span class="sort-arrow"></span></th>
+              <th onclick="ordenar('sei')">SEI <span class="sort-arrow"></span></th>
+              <th onclick="ordenar('data')">DATA <span class="sort-arrow"></span></th>
+              <th onclick="ordenar('empresa')">EMPRESA <span class="sort-arrow"></span></th>
+              <th onclick="ordenar('valor')">VALOR <span class="sort-arrow"></span></th>
+              <th onclick="ordenar('dataInicial')">DT INICIAL <span class="sort-arrow"></span></th>
+              <th onclick="ordenar('dataFinal')">DT FINAL <span class="sort-arrow"></span></th>
+              <th onclick="ordenar('renovadoAte')">RENOVADO ATÉ <span class="sort-arrow"></span></th>
+              <th onclick="ordenar('situacao')">SITUAÇÃO <span class="sort-arrow"></span></th>
+              <th style="cursor:default;">AÇÕES</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaBody"></tbody>
+        </table>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- MODAL DE EXCLUSÃO -->
+  <div class="modal-overlay" id="modalExclusao">
+    <div class="modal">
+      <h3>Confirmar Exclusão</h3>
+      <p>Tem certeza que deseja excluir este contrato? Esta ação não pode ser desfeita.</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="fecharModalExclusao()" style="width:auto;">Cancelar</button>
+        <button class="btn-danger" onclick="executarExclusao()">Sim, Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== DADOS MOCK =====
+    const contratos = [
+      {id:1, numero:'CT-001/2024', contrato:'Prestação Serviços Limpeza', sei:'SEI 12345.678901/2024-10', data:'15/01/2024', empresa:'Limpeza Total Ltda', telefone:'(51) 3333-0101', email:'contato@limpezatotal.com.br', valor:158900.00, dataInicial:'01/02/2024', dataFinal:'31/01/2025', renovadoAte:'31/01/2026', situacao:'ativo'},
+      {id:2, numero:'CT-002/2023', contrato:'Manutenção Predial', sei:'SEI 98765.432101/2023-15', data:'10/03/2023', empresa:'Edifica Engenharia S.A.', telefone:'(51) 3222-0202', email:'adm@edificaeng.com.br', valor:245000.00, dataInicial:'01/04/2023', dataFinal:'31/03/2025', renovadoAte:'31/03/2026', situacao:'renovado'},
+      {id:3, numero:'CT-003/2024', contrato:'Fornecimento de EPIs', sei:'SEI 45678.901234/2024-20', data:'20/06/2024', empresa:'Segurança Total Ltda', telefone:'(51) 3444-0303', email:'vendas@segurancatotal.com.br', valor:45800.00, dataInicial:'01/07/2024', dataFinal:'30/06/2025', renovadoAte:'', situacao:'ativo'},
+      
+    ];
+
+    const opcoesEmpresa = [
+      'Limpeza Total Ltda','Edifica Engenharia S.A.','Segurança Total Ltda',
+      'Frota Fácil Ltda','Ambiental Verde Ltda','InfoTech Soluções',
+      'Segurança Máxima Ltda','Telecom BR S.A.','Papelaria Central Ltda',
+      'Construtora Nova Era'
+    ];
+
+    const situacaoOrdem = { ativo:1, renovado:2, vencendo:3, vencido:4, encerrado:5 };
+
+    let sortState = { coluna: null, direcao: 'asc' };
+    let listaFiltrada = [];
+    let idExclusao = null;
+
+    // ===== SEARCH =====
+    function initSearch(inputId, dropdownId, wrapperId, opcoes) {
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      const wrapper = document.getElementById(wrapperId);
+
+      function renderLista(filtro) {
+        const f = (filtro || '').toLowerCase();
+        const itens = opcoes.filter(o => o.toLowerCase().includes(f));
+        dropdown.innerHTML = '';
+        if (itens.length === 0) {
+          dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+        } else {
+          itens.forEach(o => {
+            const div = document.createElement('div');
+            div.className = 'search-option';
+            div.textContent = o;
+            div.addEventListener('click', () => {
+              input.value = o;
+              dropdown.classList.remove('visible');
+            });
+            dropdown.appendChild(div);
+          });
+        }
+      }
+
+      input.addEventListener('focus', () => {
+        renderLista(input.value);
+        dropdown.classList.add('visible');
+      });
+
+      input.addEventListener('input', () => {
+        renderLista(input.value);
+        if (!dropdown.classList.contains('visible')) {
+          dropdown.classList.add('visible');
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); filtrar(); dropdown.classList.remove('visible'); }
+        if (e.key === 'Escape') dropdown.classList.remove('visible');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+      });
+    }
+
+    // ===== FORMATAÇÃO =====
+    function formatarValor(v) {
+      return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function formatarSituacao(s) {
+      const map = { ativo:'Ativo', vencendo:'Vencendo', vencido:'Vencido', renovado:'Renovado', encerrado:'Encerrado' };
+      return map[s] || s;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    // ===== ORDENAÇÃO =====
+    function ordenar(coluna) {
+      if (sortState.coluna === coluna) {
+        sortState.direcao = sortState.direcao === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState.coluna = coluna;
+        sortState.direcao = 'asc';
+      }
+      atualizarIndicadores();
+      filtrar();
+    }
+
+    function atualizarIndicadores() {
+      document.querySelectorAll('.data-table th').forEach(th => {
+        th.classList.remove('sorted');
+        const span = th.querySelector('.sort-arrow');
+        if (span) span.textContent = '';
+      });
+      const ths = document.querySelectorAll('.data-table th');
+      const indices = { numero:0, contrato:1, sei:2, data:3, empresa:4, valor:5, dataInicial:6, dataFinal:7, renovadoAte:8, situacao:9 };
+      const idx = indices[sortState.coluna];
+      if (idx !== undefined && ths[idx]) {
+        ths[idx].classList.add('sorted');
+        const span = ths[idx].querySelector('.sort-arrow');
+        if (span) span.textContent = sortState.direcao === 'asc' ? '▲' : '▼';
+      }
+    }
+
+    function aplicarOrdenacao(lista) {
+      if (!sortState.coluna) return lista;
+      const col = sortState.coluna;
+      const dir = sortState.direcao === 'asc' ? 1 : -1;
+      const arr = lista.slice();
+      arr.sort((a, b) => {
+        let va = a[col], vb = b[col];
+        if (col === 'situacao') {
+          va = situacaoOrdem[va] || 99;
+          vb = situacaoOrdem[vb] || 99;
+          return (va - vb) * dir;
+        }
+        if (col === 'valor') return (va - vb) * dir;
+        va = String(va).toLowerCase();
+        vb = String(vb).toLowerCase();
+        return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;
+      });
+      return arr;
+    }
+
+    // ===== FILTRAR E RENDERIZAR =====
+    function filtrar() {
+      const numero = document.getElementById('filtro-numero').value.trim().toLowerCase();
+      const contrato = document.getElementById('filtro-contrato').value.trim().toLowerCase();
+      const sei = document.getElementById('filtro-sei').value.trim().toLowerCase();
+      const empresa = document.getElementById('empresaSearch').value.trim().toLowerCase();
+      const situacao = document.getElementById('filtro-situacao').value;
+
+      listaFiltrada = contratos.filter(c => {
+        if (numero && !c.numero.toLowerCase().includes(numero)) return false;
+        if (contrato && !c.contrato.toLowerCase().includes(contrato)) return false;
+        if (sei && !c.sei.toLowerCase().includes(sei)) return false;
+        if (empresa && !c.empresa.toLowerCase().includes(empresa)) return false;
+        if (situacao && c.situacao !== situacao) return false;
+        return true;
+      });
+
+      listaFiltrada = aplicarOrdenacao(listaFiltrada);
+      renderTabela(listaFiltrada);
+    }
+
+    function renderTabela(lista) {
+      const tbody = document.getElementById('tabelaBody');
+      tbody.innerHTML = '';
+      if (!lista || lista.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="11">Nenhum contrato encontrado com os filtros informados.</td></tr>';
+        return;
+      }
+      lista.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(c.numero)}</td>
+          <td>${escapeHtml(c.contrato)}</td>
+          <td>${escapeHtml(c.sei)}</td>
+          <td>${escapeHtml(c.data)}</td>
+          <td>${escapeHtml(c.empresa)}</td>
+          <td>${formatarValor(c.valor)}</td>
+          <td>${escapeHtml(c.dataInicial)}</td>
+          <td>${escapeHtml(c.dataFinal)}</td>
+          <td>${c.renovadoAte ? escapeHtml(c.renovadoAte) : '—'}</td>
+          <td><span class="situacao-badge ${c.situacao}">${formatarSituacao(c.situacao)}</span></td>
+          <td>
+            <div class="acao-cell">
+              <button class="btn-acao btn-editar-linha" title="Editar" onclick="editarContrato(${c.id})">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              </button>
+              <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusao(${c.id})">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ===== AÇÕES =====
+    function limparFiltros() {
+      document.getElementById('filtro-numero').value = '';
+      document.getElementById('filtro-contrato').value = '';
+      document.getElementById('filtro-sei').value = '';
+      document.getElementById('empresaSearch').value = '';
+      document.getElementById('filtro-situacao').value = '';
+      sortState = { coluna: null, direcao: 'asc' };
+      atualizarIndicadores();
+      filtrar();
+      document.getElementById('filtro-numero').focus();
+    }
+
+    function adicionarContrato() {
+      window.location.href = 'cadastro-contrato.html';
+    }
+
+    function editarContrato(id) {
+      window.location.href = 'cadastro-contrato.html?id=' + encodeURIComponent(id);
+    }
+
+    function confirmarExclusao(id) {
+      idExclusao = id;
+      document.getElementById('modalExclusao').classList.add('aberto');
+    }
+
+    function fecharModalExclusao() {
+      idExclusao = null;
+      document.getElementById('modalExclusao').classList.remove('aberto');
+    }
+
+    function executarExclusao() {
+      if (idExclusao !== null) {
+        const idx = contratos.findIndex(c => c.id === idExclusao);
+        if (idx >= 0) contratos.splice(idx, 1);
+        fecharModalExclusao();
+        filtrar();
+      }
+    }
+
+    // ===== INICIALIZAÇÃO =====
+    document.addEventListener('DOMContentLoaded', () => {
+      initSearch('empresaSearch', 'empresaDropdown', 'empresaWrapper', opcoesEmpresa);
+
+      document.getElementById('filtro-numero').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); filtrar(); }
+      });
+      document.getElementById('filtro-contrato').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); filtrar(); }
+      });
+      document.getElementById('filtro-sei').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); filtrar(); }
+      });
+
+      document.getElementById('modalExclusao').addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-overlay')) fecharModalExclusao();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') fecharModalExclusao();
+      });
+
+      filtrar();
+    });
+  </script>
+
+  <?!=Chamar("ConsultaContratoFormJS") ?>
+
+</body>
+</html>

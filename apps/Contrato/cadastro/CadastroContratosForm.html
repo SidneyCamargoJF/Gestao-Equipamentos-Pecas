@@ -1,0 +1,491 @@
+      <section id="page-contratos-form" class="spa-page">
+
+
+       <div class="page-header">
+          <div class="actions-bar">
+            <h1>✒️ Contratos</h1>
+          </div>
+          <div class="actions-bar">
+            <button type="button" class="btn-secondary" onclick="history.back()">Cancelar</button>
+            <button type="button" class="btn-danger" onclick="limparContrato()"> <!-- filtrar() -->
+              🧹Limpar
+            </button>
+            <button type="button" class="btn-success" onclick="salvarContrato()">💾 Salvar</button>
+          </div>   
+        </div>
+
+        <div class="panel">
+          <!-- <section class="card"> -->
+
+          <!-- HEADER -->
+          <div class="form-header">
+            <h2 class="form-titulo" id="formTitulo">Novo Contrato</h2>
+            <span class="form-status" id="formStatus">Rascunho</span>
+          </div>
+
+          <form autocomplete="off" onsubmit="return false;">
+
+            <!-- ============================================= -->
+            <!-- PARTE 1: INFORMAÇÕES PRINCIPAIS               -->
+            <!-- ============================================= -->
+            <fieldset class="fieldset-principal">
+              <legend class="fieldset-legend">Informações Principais</legend>
+              <div class="form-grid-3">
+
+                <div class="field">
+                  <label class="field__label" for="numero">Número</label>
+                  <input class="field__input" type="text" id="numero" placeholder="CT-XXX/2026" readonly autofocus>
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="contrato">Nome do Contrato</label>
+                  <input class="field__input" type="text" id="contrato" placeholder="Ex: Prestação de Serviços">
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="sei">Documento SEI</label>
+                  <input class="field__input" type="text" id="sei" placeholder="SEI 00000.000000/2026-00">
+                </div>
+
+              </div>
+
+              <div class="form-grid-3">
+
+                <div class="field">
+                  <label class="field__label" for="data">Data</label>
+                  <input class="field__input" type="date" id="data">
+                </div>
+
+                <div class="field">
+                  <label class="field__label">Empresa</label>
+                  <div class="search-wrapper" id="empresaWrapper">
+                    <span class="search-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                      </svg>
+                    </span>
+                    <input class="search-input" type="text" id="empresaSearch" placeholder="Selecione a empresa..." autocomplete="off">
+                    <div class="search-dropdown" id="empresaDropdown"></div>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="situacao">Situação</label>
+                  <select class="field__select" id="situacao">
+                    <option value="rascunho">Rascunho</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="vencendo">Vencendo</option>
+                    <option value="vencido">Vencido</option>
+                    <option value="renovado">Renovado</option>
+                    <option value="encerrado">Encerrado</option>
+                  </select>
+                </div>
+
+              </div>
+            </fieldset>
+
+            <!-- ============================================= -->
+            <!-- PARTE 2: ABAS                                 -->
+            <!-- ============================================= -->
+            <fieldset class="fieldset-abas">
+              <legend class="fieldset-legend">Detalhamento</legend>
+
+              <!-- NAVEGAÇÃO DAS ABAS -->
+              <div class="tabs-nav" id="tabsNav">
+                <button class="tab-btn active" data-tab="complementares">📋 Complementares</button>
+                <button class="tab-btn" data-tab="equipamentos">🔧 Equipamentos</button>
+                <button class="tab-btn" data-tab="servicos">🛠️ Serviços</button>
+                <button class="tab-btn" data-tab="produtos">📦 Produtos</button>
+                <button class="tab-btn" data-tab="checklist-preventiva">✅ Checklist</button>
+              </div>
+
+              <!-- CONTEÚDO DAS ABAS -->
+              <div class="tabs-content">
+
+                <!-- ======================== -->
+                <!-- ABA 1: COMPLEMENTARES    -->
+                <!-- ======================== -->
+                <div class="tab-panel active" id="tab-complementares">
+                  <div class="form-grid-2">
+
+                    <div class="field field-full">
+                      <label class="field__label" for="objeto">Objeto do Contrato</label>
+                      <textarea class="field__textarea" id="objeto" rows="3" placeholder="Descreva o objeto do contrato..."></textarea>
+                    </div>
+
+                    <div class="field field-full">
+                      <label class="field__label" for="observacoes">Observações</label>
+                      <textarea class="field__textarea" id="observacoes" rows="3" placeholder="Observações relevantes..."></textarea>
+                    </div>
+
+                  </div>
+
+                  <div class="form-grid-3">
+
+                    <div class="field">
+                      <label class="field__label" for="valor">Valor (R$)</label>
+                      <input class="field__input" type="text" id="valor" placeholder="0,00">
+                    </div>
+
+                    <div class="field">
+                      <label class="field__label" for="dataInicial">Data Inicial</label>
+                      <input class="field__input" type="date" id="dataInicial">
+                    </div>
+
+                    <div class="field">
+                      <label class="field__label" for="dataFinal">Data Final</label>
+                      <input class="field__input" type="date" id="dataFinal">
+                    </div>
+
+                  </div>
+
+                  <div class="form-grid-3">
+
+                    <div class="field">
+                      <label class="field__label" for="contatoEmpresa">Contato da Empresa</label>
+                      <input class="field__input" type="text" id="contatoEmpresa" placeholder="Nome do contato na empresa">
+                    </div>
+
+                    <div class="field">
+                      <label class="field__label" for="telefone">Telefone</label>
+                      <input class="field__input" type="text" id="telefone" placeholder="(51) 99999-9999">
+                    </div>
+
+                    <div class="field">
+                      <label class="field__label" for="email">E-mail</label>
+                      <input class="field__input" type="email" id="email" placeholder="contato@empresa.com.br">
+                    </div>
+
+                  </div>
+
+                  <div class="form-grid-3">
+
+                    <div class="field">
+                      <label class="field__label" for="gestor">Gestor do Contrato</label>
+                      <input class="field__input" type="text" id="gestor" placeholder="Nome do gestor">
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- ======================== -->
+                <!-- ABA 2: EQUIPAMENTOS      -->
+                <!-- ======================== -->
+                <div class="tab-panel" id="tab-equipamentos">
+
+                  <!-- PARTE SUPERIOR: Busca de Equipamentos na Base -->
+                  <div class="equip-busca-section">
+                    <h4 class="sub-section-title">Buscar Equipamento na Base</h4>
+                    <div class="equip-busca-inline">
+                      <div class="field equip-field-pat">
+                        <label class="field__label" for="eqBuscaPat">Patrimônio</label>
+                        <input class="field__input" type="text" id="eqBuscaPat" placeholder="Ex: PAT-001">
+                      </div>
+                      <div class="field equip-field-name">
+                        <label class="field__label">Nome</label>
+                        <div class="search-wrapper" id="eqBuscaNomeWrapper">
+                          <span class="search-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                          </span>
+                          <input class="search-input" type="text" id="eqBuscaNome" placeholder="Digite o nome..." autocomplete="off">
+                          <div class="search-dropdown" id="eqBuscaNomeDropdown"></div>
+                        </div>
+                      </div>
+                      <div class="field equip-field-btn">
+                        <button class="btn-primary btn-buscar-equip" onclick="buscarEquipamentoBase()">Buscar</button>
+                      </div>
+                    </div>
+
+                    <!-- Resultado da busca -->
+                    <div id="eqResultado" class="equip-result" style="display:none;">
+                      <div class="equip-result-card">
+                        <div class="equip-result-info">
+                          <span class="equip-result-nome" id="eqResultNome"></span>
+                          <span class="equip-result-det" id="eqResultDet"></span>
+                        </div>
+                        <button class="btn-success btn-equip-add" onclick="addEquipContrato()">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                          Adicionar ao Contrato
+                        </button>
+                      </div>
+                    </div>
+                    <div id="eqVazio" class="equip-result" style="display:none;">
+                      <p class="equip-result-empty">Nenhum equipamento encontrado com esses critérios.</p>
+                    </div>
+                  </div>
+
+                  <!-- PARTE INFERIOR: Tabela de Equipamentos do Contrato -->
+                  <div class="equip-list-section">
+                    <h4 class="sub-section-title">Equipamentos Vinculados ao Contrato</h4>
+                    <div class="crud-table-wrapper">
+                      <table class="crud-table" id="tabelaEquipamentos">
+                        <thead>
+                          <tr>
+                            <th>EQUIPAMENTO</th>
+                            <th>CAPACIDADE</th>
+                            <th>MARCA</th>
+                            <th>MODELO</th>
+                            <th>PATRIMÔNIO</th>
+                            <th>LOCALIZAÇÃO</th>
+                            <th>AÇÕES</th>
+                          </tr>
+                        </thead>
+                        <tbody id="bodyEquipamentos">
+                          <tr class="empty-row"><td colspan="7">Nenhum equipamento vinculado ao contrato.</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ======================== -->
+                <!-- ABA 3: SERVIÇOS          -->
+                <!-- ======================== -->
+                <div class="tab-panel" id="tab-servicos">
+
+                  <!-- PARTE SUPERIOR: Busca de Serviços na Base -->
+                  <div class="equip-busca-section">
+                    <h4 class="sub-section-title">Buscar Serviço na Base</h4>
+                    <div class="equip-busca-inline">
+                      <div class="field equip-field-servico">
+                        <label class="field__label">Serviço</label>
+                        <div class="search-wrapper" id="servicoBuscaNomeWrapper">
+                          <span class="search-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                          </span>
+                          <input class="search-input" type="text" id="servicoBuscaNome" placeholder="Digite o nome do serviço..." autocomplete="off">
+                          <div class="search-dropdown" id="servicoBuscaNomeDropdown"></div>
+                        </div>
+                      </div>
+                      <div class="field equip-field-btn">
+                        <button class="btn-primary btn-buscar-equip" onclick="buscarServicoBase()">Buscar</button>
+                      </div>
+                    </div>
+
+                    <!-- Resultado da busca com campos editáveis -->
+                    <div id="servicoResultado" class="equip-result" style="display:none;">
+                      <div class="equip-result-card">
+                        <div class="equip-result-info">
+                          <span class="equip-result-nome" id="servicoResultNome"></span>
+                          <span class="equip-result-det" id="servicoResultDet"></span>
+                        </div>
+                        <div class="servico-campos-edicao">
+                          <div class="field servico-field-periodo">
+                            <label class="field__label" for="servicoPeriodicidade">Periodicidade</label>
+                            <select class="field__select" id="servicoPeriodicidade">
+                              <option value="unica">Única</option>
+                              <option value="diaria">Diária</option>
+                              <option value="semanal">Semanal</option>
+                              <option value="quinzenal">Quinzenal</option>
+                              <option value="mensal">Mensal</option>
+                              <option value="bimestral">Bimestral</option>
+                              <option value="trimestral">Trimestral</option>
+                              <option value="semestral">Semestral</option>
+                              <option value="anual">Anual</option>
+                              <option value="sob-demanda">Sob Demanda</option>
+                            </select>
+                          </div>
+                          <div class="field servico-field-valor">
+                            <label class="field__label" for="servicoValor">Valor (R$)</label>
+                            <input class="field__input" type="text" id="servicoValor" placeholder="0,00">
+                          </div>
+                        </div>
+                        <button class="btn-success btn-equip-add" onclick="addServicoContrato()">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                          Adicionar ao Contrato
+                        </button>
+                      </div>
+                    </div>
+                    <div id="servicoVazio" class="equip-result" style="display:none;">
+                      <p class="equip-result-empty">Nenhum serviço encontrado com esse nome.</p>
+                    </div>
+                  </div>
+
+                  <!-- PARTE INFERIOR: Tabela de Serviços do Contrato -->
+                  <div class="equip-list-section">
+                    <h4 class="sub-section-title">Serviços Vinculados ao Contrato</h4>
+                    <div class="crud-table-wrapper">
+                      <table class="crud-table" id="tabelaServicos">
+                        <thead>
+                          <tr>
+                            <th>SERVIÇO</th>
+                            <th>PERIODICIDADE</th>
+                            <th>VALOR (R$)</th>
+                            <th>AÇÕES</th>
+                          </tr>
+                        </thead>
+                        <tbody id="bodyServicos">
+                          <tr class="empty-row"><td colspan="4">Nenhum serviço vinculado ao contrato.</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ======================== -->
+                <!-- ABA 4: PRODUTOS          -->
+                <!-- ======================== -->
+                <div class="tab-panel" id="tab-produtos">
+
+                  <!-- PARTE SUPERIOR: Busca de Produtos na Base -->
+                  <div class="equip-busca-section">
+                    <h4 class="sub-section-title">Buscar Produto na Base</h4>
+                    <div class="equip-busca-inline">
+                      <div class="field equip-field-servico">
+                        <label class="field__label">Produto</label>
+                        <div class="search-wrapper" id="produtoBuscaNomeWrapper">
+                          <span class="search-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                          </span>
+                          <input class="search-input" type="text" id="produtoBuscaNome" placeholder="Digite o nome do produto..." autocomplete="off">
+                          <div class="search-dropdown" id="produtoBuscaNomeDropdown"></div>
+                        </div>
+                      </div>
+                      <div class="field equip-field-btn">
+                        <button class="btn-primary btn-buscar-equip" onclick="buscarProdutoBase()">Buscar</button>
+                      </div>
+                    </div>
+
+                    <!-- Resultado da busca -->
+                    <div id="produtoResultado" class="equip-result" style="display:none;">
+                      <div class="equip-result-card">
+                        <div class="equip-result-info">
+                          <span class="equip-result-nome" id="produtoResultNome"></span>
+                          <span class="equip-result-det" id="produtoResultDet"></span>
+                        </div>
+                        <button class="btn-success btn-equip-add" onclick="addProdutoContrato()">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                          Adicionar ao Contrato
+                        </button>
+                      </div>
+                    </div>
+                    <div id="produtoVazio" class="equip-result" style="display:none;">
+                      <p class="equip-result-empty">Nenhum produto encontrado com esse nome.</p>
+                    </div>
+                  </div>
+
+                  <!-- PARTE INFERIOR: Tabela de Produtos do Contrato -->
+                  <div class="equip-list-section">
+                    <h4 class="sub-section-title">Produtos Vinculados ao Contrato</h4>
+                    <div class="crud-table-wrapper">
+                      <table class="crud-table" id="tabelaProdutos">
+                        <thead>
+                          <tr>
+                            <th>PRODUTO</th>
+                            <th>AÇÕES</th>
+                          </tr>
+                        </thead>
+                        <tbody id="bodyProdutos">
+                          <tr class="empty-row"><td colspan="2">Nenhum produto vinculado ao contrato.</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ======================== -->
+                <!-- ABA 5: CHECKLIST         -->
+                <!-- ======================== -->
+                <div class="tab-panel" id="tab-checklist-preventiva">
+
+                  <!-- PARTE SUPERIOR: Busca de Itens na Base -->
+                  <div class="equip-busca-section">
+                    <h4 class="sub-section-title">Buscar Item na Base</h4>
+                    <div class="equip-busca-inline">
+                      <div class="field equip-field-servico">
+                        <label class="field__label">Descrição do Item</label>
+                        <div class="search-wrapper" id="checklistBuscaWrapper">
+                          <span class="search-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                          </span>
+                          <input class="search-input" type="text" id="checklistBusca" placeholder="Digite a descrição do item..." autocomplete="off">
+                          <div class="search-dropdown" id="checklistBuscaDropdown"></div>
+                        </div>
+                      </div>
+                      <div class="field equip-field-btn">
+                        <button class="btn-primary btn-buscar-equip" onclick="buscarItemChecklist()">Buscar</button>
+                      </div>
+                    </div>
+
+                    <!-- Resultado da busca com periodicidade editável -->
+                    <div id="checklistResultado" class="equip-result" style="display:none;">
+                      <div class="equip-result-card">
+                        <div class="equip-result-info">
+                          <span class="equip-result-nome" id="checklistResultNome"></span>
+                          <span class="equip-result-det" id="checklistResultDet"></span>
+                        </div>
+                        <div class="checklist-campos-edicao">
+                          <div class="field checklist-field-per">
+                            <label class="field__label" for="checklistItemPeriodicidade">Periodicidade</label>
+                            <select class="field__select" id="checklistItemPeriodicidade">
+                              <option value="mensal">Mensal</option>
+                              <option value="bimestral">Bimestral</option>
+                              <option value="trimestral">Trimestral</option>
+                              <option value="semestral">Semestral</option>
+                              <option value="anual">Anual</option>
+                            </select>
+                          </div>
+                        </div>
+                        <button class="btn-success btn-equip-add" onclick="addItemChecklistContrato()">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                          Adicionar ao Contrato
+                        </button>
+                      </div>
+                    </div>
+                    <div id="checklistVazio" class="equip-result" style="display:none;">
+                      <p class="equip-result-empty">Nenhum item encontrado com essa descrição.</p>
+                    </div>
+                  </div>
+
+                  <!-- PARTE INFERIOR: Tabela de Itens do Checklist -->
+                  <div class="equip-list-section">
+                    <h4 class="sub-section-title">Itens do Checklist Vinculados ao Contrato</h4>
+                    <div class="crud-table-wrapper">
+                      <table class="crud-table" id="tabelaChecklist">
+                        <thead>
+                          <tr>
+                            <th>DESCRIÇÃO</th>
+                            <th>PERIODICIDADE</th>
+                            <th>AÇÕES</th>
+                          </tr>
+                        </thead>
+                        <tbody id="bodyChecklist">
+                          <tr class="empty-row"><td colspan="3">Nenhum item vinculado ao contrato.</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- /tabs-content -->
+            </fieldset>
+
+            <!-- ============================================= -->
+            <!-- BOTÕES DE AÇÃO                                -->
+            <!-- ============================================= -->
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" onclick="history.back()">Cancelar</button>
+              <button type="button" class="btn btn-danger"  onclick="limparContrato()">🧹Limpar</button>
+              <button type="button" class="btn-success" onclick="salvarContrato()">💾 Salvar</button>
+
+            </div>
+
+          </form>
+        </div>
+      </section>

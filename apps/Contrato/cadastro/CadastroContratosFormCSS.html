@@ -1,0 +1,175 @@
+<style>
+
+/*
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*/
+
+/*
+.main-container { display: block; padding: 1.25rem 1rem 2rem; }
+*/
+
+.periodo-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-slate-500);
+}
+
+.periodo-select {
+  width: auto !important;
+  min-width: 10rem;
+  padding: 0.375rem 2rem 0.375rem 0.5rem !important;
+  font-size: 0.8125rem !important;
+}
+
+/* ===== BUSCA DE EQUIPAMENTOS, SERVIÇOS E PRODUTOS ===== */
+.equip-busca-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--color-slate-50);
+  border-radius: 0.5rem;
+  border: 0.0625rem solid var(--color-slate-200);
+}
+
+.equip-busca-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.equip-field-pat .field__input {
+  font-family: monospace;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+}
+
+.equip-field-servico { flex: 2; }
+
+.btn-buscar-equip {
+  width: 100% !important;
+  white-space: nowrap;
+  height: 100%;
+  min-height: 2.75rem;
+  align-self: flex-end;
+}
+
+.equip-result {
+  margin-top: 1rem;
+}
+
+.equip-result-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background: #fff;
+  border: 0.125rem solid #10b981;
+  border-radius: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.equip-result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.equip-result-nome {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-slate-700);
+}
+
+.equip-result-det {
+  font-size: 0.8125rem;
+  color: var(--color-slate-500);
+}
+
+.btn-equip-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-equip-add svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.equip-result-empty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--color-slate-400);
+  font-style: italic;
+  background: #fff;
+  border: 0.0625rem solid var(--color-slate-200);
+  border-radius: 0.5rem;
+}
+
+.equip-list-section {
+  margin-top: 0.5rem;
+}
+
+/* ===== CAMPOS EDITÁVEIS NO CARD DE SERVIÇO ===== */
+.servico-campos-edicao {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.servico-field-periodo {
+  min-width: 9rem;
+}
+
+.servico-field-valor {
+  min-width: 7rem;
+}
+
+.servico-campos-edicao .field__select,
+.servico-campos-edicao .field__input {
+  font-size: 0.8125rem;
+  padding: 0.4rem 0.5rem;
+}
+
+.servico-campos-edicao .field__select {
+  padding-right: 2rem;
+}
+
+/* ===== RESPONSIVO ===== */
+@media (min-width: 36rem) {
+  .form-grid-2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 48rem) {
+  .main-container { padding: 2rem 1rem; }
+  .card { padding: 2rem; }
+  .form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .form-actions { flex-direction: row; }
+  .btn-primary,
+  .btn-success,
+  .btn-secondary { width: auto; }
+  .tabs-nav { padding: 0.5rem; }
+  .tab-btn { padding: 0.75rem 1rem; font-size: 0.875rem; }
+  .equip-busca-section { padding: 1.25rem; }
+  .equip-busca-inline { flex-direction: row; align-items: flex-end; }
+  .equip-field-pat { flex: 0 0 12rem; }
+  .equip-field-name { flex: 1; }
+  .equip-field-btn { flex: 0 0 auto; }
+}
+
+@media (min-width: 64rem) {
+  .main-container { padding: 2rem 1.5rem; }
+}
+
+</style>
