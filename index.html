@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema Integrado de Manutenção</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <?!= include('ConsultaPecasFormCSS'); ?>
 
   <style>
 
@@ -24,6 +23,8 @@
     <?!= include('searchCSS'); ?>
     <?!= include('tableCSS'); ?>
 
+    <?!= include('ConsultaPecasFormCSS'); ?>
+
     <?!= include('CadastroContratosFormCSS'); ?>
     <?!= include('CadastroFornecedorFormCSS'); ?>
 
@@ -39,9 +40,7 @@
     <?!= include('DashboardHtml'); ?>
     <?!= include('AgendaHtml'); ?>
 
-    <?!= include('ConsultaPecasFormH'); ?>
-
-   <?!= include('ConsultaMarcaForm'); ?>
+    <?!= include('ConsultaMarcaForm'); ?>
 
     <?!= include('ConsultaPecasFormH'); ?>
     <?!= include('CadastroPecasFormH'); ?>
@@ -63,18 +62,20 @@
 
 <!-- ===== JAVASCRIPT LOGIC ===== -->
 
+  <?!= include("IndexSPAJS") ?>
   <?!= include("GlobalVarsJS") ?>  
   <?!= include("ModalJS") ?>
   <?!= include("SearchJS") ?>
   <?!= include("CrudJS") ?>
   <?!= include("TabsJS") ?>
 
-  <?!= include("IndexSPAJS") ?>
   <?!= include("HelperJS") ?>
 
   <?!= include("StateStoreDataJS") ?>
 
-  <?!= include("DashboardJS") ?>
+  <!-- ESTÁ CAUSANDO PROBLEMA 
+      <?!= include("DashboardJS") ?>
+  -->
 
   <?!= include('ConsultaMarcaFormJS'); ?>
 

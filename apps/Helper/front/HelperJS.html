@@ -52,6 +52,37 @@
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
+  // 
+  // MÁSCARA DE TELEFONE
+  // 
+  function mascaraTelefone(input) {
+    input.addEventListener('input', function() {
+      let valor = this.value.replace(/\D/g, '');
+      if (valor.length > 11) valor = valor.slice(0, 11);
+
+      if (valor.length <= 10) {
+        if (valor.length > 6) {
+          this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 6) + '-' + valor.slice(6);
+        } else if (valor.length > 2) {
+          this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
+        } else if (valor.length > 0) {
+          this.value = '(' + valor;
+        } else {
+          this.value = '';
+        }
+      } else {
+        if (valor.length > 7) {
+          this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 7) + '-' + valor.slice(7);
+        } else if (valor.length > 2) {
+          this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
+        } else if (valor.length > 0) {
+          this.value = '(' + valor;
+        } else {
+          this.value = '';
+        }
+      }
+    });
+  }
 
 
 

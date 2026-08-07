@@ -1,18 +1,24 @@
     <!-- PAGE 1: DASHBOARD -->
     <section id="page-dashboard" class="spa-page active">
+      
+      <!-- Header -->
       <div class="page-header">
         <h1>Dashboard de Manutenção</h1>
         <div class="date-badge">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span class="data-hoje"></span>
+          <span id="dataAtual"></span>
         </div>
       </div>
 
-      <!-- Metrics -->
-      <div class="metrics-grid" id="metricsGrid"></div>
+      <!-- Cards de Métricas -->
+      <div class="metrics-grid" id="metricsGrid">
+        <!-- Preenchido via JS -->
+      </div>
 
-      <!-- Dashboard Main Grid -->
-      <div class="content-grid two-col">
+      <!-- Grid de Conteúdo -->
+      <div class="content-grid">
+
+        <!-- COLUNA 1: Preventivas Mensais -->
         <div class="panel">
           <div class="panel-header">
             <h2>🔧 Preventivas Mensais</h2>
@@ -26,27 +32,36 @@
                   <th>Patrimônio</th>
                   <th>Data Prevista</th>
                   <th>Status</th>
-                  <th>Ações</th>
+                  <th></th>
                 </tr>
               </thead>
-              <tbody id="bodyMensais"></tbody>
+              <tbody id="bodyMensais">
+                <!-- Preenchido via JS -->
+              </tbody>
             </table>
           </div>
         </div>
 
+        <!-- COLUNA 2: Anuais Pendentes -->
         <div class="panel">
           <div class="panel-header">
             <h2>📅 Anuais Pendentes</h2>
             <span class="badge badge-amber" id="badgeAnuais">0 equipamentos</span>
           </div>
-          <div class="equip-list" id="listaAnuais"></div>
+          <div class="equip-list" id="listaAnuais">
+            <!-- Preenchido via JS -->
+          </div>
         </div>
-      </div>
 
-      <div class="content-grid equal-col">
+      </div><!-- /content-grid -->
+
+      <!-- Segunda linha -->
+      <div class="content-grid" style="margin-top:1.5rem;">
+
+        <!-- Próximas Preventivas -->
         <div class="panel">
           <div class="panel-header">
-            <h2>📋 Próximas (30 Dias)</h2>
+            <h2>📋 Próximas 30 Dias</h2>
             <span class="badge badge-green" id="badgeProximas">0 eventos</span>
           </div>
           <div class="table-wrapper">
@@ -56,14 +71,17 @@
                   <th>Data</th>
                   <th>Equipamento</th>
                   <th>Tipo</th>
-                  <th>Status</th>
+                  <th>Responsável</th>
                 </tr>
               </thead>
-              <tbody id="bodyProximas"></tbody>
+              <tbody id="bodyProximas">
+                <!-- Preenchido via JS -->
+              </tbody>
             </table>
           </div>
         </div>
 
+        <!-- Resumo por Status -->
         <div class="panel">
           <div class="panel-header">
             <h2>📊 Resumo por Status</h2>
@@ -75,13 +93,16 @@
                 <tr>
                   <th>Status</th>
                   <th>Quantidade</th>
-                  <th>Proporção</th>
+                  <th>%</th>
                 </tr>
               </thead>
-              <tbody id="bodyStatus"></tbody>
+              <tbody id="bodyStatus">
+                <!-- Preenchido via JS -->
+              </tbody>
             </table>
           </div>
           <div class="mini-chart" id="miniChart"></div>
         </div>
-      </div>
+
+      </div><!-- /content-grid -->
     </section>
