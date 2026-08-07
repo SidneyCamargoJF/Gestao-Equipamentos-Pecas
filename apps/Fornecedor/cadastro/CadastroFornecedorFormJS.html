@@ -330,7 +330,7 @@ function salvarFornecedor() {
 // campos, já que aqui não existe um "DOMContentLoaded" novo (o HTML foi
 // injetado dinamicamente, não carregado como página).
 
-function renderCadastroFornecedorForm() {
+async function renderCadastroFornecedorForm() {
   gerarCodigo();
 
   const cnpjField = document.getElementById('cnpj');
