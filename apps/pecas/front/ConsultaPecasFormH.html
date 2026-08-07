@@ -39,7 +39,7 @@
         </div>
         <div class="actions-bar">
           <button type="button" class="btn-secondary" onclick="limparFiltros()">Limpar</button>
-          <button type="button" class="btn-success" onclick="adicionarPeca()">
+          <button type="button" class="btn-success" onclick="trocarPagina('pecas-form')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
@@ -109,8 +109,6 @@
                 <option value="">Todas</option>
                 <option value="ativa">Ativa</option>
                 <option value="vencida">Vencida</option>
-                <option value="sim">Sim</option>
-                <option value="nao">Não</option>
                 <option value="vencendo">Vencendo</option>
               </select>
             </div>
@@ -126,6 +124,7 @@
                 <th onclick="ordenar('nome')">NOME <span class="sort-arrow"></span></th>
                 <th onclick="ordenar('marca')">MARCA <span class="sort-arrow"></span></th>
                 <th onclick="ordenar('modelo')">MODELO <span class="sort-arrow"></span></th>
+                <th onclick="ordenar('fornecedor')">FORNECEDOR <span class="sort-arrow"></span></th>
                 <th onclick="ordenar('localizacao')">LOCALIZAÇÃO <span class="sort-arrow"></span></th>
                 <th onclick="ordenar('valor')">VALOR <span class="sort-arrow"></span></th>
                 <th onclick="ordenar('garantia')">GARANTIA <span class="sort-arrow"></span></th>
