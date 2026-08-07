@@ -1,126 +1,137 @@
 <script>
+      // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
+      async function renderPecas() {
+        await inicializarPecas();
+        consultarPecas();
 
-      async function renderPecasView() { // 06/08/2026
-
-        await inicializarPecas()
-
-        consultarPecas()
-
-        document.getElementById('filtro-nome').focus();
-
+        const inputNome = document.getElementById('filtro-nome');
+        if (inputNome) {
+          inputNome.focus();
+        }
       }
 
-      
       // ===== CARREGAR MARCAS =====
       async function loadBrands() {
         try {
-          console.log("Iniciando chamada ao servidor ReadBrands...");
-          
-          // O código pausa aqui até que a função 'minhaFuncaoDoServidor' termine
           const res = await runServerFunction("ReadBrands");
-
-          return res.map(line => line[1])
-          
+          if (!Array.isArray(res)) return [];
+          return res.map(line => line[1]).filter(Boolean);
         } catch (error) {
-          console.error("Erro ao executar a função:", error);
+          return [];
         }
       }
 
-      // ===== CARREGAR LOCALIZACAO =====
+      // ===== CARREGAR LOCALIZAÇÃO =====
       async function loadLocations() {
         try {
-          console.log("Iniciando chamada ao servidor ReadLocations...");
-          
-          // O código pausa aqui até que a função 'minhaFuncaoDoServidor' termine
           const res = await runServerFunction("ReadLocations");
-
-          return res.map(line => line[1])
-          
+          if (!Array.isArray(res)) return [];
+          return res.map(line => line[1]).filter(Boolean);
         } catch (error) {
-          console.error("Erro ao executar a função:", error);
+          return [];
         }
       }
 
-      // ===== CARREGAR LOCALIZACAO =====
+      // ===== CARREGAR FORNECEDORES =====
       async function loadSuppliers() {
         try {
-          console.log("Iniciando chamada ao servidor ReadSuppliers...");
-          
-          // O código pausa aqui até que a função 'minhaFuncaoDoServidor' termine
           const res = await runServerFunction("ReadSuppliers");
-
-          return res.map(line => line[1])
-          
+          if (!Array.isArray(res)) return [];
+          return res.map(line => line[1]).filter(Boolean);
         } catch (error) {
-          console.error("Erro ao executar a função:", error);
+          return [];
         }
       }
 
-      // ===== SEARCH =====
+      // ===== COMPONENTE DE BUSCA COM DROPDOWN COMPLETO AO DAR FOCO =====
       function initSearch(inputId, dropdownId, wrapperId, opcoes) {
-
         const input = document.getElementById(inputId);
         const dropdown = document.getElementById(dropdownId);
         const wrapper = document.getElementById(wrapperId);
 
+        if (!input || !dropdown || !wrapper) return;
+
+        const listaOpcoes = Array.isArray(opcoes) ? opcoes : [];
+
         function renderLista(filtro) {
-          const f = (filtro || '').toLowerCase();
-          const itens = opcoes.filter(o => o.toLowerCase().includes(f));
+          const f = (filtro || '').toLowerCase().trim();
+
+          const itens = (f === '') 
+            ? listaOpcoes 
+            : listaOpcoes.filter(o => String(o).toLowerCase().includes(f));
+
           dropdown.innerHTML = '';
+
           if (itens.length === 0) {
-            dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+            dropdown.innerHTML = '<div class="search-no-result" style="padding: 8px; color: #888;">Nenhum resultado</div>';
           } else {
             itens.forEach(o => {
               const div = document.createElement('div');
               div.className = 'search-option';
               div.textContent = o;
-              div.addEventListener('click', () => {
+
+              div.addEventListener('mousedown', (e) => {
+                e.preventDefault();
                 input.value = o;
-                dropdown.classList.remove('visible');
+                dropdown.classList.remove('visible', 'active');
+                consultarPecas();
               });
               dropdown.appendChild(div);
             });
           }
         }
 
-        input.addEventListener('focus', () => {
-          renderLista(input.value);
-          dropdown.classList.add('visible');
-        });
+        function abrirListaCompleta() {
+          renderLista('');
+          dropdown.classList.add('visible', 'active');
+        }
+
+        input.addEventListener('focus', abrirListaCompleta);
+        input.addEventListener('click', abrirListaCompleta);
 
         input.addEventListener('input', () => {
           renderLista(input.value);
-          if (!dropdown.classList.contains('visible')) {
-            dropdown.classList.add('visible');
-          }
+          dropdown.classList.add('visible', 'active');
         });
 
         input.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') { e.preventDefault(); consultarPecas(); dropdown.classList.remove('visible'); }
-          if (e.key === 'Escape') dropdown.classList.remove('visible');
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            dropdown.classList.remove('visible', 'active');
+            consultarPecas();
+          }
+          if (e.key === 'Escape') {
+            dropdown.classList.remove('visible', 'active');
+          }
         });
 
         document.addEventListener('click', (e) => {
-          if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+          if (!wrapper.contains(e.target)) {
+            dropdown.classList.remove('visible', 'active');
+          }
         });
       }
 
       // ===== FORMATAÇÃO =====
       function formatarValor(v) {
-        if (v == null) {
-          return ''
-        }
-
-        return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        if (v == null || v === '') return 'R$ 0,00';
+        const num = Number(v);
+        return isNaN(num) ? v : num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       }
 
       function formatarGarantia(g) {
-        const map = { ativa:'Ativa', vencida:'Vencida', sim:'Sim', nao:'Não', vencendo:'Vencendo' };
-        return map[g] || g;
+        const map = { ativa: 'Ativa', vencida: 'Vencida', vencendo: 'Vencendo' };
+        return map[String(g).toLowerCase()] || g || '-';
       }
 
       function escapeHtml(s) {
-        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        if (s == null) return '';
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
       }
 
       // ===== ORDENAÇÃO =====
@@ -142,7 +153,7 @@
           if (span) span.textContent = '';
         });
         const ths = document.querySelectorAll('.data-table th');
-        const indices = { nome:0, marca:1, modelo:2, localizacao:3, valor:4, garantia:5 };
+        const indices = { nome: 0, marca: 1, modelo: 2, localizacao: 3, valor: 4, garantia: 5 };
         const idx = indices[sortState.coluna];
         if (idx !== undefined && ths[idx]) {
           ths[idx].classList.add('sorted');
@@ -152,20 +163,20 @@
       }
 
       function aplicarOrdenacao(lista) {
-        if (!sortState.coluna) return lista;
+        if (!sortState.coluna || !Array.isArray(lista)) return lista;
         const col = sortState.coluna;
         const dir = sortState.direcao === 'asc' ? 1 : -1;
         const arr = lista.slice();
         arr.sort((a, b) => {
           let va = a[col], vb = b[col];
           if (col === 'garantia') {
-            va = garantiaOrdem[va] || 99;
-            vb = garantiaOrdem[vb] || 99;
+            va = garantiaOrdem[String(va).toLowerCase()] || 99;
+            vb = garantiaOrdem[String(vb).toLowerCase()] || 99;
             return (va - vb) * dir;
           }
-          if (col === 'valor') return (va - vb) * dir;
-          va = String(va).toLowerCase();
-          vb = String(vb).toLowerCase();
+          if (col === 'valor') return (Number(va || 0) - Number(vb || 0)) * dir;
+          va = String(va || '').toLowerCase();
+          vb = String(vb || '').toLowerCase();
           return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;
         });
         return arr;
@@ -173,46 +184,43 @@
 
       // ===== CONSULTAR, FILTRAR E RENDERIZAR =====
       function consultarPecas() {
-        const nome = document.getElementById('filtro-nome').value.trim().toLowerCase();
-        const marca = document.getElementById('marcaSearch').value.trim().toLowerCase();
-        const localizacao = document.getElementById('localizacaoSearch').value.trim().toLowerCase();
-        const fornecedor = document.getElementById('fornecedorSearch').value.trim().toLowerCase();
-        const garantia = document.getElementById('filtro-garantia').value;
+        const nome = document.getElementById('filtro-nome')?.value.trim() || '';
+        const marca = document.getElementById('marcaSearch')?.value.trim() || '';
+        const localizacao = document.getElementById('localizacaoSearch')?.value.trim() || '';
+        const fornecedor = document.getElementById('fornecedorSearch')?.value.trim() || '';
+        const garantia = document.getElementById('filtro-garantia')?.value || '';
 
-        const criterios = {
-          nome: nome,
-          marca: marca,
-          localizacao: localizacao,
-          fornecedor: fornecedor,
-          garantia: garantia
-        }
+        const criterios = { nome, marca, localizacao, fornecedor, garantia };
 
-        google.script.run.withSuccessHandler(ReturnPecas).FiltrarPecas(criterios)
-
+        google.script.run
+          .withSuccessHandler(ReturnPecas)
+          .FiltrarPecas(criterios);
       }
 
       function ReturnPecas(objPecas) {
+        if (objPecas === "NoData" || !Array.isArray(objPecas)) {
+          pecas = [];
+          renderTabela([]);
+          return;
+        }
 
         pecas = aplicarOrdenacao(objPecas);
-
-        console.log(pecas)
-
-        renderTabela(pecas);        
-
+        renderTabela(pecas);
       }
 
       function filtrar() {
-        const nome = document.getElementById('filtro-nome').value.trim().toLowerCase();
-        const marca = document.getElementById('marcaSearch').value.trim().toLowerCase();
-        const localizacao = document.getElementById('localizacaoSearch').value.trim().toLowerCase();
-        const fornecedor = document.getElementById('fornecedorSearch').value.trim().toLowerCase();
-        const garantia = document.getElementById('filtro-garantia').value;
+        const nome = document.getElementById('filtro-nome')?.value.trim().toLowerCase() || '';
+        const marca = document.getElementById('marcaSearch')?.value.trim().toLowerCase() || '';
+        const localizacao = document.getElementById('localizacaoSearch')?.value.trim().toLowerCase() || '';
+        const fornecedor = document.getElementById('fornecedorSearch')?.value.trim().toLowerCase() || '';
+        const garantia = document.getElementById('filtro-garantia')?.value || '';
 
-        listaFiltrada = pecas.filter(p => {
-          if (nome && !p.nome.toLowerCase().includes(nome)) return false;
-          if (marca && !p.marca.toLowerCase().includes(marca)) return false;
-          if (localizacao && !p.localizacao.toLowerCase().includes(localizacao)) return false;
-          if (garantia && p.garantia !== garantia) return false;
+        let listaFiltrada = pecas.filter(p => {
+          if (nome && !String(p.nome || '').toLowerCase().includes(nome)) return false;
+          if (marca && !String(p.marca || '').toLowerCase().includes(marca)) return false;
+          if (localizacao && !String(p.localizacao || '').toLowerCase().includes(localizacao)) return false;
+          if (fornecedor && !String(p.fornecedor || '').toLowerCase().includes(fornecedor)) return false;
+          if (garantia && String(p.garantia).toLowerCase() !== garantia.toLowerCase()) return false;
           return true;
         });
 
@@ -222,95 +230,113 @@
 
       function renderTabela(lista) {
         const tbody = document.getElementById('bodyPecasView');
+        if (!tbody) return;
+
         tbody.innerHTML = '';
-        
+
         if (!lista || lista.length === 0) {
-          tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhuma peça encontrada com os filtros informados.</td></tr>';
+          tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Nenhuma peça encontrada com os filtros informados.</td></tr>';
           return;
         }
+
         lista.forEach(p => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${escapeHtml(p.nome)}</td>
             <td>${escapeHtml(p.marca)}</td>
             <td>${escapeHtml(p.modelo)}</td>
+            <td>${escapeHtml(p.fornecedor)}</td>
             <td>${escapeHtml(p.localizacao)}</td>
             <td>${formatarValor(p.valor)}</td>
-            <td><span class="garantia-badge ${p.garantia}">${formatarGarantia(p.garantia)}</span></td>
+            <td><span class="garantia-badge ${escapeHtml(p.garantia)}">${formatarGarantia(p.garantia)}</span></td>
             <td>${escapeHtml(p.dt_garantia)}</td>
             <td>${escapeHtml(p.sei_num)}</td>
             <td>
-              <button class="btn-acao btn-editar-linha" title="Editar" onclick="editarPeca(${p.id})">✏️</button>
-              <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusao(${p.id})">🗑️</button>
+              <button class="btn-acao btn-editar-linha" title="Editar" onclick="editarPeca('${p.id}')">✏️</button>
+              <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusao('${p.id}')">🗑️</button>
             </td>
           `;
           tbody.appendChild(tr);
         });
       }
 
-      // ===== AÇÕES =====
+      // ===== AÇÕES DA INTERFACE =====
       function limparFiltros() {
-        document.getElementById('filtro-nome').value = '';
-        document.getElementById('marcaSearch').value = '';
-        document.getElementById('localizacaoSearch').value = '';
-        document.getElementById('fornecedorSearch').value = '';
-        document.getElementById('filtro-garantia').value = '';
+        if (document.getElementById('filtro-nome')) document.getElementById('filtro-nome').value = '';
+        if (document.getElementById('marcaSearch')) document.getElementById('marcaSearch').value = '';
+        if (document.getElementById('localizacaoSearch')) document.getElementById('localizacaoSearch').value = '';
+        if (document.getElementById('fornecedorSearch')) document.getElementById('fornecedorSearch').value = '';
+        if (document.getElementById('filtro-garantia')) document.getElementById('filtro-garantia').value = '';
+
         sortState = { coluna: null, direcao: 'asc' };
         atualizarIndicadores();
-        filtrar();
-        document.getElementById('filtro-nome').focus();
+        consultarPecas();
+
+        const inputNome = document.getElementById('filtro-nome');
+        if (inputNome) inputNome.focus();
       }
 
       function editarPeca(id) {
-        window.location.href = 'cadastro-pecas.html?id=' + encodeURIComponent(id);
+        if (typeof carregarDadosPecaParaEdicao === 'function') {
+          carregarDadosPecaParaEdicao(id);
+        }
+        if (typeof trocarPagina === 'function') {
+          trocarPagina('pecas-form');
+        }
       }
 
       function confirmarExclusao(id) {
         idExclusao = id;
-        document.getElementById('modalExclusao').classList.add('aberto');
+        const modal = document.getElementById('modalExclusao');
+        if (modal) modal.classList.add('aberto');
       }
 
       function fecharModalExclusao() {
         idExclusao = null;
-        document.getElementById('modalExclusao').classList.remove('aberto');
+        const modal = document.getElementById('modalExclusao');
+        if (modal) modal.classList.remove('aberto');
       }
 
       function executarExclusao() {
         if (idExclusao !== null) {
-          const idx = pecas.findIndex(p => p.id === idExclusao);
+          const idx = pecas.findIndex(p => String(p.id) === String(idExclusao));
           if (idx >= 0) pecas.splice(idx, 1);
           fecharModalExclusao();
           filtrar();
         }
       }
 
-      // ===== INICIALIZAÇÃO =====
-
-      // document.addEventListener('DOMContentLoaded', inicializarPagina)
-
+      // ===== INICIALIZAÇÃO ASSÍNCRONA =====
       async function inicializarPecas() {
-
-        opcoesMarca = await loadBrands()
-        opcoesLocalizacao = await loadLocations()
-        opcoesFornecedor = await loadSuppliers()
+        const [opcoesMarca, opcoesLocalizacao, opcoesFornecedor] = await Promise.all([
+          loadBrands(),
+          loadLocations(),
+          loadSuppliers()
+        ]);
 
         initSearch('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca);
         initSearch('localizacaoSearch', 'localizacaoDropdown', 'localizacaoWrapper', opcoesLocalizacao);
         initSearch('fornecedorSearch', 'fornecedorDropdown', 'fornecedorWrapper', opcoesFornecedor);
 
-        document.getElementById('filtro-nome').addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') { e.preventDefault(); filtrar(); }
-        });
+        const filtroNome = document.getElementById('filtro-nome');
+        if (filtroNome) {
+          filtroNome.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              consultarPecas();
+            }
+          });
+        }
 
-        document.getElementById('modalExclusao').addEventListener('click', (e) => {
-          if (e.target.classList.contains('modal-overlay')) fecharModalExclusao();
-        });
+        const modalExclusao = document.getElementById('modalExclusao');
+        if (modalExclusao) {
+          modalExclusao.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) fecharModalExclusao();
+          });
+        }
 
         document.addEventListener('keydown', (e) => {
           if (e.key === 'Escape') fecharModalExclusao();
         });
-
-        filtrar();
-      };
-
+      }
 </script>

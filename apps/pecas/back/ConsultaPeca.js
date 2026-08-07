@@ -1,113 +1,72 @@
-function consultarPeca() {
-  const planilha = SpreadsheetApp.getActive();
-  const abaConsultarPeca = planilha.getSheetByName("consulta peca");
-  const abaTabelaPecas = planilha.getSheetByName("tab_pecas");
+function ConsultaPecasHtml() {
+  return HtmlService.createHtmlOutputFromFile('ConsultaPecasForm').getContent();
+}
 
-  SpreadsheetApp.flush();
+function showPecas() {
+  const form = HtmlService.createTemplateFromFile("ConsultaPecasForm");
+  const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  showForm.setTitle("Consulta de Peças").setHeight(900).setWidth(1600);
 
-  // Lê os inputs do usuário
-  const nome = abaConsultarPeca.getRange("C2:D2").getValue();
-  const capacidade = abaConsultarPeca.getRange("C4:D4").getValue();
-  const fornecedor = abaConsultarPeca.getRange("C6:D6").getValue();
-  const marca = abaConsultarPeca.getRange("C8:D8").getValue();
-  const numeroDeSerie = abaConsultarPeca.getRange("G2:H2").getValue();
-  const notaFiscal = abaConsultarPeca.getRange("G4:H4").getValue();
-  const dataNotaFiscal = abaConsultarPeca.getRange("G6:H6").getValue();
-  const garantia = abaConsultarPeca.getRange("G8:H8").getValue();
-  const modalidade = abaConsultarPeca.getRange("K2:L2").getValue();
-  const valor = abaConsultarPeca.getRange("K4:L4").getValue();
+  SpreadsheetApp.getUi().showModalDialog(showForm, "Consulta de Peças");
+}
 
-  // Padroniza os inputs para letras minúsculas e remove espaços extras
-  const sNome = String(nome).trim().toLowerCase();
-  const sCapacidade = String(capacidade).trim().toLowerCase();
-  const sFornecedor = String(fornecedor).trim().toLowerCase();
-  const sMarca = String(marca).trim().toLowerCase();
-  const sNumeroDeSerie = String(numeroDeSerie).trim().toLowerCase();
-  const sNotaFiscal = String(notaFiscal).trim().toLowerCase();
-  const sDataNotaFiscal = String(dataNotaFiscal).trim().toLowerCase();
-  const sGarantia = String(garantia).trim().toLowerCase();
-  const sModalidade = String(modalidade).trim().toLowerCase();
-  const sValor = String(valor).trim().toLowerCase();
+function FiltrarPecas(criterios) {
+  let dados = ReadParts();
+  if (!dados || dados.length === 0) return "NoData";
 
-  const ultimaLinha = abaTabelaPecas.getLastRow();
+  criterios = criterios || {};
+  let cNomeFiltro        = String(criterios.nome || '').trim().toLowerCase();
+  let cMarcaFiltro       = String(criterios.marca || '').trim().toLowerCase();
+  let cLocalizacaoFiltro = String(criterios.localizacao || '').trim().toLowerCase();
+  let cFornecedorFiltro  = String(criterios.fornecedor || '').trim().toLowerCase();
+  let cGarantiaFiltro    = String(criterios.garantia || '').trim().toLowerCase();
 
-  const todosDados = abaTabelaPecas.getRange(2, 2, ultimaLinha - 1, 10).getValues();
-  let pecaDados = []
+  let res = [];
 
-  for (let linha = 0; linha < todosDados.length; linha++){
+  // Pula o cabeçalho (linha 0) se a primeira célula contiver "id" ou palavra similar
+  let inicio = (dados.length > 0 && String(dados[0][0]).toLowerCase().includes('id')) ? 1 : 0;
 
-    //Padroniza os dados do banco para letras minúsculas e remove espaços extras
-    let tNome = String(todosDados[linha][0]).trim().toLowerCase();
-    let tMarca = String(todosDados[linha][1]).trim().toLowerCase();
-    let tCapacidade = String(todosDados[linha][2]).trim().toLowerCase();
-    let tNumeroDeSerie = String(todosDados[linha][3]).trim().toLowerCase();
-    let tFornecedor = String(todosDados[linha][4]).trim().toLowerCase();
-    let tNotaFiscal = String(todosDados[linha][5]).trim().toLowerCase();
-    let tDataNotaFiscal = String(todosDados[linha][6]).trim().toLowerCase();
-    let tGarantia = String(todosDados[linha][7]).trim().toLowerCase();
-    let tModalidade = String(todosDados[linha][8]).trim().toLowerCase();
-    let tValor = String(todosDados[linha][9]).trim().toLowerCase();
+  for (let l = inicio; l < dados.length; l++) {
+    // Leitura segura com tratamento contra null/undefined
+    let colNome        = String(dados[l][1] || '').trim().toLowerCase();
+    let colMarca       = String(dados[l][2] || '').trim().toLowerCase();
+    let colLocalizacao = String(dados[l][6] || '').trim().toLowerCase();
+    let colFornecedor  = String(dados[l][7] || '').trim().toLowerCase();
+    let colGarantia    = String(dados[l][11] || '').trim().toLowerCase();
 
+    // Comparações com operador lógico ||
+    let cNome        = (cNomeFiltro === ""        || colNome.includes(cNomeFiltro));
+    let cMarca       = (cMarcaFiltro === ""       || colMarca.includes(cMarcaFiltro));
+    let cLocalizacao = (cLocalizacaoFiltro === "" || colLocalizacao.includes(cLocalizacaoFiltro));
+    let cFornecedor  = (cFornecedorFiltro === ""  || colFornecedor.includes(cFornecedorFiltro));
+    let cGarantia    = (cGarantiaFiltro === ""    || colGarantia.includes(cGarantiaFiltro));
 
-    let condicao1 = (sNome === "" || tNome == sNome);
-    let condicao2 = (sMarca === "" || tMarca == sMarca);
-    let condicao3 = (sCapacidade === "" || tCapacidade == sCapacidade);
-    let condicao4 = (sNumeroDeSerie === "" || tNumeroDeSerie == sNumeroDeSerie);
-    let condicao5 = (sFornecedor === "" || tFornecedor == sFornecedor);
-    let condicao6 = (sNotaFiscal === "" || tNotaFiscal == sNotaFiscal);
-    let condicao7 = (sDataNotaFiscal === "" || tDataNotaFiscal == sDataNotaFiscal);
-    let condicao8 = (sGarantia === "" || tGarantia == sGarantia);
-    let condicao9 = (sModalidade === "" || tModalidade == sModalidade);
-    let condicao10 = (sValor === "" || tValor == sValor);
+    if (cNome && cMarca && cLocalizacao && cFornecedor && cGarantia) {
+      let diasGarantia = (typeof calculaDias === 'function') 
+        ? calculaDias(dados[l][partsDtGarantiaCol], new Date()) 
+        : 0;
 
-    if (condicao1 && condicao2 && condicao3 && condicao4 && condicao5 && condicao6 && condicao7 && condicao8 && condicao9 && condicao10){
-      pecaDados.push(todosDados[linha]);
+      let objRes = {
+        id: dados[l][partsIdCol],
+        nome: dados[l][partsNameCol],
+        marca: dados[l][partsBrandCol],
+        modelo: dados[l][partsModelCol],
+        fornecedor: dados[l][partsSuplierCol],
+        localizacao: dados[l][partsLocalCol],
+        garantia: (typeof statusGarantia === 'function') ? statusGarantia(diasGarantia) : colGarantia,
+        dt_garantia: (typeof dateToString === 'function') ? dateToString(dados[l][partsDtGarantiaCol]) : dados[l][partsDtGarantiaCol],
+        dias_garantia: diasGarantia,
+        valor: dados[l][partsValueCol],
+        sei_num: dados[l][partsSEINumCol]
+      };
+
+      res.push(objRes);
     }
-
   }
 
-  const intervaloExibicao = abaConsultarPeca.getRange("B15:K");
-
-  intervaloExibicao.clearContent();
-
-  if (pecaDados.length > 0) {
-    abaConsultarPeca.getRange(15, 2, pecaDados.length, 10).setValues(pecaDados);
-  }
-  else {
-    SpreadsheetApp.getUi().alert("Peça não encontrada");
+  if (res.length === 0) {
+    return "NoData";
   }
 
-
+  return res;
 }
-
-
-function redirecionarEdicaoPeca(dados) {
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
-  const abaCadastro = planilha.getSheetByName('cadastro pecas');
-  SpreadsheetApp.setActiveSheet(abaCadastro);
-
-  //Indicador de edição
-  abaCadastro.getRange("Z1").setValue(dados[4]); 
-
-  abaCadastro.getRange("C3").setValue(dados[4]);
-  abaCadastro.getRange("C5").setValue(dados[2]);
-  abaCadastro.getRange("C7").setValue(dados[3]);
-  abaCadastro.getRange("C9").setValue(dados[5]);
-  abaCadastro.getRange("C11").setValue(dados[0]);
-  abaCadastro.getRange("C13").setValue(dados[1]);
-
-}
-
-function modoEdicaoPeca(ativar) {
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
-  const abaEdicao = planilha.getSheetByName('cadastro material');
-  
-  if (ativar === true) {
-    abaEdicao.getRange("Z1").setValue(true);
-
-  } else {
-    abaEdicao.getRange("Z1").setValue(false);
-  }
-}
-
-
