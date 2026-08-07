@@ -210,10 +210,6 @@ function verificarEmailAoSair() {
 // 
 // GERAÇÃO DE CÓDIGO (exibido apenas até salvar; o ID real vem do backend)
 // 
-function gerarCodigo() {
-  const campo = document.getElementById('codigo');
-  if (campo && !campo.value) campo.value = 'Novo';
-}
 
 // 
 // COLETA DOS DADOS DO FORMULÁRIO
@@ -280,7 +276,7 @@ function limparFormulario() {
   document.querySelectorAll('.field__input, .field__select').forEach(el => {
     if (el.id !== 'codigo') el.value = '';
   });
-  gerarCodigo();
+  
   document.getElementById('formTitulo').textContent = 'Novo Fornecedor';
   document.getElementById('formStatus').textContent = 'Rascunho';
 }
@@ -331,7 +327,6 @@ function salvarFornecedor() {
 // injetado dinamicamente, não carregado como página).
 
 async function renderCadastroFornecedorForm() {
-  gerarCodigo();
 
   const cnpjField = document.getElementById('cnpj');
   if (cnpjField) {
