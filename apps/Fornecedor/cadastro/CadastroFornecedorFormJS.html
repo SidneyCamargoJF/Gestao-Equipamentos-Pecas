@@ -1,5 +1,5 @@
-
 <script>
+
 
 // =====================================================
 // CADASTRO DE FORNECEDOR - JS (CLIENTE)
@@ -160,7 +160,6 @@ function buscarFornecedorPorCnpj(cnpj) {
 }
 
 function preencherFormulario(dados) {
-  document.getElementById('codigo').value = dados.id || '';
   document.getElementById('razaoSocial').value = dados.razaoSocial || '';
   document.getElementById('nomeFantasia').value = dados.nomeFantasia || '';
   document.getElementById('cnpj').value = dados.cnpj || '';
@@ -211,7 +210,7 @@ function verificarEmailAoSair() {
 // 
 // GERAÇÃO DE CÓDIGO (exibido apenas até salvar; o ID real vem do backend)
 // 
-async function gerarCodigo() {
+function gerarCodigo() {
   const campo = document.getElementById('codigo');
   if (campo && !campo.value) campo.value = 'Novo';
 }
@@ -277,7 +276,6 @@ function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-
 function limparFormulario() {
   document.querySelectorAll('.field__input, .field__select').forEach(el => {
     if (el.id !== 'codigo') el.value = '';
@@ -287,13 +285,14 @@ function limparFormulario() {
   document.getElementById('formStatus').textContent = 'Rascunho';
 }
 
-
 // 
 // SALVAR RASCUNHO
 // Sem chamada ao backend por enquanto — o .gs enviado só cobre o
 // cadastro/atualização definitiva (salvarFornecedorBackend).
 // 
-
+function salvarRascunho() {
+  alert('Fornecedor salvo como rascunho!');
+}
 
 // 
 // SALVAR FORNECEDOR (cria ou atualiza, conforme o CNPJ)
@@ -323,16 +322,16 @@ function salvarFornecedor() {
     .salvarFornecedorBackend(dados);
 }
 
-
+// 
 // RENDER / INICIALIZAÇÃO DA TELA
 // Chamada pelo sistema de navegação (SPA) logo depois de injetar o HTML
 // do CadastroFornecedorForm no container da página — igual o padrão do
 // renderContratosForm() do Contrato. Liga as máscaras e os eventos nos
 // campos, já que aqui não existe um "DOMContentLoaded" novo (o HTML foi
 // injetado dinamicamente, não carregado como página).
-// 
-async function renderFornecedorForm() {
-  await gerarCodigo();
+
+function renderCadastroFornecedorForm() {
+  gerarCodigo();
 
   const cnpjField = document.getElementById('cnpj');
   if (cnpjField) {
@@ -359,10 +358,10 @@ async function renderFornecedorForm() {
 
 // Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante
 // que a inicialização também rode no carregamento normal da página.
+
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('cnpj')) {
     renderCadastroFornecedorForm();
   }
 });
-
 </script>
