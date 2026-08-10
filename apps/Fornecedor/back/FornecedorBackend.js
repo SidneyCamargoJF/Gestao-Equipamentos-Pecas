@@ -41,10 +41,10 @@ function salvarFornecedorBackend(dados) {
 
   // Validação de campos obrigatórios (repetida no servidor por segurança,
   // mesmo já validando no cliente antes de chamar essa função)
-  //if (!razaoSocial || !nomeFantasia || !cnpj || !inscricaoEstadual || !inscricaoMunicipal ||
-      //!cep || !ruaAvenida || !numero || !bairro || !cidade || !estado) {
-    //return { sucesso: false, mensagem: 'ERRO: Faltam dados obrigatórios.' };
-  //}
+  if (!razaoSocial || !nomeFantasia || !cnpj || !inscricaoEstadual || !inscricaoMunicipal ||
+      !cep || !ruaAvenida || !numero || !bairro || !cidade || !estado) {
+    return { sucesso: false, mensagem: 'ERRO: Faltam dados obrigatórios.' };
+  }
 
   // Limpeza de formatação
   cep = cep.toString().replace(/\D/g, '');

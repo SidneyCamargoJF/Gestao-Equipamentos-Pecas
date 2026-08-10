@@ -92,7 +92,7 @@ function buscarCEP() {
       document.getElementById('bairro').value = dados.bairro || '';
       document.getElementById('cidade').value = dados.localidade || '';
       document.getElementById('estado').value = dados.uf || '';
-      document.getElementById('numero').focus();
+      document.getElementById('numeroFornecedor').focus();
     })
     .catch(() => {
       alert('Não foi possível buscar o CEP. Verifique sua conexão.');
@@ -164,13 +164,13 @@ function preencherFormulario(dados) {
   document.getElementById('cnpj').value = dados.cnpj || '';
   document.getElementById('inscricaoEstadual').value = dados.inscricaoEstadual || '';
   document.getElementById('inscricaoMunicipal').value = dados.inscricaoMunicipal || '';
-  document.getElementById('email').value = dados.email || '';
+  document.getElementById('emailFornecedor').value = dados.email || '';
   document.getElementById('telefoneFixo').value = dados.telefoneFixo || '';
   document.getElementById('telefoneCelular').value = dados.telefoneCelular || '';
   document.getElementById('whatsapp').value = dados.whatsapp || '';
   document.getElementById('cep').value = dados.cep || '';
   document.getElementById('ruaAvenida').value = dados.ruaAvenida || '';
-  document.getElementById('numero').value = dados.numero || '';
+  document.getElementById('numeroFornecedor').value = dados.numero || '';
   document.getElementById('bairro').value = dados.bairro || '';
   document.getElementById('cidade').value = dados.cidade || '';
   document.getElementById('estado').value = dados.estado || '';
@@ -195,7 +195,7 @@ function preencherWhatsapp() {
 // cliente, sem precisar chamar o servidor.
 // 
 function verificarEmailAoSair() {
-  const emailField = document.getElementById('email');
+  const emailField = document.getElementById('emailFornecedor');
   const valor = emailField.value.trim();
 
   if (!valor) return;
@@ -205,7 +205,6 @@ function verificarEmailAoSair() {
     alert('E-mail inválido. Digite um e-mail válido.');
   }
 }
-
 
 // 
 // COLETA DOS DADOS DO FORMULÁRIO
@@ -236,7 +235,7 @@ function coletarDadosFornecedor() {
 // 
 const CAMPOS_OBRIGATORIOS = [
   'razaoSocial', 'nomeFantasia', 'cnpj', 'inscricaoEstadual', 'inscricaoMunicipal',
-  'cep', 'ruaAvenida', 'numero', 'bairro', 'cidade', 'estado'
+  'cep', 'ruaAvenida', 'numeroFornecedor', 'bairro', 'cidade', 'estado'
 ];
 
 function validarFormulario() {
@@ -290,7 +289,7 @@ function salvarRascunho() {
 // Chama salvarFornecedorBackend() no Fornecedor_Backend.gs
 // 
 function salvarFornecedor() {
-  //if (!validarFormulario()) return;
+  if (!validarFormulario()) return;
 
   const dados = coletarDadosFornecedor();
   const btn = document.querySelector('.btn-primary');
@@ -343,7 +342,7 @@ async function renderCadastroFornecedorForm() {
   const whatsappField = document.getElementById('whatsapp');
   if (whatsappField) mascaraTelefone(whatsappField);
 
-  const emailField = document.getElementById('email');
+  const emailField = document.getElementById('emailFornecedor');
   if (emailField) emailField.addEventListener('blur', verificarEmailAoSair);
 }
 
