@@ -207,9 +207,7 @@ function verificarEmailAoSair() {
   }
 }
 
-// 
-// GERAÇÃO DE CÓDIGO (exibido apenas até salvar; o ID real vem do backend)
-// 
+
 
 // 
 // COLETA DOS DADOS DO FORMULÁRIO
@@ -272,9 +270,9 @@ function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-function limparFormulario() {
+function limparFornecedor() {
   document.querySelectorAll('.field__input, .field__select').forEach(el => {
-    if (el.id !== 'codigo') el.value = '';
+    el.value = '';
   });
   
   document.getElementById('formTitulo').textContent = 'Novo Fornecedor';
@@ -309,7 +307,7 @@ function salvarFornecedor() {
         return;
       }
       alert(resultado.mensagem);
-      limparFormulario();
+      limparFornecedor();
     })
     .withFailureHandler(function (erro) {
       btn.disabled = false;
