@@ -42,8 +42,16 @@ function FiltrarPecas(criterios) {
     let cGarantia    = (cGarantiaFiltro === ""    || colGarantia.includes(cGarantiaFiltro));
 
     if (cNome && cMarca && cLocalizacao && cFornecedor && cGarantia) {
-      let diasGarantia = (typeof calculaDias === 'function') 
-        ? calculaDias(dados[l][partsDtGarantiaCol], new Date()) 
+      // A célula pode vir como Date (formatação de data na planilha) ou como texto (ex: input HTML) --
+      // calculaDias() exige um Date de verdade, por isso normalizamos antes de usar.
+      let dtGarantiaRaw = dados[l][partsDtGarantiaCol];
+      let dtGarantiaData = dtGarantiaRaw instanceof Date
+        ? dtGarantiaRaw
+        : (dtGarantiaRaw ? stringToDate(String(dtGarantiaRaw)) : null);
+      let dtGarantiaValida = dtGarantiaData && !isNaN(dtGarantiaData);
+
+      let diasGarantia = (typeof calculaDias === 'function' && dtGarantiaValida)
+        ? calculaDias(dtGarantiaData, new Date())
         : 0;
 
       let objRes = {
@@ -54,7 +62,7 @@ function FiltrarPecas(criterios) {
         fornecedor: dados[l][partsSuplierCol],
         localizacao: dados[l][partsLocalCol],
         garantia: (typeof statusGarantia === 'function') ? statusGarantia(diasGarantia) : colGarantia,
-        dt_garantia: (typeof dateToString === 'function') ? dateToString(dados[l][partsDtGarantiaCol]) : dados[l][partsDtGarantiaCol],
+        dt_garantia: (typeof dateToString === 'function' && dtGarantiaValida) ? dateToString(dtGarantiaData) : dtGarantiaRaw,
         dias_garantia: diasGarantia,
         valor: dados[l][partsValueCol],
         sei_num: dados[l][partsSEINumCol]
