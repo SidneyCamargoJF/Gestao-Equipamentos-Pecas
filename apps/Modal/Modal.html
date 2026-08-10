@@ -3,9 +3,10 @@
       <div class="modal">
         <h3> Nova Marca </h3>
         <div class="form-group">
-          <label for="novaMarcaNome" class="field__label"> Nome da Marca:</label>
+          <label for="novaMarcaNome" class="field__label"> Nome da Marca *</label>
           <input type="text" id="novaMarcaNome" class="search-input" placeholder="Digite o nome da marca..."/>
-          </div>
+          <span class="field__error-msg" id="novaMarcaNomeErro">Informe o nome da marca.</span>
+        </div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick="fecharModalCadastro()">Cancelar</button>
           <button type="button" class="btn-primary" onclick="salvarNovaMarca()">Salvar</button>

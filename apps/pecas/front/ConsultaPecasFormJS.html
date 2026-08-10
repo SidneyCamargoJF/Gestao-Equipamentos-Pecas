@@ -153,7 +153,7 @@
           if (span) span.textContent = '';
         });
         const ths = document.querySelectorAll('.data-table th');
-        const indices = { nome: 0, marca: 1, modelo: 2, localizacao: 3, valor: 4, garantia: 5 };
+        const indices = { nome: 0, marca: 1, modelo: 2, fornecedor: 3, localizacao: 4, valor: 5, garantia: 6 };
         const idx = indices[sortState.coluna];
         if (idx !== undefined && ths[idx]) {
           ths[idx].classList.add('sorted');

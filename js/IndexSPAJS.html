@@ -1,7 +1,7 @@
 <script>
 
     // SPA View Switcher
-    function trocarPagina(paginaId) {
+    function trocarPagina(paginaId, param) {
       // Hide all SPA pages
       document.querySelectorAll('.spa-page').forEach(page => page.classList.remove('active'));
 
@@ -28,14 +28,10 @@
       if (paginaId === 'dashboard') renderDashboard();
       if (paginaId === 'equipamentos') renderEquipamentos();
 
-      if (paginaId === 'marcas-view') renderMarcasView(); 
-
-      if (paginaId === 'pecas-view') renderPecasView();
-      if (paginaId === 'pecas-form') renderPecasForm();
+      if (paginaId === 'pecas-view') renderPecas();
+      if (paginaId === 'pecas-form') renderCadastroPecas(param);
 
       if (paginaId === 'contratos-form') renderContratosForm();
-
-      if (paginaId === 'fornecedor-form') renderFornecedorForm();
       
       if (paginaId === 'chamados') renderChamados();
       if (paginaId === 'ordens') renderOrdens();

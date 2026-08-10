@@ -1,86 +1,249 @@
 <script>
-
-  let fieldNomeForm = document.getElementById('campo-nome')
-  let fieldMarcaForm = document.getElementById('campo-marca')
-  let fieldValorForm = document.getElementById('campo-valor')
-  let fieldNumeroSerieForm = document.getElementById('campo-numero-serie')
-  let fieldFornecedorForm = document.getElementById('campo-fornecedor')
-  let fieldNotaFiscalForm = document.getElementById('campo-nota-fiscal')
-  let fieldDataNotaForm = document.getElementById('campo-data-nota')
-  let fieldGarantiaForm = document.getElementById('campo-garantia')
-  let fieldModalidadeForm = document.getElementById('campo-modalidade')
-  let fieldCapacidadeForm = document.getElementById('campo-capacidade')
-
-  async function renderPecasForm() { // 06/08/2026
-
-    await inicializarPecas()
-
-    consultarPecas() // 06/08/2026
-
-    document.getElementById('campo-nome').focus();
-
+  // ===== 1. PROMISES AUXILIARES PARA BUSCAR DADOS DO BACKEND =====
+  function loadBrands() {
+    console.log("📡 [loadBrands] Solicitando marcas ao servidor...");
+    return new Promise((resolve) => {
+      google.script.run
+        .withSuccessHandler(res => {
+          console.log("✅ [loadBrands] Marcas recebidas:", res);
+          resolve(res || []);
+        })
+        .withFailureHandler(err => {
+          console.error("❌ [loadBrands] Erro no servidor:", err);
+          resolve([]);
+        })
+        .ReadBrands(); // Ou .buscarMarcasAtivas() conforme seu .gs
+    });
   }
 
-  function Salvar() {
-    // Move os campos para o array para gravação
-    let nome  = fieldNomeForm.value
-    let marca = fieldMarcaForm.value
-    let valor = fieldValorForm.value
-    let numeroSerie = fieldNumeroSerieForm.value
-    let fornecedor = fieldFornecedorForm.value
-    let notaFiscal = fieldNotaFiscalForm.value
-    let dataNota   = fieldNotaFiscalForm.value
-    let garantia   = fieldGarantiaForm.value
-    let modalidade = fieldModalidadeForm.value
-    let capacidade = fieldCapacidadeForm.value
-
-    nome = nome.trim()
-    marca = marca.trim()
-    valor = valor.trim()
-    numeroSerie = numeroSerie.trim()
-    fornecedor = fornecedor.trim()
-    notaFiscal = notaFiscal.trim()
-    dataNota = dataNota.trim()
-    garantia = garantia.trim()
-    modalidade = modalidade.trim()
-    capacidade = capacidade.trim()
-
-    if ( isEmpty(nome) || isEmpty(marca) || isEmpty(valor) || isEmpty(numeroSerie) ||
-      isEmpty(fornecedor) || isEmpty(notaFiscal) || isEmpty(dataNota) ||
-      isEmpty(garantia) || isEmpty(modalidade) || isEmpty(capacidade)) {
-      // showMessage(Necessita preencher todos os campos, 'OK');
-      console.log('isEmpty')
-      return false;
-    }
-
-    let Dados = {
-      Nome: nome,
-      Marca: marca,
-      Valor: valor,
-      NumeroSerie: numeroSerie,
-      Fornecedor: fornecedor,
-      NotaFiscal: notaFiscal,
-      DataNota: dataNota,
-      Garantia: garantia,
-      Modalidade: modalidade,
-      Capacidade: capacidade
-    }
-
-    google.script.run.withSuccessHandler(Retorno).SalvarPecas(Dados)
-
-    console.log('salvar')
+  function loadLocations() {
+    console.log("📡 [loadLocations] Solicitando localizações ao servidor...");
+    return new Promise((resolve) => {
+      google.script.run
+        .withSuccessHandler(res => {
+          console.log("✅ [loadLocations] Localizações recebidas:", res);
+          resolve(res || []);
+        })
+        .withFailureHandler(err => {
+          console.error("❌ [loadLocations] Erro no servidor:", err);
+          resolve([]);
+        })
+        .ReadLocations();
+    });
   }
 
-  function Retorno(r) {
-    console.log('retorno')
-    if (r == "PEÇA JA CADASTRADA") {
-      let m = "PEÇA JÁ CADASTRADA"
-      console.log(m)
-      return false
+  function loadSuppliers() {
+    console.log("📡 [loadSuppliers] Solicitando fornecedores ao servidor...");
+    return new Promise((resolve) => {
+      google.script.run
+        .withSuccessHandler(res => {
+          console.log("✅ [loadSuppliers] Fornecedores recebidos:", res);
+          resolve(res || []);
+        })
+        .withFailureHandler(err => {
+          console.error("❌ [loadSuppliers] Erro no servidor:", err);
+          resolve([]);
+        })
+        .ReadSuppliers();
+    });
+  }
+
+  // ===== 2. PREENCHEDOR DE SELECTS =====
+  function preencherSelect(elementId, listaBruta, labelPadrao) {
+    console.log(`⚙️ [preencherSelect] Preenchendo "${elementId}"...`);
+    const select = document.getElementById(elementId);
+    
+    if (!select) {
+      console.warn(`⚠️ [preencherSelect] Elemento <select id="${elementId}"> não existe na DOM.`);
+      return;
     }
 
+    select.innerHTML = `<option value="">-- ${labelPadrao} --</option>`;
 
+    // Trata caso venha matriz de colunas [ [id, nome], ... ] ou array simples [ "nome", ... ]
+    let lista = Array.isArray(listaBruta) ? listaBruta : [];
+    if (lista.length > 0 && Array.isArray(lista[0])) {
+      lista = lista.map(item => item[1]).filter(Boolean);
+    }
 
+    // Remove duplicados e vazios
+    const listaUnica = Array.from(new Set(lista)).filter(Boolean);
+
+    if (listaUnica.length > 0) {
+      listaUnica.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item;
+        opt.textContent = item;
+        select.appendChild(opt);
+      });
+      console.log(`✅ [preencherSelect] ${listaUnica.length} opções adicionadas em "${elementId}".`);
+    } else {
+      select.innerHTML = `<option value="">Nenhum item encontrado</option>`;
+      console.warn(`⚠️ [preencherSelect] Nenhuma opção disponível para "${elementId}".`);
+    }
+  }
+
+  // ===== 3. INICIALIZAÇÃO E RENDERIZAÇÃO DA PÁGINA =====
+  async function renderCadastroPecas(id) {
+    console.log("🚀 [renderCadastroPecas] Iniciando formulário. ID recebido:", id || "Novo Cadastro");
+
+    // Validações com checagem de existência no DOM para evitar erros no F12
+    const inputPecaId = document.getElementById('pecaId');
+    if (inputPecaId) {
+      inputPecaId.value = id || '';
+    } else {
+      console.warn("⚠️ [renderCadastroPecas] Elemento 'pecaId' não foi encontrado no HTML.");
+    }
+
+    const tituloForm = document.getElementById('formTituloPeca');
+    if (tituloForm) {
+      tituloForm.textContent = id ? 'Editar Peça' : 'Nova Peça';
+    }
+
+    try {
+      console.log("⏳ [renderCadastroPecas] Aguardando respostas das 3 consultas (Marcas, Locais, Fornecedores)...");
+      const [opcoesMarca, opcoesLocal, opcoesFornecedor] = await Promise.all([
+        loadBrands(),
+        loadLocations(),
+        loadSuppliers()
+      ]);
+
+      preencherSelect('marcaSelect', opcoesMarca, 'Selecione a Marca');
+      preencherSelect('localSelect', opcoesLocal, 'Selecione a Localização');
+      preencherSelect('fornecedorSelect', opcoesFornecedor, 'Selecione o Fornecedor');
+
+    } catch (err) {
+      console.error("❌ [renderCadastroPecas] Erro fatal durante a renderização:", err);
+    }
+
+    if (!id) {
+      const nomeInput = document.getElementById('nomePeca');
+      if (nomeInput) nomeInput.focus();
+    }
+  }
+
+  // ===== 4. ENVIAR DADOS AO SERVIDOR =====
+  function salvarPeca() {
+    console.log("💾 [salvarPeca] Coletando dados do formulário...");
+
+    const dadosPeca = {
+      id: document.getElementById('pecaId')?.value || '',
+      nome: document.getElementById('nomePeca')?.value.trim() || '',
+      marca: document.getElementById('marcaSelect')?.value || '',
+      modelo: document.getElementById('modelo')?.value.trim() || '',
+      capacidade: document.getElementById('capacidade')?.value.trim() || '',
+      numero_serie: document.getElementById('numeroSerie')?.value.trim() || '',
+      local: document.getElementById('localSelect')?.value || '',
+      fornecedor: document.getElementById('fornecedorSelect')?.value || '',
+      notaFiscal: document.getElementById('notaFiscal')?.value.trim() || '',
+      dataNotaFiscal: document.getElementById('dataNota')?.value || '',
+      garantia: document.getElementById('garantia')?.value || '',
+      dtGarantia: document.getElementById('dtGarantia')?.value || '',
+      modalidade: document.getElementById('modalidade')?.value || '',
+      valor: document.getElementById('valor')?.value.trim() || '',
+      seiNum: document.getElementById('seiNum')?.value.trim() || ''
+    };
+
+    console.log("📦 [salvarPeca] Objeto estruturado:", dadosPeca);
+
+    // Validações no cliente
+    if (!dadosPeca.nome) {
+      alert('Por favor, informe o Nome da Peça.');
+      console.warn("⚠️ [salvarPeca] Validação falhou: Nome da Peça vazio.");
+      document.getElementById('nomePeca')?.focus();
+      return;
+    }
+
+    if (!dadosPeca.marca) {
+      alert('Por favor, selecione uma Marca da lista.');
+      console.warn("⚠️ [salvarPeca] Validação falhou: Marca não selecionada.");
+      document.getElementById('marcaSelect')?.focus();
+      return;
+    }
+
+    if (!dadosPeca.local) {
+      alert('Por favor, selecione uma Localização da lista.');
+      console.warn("⚠️ [salvarPeca] Validação falhou: Localização não selecionada.");
+      document.getElementById('localSelect')?.focus();
+      return;
+    }
+
+    if (!dadosPeca.fornecedor) {
+      alert('Por favor, selecione um Fornecedor da lista.');
+      console.warn("⚠️ [salvarPeca] Validação falhou: Fornecedor não selecionado.");
+      document.getElementById('fornecedorSelect')?.focus();
+      return;
+    }
+
+    console.log("📤 [salvarPeca] Enviando dados para salvarPeca() no servidor Apps Script...");
+
+    google.script.run
+      .withSuccessHandler((resposta) => {
+        console.log("📥 [salvarPeca] Resposta do servidor:", resposta);
+        if (resposta && resposta.sucesso) {
+          alert(resposta.mensagem || 'Peça salva com sucesso!');
+          limparPeca();
+          if (typeof trocarPagina === 'function') {
+            trocarPagina('pecas-view');
+          }
+        } else {
+          alert(resposta ? resposta.mensagem : 'Erro ao salvar a peça.');
+        }
+      })
+      .withFailureHandler((err) => {
+        console.error("❌ [salvarPeca] Erro ao se comunicar com o servidor:", err);
+        alert('Erro de comunicação com o servidor: ' + (err.message || err));
+      })
+      .salvarPeca(dadosPeca);
+  }
+
+  // ===== 5. LIMPAR FORMULÁRIO =====
+  function limparPeca() {
+    console.log("🧹 [limparPeca] Limpando formulário...");
+
+    const form = document.getElementById('formPeca');
+
+    if (form) {
+      form.reset();
+    }
+
+    // Limpa também o ID oculto da peça
+    const pecaId = document.getElementById('pecaId');
+    if (pecaId) {
+      pecaId.value = '';
+    }
+
+    // Garante que os selects fiquem sem seleção
+    const selects = [
+      'marcaSelect',
+      'localSelect',
+      'fornecedorSelect',
+      'modalidade'
+    ];
+
+    selects.forEach(id => {
+      const select = document.getElementById(id);
+      if (select) {
+        select.selectedIndex = 0;
+      }
+    });
+
+    // Retorna o título para novo cadastro
+    const titulo = document.getElementById('formTituloPeca');
+    if (titulo) {
+      titulo.textContent = 'Nova Peça';
+    }
+
+    const status = document.getElementById('formStatusPeca');
+    if (status) {
+      status.textContent = 'Rascunho';
+    }
+
+    // Coloca o cursor novamente no campo Nome
+    const nomeInput = document.getElementById('nomePeca');
+    if (nomeInput) {
+      nomeInput.focus();
+    }
   }
 
 </script>
