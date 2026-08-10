@@ -41,10 +41,10 @@ function salvarFornecedorBackend(dados) {
 
   // Validação de campos obrigatórios (repetida no servidor por segurança,
   // mesmo já validando no cliente antes de chamar essa função)
-  if (!razaoSocial || !nomeFantasia || !cnpj || !inscricaoEstadual || !inscricaoMunicipal ||
-      !cep || !ruaAvenida || !numero || !bairro || !cidade || !estado) {
-    return { sucesso: false, mensagem: 'ERRO: Faltam dados obrigatórios.' };
-  }
+  //if (!razaoSocial || !nomeFantasia || !cnpj || !inscricaoEstadual || !inscricaoMunicipal ||
+      //!cep || !ruaAvenida || !numero || !bairro || !cidade || !estado) {
+    //return { sucesso: false, mensagem: 'ERRO: Faltam dados obrigatórios.' };
+  //}
 
   // Limpeza de formatação
   cep = cep.toString().replace(/\D/g, '');
@@ -127,46 +127,4 @@ function verificarCnpjExistente(cnpj) {
     }
   }
   return { existe: false };
-}
-
-/**
- * Busca os dados completos de um fornecedor pelo CNPJ, para carregar no
- * formulário em modo de edição. Retorna um objeto já no formato dos campos
- * do HTML (mesmos nomes usados em coletarDadosFornecedor no cliente) ou
- * null se não encontrar.
- */
-function buscarFornecedorPorCnpjBackend(cnpj) {
-  if (!cnpj) return null;
-
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const abaTabelaFornecedor = ss.getSheetByName('tbl_fornecedor');
-  const cnpjLimpo = cnpj.toString().trim();
-
-  const dadosTabela = abaTabelaFornecedor.getDataRange().getValues();
-
-  for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
-    const linha = dadosTabela[i];
-    if (linha[3].toString().trim() === cnpjLimpo) {
-      return {
-        id: linha[0],
-        razaoSocial: linha[1],
-        nomeFantasia: linha[2],
-        cnpj: linha[3],
-        inscricaoEstadual: linha[4],
-        inscricaoMunicipal: linha[5],
-        email: linha[6],
-        telefoneFixo: linha[7],
-        telefoneCelular: linha[8],
-        whatsapp: linha[9],
-        cep: linha[10],
-        ruaAvenida: linha[11],
-        numero: linha[12],
-        bairro: linha[13],
-        cidade: linha[14],
-        estado: linha[15],
-        complemento: linha[16]
-      };
-    }
-  }
-  return null;
 }

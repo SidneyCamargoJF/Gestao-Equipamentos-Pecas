@@ -1,6 +1,5 @@
 <script>
 
-
 // =====================================================
 // CADASTRO DE FORNECEDOR - JS (CLIENTE)
 // Roda no navegador (dentro do HTML). A gravação na planilha
@@ -178,10 +177,10 @@ function preencherFormulario(dados) {
   document.getElementById('complemento').value = dados.complemento || '';
 }
 
-// 
+
 // AUTOPREENCHER WHATSAPP COM O TELEFONE CELULAR
 // Equivalente a preencherWhatsapp() do .gs original.
-// 
+
 function preencherWhatsapp() {
   const celular = document.getElementById('telefoneCelular');
   const whatsapp = document.getElementById('whatsapp');
@@ -208,7 +207,6 @@ function verificarEmailAoSair() {
 }
 
 
-
 // 
 // COLETA DOS DADOS DO FORMULÁRIO
 // 
@@ -219,13 +217,13 @@ function coletarDadosFornecedor() {
     cnpj: document.getElementById('cnpj').value.trim(),
     inscricaoEstadual: document.getElementById('inscricaoEstadual').value.trim(),
     inscricaoMunicipal: document.getElementById('inscricaoMunicipal').value.trim(),
-    email: document.getElementById('email').value.trim(),
+    email: document.getElementById('emailFornecedor').value.trim(),
     telefoneFixo: document.getElementById('telefoneFixo').value.trim(),
     telefoneCelular: document.getElementById('telefoneCelular').value.trim(),
     whatsapp: document.getElementById('whatsapp').value.trim(),
     cep: document.getElementById('cep').value.trim(),
     ruaAvenida: document.getElementById('ruaAvenida').value.trim(),
-    numero: document.getElementById('numero').value.trim(),
+    numero: document.getElementById('numeroFornecedor').value.trim(),
     bairro: document.getElementById('bairro').value.trim(),
     cidade: document.getElementById('cidade').value.trim(),
     estado: document.getElementById('estado').value,
@@ -279,11 +277,10 @@ function limparFornecedor() {
   document.getElementById('formStatus').textContent = 'Rascunho';
 }
 
-// 
+
 // SALVAR RASCUNHO
 // Sem chamada ao backend por enquanto — o .gs enviado só cobre o
 // cadastro/atualização definitiva (salvarFornecedorBackend).
-// 
 function salvarRascunho() {
   alert('Fornecedor salvo como rascunho!');
 }
@@ -293,7 +290,7 @@ function salvarRascunho() {
 // Chama salvarFornecedorBackend() no Fornecedor_Backend.gs
 // 
 function salvarFornecedor() {
-  if (!validarFormulario()) return;
+  //if (!validarFormulario()) return;
 
   const dados = coletarDadosFornecedor();
   const btn = document.querySelector('.btn-primary');
@@ -325,6 +322,7 @@ function salvarFornecedor() {
 // injetado dinamicamente, não carregado como página).
 
 async function renderCadastroFornecedorForm() {
+  
 
   const cnpjField = document.getElementById('cnpj');
   if (cnpjField) {
