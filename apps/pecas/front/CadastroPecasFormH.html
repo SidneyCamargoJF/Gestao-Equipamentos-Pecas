@@ -1,9 +1,141 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <base target="_top">
-  </head>
-  <body>
-    
-  </body>
-</html>
+<section id="page-pecas-form" class="spa-page">
+
+  <input type="hidden" id="pecaId" value="">
+
+  <div class="page-header">
+    <div class="actions-bar">
+      <h1>⚙️ Peças</h1>
+    </div>   
+  </div>
+
+  <div class="panel">
+
+    <!-- HEADER -->
+    <div class="form-header">
+      <h2 class="form-titulo" id="formTituloPeca">Nova Peça</h2>
+      <span class="form-status" id="formStatusPeca">Rascunho</span>
+    </div>
+
+    <form id="formPeca" autocomplete="off" onsubmit="return false;">
+
+      <!-- ============================================= -->
+      <!-- PARTE 1: INFORMAÇÕES DA PEÇA                  -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal">
+        <legend class="fieldset-legend">Informações da Peça</legend>
+        
+        <div class="form-grid-3">
+
+          <div class="field">
+            <label class="field__label" for="nomePeca">Nome da Peça *</label>
+            <input class="field__input" type="text" id="nomePeca" placeholder="Ex: Filtro HEPA, Placa Principal..." autofocus>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="marcaSelect">Marca *</label>
+            <select id="marcaSelect" class="field__input field__select">
+              <option value="">Carregando marcas...</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="modelo">Modelo</label>
+            <input class="field__input" type="text" id="modelo" placeholder="Ex: Mod-100X">
+          </div>
+
+        </div>
+
+        <div class="form-grid-3">
+
+          <div class="field">
+            <label class="field__label" for="capacidade">Capacidade</label>
+            <input class="field__input" type="text" id="capacidade" placeholder="Ex: 12000 BTU, 500W...">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="numeroSerie">Número de Série</label>
+            <input class="field__input" type="text" id="numeroSerie" placeholder="Ex: SN-987654321">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="localSelect">Localização *</label>
+            <select id="localSelect" class="field__input field__select">
+              <option value="">Carregando localizações...</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="form-grid-3">
+
+        <div class="field">
+          <label class="field__label" for="fornecedorSelect">Fornecedor *</label>
+          <select id="fornecedorSelect" class="field__input field__select">
+            <option value="">Carregando fornecedores...</option>
+          </select>
+        </div>
+
+          <div class="field">
+            <label class="field__label" for="notaFiscal">Nota Fiscal</label>
+            <input class="field__input" type="text" id="notaFiscal" placeholder="Ex: NF-12345">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="dataNota">Data da Nota</label>
+            <input class="field__input" type="date" id="dataNota">
+          </div>
+
+        </div>
+
+        <div class="form-grid-3">
+
+          <div class="field">
+            <label class="field__label" for="garantia">Garantia</label>
+            <input class="field__input" type="text" id="garantia" placeholder="Ex: 12 meses">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="dtGarantia">Data Limite Garantia</label>
+            <input class="field__input" type="date" id="dtGarantia">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="modalidade">Modalidade</label>
+            <select class="field__select" id="modalidade">
+              <option value="">Selecione...</option>
+              <option value="compra">Compra</option>
+              <option value="locacao">Locação</option>
+              <option value="comodato">Comodato</option>
+              <option value="doacao">Doação</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="form-grid-3">
+
+          <div class="field">
+            <label class="field__label" for="valor">Valor (R$)</label>
+            <input class="field__input" type="text" id="valor" placeholder="0,00">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="seiNum">Documento SEI</label>
+            <input class="field__input" type="text" id="seiNum" placeholder="SEI 00000.000000/2026-00">
+          </div>
+
+        </div>
+      </fieldset>
+
+      <!-- ============================================= -->
+      <!-- BOTÕES DE AÇÃO                                -->
+      <!-- ============================================= -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="trocarPagina('pecas-view')">Cancelar</button>
+        <button type="button" class="btn btn-danger" onclick="limparPeca()">Limpar</button>
+        <button type="button" class="btn-success" onclick="salvarPeca()">Salvar</button>
+      </div>
+
+    </form>
+  </div>
+</section>
