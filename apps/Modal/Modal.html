@@ -1,38 +1,3 @@
-    <!-- MODAL DE CADASTRO -->
-    <div class="modal-overlay" id='modalCadastro'>
-      <div class="modal">
-        <h3> Nova Marca </h3>
-        <div class="form-group">
-          <label for="novaMarcaNome" class="field__label"> Nome da Marca *</label>
-          <input type="text" id="novaMarcaNome" class="search-input" placeholder="Digite o nome da marca..."/>
-          <span class="field__error-msg" id="novaMarcaNomeErro">Informe o nome da marca.</span>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModalCadastro()">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="salvarNovaMarca()">Salvar</button>
-        </div>
-      </div>
-    </div> 
-    
-    <!-- MODAL DE EDIÇÃO -->
-    <div class="modal-overlay" id="modalEdicao">
-      <div class="modal">
-        <h3>Editar Marca</h3>
-        
-        <!-- Guarda o ID da marca -->
-        <input type="hidden" id="editMarcaId">
-        
-        <div class="form-group">
-          <label for="editMarcaNome" class="field__label">Nome da Marca:</label>
-          <input type="text" id="editMarcaNome" class="search-input" placeholder="Digite o novo nome..."/>
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModalEdicao()" style="width:auto;">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="executarEdicao()">Salvar</button>
-        </div>
-      </div>
-    </div>
 
     <!-- MODAL DE EXCLUSÃO -->
     <div class="modal-overlay" id="modalExclusao">
