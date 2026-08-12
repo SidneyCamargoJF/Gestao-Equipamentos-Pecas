@@ -121,7 +121,7 @@
 
       const btnExcluir = m.desativada 
         ? '<button class="btn-acao btn-excluir-linha" title="Desativar" disabled style="opacity:0.3; cursor:not-allowed;">🗑️</button>'
-        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="abrirModalExclusao('${m.id}')">🗑️</button>`;
+        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="abrirModalExclusao('marcas', '${m.id}')">🗑️</button>`;
 
       tr.innerHTML = `
         <td>

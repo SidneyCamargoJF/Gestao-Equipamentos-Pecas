@@ -1,29 +1,72 @@
 <script>
 
-  function abrirModalExclusao(table, id) {
+  // origem identifica qual tela abriu o modal de exclusão ('marcas', 'pecas', ...)
+  // para saber qual função de exclusão específica chamar ao confirmar.
+  let origemModalExclusao = null;
+
+  function abrirModalExclusao(origem, id) {
     idExclusao = id;
-    table_name = table
-    
+    origemModalExclusao = origem;
+    table_name = origem;
+
     const modal = document.getElementById('modalExclusao');
     if (modal) modal.classList.add('aberto');
   }
 
   function fecharModalExclusao(res) {
     if (res === "Y") {
-        executarExclusao(table_name, id)
-    } 
+      if (origemModalExclusao === 'marcas' && typeof executarExclusaoMarca === 'function') {
+        executarExclusaoMarca();
+        return;
+      }
+      if (origemModalExclusao === 'pecas' && typeof executarExclusaoPeca === 'function') {
+        executarExclusaoPeca();
+        return;
+      }
+    }
+
     idExclusao = null;
+    origemModalExclusao = null;
     const modal = document.getElementById('modalExclusao');
     if (modal) modal.classList.remove('aberto');
   }
 
-  function fecharModalCadastro(modalCadastro) {
-    const modal = document.getElementById(modalCadastro);
+  function fecharModalCadastro() {
+    const modal = document.getElementById('modalCadastro');
+    if (modal) modal.classList.remove('aberto');
+  }
+
+  function fecharModalCadastroFornecedor() {
+    const modal = document.getElementById('modalCadastroFornecedor');
+    if (modal) modal.classList.remove('aberto');
+  }
+
+  function fecharModalCadastroLocalizacao() {
+    const modal = document.getElementById('modalCadastroLocalizacao');
     if (modal) modal.classList.remove('aberto');
   }
 
   function fecharModal(id) {
     document.getElementById(id).classList.remove('aberto');
   }
+
+  // Fecha os modais de cadastro rápido ao clicar fora ou apertar Escape.
+  document.addEventListener('DOMContentLoaded', () => {
+    ['modalCadastroFornecedor', 'modalCadastroLocalizacao'].forEach(idModal => {
+      const elModal = document.getElementById(idModal);
+      if (elModal) {
+        elModal.addEventListener('click', (e) => {
+          if (e.target.classList.contains('modal-overlay')) elModal.classList.remove('aberto');
+        });
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        fecharModalCadastroFornecedor();
+        fecharModalCadastroLocalizacao();
+      }
+    });
+  });
 
 </script>

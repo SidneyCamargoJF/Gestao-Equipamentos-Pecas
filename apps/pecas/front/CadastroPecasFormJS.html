@@ -83,6 +83,138 @@
     }
   }
 
+  // ===== 2.1 CADASTRO RÁPIDO VIA BOTÃO "+" (Marca, Fornecedor, Localização) =====
+
+  async function atualizarMarcaSelectPecas(nomeSelecionar) {
+    const opcoesMarca = await loadBrands();
+    preencherSelect('marcaSelect', opcoesMarca, 'Selecione a Marca');
+    if (nomeSelecionar) {
+      const select = document.getElementById('marcaSelect');
+      if (select) select.value = nomeSelecionar;
+    }
+  }
+
+  function abrirModalCadastroFornecedor() {
+    ['novoFornecedorCnpj', 'novoFornecedorRazaoSocial', 'novoFornecedorNomeFantasia', 'novoFornecedorCidade', 'novoFornecedorEmail', 'novoFornecedorTelefoneFixo'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = '';
+        el.classList.remove('is-invalid');
+      }
+    });
+
+    const modal = document.getElementById('modalCadastroFornecedor');
+    if (modal) {
+      modal.classList.add('aberto');
+      setTimeout(() => document.getElementById('novoFornecedorCnpj')?.focus(), 100);
+    }
+  }
+
+  async function salvarNovoFornecedorRapido() {
+    const campos = {
+      cnpj: document.getElementById('novoFornecedorCnpj'),
+      razaoSocial: document.getElementById('novoFornecedorRazaoSocial'),
+      nomeFantasia: document.getElementById('novoFornecedorNomeFantasia'),
+      cidade: document.getElementById('novoFornecedorCidade'),
+      email: document.getElementById('novoFornecedorEmail'),
+      telefoneFixo: document.getElementById('novoFornecedorTelefoneFixo')
+    };
+
+    let valido = true;
+    Object.values(campos).forEach(input => {
+      if (!input) return;
+      if (!input.value.trim()) {
+        input.classList.add('is-invalid');
+        valido = false;
+      } else {
+        input.classList.remove('is-invalid');
+      }
+    });
+
+    if (!valido) return;
+
+    const dados = {
+      cnpj: campos.cnpj.value.trim(),
+      razaoSocial: campos.razaoSocial.value.trim(),
+      nomeFantasia: campos.nomeFantasia.value.trim(),
+      cidade: campos.cidade.value.trim(),
+      email: campos.email.value.trim(),
+      telefoneFixo: campos.telefoneFixo.value.trim()
+    };
+
+    google.script.run
+      .withSuccessHandler(async (resposta) => {
+        if (resposta && resposta.sucesso) {
+          fecharModalCadastroFornecedor();
+          const opcoesFornecedor = await loadSuppliers();
+          preencherSelect('fornecedorSelect', opcoesFornecedor, 'Selecione o Fornecedor');
+          const select = document.getElementById('fornecedorSelect');
+          if (select) select.value = dados.razaoSocial;
+        } else {
+          alert(resposta ? resposta.mensagem : 'Erro ao cadastrar fornecedor.');
+        }
+      })
+      .withFailureHandler((err) => {
+        console.error('Erro ao cadastrar fornecedor:', err);
+        alert('Ocorreu um erro no script: ' + (err.message || err));
+      })
+      .cadastrarFornecedorRapido(dados);
+  }
+
+  function abrirModalCadastroLocalizacao() {
+    const input = document.getElementById('novaLocalizacaoNome');
+    if (input) {
+      input.value = '';
+      input.classList.remove('is-invalid');
+    }
+
+    const modal = document.getElementById('modalCadastroLocalizacao');
+    if (modal) {
+      modal.classList.add('aberto');
+      setTimeout(() => input && input.focus(), 100);
+    }
+  }
+
+  async function salvarNovaLocalizacao() {
+    const input = document.getElementById('novaLocalizacaoNome');
+    const nomeLocalizacao = input ? input.value.trim() : '';
+
+    if (!nomeLocalizacao) {
+      if (input) {
+        input.classList.add('is-invalid');
+        input.focus();
+      }
+      return;
+    }
+
+    if (input) input.classList.remove('is-invalid');
+
+    google.script.run
+      .withSuccessHandler(async (resposta) => {
+        if (resposta && resposta.sucesso) {
+          fecharModalCadastroLocalizacao();
+          const opcoesLocal = await loadLocations();
+          preencherSelect('localSelect', opcoesLocal, 'Selecione a Localização');
+          const select = document.getElementById('localSelect');
+          if (select) select.value = nomeLocalizacao;
+        } else {
+          alert(resposta ? resposta.mensagem : 'Erro ao cadastrar localização.');
+        }
+      })
+      .withFailureHandler((err) => {
+        console.error('Erro ao cadastrar localização:', err);
+        alert('Ocorreu um erro no script: ' + (err.message || err));
+      })
+      .cadastrarLocalizacao(nomeLocalizacao);
+  }
+
+  ['novoFornecedorCnpj', 'novoFornecedorRazaoSocial', 'novoFornecedorNomeFantasia', 'novoFornecedorCidade', 'novoFornecedorEmail', 'novoFornecedorTelefoneFixo', 'novaLocalizacaoNome'].forEach(id => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', () => el.classList.remove('is-invalid'));
+    });
+  });
+
   // ===== 3. INICIALIZAÇÃO E RENDERIZAÇÃO DA PÁGINA =====
   async function renderCadastroPecas(id) {
     console.log("🚀 [renderCadastroPecas] Iniciando formulário. ID recebido:", id || "Novo Cadastro");

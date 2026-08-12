@@ -6,7 +6,8 @@
 
     consultarMarcas()
 
-    document.getElementById('filtro-nome').focus();
+    const inputMarcaSearch = document.getElementById('marcaSearch');
+    if (inputMarcaSearch) inputMarcaSearch.focus();
 
   }
 
@@ -26,12 +27,67 @@
   function RetornoMarcas(objmarcas) {
     marcas = Array.isArray(objmarcas) ? objmarcas : [];
     listaFiltrada = aplicarOrdenacao(marcas);
-    
+
     // Atualiza opções do dropdown de busca
     const opcoesMarca = [...new Set(marcas.map(m => m.marca).filter(Boolean))];
-    initSearch('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca);
+    initSearchMarcas('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca);
 
     renderTabela(listaFiltrada);
+  }
+
+  // ===== COMPONENTE DE BUSCA COM DROPDOWN COMPLETO AO DAR FOCO =====
+  // Função exclusiva desta tela para não colidir com o "initSearch" de outras páginas
+  // (todo <script> do Apps Script cai no mesmo escopo global).
+  function initSearchMarcas(inputId, dropdownId, wrapperId, opcoes) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const wrapper = document.getElementById(wrapperId);
+
+    if (!input || !dropdown || !wrapper) return;
+
+    const listaOpcoes = Array.isArray(opcoes) ? opcoes : [];
+
+    function renderLista(filtro) {
+      const f = (filtro || '').toLowerCase().trim();
+      const itens = (f === '') ? listaOpcoes : listaOpcoes.filter(o => String(o).toLowerCase().includes(f));
+
+      dropdown.innerHTML = '';
+      if (itens.length === 0) {
+        dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+      } else {
+        itens.forEach(o => {
+          const div = document.createElement('div');
+          div.className = 'search-option';
+          div.textContent = o;
+          div.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            input.value = o;
+            dropdown.classList.remove('visible', 'active');
+            filtrarMarca();
+          });
+          dropdown.appendChild(div);
+        });
+      }
+    }
+
+    input.addEventListener('focus', () => {
+      renderLista(input.value);
+      dropdown.classList.add('visible', 'active');
+    });
+
+    input.addEventListener('input', () => {
+      renderLista(input.value);
+      dropdown.classList.add('visible', 'active');
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); dropdown.classList.remove('visible', 'active'); filtrarMarca(); }
+      if (e.key === 'Escape') dropdown.classList.remove('visible', 'active');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!wrapper.contains(e.target)) dropdown.classList.remove('visible', 'active');
+    });
   }
 
   function filtrarMarca() {
@@ -53,19 +109,15 @@
     
     sortState = { coluna: null, direcao: 'asc' };
     atualizarIndicadores();
-    consultar();
-    
+    consultarMarcas();
+
     if (inputMarca) inputMarca.focus();
   }
 
   // ===== INICIALIZAÇÃO SEGURA =====
+  // Só cuida dos modais (compartilhados por toda a SPA); os dados da tela de Marcas
+  // em si são carregados por renderMarcasView() quando a página fica ativa.
   document.addEventListener('DOMContentLoaded', () => {
-    const inputMarca = document.getElementById('marcaSearch');
-    if (inputMarca) inputMarca.focus();
-
-    // Carrega os dados iniciais
-    consultarMarcas();
-
     // Eventos de clique fora para fechar os modais
     ['modalExclusao', 'modalEdicao', 'modalCadastro'].forEach(idModal => {
       const elModal = document.getElementById(idModal);
@@ -121,7 +173,7 @@
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso) {
           fecharModalEdicao();
-          consultar();
+          consultarMarcas();
         } else {
           alert(resposta ? resposta.mensagem : "Erro ao atualizar a marca.");
         }
@@ -145,20 +197,29 @@
           alert(resposta.mensagem);
         } else {
           fecharModalExclusao();
-          consultar();
+          consultarMarcas();
         }
       })
       .withFailureHandler((err) => {
         console.error('Erro ao desativar marca:', err);
         alert('Erro ao conectar com o servidor.');
       })
-      .ExcluirRegistro(table_name, idExclusao);
+      .desativarMarca(idExclusao);
   }
 
   // ==== MODAL DE CADASTRO DE MARCA ====
-  function abrirModalCadastro() {
+  // origem: 'marcas' (tela de Marcas) ou 'pecas' (botão + no Cadastro de Peças) --
+  // define o que atualizar depois de salvar com sucesso.
+  let origemModalCadastroMarca = 'marcas';
+
+  function abrirModalCadastro(origem) {
+    origemModalCadastroMarca = origem || 'marcas';
+
     const input = document.getElementById('novaMarcaNome');
-    if (input) input.value = '';
+    if (input) {
+      input.value = '';
+      input.classList.remove('is-invalid');
+    }
 
     const modal = document.getElementById('modalCadastro');
     if (modal) {
@@ -172,15 +233,24 @@
     const nomeMarca = input ? input.value.trim() : '';
 
     if (!nomeMarca) {
-      alert('Por favor, digite o nome da marca.');
+      if (input) {
+        input.classList.add('is-invalid');
+        input.focus();
+      }
       return;
     }
+
+    if (input) input.classList.remove('is-invalid');
 
     google.script.run
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso) {
           fecharModalCadastro();
-          consultar();
+          if (origemModalCadastroMarca === 'pecas' && typeof atualizarMarcaSelectPecas === 'function') {
+            atualizarMarcaSelectPecas(nomeMarca);
+          } else {
+            consultarMarcas();
+          }
         } else {
           alert(resposta ? resposta.mensagem : 'Erro ao cadastrar marca.');
         }
@@ -198,19 +268,17 @@
 
   async function inicializarMarcas() {
 
-    document.getElementById('filtro-nome').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); filtrar(); }
-    });
-
     document.getElementById('modalExclusao').addEventListener('click', (e) => {
       if (e.target.classList.contains('modal-overlay')) fecharModalExclusao();
+    });
+
+    document.getElementById('novaMarcaNome').addEventListener('input', (e) => {
+      e.target.classList.remove('is-invalid');
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') fecharModalExclusao();
     });
-
-    filtrar();
   };
 
 </script>

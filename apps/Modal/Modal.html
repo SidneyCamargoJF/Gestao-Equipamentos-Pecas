@@ -34,6 +34,63 @@
       </div>
     </div>
 
+    <!-- MODAL DE CADASTRO RÁPIDO DE FORNECEDOR -->
+    <div class="modal-overlay" id="modalCadastroFornecedor">
+      <div class="modal">
+        <h3>Novo Fornecedor</h3>
+        <div class="form-group">
+          <label for="novoFornecedorCnpj" class="field__label">CNPJ *</label>
+          <input type="text" id="novoFornecedorCnpj" class="search-input" placeholder="00.000.000/0000-00"/>
+          <span class="field__error-msg">Informe o CNPJ.</span>
+        </div>
+        <div class="form-group">
+          <label for="novoFornecedorRazaoSocial" class="field__label">Razão Social *</label>
+          <input type="text" id="novoFornecedorRazaoSocial" class="search-input" placeholder="Digite a razão social..."/>
+          <span class="field__error-msg">Informe a razão social.</span>
+        </div>
+        <div class="form-group">
+          <label for="novoFornecedorNomeFantasia" class="field__label">Nome Fantasia *</label>
+          <input type="text" id="novoFornecedorNomeFantasia" class="search-input" placeholder="Digite o nome fantasia..."/>
+          <span class="field__error-msg">Informe o nome fantasia.</span>
+        </div>
+        <div class="form-group">
+          <label for="novoFornecedorCidade" class="field__label">Cidade *</label>
+          <input type="text" id="novoFornecedorCidade" class="search-input" placeholder="Digite a cidade..."/>
+          <span class="field__error-msg">Informe a cidade.</span>
+        </div>
+        <div class="form-group">
+          <label for="novoFornecedorEmail" class="field__label">Email *</label>
+          <input type="text" id="novoFornecedorEmail" class="search-input" placeholder="Digite o email..."/>
+          <span class="field__error-msg">Informe o email.</span>
+        </div>
+        <div class="form-group">
+          <label for="novoFornecedorTelefoneFixo" class="field__label">Telefone Fixo *</label>
+          <input type="text" id="novoFornecedorTelefoneFixo" class="search-input" placeholder="(00) 0000-0000"/>
+          <span class="field__error-msg">Informe o telefone fixo.</span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModalCadastroFornecedor()">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="salvarNovoFornecedorRapido()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE CADASTRO DE LOCALIZAÇÃO -->
+    <div class="modal-overlay" id="modalCadastroLocalizacao">
+      <div class="modal">
+        <h3>Nova Localização</h3>
+        <div class="form-group">
+          <label for="novaLocalizacaoNome" class="field__label">Nome da Localização *</label>
+          <input type="text" id="novaLocalizacaoNome" class="search-input" placeholder="Digite o nome da localização..."/>
+          <span class="field__error-msg">Informe o nome da localização.</span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModalCadastroLocalizacao()">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="salvarNovaLocalizacao()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL DE EXCLUSÃO -->
     <div class="modal-overlay" id="modalExclusao">
       <div class="modal">
