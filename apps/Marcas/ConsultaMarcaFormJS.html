@@ -1,4 +1,4 @@
-<script>
+<script> // ConsultaMarcaFormJS
 
   async function renderMarcasView() {
 
@@ -32,7 +32,7 @@
     const opcoesMarca = [...new Set(marcas.map(m => m.marca).filter(Boolean))];
     initSearchMarcas('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca);
 
-    renderTabela(listaFiltrada);
+    renderTabelaMarca(listaFiltrada);
   }
 
   // ===== COMPONENTE DE BUSCA COM DROPDOWN COMPLETO AO DAR FOCO =====
@@ -100,7 +100,7 @@
     });
 
     listaFiltrada = aplicarOrdenacao(listaFiltrada);
-    renderTabela(listaFiltrada);
+    renderTabelaMarca(listaFiltrada);
   }
 
   function limparFiltrosMarca() {
@@ -119,14 +119,14 @@
   // em si são carregados por renderMarcasView() quando a página fica ativa.
   document.addEventListener('DOMContentLoaded', () => {
     // Eventos de clique fora para fechar os modais
-    ['modalExclusao', 'modalEdicao', 'modalCadastro'].forEach(idModal => {
+    ['modalExclusao', 'modalEdicaoMarca', 'modalCadastroMarca'].forEach(idModal => {
       const elModal = document.getElementById(idModal);
       if (elModal) {
         elModal.addEventListener('click', (e) => {
           if (e.target.classList.contains('modal-overlay')) {
             fecharModalExclusao();
             fecharModalEdicao();
-            fecharModalCadastro();
+            fecharModal('modalCadastroMarca');
           }
         });
       }
@@ -136,19 +136,40 @@
       if (e.key === 'Escape') {
         fecharModalExclusao();
         fecharModalEdicao();
-        fecharModalCadastro();
+        fecharModal('modalCadastroMarca');
       }
     });
   });
 
+  // ==== MODAL DE CADASTRO DE MARCA ====
+  // origem: 'marcas' (tela de Marcas) ou 'pecas' (botão + no Cadastro de Peças) --
+  // define o que atualizar depois de salvar com sucesso.
+  let origemModalCadastroMarca = 'marcas';
+
+  function abrirModalCadastroMarca(origem) {
+    origemModalCadastroMarca = origem || 'marcas';
+
+    const input = document.getElementById('novaMarcaNome');
+    if (input) {
+      input.value = '';
+      input.classList.remove('is-invalid');
+    }
+
+    const modal = document.getElementById('modalCadastroMarca');
+    if (modal) {
+      modal.classList.add('aberto');
+      setTimeout(() => input && input.focus(), 100);
+    }
+  }
+
   // === MODAL DE EDIÇÃO === 
-  function abrirModalEdicao(id) {
+  function abrirModalEdicaoMarca(id) {
     const marcaEncontrada = marcas ? marcas.find(m => String(m.id) === String(id)) : null;
 
     document.getElementById('editMarcaId').value = id;
     document.getElementById('editMarcaNome').value = marcaEncontrada ? marcaEncontrada.marca : '';
 
-    const modal = document.getElementById('modalEdicao');
+    const modal = document.getElementById('modalEdicaoMarca');
     if (modal) modal.classList.add('aberto');
   }
 
@@ -156,7 +177,7 @@
     document.getElementById('editMarcaId').value = '';
     document.getElementById('editMarcaNome').value = '';
 
-    const modal = document.getElementById('modalEdicao');
+    const modal = document.getElementById('modalEdicaoMarca');
     if (modal) modal.classList.remove('aberto');
   }
 
@@ -185,6 +206,7 @@
       .editarMarca(id, novoNome.trim());
   }
 
+  // ==== MODAL DE EXCLUSÃO DE MARCA ====
   function executarExclusaoMarca() {
     if (!idExclusao) {
       alert("Nenhum registro selecionado.");
@@ -207,27 +229,6 @@
       .desativarMarca(idExclusao);
   }
 
-  // ==== MODAL DE CADASTRO DE MARCA ====
-  // origem: 'marcas' (tela de Marcas) ou 'pecas' (botão + no Cadastro de Peças) --
-  // define o que atualizar depois de salvar com sucesso.
-  let origemModalCadastroMarca = 'marcas';
-
-  function abrirModalCadastro(origem) {
-    origemModalCadastroMarca = origem || 'marcas';
-
-    const input = document.getElementById('novaMarcaNome');
-    if (input) {
-      input.value = '';
-      input.classList.remove('is-invalid');
-    }
-
-    const modal = document.getElementById('modalCadastro');
-    if (modal) {
-      modal.classList.add('aberto');
-      setTimeout(() => input && input.focus(), 100);
-    }
-  }
-
   function salvarNovaMarca() {
     const input = document.getElementById('novaMarcaNome');
     const nomeMarca = input ? input.value.trim() : '';
@@ -245,7 +246,7 @@
     google.script.run
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso) {
-          fecharModalCadastro();
+          fecharModal('modalCadastroMarca');
           if (origemModalCadastroMarca === 'pecas' && typeof atualizarMarcaSelectPecas === 'function') {
             atualizarMarcaSelectPecas(nomeMarca);
           } else {
@@ -280,5 +281,47 @@
       if (e.key === 'Escape') fecharModalExclusao();
     });
   };
+
+  function renderTabelaMarca(lista) {
+
+    const tbody = document.getElementById('tabelaBodyMarca');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    if (!lista || lista.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="2">Nenhum registro encontrado.</td></tr>';
+      return;
+    }
+
+    lista.forEach(m => {
+      const tr = document.createElement('tr');
+
+      if (m.desativada) {
+        tr.classList.add('linha-desativada');
+      }
+
+      const btnEditar = m.desativada 
+        ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
+        : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="abrirModalEdicaoMarca('${m.id}')">✏️</button>`;
+
+      const btnExcluir = m.desativada 
+        ? '<button class="btn-acao btn-excluir-linha" title="Desativar" disabled style="opacity:0.3; cursor:not-allowed;">🗑️</button>'
+        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="abrirModalExclusao('marcas', '${m.id}')">🗑️</button>`;
+
+      tr.innerHTML = `
+        <td>
+          ${escapeHtml(m.marca)}
+          ${m.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}
+        </td>
+        <td>
+          ${btnEditar}
+          ${btnExcluir}
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  }
 
 </script>

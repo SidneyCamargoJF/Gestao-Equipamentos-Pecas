@@ -1,4 +1,4 @@
-<script>
+<script> // CadastroContratosFormJS.html
 
   function renderContratosForm() {
     const tbody = document.getElementById('bodyPecasView');
@@ -32,111 +32,6 @@ let servicoSelecionado = null;
 let produtoSelecionado = null;
 let checklistItemSelecionado = null;
 
-// 
-// SEARCH (com mínimo de 2 caracteres)
-// 
-function initSearch(inputId, dropdownId, wrapperId, opcoes) {
-  const input = document.getElementById(inputId);
-  const dropdown = document.getElementById(dropdownId);
-  const wrapper = document.getElementById(wrapperId);
-
-  function renderLista(filtro) {
-    const f = (filtro || '').toLowerCase();
-    dropdown.innerHTML = '';
-    if (f.length < 2) {
-      dropdown.innerHTML = '<div class="search-no-result">Digite pelo menos 2 caracteres...</div>';
-      return;
-    }
-    const itens = opcoes.filter(o => o.toLowerCase().includes(f));
-    if (itens.length === 0) {
-      dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
-    } else {
-      itens.forEach(o => {
-        const div = document.createElement('div');
-        div.className = 'search-option';
-        div.textContent = o;
-        div.addEventListener('click', () => {
-          input.value = o;
-          dropdown.classList.remove('visible');
-        });
-        dropdown.appendChild(div);
-      });
-    }
-  }
-
-  input.addEventListener('focus', () => {
-    if (input.value.trim().length >= 2) {
-      renderLista(input.value);
-      dropdown.classList.add('visible');
-    }
-  });
-
-  input.addEventListener('input', () => {
-    if (input.value.trim().length >= 2) {
-      renderLista(input.value);
-      if (!dropdown.classList.contains('visible')) dropdown.classList.add('visible');
-    } else {
-      dropdown.classList.remove('visible');
-    }
-  });
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') dropdown.classList.remove('visible');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
-  });
-}
-
-// 
-// ABAS
-// 
-function initTabs() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      this.classList.add('active');
-      const tabId = 'tab-' + this.dataset.tab;
-      const panel = document.getElementById(tabId);
-      if (panel) panel.classList.add('active');
-    });
-  });
-}
-
-// 
-// MÁSCARA DE TELEFONE
-// 
-function mascaraTelefone(input) {
-  input.addEventListener('input', function() {
-    let valor = this.value.replace(/\D/g, '');
-    if (valor.length > 11) valor = valor.slice(0, 11);
-
-    if (valor.length <= 10) {
-      if (valor.length > 6) {
-        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 6) + '-' + valor.slice(6);
-      } else if (valor.length > 2) {
-        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
-      } else if (valor.length > 0) {
-        this.value = '(' + valor;
-      } else {
-        this.value = '';
-      }
-    } else {
-      if (valor.length > 7) {
-        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 7) + '-' + valor.slice(7);
-      } else if (valor.length > 2) {
-        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
-      } else if (valor.length > 0) {
-        this.value = '(' + valor;
-      } else {
-        this.value = '';
-      }
-    }
-  });
-}
 
 // 
 // BUSCA E VINCULAÇÃO DE EQUIPAMENTOS (BASE → CONTRATO)

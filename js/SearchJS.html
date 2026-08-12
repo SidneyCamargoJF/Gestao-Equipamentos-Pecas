@@ -96,46 +96,4 @@
     return arr;
   }
 
-
-    function renderTabela(lista) {
-    const tbody = document.getElementById('tabelaBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    if (!lista || lista.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="2">Nenhuma registro encontrado.</td></tr>';
-      return;
-    }
-
-    lista.forEach(m => {
-      const tr = document.createElement('tr');
-
-      if (m.desativada) {
-        tr.classList.add('linha-desativada');
-      }
-
-      const btnEditar = m.desativada 
-        ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
-        : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="abrirModalEdicao('${m.id}')">✏️</button>`;
-
-      const btnExcluir = m.desativada 
-        ? '<button class="btn-acao btn-excluir-linha" title="Desativar" disabled style="opacity:0.3; cursor:not-allowed;">🗑️</button>'
-        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="abrirModalExclusao('marcas', '${m.id}')">🗑️</button>`;
-
-      tr.innerHTML = `
-        <td>
-          ${escapeHtml(m.marca)}
-          ${m.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}
-        </td>
-        <td>
-          ${btnEditar}
-          ${btnExcluir}
-        </td>
-      `;
-
-      tbody.appendChild(tr);
-    });
-  }
-
 </script>
