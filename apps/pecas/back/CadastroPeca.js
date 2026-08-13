@@ -51,6 +51,47 @@ function salvarPeca(dadosPeca) {
       return { sucesso: false, mensagem: "O campo 'Nome da Peça' é obrigatório." };
     }
 
+    // ==== MODO EDIÇÃO: atualiza a linha existente em vez de criar uma nova ====
+    if (dadosPeca.id) {
+      const idBuscado = Number(dadosPeca.id);
+      const ultimaLinhaExistente = abaRegistroPecas.getLastRow();
+
+      if (ultimaLinhaExistente >= firstLineParts) {
+        const numLinhas = ultimaLinhaExistente - firstLineParts + 1;
+        const idsExistentes = abaRegistroPecas.getRange(firstLineParts, 1, numLinhas, 1).getValues();
+
+        for (let i = 0; i < idsExistentes.length; i++) {
+          if (Number(idsExistentes[i][0]) === idBuscado) {
+            const linhaReal = i + firstLineParts;
+
+            const linhaAtualizada = [
+              idBuscado,
+              dadosPeca.nome,
+              dadosPeca.marca,
+              dadosPeca.modelo,
+              dadosPeca.capacidade,
+              dadosPeca.numero_serie,
+              dadosPeca.local,
+              dadosPeca.fornecedor,
+              dadosPeca.notaFiscal,
+              dadosPeca.dataNotaFiscal,
+              dadosPeca.garantia,
+              dadosPeca.dtGarantia,
+              dadosPeca.modalidade,
+              dadosPeca.valor,
+              dadosPeca.seiNum
+            ];
+
+            abaRegistroPecas.getRange(linhaReal, 1, 1, linhaAtualizada.length).setValues([linhaAtualizada]);
+            return { sucesso: true, mensagem: "Peça atualizada com sucesso!", id: idBuscado };
+          }
+        }
+      }
+
+      return { sucesso: false, mensagem: "Peça não encontrada para edição (ID " + idBuscado + ")." };
+    }
+
+    // ==== MODO CRIAÇÃO ====
     const ultimaLinha = abaRegistroPecas.getLastRow();
     let novoId = 1;
 
@@ -88,6 +129,74 @@ function salvarPeca(dadosPeca) {
     Logger.log("Erro ao salvar peça: " + e.message);
     return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
   }
+}
+
+/**
+ * Busca uma peça pelo ID e devolve um objeto com os mesmos nomes de campo
+ * usados no formulário de Cadastro de Peças, pra preencher a edição.
+ * Retorna null se o ID não for encontrado.
+ */
+function buscarPecaPorId(id) {
+  try {
+    const idBuscado = Number(id);
+    if (!idBuscado) return null;
+
+    const dados = ReadParts();
+    if (!dados) return null;
+
+    for (let i = 0; i < dados.length; i++) {
+      if (Number(dados[i][partsIdCol]) === idBuscado) {
+        const linha = dados[i];
+        return {
+          id: idBuscado,
+          nome: String(linha[partsNameCol] || ''),
+          marca: String(linha[partsBrandCol] || ''),
+          modelo: String(linha[partsModelCol] || ''),
+          capacidade: String(linha[partsCapacityCol] || ''),
+          numero_serie: String(linha[partsNSCol] || ''),
+          local: String(linha[partsLocalCol] || ''),
+          fornecedor: String(linha[partsSuplierCol] || ''),
+          notaFiscal: String(linha[partsNumNFCol] || ''),
+          dataNotaFiscal: converterParaInputDate(linha[partsDtNFCol]),
+          garantia: String(linha[partsGarantiaCol] || ''),
+          dtGarantia: converterParaInputDate(linha[partsDtGarantiaCol]),
+          modalidade: String(linha[partsModalidadeCol] || ''),
+          valor: linha[partsValueCol],
+          seiNum: String(linha[partsSEINumCol] || '')
+        };
+      }
+    }
+
+    return null;
+  } catch (e) {
+    Logger.log("Erro ao buscar peça por ID: " + e.message);
+    return null;
+  }
+}
+
+/**
+ * Converte uma célula (Date, "yyyy-MM-dd" ou "dd/MM/yyyy") para o formato
+ * "yyyy-MM-dd" exigido por <input type="date">. Devolve "" se não der pra
+ * reconhecer o valor.
+ */
+function converterParaInputDate(valorCelula) {
+  if (!valorCelula) return '';
+
+  if (valorCelula instanceof Date) {
+    return Utilities.formatDate(valorCelula, "GMT-3", "yyyy-MM-dd");
+  }
+
+  const texto = String(valorCelula).trim();
+  if (!texto) return '';
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
+    const partes = texto.split('/');
+    return partes[2] + '-' + partes[1] + '-' + partes[0];
+  }
+
+  return '';
 }
 
 // Funções para carregar as opções dos selects

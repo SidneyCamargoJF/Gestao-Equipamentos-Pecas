@@ -4,14 +4,7 @@
   <div class="page-header">
           <div class="actions-bar">
             <h1>🚚 Fornecedores</h1>
-          </div>
-          <div class="actions-bar">
-            <button type="button" class="btn-secondary" onclick="history.back()">Cancelar</button>
-            <button type="button" class="btn-danger" onclick="limparFornecedor()"> <!-- filtrar() -->
-              🧹Limpar
-            </button>
-            <button type="button" class="btn-success" onclick="salvarFornecedor()">💾 Salvar</button>
-          </div>   
+          </div>  
         </div>
 
   <div class="card">
@@ -194,27 +187,16 @@
                 <option value="TO">TO</option>
               </select>
             </div>
- 
           </div>
         </fieldset>
- 
         <!-- ============================================= -->
         <!-- BOTÕES DE AÇÃO                                -->
         <!-- ============================================= -->
-        <div class="form-actions">
-          <button type="button" class="btn-secondary" onclick="history.back()">Cancelar</button>
-          <button type="button" class="btn-danger" onclick="limparFornecedor()"> <!-- filtrar() -->
-              🧹Limpar
-            </button>
-          <button type="button" class="btn-success" onclick="salvarFornecedor()">
-            💾
-            Salvar 
-          </button>
-        </div>
- 
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="trocarPagina('fornecedor-view')">Cancelar</button>
+        <button type="button" class="btn btn-danger" onclick="limparFornecedor()">Limpar</button>
+        <button type="button" class="btn-success" onclick="salvarFornecedor()">Salvar</button>
+      </div>
       </form>
- 
-
     </div>
-    
   </section>

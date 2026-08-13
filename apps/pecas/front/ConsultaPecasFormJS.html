@@ -191,13 +191,20 @@
         const garantia = document.getElementById('filtro-garantia')?.value || '';
 
         const criterios = { nome, marca, localizacao, fornecedor, garantia };
+        console.log('📤 [consultarPecas] Critérios enviados:', criterios);
 
         google.script.run
           .withSuccessHandler(ReturnPecas)
+          .withFailureHandler((err) => {
+            console.error('❌ [consultarPecas] Erro ao consultar peças no servidor:', err);
+            alert('Erro ao consultar peças: ' + (err.message || err));
+          })
           .FiltrarPecas(criterios);
       }
 
       function ReturnPecas(objPecas) {
+        console.log('📥 [ReturnPecas] Resposta bruta do servidor:', objPecas);
+
         if (objPecas === "NoData" || !Array.isArray(objPecas)) {
           pecas = [];
           renderTabela([]);
@@ -277,11 +284,8 @@
       }
 
       function editarPeca(id) {
-        if (typeof carregarDadosPecaParaEdicao === 'function') {
-          carregarDadosPecaParaEdicao(id);
-        }
         if (typeof trocarPagina === 'function') {
-          trocarPagina('pecas-form');
+          trocarPagina('pecas-form', id);
         }
       }
 

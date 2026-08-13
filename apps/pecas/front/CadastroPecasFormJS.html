@@ -248,10 +248,62 @@
       console.error("❌ [renderCadastroPecas] Erro fatal durante a renderização:", err);
     }
 
-    if (!id) {
+    if (id) {
+      await preencherFormularioParaEdicao(id);
+    } else {
       const nomeInput = document.getElementById('nomePeca');
       if (nomeInput) nomeInput.focus();
     }
+  }
+
+  // ===== 3.1 CARREGAR DADOS DE UMA PEÇA EXISTENTE PARA EDIÇÃO =====
+  function preencherFormularioParaEdicao(id) {
+    return new Promise((resolve) => {
+      google.script.run
+        .withSuccessHandler((peca) => {
+          if (!peca) {
+            alert('Não foi possível carregar os dados dessa peça para edição.');
+            resolve();
+            return;
+          }
+
+          const campos = {
+            nomePeca: peca.nome,
+            modelo: peca.modelo,
+            capacidade: peca.capacidade,
+            numeroSerie: peca.numero_serie,
+            notaFiscal: peca.notaFiscal,
+            dataNota: peca.dataNotaFiscal,
+            garantia: peca.garantia,
+            dtGarantia: peca.dtGarantia,
+            modalidade: peca.modalidade,
+            valor: peca.valor,
+            seiNum: peca.seiNum
+          };
+
+          Object.keys(campos).forEach(elId => {
+            const el = document.getElementById(elId);
+            if (el) el.value = campos[elId] ?? '';
+          });
+
+          const marcaSelect = document.getElementById('marcaSelect');
+          if (marcaSelect) marcaSelect.value = peca.marca || '';
+
+          const localSelect = document.getElementById('localSelect');
+          if (localSelect) localSelect.value = peca.local || '';
+
+          const fornecedorSelect = document.getElementById('fornecedorSelect');
+          if (fornecedorSelect) fornecedorSelect.value = peca.fornecedor || '';
+
+          resolve();
+        })
+        .withFailureHandler((err) => {
+          console.error('❌ [preencherFormularioParaEdicao] Erro ao carregar peça:', err);
+          alert('Erro ao carregar peça: ' + (err.message || err));
+          resolve();
+        })
+        .buscarPecaPorId(id);
+    });
   }
 
   // ===== 4. ENVIAR DADOS AO SERVIDOR =====
