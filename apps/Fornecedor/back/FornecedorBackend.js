@@ -108,6 +108,87 @@ function salvarFornecedorBackend(dados) {
 }
 
 /**
+ * Cadastro rápido de fornecedor com apenas os campos essenciais (CNPJ, Razão
+ * Social, Nome Fantasia, Cidade). Os demais campos ficam em branco e podem
+ * ser completados depois pela tela completa de Cadastro de Fornecedor.
+ * Chamado pelo botão "+" ao lado do campo Fornecedor no Cadastro de Peças.
+ */
+function cadastrarFornecedorRapido(dados) {
+  try {
+    const razaoSocial = ((dados && dados.razaoSocial) || '').toString().trim();
+    const nomeFantasia = ((dados && dados.nomeFantasia) || '').toString().trim();
+    const cnpj = ((dados && dados.cnpj) || '').toString().trim();
+    const cidade = ((dados && dados.cidade) || '').toString().trim();
+    const email = (dados && dados.email) ? dados.email.toString().trim() : '';
+    const telefoneFixo = (dados && dados.telefoneFixo) ? dados.telefoneFixo.toString().trim() : '';
+
+    if (!razaoSocial || !nomeFantasia || !cnpj || !cidade || !email || !telefoneFixo) {
+      return { sucesso: false, mensagem: 'Preencha todos os campos obrigatórios.' };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaTabelaFornecedor = ss.getSheetByName('tbl_fornecedor');
+
+    if (!abaTabelaFornecedor) {
+      return { sucesso: false, mensagem: "Aba 'tbl_fornecedor' não foi encontrada na planilha." };
+    }
+
+    const dadosTabela = abaTabelaFornecedor.getDataRange().getValues();
+
+    for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
+      if (dadosTabela[i][3] && dadosTabela[i][3].toString().trim() === cnpj) {
+        return { sucesso: false, mensagem: 'Já existe um fornecedor cadastrado com este CNPJ.' };
+      }
+    }
+
+    const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+    const ultimaLinhaPlanilha = abaTabelaFornecedor.getLastRow();
+    const ultimaLinha = Math.max(ultimaLinhaPlanilha, PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1);
+
+    let novoId;
+    if (ultimaLinha < PRIMEIRA_LINHA_DADOS_FORNECEDOR) {
+      novoId = 1;
+    } else {
+      let idAtual = abaTabelaFornecedor.getRange(ultimaLinha, 1).getValue();
+      if (idAtual === "" || idAtual === "ID" || isNaN(Number(idAtual))) idAtual = 0;
+      novoId = Number(idAtual) + 1;
+    }
+
+    // [id, razaoSocial, nomeFantasia, cnpj, inscEstadual, inscMunicipal, email,
+    //  telefoneFixo, celular, whatsapp, cep, logradouro, numero, bairro,
+    //  cidade, estado, complemento, dataCadastro, dataAlteracao, status]
+    const novosDados = [
+      novoId,          
+      razaoSocial,     
+      nomeFantasia,    
+      cnpj,            
+      "",              
+      "",
+      email, 
+      telefoneFixo, 
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      cidade, 
+      "", 
+      "",
+      dataAtual, 
+      "",
+      "Ativo"
+    ];
+
+    abaTabelaFornecedor.getRange(ultimaLinha + 1, 1, 1, 20).setValues([novosDados]);
+    return { sucesso: true, mensagem: 'Fornecedor cadastrado com sucesso!', id: novoId };
+
+  } catch (e) {
+    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+  }
+}
+
+/**
  * Verifica se já existe um fornecedor cadastrado com o CNPJ informado.
  * Chamado quando o usuário sai do campo CNPJ (evento blur) no formulário.
  * Retorna { existe: boolean }

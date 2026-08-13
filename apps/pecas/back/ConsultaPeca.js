@@ -23,49 +23,54 @@ function FiltrarPecas(criterios) {
 
   let res = [];
 
-  // Pula o cabeçalho (linha 0) se a primeira célula contiver "id" ou palavra similar
   let inicio = (dados.length > 0 && String(dados[0][0]).toLowerCase().includes('id')) ? 1 : 0;
 
   for (let l = inicio; l < dados.length; l++) {
-    // Leitura segura com tratamento contra null/undefined
     let colNome        = String(dados[l][1] || '').trim().toLowerCase();
     let colMarca       = String(dados[l][2] || '').trim().toLowerCase();
     let colLocalizacao = String(dados[l][6] || '').trim().toLowerCase();
     let colFornecedor  = String(dados[l][7] || '').trim().toLowerCase();
-    let colGarantia    = String(dados[l][11] || '').trim().toLowerCase();
 
-    // Comparações com operador lógico ||
+
+    let dtGarantiaRaw = dados[l][partsDtGarantiaCol];
+    let dtGarantiaData = dtGarantiaRaw instanceof Date
+      ? dtGarantiaRaw
+      : (dtGarantiaRaw ? stringToDate(String(dtGarantiaRaw)) : null);
+    let dtGarantiaValida = dtGarantiaData && !isNaN(dtGarantiaData);
+
+    let diasGarantia = (typeof calculaDias === 'function' && dtGarantiaValida)
+      ? calculaDias(dtGarantiaData, new Date())
+      : 0;
+
+    let garantiaStatus = (typeof statusGarantia === 'function') ? statusGarantia(diasGarantia) : '';
+    let colGarantia = String(garantiaStatus || '').trim().toLowerCase();
+
     let cNome        = (cNomeFiltro === ""        || colNome.includes(cNomeFiltro));
     let cMarca       = (cMarcaFiltro === ""       || colMarca.includes(cMarcaFiltro));
     let cLocalizacao = (cLocalizacaoFiltro === "" || colLocalizacao.includes(cLocalizacaoFiltro));
     let cFornecedor  = (cFornecedorFiltro === ""  || colFornecedor.includes(cFornecedorFiltro));
-    let cGarantia    = (cGarantiaFiltro === ""    || colGarantia.includes(cGarantiaFiltro));
+    let cGarantia    = (cGarantiaFiltro === ""    || colGarantia === cGarantiaFiltro);
 
     if (cNome && cMarca && cLocalizacao && cFornecedor && cGarantia) {
-      // A célula pode vir como Date (formatação de data na planilha) ou como texto (ex: input HTML) --
-      // calculaDias() exige um Date de verdade, por isso normalizamos antes de usar.
-      let dtGarantiaRaw = dados[l][partsDtGarantiaCol];
-      let dtGarantiaData = dtGarantiaRaw instanceof Date
-        ? dtGarantiaRaw
-        : (dtGarantiaRaw ? stringToDate(String(dtGarantiaRaw)) : null);
-      let dtGarantiaValida = dtGarantiaData && !isNaN(dtGarantiaData);
-
-      let diasGarantia = (typeof calculaDias === 'function' && dtGarantiaValida)
-        ? calculaDias(dtGarantiaData, new Date())
-        : 0;
+      let dtGarantiaTexto = '';
+      if (dtGarantiaValida && typeof dateToString === 'function') {
+        dtGarantiaTexto = dateToString(dtGarantiaData);
+      } else if (dtGarantiaRaw && !(dtGarantiaRaw instanceof Date)) {
+        dtGarantiaTexto = String(dtGarantiaRaw);
+      }
 
       let objRes = {
         id: dados[l][partsIdCol],
-        nome: dados[l][partsNameCol],
-        marca: dados[l][partsBrandCol],
-        modelo: dados[l][partsModelCol],
-        fornecedor: dados[l][partsSuplierCol],
-        localizacao: dados[l][partsLocalCol],
-        garantia: (typeof statusGarantia === 'function') ? statusGarantia(diasGarantia) : colGarantia,
-        dt_garantia: (typeof dateToString === 'function' && dtGarantiaValida) ? dateToString(dtGarantiaData) : dtGarantiaRaw,
+        nome: String(dados[l][partsNameCol] || ''),
+        marca: String(dados[l][partsBrandCol] || ''),
+        modelo: String(dados[l][partsModelCol] || ''),
+        fornecedor: String(dados[l][partsSuplierCol] || ''),
+        localizacao: String(dados[l][partsLocalCol] || ''),
+        garantia: garantiaStatus,
+        dt_garantia: dtGarantiaTexto,
         dias_garantia: diasGarantia,
         valor: dados[l][partsValueCol],
-        sei_num: dados[l][partsSEINumCol]
+        sei_num: String(dados[l][partsSEINumCol] || '')
       };
 
       res.push(objRes);

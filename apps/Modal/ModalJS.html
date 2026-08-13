@@ -24,8 +24,13 @@
     */
   }
 
-  function fecharModalCadastro(modalCadastro) {
-    const modal = document.getElementById(modalCadastro);
+  function fecharModalCadastroFornecedor() {
+    const modal = document.getElementById('modalCadastroFornecedor');
+    if (modal) modal.classList.remove('aberto');
+  }
+
+  function fecharModalCadastroLocalizacao() {
+    const modal = document.getElementById('modalCadastroLocalizacao');
     if (modal) modal.classList.remove('aberto');
   }
 
@@ -36,5 +41,24 @@
   function fecharModal(id) {
     document.getElementById(id).classList.remove('aberto');
   }
+
+  // Fecha os modais de cadastro rápido ao clicar fora ou apertar Escape.
+  document.addEventListener('DOMContentLoaded', () => {
+    ['modalCadastroFornecedor', 'modalCadastroLocalizacao'].forEach(idModal => {
+      const elModal = document.getElementById(idModal);
+      if (elModal) {
+        elModal.addEventListener('click', (e) => {
+          if (e.target.classList.contains('modal-overlay')) elModal.classList.remove('aberto');
+        });
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        fecharModalCadastroFornecedor();
+        fecharModalCadastroLocalizacao();
+      }
+    });
+  });
 
 </script>
