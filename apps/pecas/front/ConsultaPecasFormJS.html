@@ -297,7 +297,7 @@
         if (modal) modal.classList.remove('aberto');
       }
 
-      function executarExclusao() {
+      function executarExclusaoPecas() {
         if (idExclusao !== null) {
           const idx = pecas.findIndex(p => String(p.id) === String(idExclusao));
           if (idx >= 0) pecas.splice(idx, 1);

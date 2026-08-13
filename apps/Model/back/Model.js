@@ -69,3 +69,11 @@ function ReadSheetColumns(sheetName, startLine, numColumns, context, fixed = fal
   }
 }
  
+function ExcluirRegistro( table, id) {
+
+  if (table === 'tbl_marca') {
+    return (desativarMarca(idMarcaInput))
+
+  }
+
+}

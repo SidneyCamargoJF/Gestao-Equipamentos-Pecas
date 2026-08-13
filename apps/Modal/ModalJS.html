@@ -1,25 +1,36 @@
 <script>
 
-  function abrirModalExclusao(table, id) {
-    idExclusao = id;
-    table_name = table
-    
-    const modal = document.getElementById('modalExclusao');
-    if (modal) modal.classList.add('aberto');
+  function abrirModalExclusao() {
+
+
+          console.log("abrirModalExclusao")
+
+    exibirModal('modalExclusao')
+
+    // const modal = document.getElementById('modalExclusao');
+    // if (modal) modal.classList.add('aberto');
   }
 
+
   function fecharModalExclusao(res) {
-    if (res === "Y") {
-        executarExclusao(table_name, id)
-    } 
+
     idExclusao = null;
+
+    fecharModal('modalExclusao')
+
+    /*
     const modal = document.getElementById('modalExclusao');
     if (modal) modal.classList.remove('aberto');
+    */
   }
 
   function fecharModalCadastro(modalCadastro) {
     const modal = document.getElementById(modalCadastro);
     if (modal) modal.classList.remove('aberto');
+  }
+
+  function exibirModal(id) {
+    document.getElementById(id).classList.add('aberto');
   }
 
   function fecharModal(id) {

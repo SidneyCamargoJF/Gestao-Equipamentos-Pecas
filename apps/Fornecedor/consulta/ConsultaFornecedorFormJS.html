@@ -177,7 +177,7 @@
     document.getElementById('modalExclusao').classList.remove('aberto');
   }
 
-  function executarExclusao() {
+  function executarExclusaoFornecedor() {
     if (idExclusao !== null) {
       const idx = fornecedores.findIndex(f => f.id === idExclusao);
       if (idx >= 0) fornecedores.splice(idx, 1);
