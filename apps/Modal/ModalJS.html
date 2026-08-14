@@ -1,34 +1,10 @@
 <script>
 
-  // origem identifica qual tela abriu o modal de exclusão ('marcas', 'pecas', ...)
-  // para saber qual função de exclusão específica chamar ao confirmar.
-  let origemModalExclusao = null;
-
-  function abrirModalExclusao(origem, id) {
+  // Modal de exclusão genérico -- hoje usado só pela tela de Peças (Marca tem seu
+  // próprio modal/fluxo de exclusão dedicado, ver ConsultaMarcaFormJS.html).
+  function abrirModalExclusao(id) {
     idExclusao = id;
-    origemModalExclusao = origem;
-    table_name = origem;
-
-    const modal = document.getElementById('modalExclusao');
-    if (modal) modal.classList.add('aberto');
-  }
-
-  function fecharModalExclusao(res) {
-    if (res === "Y") {
-      if (origemModalExclusao === 'marcas' && typeof executarExclusaoMarca === 'function') {
-        executarExclusaoMarca();
-        return;
-      }
-      if (origemModalExclusao === 'pecas' && typeof executarExclusaoPeca === 'function') {
-        executarExclusaoPeca();
-        return;
-      }
-    }
-
-    idExclusao = null;
-    origemModalExclusao = null;
-    const modal = document.getElementById('modalExclusao');
-    if (modal) modal.classList.remove('aberto');
+    exibirModal('modalExclusao');
   }
 
   function fecharModalCadastroFornecedor() {
@@ -39,6 +15,10 @@
   function fecharModalCadastroLocalizacao() {
     const modal = document.getElementById('modalCadastroLocalizacao');
     if (modal) modal.classList.remove('aberto');
+  }
+
+  function exibirModal(id) {
+    document.getElementById(id).classList.add('aberto');
   }
 
   function fecharModal(id) {

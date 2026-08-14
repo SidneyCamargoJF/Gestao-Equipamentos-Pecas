@@ -9,7 +9,8 @@
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroMarca')">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="salvarNovaMarca()">Salvar</button>
+          <button type="button" class="btn-primary" onclick="salvarNovaMarca(false)">Salvar</button>
+          <button type="button" class="btn-primary" onclick="salvarNovaMarca(true)">Salvar e Sair</button>
         </div>
       </div>
     </div> 
@@ -30,6 +31,18 @@
         <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick="fecharModal('modalEdicaoMarca')" style="width:auto;">Cancelar</button>
           <button type="button" class="btn-primary" onclick="executarEdicao()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE EXCLUSÃO -->
+    <div class="modal-overlay" id="modalExclusaoMarca">
+      <div class="modal">
+        <h3>Confirmar Exclusão</h3>
+        <p>Tem certeza que deseja fazer a exclusão? Esta ação não pode ser desfeita.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="fecharModal('modalExclusaoMarca')" style="width:auto;">Cancelar</button>
+          <button class="btn-danger" onclick="executarExclusaoMarca()">Sim, Excluir</button>
         </div>
       </div>
     </div>

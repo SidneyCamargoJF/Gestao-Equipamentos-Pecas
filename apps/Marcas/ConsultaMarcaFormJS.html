@@ -93,7 +93,7 @@
   function filtrarMarca() {
     const marcaInput = document.getElementById('marcaSearch');
     const marca = marcaInput ? marcaInput.value.trim().toLowerCase() : '';
-    
+
     listaFiltrada = marcas.filter(m => {
       if (marca && !(m.marca || '').toLowerCase().includes(marca)) return false;
       return true;
@@ -106,7 +106,7 @@
   function limparFiltrosMarca() {
     const inputMarca = document.getElementById('marcaSearch');
     if (inputMarca) inputMarca.value = '';
-    
+
     sortState = { coluna: null, direcao: 'asc' };
     atualizarIndicadores();
     consultarMarcas();
@@ -115,45 +115,31 @@
   }
 
   // ===== INICIALIZAÇÃO SEGURA =====
-  // Só cuida dos modais (compartilhados por toda a SPA); os dados da tela de Marcas
-  // em si são carregados por renderMarcasView() quando a página fica ativa.
+  // Cuida só dos modais de Marca (clique fora / Escape); os dados da tela em si
+  // são carregados por renderMarcasView() quando a página fica ativa.
   document.addEventListener('DOMContentLoaded', () => {
-    // Eventos de clique fora para fechar os modais
-    ['modalExclusao', 'modalEdicaoMarca', 'modalCadastroMarca'].forEach(idModal => {
+    ['modalCadastroMarca', 'modalEdicaoMarca', 'modalExclusaoMarca'].forEach(idModal => {
       const elModal = document.getElementById(idModal);
       if (elModal) {
         elModal.addEventListener('click', (e) => {
-          if (e.target.classList.contains('modal-overlay')) {
-            fecharModalExclusao();
-            fecharModalEdicao();
-            fecharModal('modalCadastroMarca');
-          }
+          if (e.target.classList.contains('modal-overlay')) fecharModal(idModal);
         });
       }
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        fecharModalExclusao();
-        fecharModalEdicao();
         fecharModal('modalCadastroMarca');
+        fecharModal('modalEdicaoMarca');
+        fecharModal('modalExclusaoMarca');
       }
     });
   });
 
   // ==== MODAL DE CADASTRO DE MARCA ====
-  // origem: 'marcas' (tela de Marcas) ou 'pecas' (botão + no Cadastro de Peças) --
-  // define o que atualizar depois de salvar com sucesso.
-  let origemModalCadastroMarca = 'marcas';
-
-  function abrirModalCadastroMarca(origem) {
-    origemModalCadastroMarca = origem || 'marcas';
-
+  function abrirModalCadastroMarca() {
     const input = document.getElementById('novaMarcaNome');
-    if (input) {
-      input.value = '';
-      input.classList.remove('is-invalid');
-    }
+    if (input) input.value = '';
 
     const modal = document.getElementById('modalCadastroMarca');
     if (modal) {
@@ -162,7 +148,35 @@
     }
   }
 
-  // === MODAL DE EDIÇÃO === 
+  function salvarNovaMarca(sair) {
+    const input = document.getElementById('novaMarcaNome');
+    const nomeMarca = input ? input.value.trim() : '';
+
+    if (!nomeMarca) {
+      alert('Por favor, digite o nome da marca.');
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler((resposta) => {
+        if (resposta && resposta.sucesso) {
+          if (sair) {
+            document.getElementById('novaMarcaNome').value = ''
+            fecharModal('modalCadastroMarca');
+          }
+          consultarMarcas();
+        } else {
+          alert(resposta ? resposta.mensagem : 'Erro ao cadastrar marca.');
+        }
+      })
+      .withFailureHandler((err) => {
+        console.error('Erro ao cadastrar marca:', err);
+        alert('Ocorreu um erro no script: ' + (err.message || err));
+      })
+      .cadastrarMarca(nomeMarca);
+  }
+
+  // === MODAL DE EDIÇÃO ===
   function abrirModalEdicaoMarca(id) {
     const marcaEncontrada = marcas ? marcas.find(m => String(m.id) === String(id)) : null;
 
@@ -171,14 +185,6 @@
 
     const modal = document.getElementById('modalEdicaoMarca');
     if (modal) modal.classList.add('aberto');
-  }
-
-  function fecharModalEdicao() {
-    document.getElementById('editMarcaId').value = '';
-    document.getElementById('editMarcaNome').value = '';
-
-    const modal = document.getElementById('modalEdicaoMarca');
-    if (modal) modal.classList.remove('aberto');
   }
 
   function executarEdicao() {
@@ -193,7 +199,7 @@
     google.script.run
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso) {
-          fecharModalEdicao();
+          fecharModal('modalEdicaoMarca');
           consultarMarcas();
         } else {
           alert(resposta ? resposta.mensagem : "Erro ao atualizar a marca.");
@@ -207,79 +213,37 @@
   }
 
   // ==== MODAL DE EXCLUSÃO DE MARCA ====
-  function executarExclusaoMarca() {
-    if (!idExclusao) {
-      alert("Nenhum registro selecionado.");
+
+  function confirmaExclusaoMarca(id) {
+    if (!id) {
+      alert("Erro: Nenhum registro selecionado.");
       return;
     }
 
-    google.script.run
-      .withSuccessHandler((resposta) => {
-        if (resposta && resposta.sucesso === false) {
-          alert(resposta.mensagem);
-        } else {
-          fecharModalExclusao();
-          consultarMarcas();
-        }
-      })
-      .withFailureHandler((err) => {
-        console.error('Erro ao desativar marca:', err);
-        alert('Erro ao conectar com o servidor.');
-      })
-      .desativarMarca(idExclusao);
+    idExclusao = id
+
+    exibirModal('modalExclusaoMarca')
+
   }
 
-  function salvarNovaMarca() {
-    const input = document.getElementById('novaMarcaNome');
-    const nomeMarca = input ? input.value.trim() : '';
+  async function executarExclusaoMarca() {
 
-    if (!nomeMarca) {
-      if (input) {
-        input.classList.add('is-invalid');
-        input.focus();
-      }
-      return;
-    }
+    let res = await executarExclusao('tbl_marca', idExclusao)
 
-    if (input) input.classList.remove('is-invalid');
+    idExclusao = null;
 
-    google.script.run
-      .withSuccessHandler((resposta) => {
-        if (resposta && resposta.sucesso) {
-          fecharModal('modalCadastroMarca');
-          if (origemModalCadastroMarca === 'pecas' && typeof atualizarMarcaSelectPecas === 'function') {
-            atualizarMarcaSelectPecas(nomeMarca);
-          } else {
-            consultarMarcas();
-          }
-        } else {
-          alert(resposta ? resposta.mensagem : 'Erro ao cadastrar marca.');
-        }
-      })
-      .withFailureHandler((err) => {
-        console.error('Erro ao cadastrar marca:', err);
-        alert('Ocorreu um erro no script: ' + (err.message || err));
-      })
-      .cadastrarMarca(nomeMarca);
+    consultarMarcas()
+
+    fecharModal('modalExclusaoMarca')
+
+    return res
   }
+
 
   // ===== INICIALIZAÇÃO =====
 
-  // document.addEventListener('DOMContentLoaded', inicializarPagina)
-
   async function inicializarMarcas() {
-
-    document.getElementById('modalExclusao').addEventListener('click', (e) => {
-      if (e.target.classList.contains('modal-overlay')) fecharModalExclusao();
-    });
-
-    document.getElementById('novaMarcaNome').addEventListener('input', (e) => {
-      e.target.classList.remove('is-invalid');
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') fecharModalExclusao();
-    });
+    // (reservado para inicializações futuras específicas desta tela)
   };
 
   function renderTabelaMarca(lista) {
@@ -301,13 +265,13 @@
         tr.classList.add('linha-desativada');
       }
 
-      const btnEditar = m.desativada 
+      const btnEditar = m.desativada
         ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
         : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="abrirModalEdicaoMarca('${m.id}')">✏️</button>`;
 
-      const btnExcluir = m.desativada 
+      const btnExcluir = m.desativada
         ? '<button class="btn-acao btn-excluir-linha" title="Desativar" disabled style="opacity:0.3; cursor:not-allowed;">🗑️</button>'
-        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="abrirModalExclusao('marcas', '${m.id}')">🗑️</button>`;
+        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="confirmaExclusaoMarca('${m.id}')">🗑️</button>`;
 
       tr.innerHTML = `
         <td>

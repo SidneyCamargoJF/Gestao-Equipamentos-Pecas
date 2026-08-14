@@ -1,53 +1,35 @@
 <script>
   
-function executarExclusao(table, id) {
+  async function executarExclusao(table, id) {
     if (!id) {
       alert("Nenhum registro selecionado.");
-      return;
+      return false;
     }
 
-    google.script.run
-      .withSuccessHandler((resposta) => {
-        if (resposta && resposta.sucesso === false) {
-          alert(resposta.mensagem);
-        } else {
-          consultar();
-        }
-      })
-      .withFailureHandler((err) => {
-        console.error('Erro ao desativar marca:', err);
-        alert('Erro ao conectar com o servidor.');
-      })
-      .ExcluirRegistro(table, id);
-  }
-
-
-
-
-</script>
-<script>
-
-function executarExclusao(table, id) {
-    if (!id) {
-      alert("Nenhum registro selecionado.");
-      return;
+    if (!table) {
+      alert("Tabela não definida");
+      return false;
     }
 
-    google.script.run
-      .withSuccessHandler((resposta) => {
-        if (resposta && resposta.sucesso === false) {
-          alert(resposta.mensagem);
-        } else {
-          consultar();
-        }
-      })
-      .withFailureHandler((err) => {
-        console.error('Erro ao desativar marca:', err);
-        alert('Erro ao conectar com o servidor.');
-      })
-      .ExcluirRegistro(table, id);
+    // google.script.run não é uma Promise de verdade -- "await" nele sozinho não
+    // espera a resposta do servidor. runServerFunction() (HelperJS.html) resolve isso.
+    try {
+      const resposta = await runServerFunction('ExcluirRegistro', table, id);
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error('Erro ao desativar registro:', err);
+      alert('Erro ao conectar com o servidor.');
+      return false;
+    }
   }
 
+  function consultar(table) {
+    if (table === 'tbl_marca') consultarMarcas();
+  }
 
 
 </script>

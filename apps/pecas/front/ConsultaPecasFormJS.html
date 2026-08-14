@@ -44,6 +44,8 @@
       }
 
       // ===== COMPONENTE DE BUSCA COM DROPDOWN COMPLETO AO DAR FOCO =====
+      // Função exclusiva desta tela para não colidir com o "initSearch" de outras páginas
+      // (todo <script> do Apps Script cai no mesmo escopo global).
       function initSearchPecas(inputId, dropdownId, wrapperId, opcoes) {
         const input = document.getElementById(inputId);
         const dropdown = document.getElementById(dropdownId);
@@ -56,8 +58,8 @@
         function renderLista(filtro) {
           const f = (filtro || '').toLowerCase().trim();
 
-          const itens = (f === '') 
-            ? listaOpcoes 
+          const itens = (f === '')
+            ? listaOpcoes
             : listaOpcoes.filter(o => String(o).toLowerCase().includes(f));
 
           dropdown.innerHTML = '';
@@ -278,7 +280,7 @@
             <td>${escapeHtml(p.sei_num)}</td>
             <td>
               <button class="btn-acao btn-editar-linha" title="Editar" onclick="editarPeca('${p.id}')">✏️</button>
-              <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="abrirModalExclusao('pecas', '${p.id}')">🗑️</button>
+              <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="abrirModalExclusao('${p.id}')">🗑️</button>
             </td>
           `;
           tbody.appendChild(tr);
@@ -307,14 +309,14 @@
         }
       }
 
-      // abrir/fechar o modal de exclusão e o dispatcher (fecharModalExclusao) são
-      // compartilhados por todas as telas e vivem em apps/Modal/ModalJS.html.
+      // abrirModalExclusao/fecharModal (genéricos) vivem em apps/Modal/ModalJS.html.
       function executarExclusaoPeca() {
         if (idExclusao !== null) {
           const idx = pecas.findIndex(p => String(p.id) === String(idExclusao));
           if (idx >= 0) pecas.splice(idx, 1);
         }
-        fecharModalExclusao();
+        idExclusao = null;
+        fecharModal('modalExclusao');
         filtrar();
       }
 
@@ -343,12 +345,12 @@
         const modalExclusao = document.getElementById('modalExclusao');
         if (modalExclusao) {
           modalExclusao.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-overlay')) fecharModalExclusao();
+            if (e.target.classList.contains('modal-overlay')) fecharModal('modalExclusao');
           });
         }
 
         document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') fecharModalExclusao();
+          if (e.key === 'Escape') fecharModal('modalExclusao');
         });
       }
 </script>

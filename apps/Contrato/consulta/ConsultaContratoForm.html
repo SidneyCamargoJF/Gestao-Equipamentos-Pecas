@@ -333,7 +333,7 @@
       document.getElementById('modalExclusao').classList.remove('aberto');
     }
 
-    function executarExclusao() {
+    function executarExclusaoContrato() {
       if (idExclusao !== null) {
         const idx = contratos.findIndex(c => c.id === idExclusao);
         if (idx >= 0) contratos.splice(idx, 1);
