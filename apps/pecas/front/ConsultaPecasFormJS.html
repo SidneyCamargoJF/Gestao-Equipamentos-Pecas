@@ -193,13 +193,31 @@
         const criterios = { nome, marca, localizacao, fornecedor, garantia };
         console.log('📤 [consultarPecas] Critérios enviados:', criterios);
 
+        mostrarCarregandoPecas(true);
+
         google.script.run
-          .withSuccessHandler(ReturnPecas)
+          .withSuccessHandler((objPecas) => {
+            mostrarCarregandoPecas(false);
+            ReturnPecas(objPecas);
+          })
           .withFailureHandler((err) => {
+            mostrarCarregandoPecas(false);
             console.error('❌ [consultarPecas] Erro ao consultar peças no servidor:', err);
             alert('Erro ao consultar peças: ' + (err.message || err));
           })
           .FiltrarPecas(criterios);
+      }
+
+      function mostrarCarregandoPecas(carregando) {
+        const btn = document.getElementById('btnConsultarPecas');
+        if (btn) btn.disabled = carregando;
+
+        if (carregando) {
+          const tbody = document.getElementById('bodyPecasView');
+          if (tbody) {
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span>Buscando peças...</td></tr>';
+          }
+        }
       }
 
       function ReturnPecas(objPecas) {
