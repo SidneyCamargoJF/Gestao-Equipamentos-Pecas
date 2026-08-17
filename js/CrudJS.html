@@ -11,16 +11,21 @@
       return
     }
 
+    exibirModal('processando')
+
+
     await google.script.run
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso === false) {
           alert(resposta.mensagem);
         } 
+        fecharModal('processando')
         return true
       })
       .withFailureHandler((err) => {
         console.error('Erro ao desativar marca:', err);
         alert('Erro ao conectar com o servidor.');
+        fecharModal('processando')
         return false
       })
       .ExcluirRegistro(table, id);
