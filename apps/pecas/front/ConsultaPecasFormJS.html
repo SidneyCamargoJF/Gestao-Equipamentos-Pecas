@@ -1,6 +1,7 @@
 <script>
       // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
       async function renderPecas() {
+        console.log('renderPecas')
         await inicializarPecas();
         consultarPecas();
 
@@ -44,8 +45,6 @@
       }
 
       // ===== COMPONENTE DE BUSCA COM DROPDOWN COMPLETO AO DAR FOCO =====
-      // Função exclusiva desta tela para não colidir com o "initSearch" de outras páginas
-      // (todo <script> do Apps Script cai no mesmo escopo global).
       function initSearchPecas(inputId, dropdownId, wrapperId, opcoes) {
         const input = document.getElementById(inputId);
         const dropdown = document.getElementById(dropdownId);
@@ -322,6 +321,7 @@
 
       // ===== INICIALIZAÇÃO ASSÍNCRONA =====
       async function inicializarPecas() {
+        console.log('inicializa Peças')
         const [opcoesMarca, opcoesLocalizacao, opcoesFornecedor] = await Promise.all([
           loadBrandsPecasConsulta(),
           loadLocationsPecasConsulta(),
