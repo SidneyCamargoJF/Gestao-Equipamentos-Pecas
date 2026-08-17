@@ -1,8 +1,8 @@
 <!-- JAVASCRIPT ORIENTADO A OBJETOS -->
 <script>
-class MarcaController {
+class EquipmentController {
   constructor() {
-    this.marcas = [];
+    this.equipments = [];
     this.listaFiltrada = [];
     this.idExclusao = null;
     this.sortState = { coluna: null, direcao: 'asc' };
@@ -11,15 +11,15 @@ class MarcaController {
   // ===== INICIALIZAÇÃO =====
   init() {
     this.bindEvents();
-    this.consultarMarcas();
+    this.consultarEquipments();
   }
 
   bindEvents() {
-    const inputMarca = document.getElementById('marcaSearch');
-    if (inputMarca) inputMarca.focus();
+    const inputEquipment = document.getElementById('equipmentSearch');
+    if (inputEquipment) inputEquipment.focus();
 
     // Eventos de overlay e esc
-    const modais = ['modalExclusaoMarca', 'modalEdicaoMarca', 'modalCadastroMarca'];
+    const modais = ['modalExclusaoEquipment', 'modalEdicaoEquipment', 'modalCadastroEquipment'];
     modais.forEach(idModal => {
       const elModal = document.getElementById(idModal);
       if (elModal) {
@@ -40,65 +40,65 @@ class MarcaController {
 
   fecharTodosModais() {
     if (typeof fecharModal === 'function') {
-      fecharModal('modalCadastroMarca');
-      fecharModal('modalEdicaoMarca');
-      fecharModal('modalExclusaoMarca');
+      fecharModal('modalCadastroEquipment');
+      fecharModal('modalEdicaoEquipment');
+      fecharModal('modalExclusaoEquipment');
     }
   }
 
   // ===== CONSULTA E FILTROS =====
-  consultarMarcas() {
-    const marcaInput = document.getElementById('marcaSearch');
-    const marca = marcaInput ? marcaInput.value.trim().toLowerCase() : '';
-    const criterios = { marca };
+  consultarEquipments() {
+    const equipmentInput = document.getElementById('equipmentSearch');
+    const equipment = equipmentInput ? equipmentInput.value.trim().toLowerCase() : '';
+    const criterios = { equipment };
 
     google.script.run
-      .withSuccessHandler(objmarcas => this.retornoMarcas(objmarcas))
+      .withSuccessHandler(objEquipments => this.retornoEquipments(objEquipments))
       .withFailureHandler(err => console.error('Erro ao consultar: ', err))
-      .filtrarMarcas(criterios);
+      .filtrarEquipments(criterios);
   }
 
-  retornoMarcas(objmarcas) {
-    this.marcas = Array.isArray(objmarcas) ? objmarcas : [];
-    this.listaFiltrada = typeof aplicarOrdenacao === 'function' ? aplicarOrdenacao(this.marcas) : this.marcas;
+  retornoEquipments(objEquipments) {
+    this.Equipments = Array.isArray(objEquipments) ? objEquipments : [];
+    this.listaFiltrada = typeof aplicarOrdenacao === 'function' ? aplicarOrdenacao(this.Equipments) : this.Equipments;
 
-    const opcoesMarca = [...new Set(this.marcas.map(m => m.marca).filter(Boolean))];
+    const opcoesEquipment = [...new Set(this.Equipments.map(m => m.Equipment).filter(Boolean))];
     if (typeof initSearch === 'function') {
-      initSearch('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca);
+      initSearch('equipmentSearch', 'equipmentDropdown', 'equipmentWrapper', opcoesEquipment);
     }
 
-    this.renderTabelaMarca(this.listaFiltrada);
+    this.renderTabelaEquipment(this.listaFiltrada);
   }
 
-  filtrarMarca() {
-    const marcaInput = document.getElementById('marcaSearch');
-    const marca = marcaInput ? marcaInput.value.trim().toLowerCase() : '';
+  filtrarEquipment() {
+    const equipmentInput = document.getElementById('equipmentSearch');
+    const equipment = equipmentInput ? equipmentInput.value.trim().toLowerCase() : '';
 
-    this.listaFiltrada = this.marcas.filter(m => {
-      if (marca && !(m.marca || '').toLowerCase().includes(marca)) return false;
+    this.listaFiltrada = this.equipments.filter(m => {
+      if (equipment && !(m.equipment || '').toLowerCase().includes(equipment)) return false;
       return true;
     });
 
     if (typeof aplicarOrdenacao === 'function') {
       this.listaFiltrada = aplicarOrdenacao(this.listaFiltrada);
     }
-    this.renderTabelaMarca(this.listaFiltrada);
+    this.renderTabelaEquipment(this.listaFiltrada);
   }
 
-  limparFiltrosMarca() {
-    const inputMarca = document.getElementById('marcaSearch');
-    if (inputMarca) inputMarca.value = '';
+  limparFiltrosEquipment() {
+    const inputEquipment = document.getElementById('equipmentSearch');
+    if (inputEquipment) inputEquipment.value = '';
 
     this.sortState = { coluna: null, direcao: 'asc' };
     if (typeof atualizarIndicadores === 'function') atualizarIndicadores();
-    this.consultarMarcas();
+    this.consultarEquipments();
 
-    if (inputMarca) inputMarca.focus();
+    if (inputEquipment) inputEquipment.focus();
   }
 
   // ===== RENDERIZAÇÃO DE TABELA =====
-  renderTabelaMarca(lista) {
-    const tbody = document.getElementById('tabelaBodyMarca');
+  renderTabelaEquipment(lista) {
+    const tbody = document.getElementById('tabelaBodyEquipment');
     if (!tbody) return;
 
     tbody.innerHTML = '';
@@ -133,7 +133,7 @@ class MarcaController {
       }
 
       const tdConteudo = document.createElement('td');
-      const textEscaped = typeof escapeHtml === 'function' ? escapeHtml(m.marca) : m.marca;
+      const textEscaped = typeof escapeHtml === 'function' ? escapeHtml(m.equipment) : m.equipment;
       tdConteudo.innerHTML = `${textEscaped} ${m.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}`;
 
       const tdAcoes = document.createElement('td');
@@ -147,76 +147,76 @@ class MarcaController {
   }
 
   // ===== MODAL DE CADASTRO =====
-  abrirModalCadastroMarca() {
-    const input = document.getElementById('novaMarcaNome');
+  abrirModalCadastroEquipment() {
+    const input = document.getElementById('novaEquipmentNome');
     if (input) input.value = '';
 
-    const modal = document.getElementById('modalCadastroMarca');
+    const modal = document.getElementById('modalCadastroEquipment');
     if (modal) {
       modal.classList.add('aberto');
       setTimeout(() => input && input.focus(), 100);
     }
   }
 
-  salvarNovaMarca() {
-    const input = document.getElementById('novaMarcaNome');
-    const nomeMarca = input ? input.value.trim() : '';
+  salvarNovaEquipment() {
+    const input = document.getElementById('novaEquipmentNome');
+    const nomeEquipment = input ? input.value.trim() : '';
 
-    if (!nomeMarca) {
-      alert('Por favor, digite o nome da marca.');
+    if (!nomeEquipment) {
+      alert('Por favor, digite o nome do Equipamento.');
       return;
     }
 
     google.script.run
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso) {
-          this.consultarMarcas();
-          if (typeof fecharModal === 'function') fecharModal('modalCadastroMarca');
+          this.consultarEquipments();
+          if (typeof fecharModal === 'function') fecharModal('modalCadastroEquipment');
         } else {
-          alert(resposta ? resposta.mensagem : 'Erro ao cadastrar marca.');
+          alert(resposta ? resposta.mensagem : 'Erro ao cadastrar.');
         }
       })
       .withFailureHandler((err) => {
-        console.error('Erro ao cadastrar marca:', err);
+        console.error('Erro ao cadastrar:', err);
         alert('Ocorreu um erro no script: ' + (err.message || err));
       })
-      .cadastrarMarca(nomeMarca);
+      .cadastrarEquipment(nomeEquipment);
   }
 
   // ===== MODAL DE EDIÇÃO =====
   abrirModalEdicao(id) {
-    const marcaEncontrada = this.marcas.find(m => String(m.id) === String(id));
+    const equipmentEncontrada = this.equipments.find(m => String(m.id) === String(id));
 
-    document.getElementById('editMarcaId').value = id;
-    document.getElementById('editMarcaNome').value = marcaEncontrada ? marcaEncontrada.marca : '';
+    document.getElementById('editEquipmentId').value = id;
+    document.getElementById('editEquipmentNome').value = equipmentEncontrada ? equipmentEncontrada.equipment : '';
 
-    const modal = document.getElementById('modalEdicaoMarca');
+    const modal = document.getElementById('modalEdicaoEquipment');
     if (modal) modal.classList.add('aberto');
   }
 
   executarEdicao() {
-    const id = document.getElementById('editMarcaId').value;
-    const novoNome = document.getElementById('editMarcaNome').value;
+    const id = document.getElementById('editEquipmentId').value;
+    const novoNome = document.getElementById('editEquipmentNome').value;
 
     if (!novoNome || !novoNome.trim()) {
-      alert("Por favor, digite o nome da marca.");
+      alert("Por favor, digite o nome do equipamento.");
       return;
     }
 
     google.script.run
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso) {
-          if (typeof fecharModal === 'function') fecharModal('modalEdicaoMarca');
-          this.consultarMarcas();
+          if (typeof fecharModal === 'function') fecharModal('modalEdicaoEquipment');
+          this.consultarEquipments();
         } else {
-          alert(resposta ? resposta.mensagem : "Erro ao atualizar a marca.");
+          alert(resposta ? resposta.mensagem : "Erro ao atualizar.");
         }
       })
       .withFailureHandler((err) => {
-        console.error('Erro ao editar marca: ', err);
+        console.error('Erro ao edita: ', err);
         alert('Erro de comunicação com o servidor.');
       })
-      .editarMarca(id, novoNome.trim());
+      .editarEquipment(id, novoNome.trim());
   }
 
   // ===== MODAL DE EXCLUSÃO =====
@@ -227,27 +227,27 @@ class MarcaController {
     }
     this.idExclusao = id;
     if (typeof exibirModal === 'function') {
-      exibirModal('modalExclusaoMarca');
+      exibirModal('modalExclusaoEquipment');
     } else {
-      const modal = document.getElementById('modalExclusaoMarca');
+      const modal = document.getElementById('modalExclusaoEquipment');
       if (modal) modal.classList.add('aberto');
     }
   }
 
   async executarExclusao() {
     if (typeof executarExclusao === 'function') {
-      await executarExclusao('tbl_marca', this.idExclusao);
+      await executarExclusao('tbl_equipment', this.idExclusao);
     }
     this.idExclusao = null;
-    this.consultarMarcas();
-    if (typeof fecharModal === 'function') fecharModal('modalExclusaoMarca');
+    this.consultarEquipments();
+    if (typeof fecharModal === 'function') fecharModal('modalExclusaoEquipment');
   }
 }
 
 // Instanciação da Controller
-const marcaController = new MarcaController();
+const equipmentController = new EquipmentController();
 
 document.addEventListener('DOMContentLoaded', () => {
-  marcaController.init();
+  equipmentController.init();
 });
 </script>

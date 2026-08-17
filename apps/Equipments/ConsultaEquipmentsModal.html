@@ -1,0 +1,48 @@
+    <!-- MODAL DE CADASTRO -->
+    <div class="modal-overlay" id='modalCadastroEquipment'>
+      <div class="modal">
+        <h3> Nova Equipment </h3>
+        <div class="form-group">
+          <label for="novoEquipmentNome" class="field__label"> Nome do Equipmento *</label>
+          <input type="text" id="novoEquipmentNome" class="search-input" placeholder="Digite o nome do Equipamento..."/>
+          <span class="field__error-msg" id="novoEquipmentNomeErro">Informe o nome do Equipmento.</span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroEquipment')">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="equipmentController.salvarNovoEquipment(false)">Salvar</button>
+          <button type="button" class="btn-primary" onclick="equipmentController.salvarNovoEquipment(true)">Salvar e Sair</button>
+        </div>
+      </div>
+    </div> 
+
+    <!-- MODAL DE EDIÇÃO -->
+    <div class="modal-overlay" id="modalEdicaoEquipment">
+      <div class="modal">
+        <h3>Editar Equipment</h3>
+        
+        <!-- Guarda o ID do Equipamento -->
+        <input type="hidden" id="editEquipmentId">
+        
+        <div class="form-group">
+          <label for="editEquipmentNome" class="field__label">Nome do Equipamento:</label>
+          <input type="text" id="editEquipmentNome" class="search-input" placeholder="Digite o novo nome..."/>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroEquipment')" style="width:auto;">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="equipmentController.executarEdicao()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE EXCLUSÃO -->
+    <div class="modal-overlay" id="modalExclusaoEquipment">
+      <div class="modal">
+        <h3>Confirmar Exclusão</h3>
+        <p>Tem certeza que deseja fazer a exclusão? Esta ação não pode ser desfeita.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="fecharModal('modalExclusaoEquipment')" style="width:auto;">Cancelar</button>
+          <button class="btn-danger" onclick="equipmentController.executarExclusao()">Sim, Excluir</button>
+        </div>
+      </div>
+    </div>

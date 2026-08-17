@@ -1,45 +1,45 @@
-let brandTableName = 'tbl_marca'
-let firstLineBrands  = 3
-let numColumnsBrands = 5
+let equipTableName = 'tbl_marca'
+let firstLineEquipments  = 3
+let numColumnsEquipments = 5
 
-let brandIdCol = 0
-let brandNameCol = 1
-let brandDtCadastroCol = 2
-let brandDtExclusaoCol = 3
-let brandDtAlteracaoCol = 4
+let equipIdCol = 0
+let equipNameCol = 1
+let equipDtCadastroCol = 2
+let equipDtExclusaoCol = 3
+let equipDtAlteracaoCol = 4
 
-function ReadBrands() {
+function ReadEquipments() {
 
-  const objRows = ReadSheet(brandTableName, firstLineBrands, numColumnsBrands)
+  const objRows = ReadSheet(equipTableName, firstLineEquipments, numColumnsEquipments)
 
   objRows.forEach( item => {
-    item[brandDtCadastroCol] = isEmpty( item[brandDtCadastroCol] ) ? "" :  dateToString(item[brandDtCadastroCol])
-    item[brandDtExclusaoCol] = isEmpty( item[brandDtExclusaoCol] ) ? "" :  dateToString(item[brandDtExclusaoCol])
-    item[brandDtAlteracaoCol] = isEmpty( item[brandDtAlteracaoCol] ) ? "" : dateToString(item[brandDtAlteracaoCol])
+    item[equipDtCadastroCol] = isEmpty( item[equipDtCadastroCol] ) ? "" :  dateToString(item[equipDtCadastroCol])
+    item[equipDtExclusaoCol] = isEmpty( item[equipDtExclusaoCol] ) ? "" :  dateToString(item[equipDtExclusaoCol])
+    item[equipDtAlteracaoCol] = isEmpty( item[equipDtAlteracaoCol] ) ? "" : dateToString(item[equipDtAlteracaoCol])
   })
   
   return objRows
 }
 
-function  findBrandId(id) {
+function  findEquipmentId(id) {
   
-  return FindContext(brandTableName, id, firstLineBrands, numColumnsBrands)
+  return FindContext(equipTableName, id, firstLineEquipments, numColumnsEquipments)
 }
 
-function findBrand(columnName, context) {
+function findEquipment(columnName, context) {
 
   switch (columnName) {
     case 'id':
-      return FindContext(brandTableName, context, firstLineBrands, brandIdCol)
+      return FindContext(equipTableName, context, firstLineEquipments, equipIdCol)
     case 'name':
     case 'nome':
-      return FindContext(brandTableName, context, firstLineBrands, brandNameCol)
+      return FindContext(equipTableName, context, firstLineEquipments, equipNameCol)
       
     default:
       return false
   }
 
-  return SearchContext(brandTableName, context, firstLineBrands, numColumnsBrands)
+  return SearchContext(equipTableName, context, firstLineEquipments, numColumnsEquipments)
 }
 
 /*
@@ -59,7 +59,7 @@ function desativarMarca(idMarcaInput) {
       return;
     }
 
-    const dadosMarcas = ReadBrands();
+    const dadosMarcas = ReadEquipments();
     let linhaLocalizada = -1;
 
     for (let i = 0; i <dadosMarcas.length; i ++) {
@@ -67,7 +67,7 @@ function desativarMarca(idMarcaInput) {
       const dataExclusaoTabela = dadosMarcas[i][3] ? dadosMarcas[i][3].toString().trim() : "";
 
       if(idTabela === idMarca && dataExclusaoTabela === "") {
-        linhaLocalizada = i + firstLineBrands;
+        linhaLocalizada = i + firstLineEquipments;
         break; 
       }
     }
@@ -75,7 +75,7 @@ function desativarMarca(idMarcaInput) {
     if (linhaLocalizada !== -1) {
       const dataExclusao = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
 
-      abaConsultaMarca.getRange(linhaLocalizada, brandDtAlteracaoCol).setValue(dataExclusao);
+      abaConsultaMarca.getRange(linhaLocalizada, equipDtAlteracaoCol).setValue(dataExclusao);
       abaConsultaMarca.getRange(linhaLocalizada, 1, 1, 4).setBackground("#F4CCCC");
 
       Logger.log("Marca ID " + idMarca + " desativada na linha " + linhaLocalizada);   

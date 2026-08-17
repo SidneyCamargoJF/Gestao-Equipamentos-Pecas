@@ -1,0 +1,62 @@
+      <section id="page-equipments-view" class="spa-page">
+
+        <div class="page-header">
+          <div class="actions-bar">
+            <h1>⚙️ Equipments</h1>
+          </div>
+
+          <!-- Botoes de limpar e adicionar -->
+
+          <div class="actions-bar">
+            <button type="button" class="btn-secondary" onclick="equipmentController.limparFiltros()">Limpar</button>
+            <button type="button" class="btn-success" onclick="equipmentController.abrirModalCadastro()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Adicionar
+            </button>
+            <button type="button" class="btn-primary" onclick="equipmentController.consultar()"> <!-- filtrar() -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Consultar
+            </button>
+          </div>   
+        </div>
+
+        <div class="panel">
+
+          <!-- FILTRO -->
+          <form autocomplete="off" onsubmit="return false;">
+            <div class="filters-primary">
+              <div class="field">
+                <label class="field__label">Equipamentos</label>
+                <div class="search-wrapper" id="equipmentWrapper">
+                  <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                  </span>
+                  <input class="search-input" type="text" id="equipmentSearch" placeholder="Selecione o equipamento..." autocomplete="off">
+                  <div class="search-dropdown" id="equipmentDropdown"></div>
+                </div>
+              </div>
+            </div> 
+
+          </form>
+
+          <!-- TABELA -->
+          <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th onclick="ordenar('equipamento')">Equipamento <span class="sort-arrow"></span></th>
+                <th>AÇÕES</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaBodyequipment"></tbody>
+          </table>
+          </div>
+        </div>
+
+      </section>
