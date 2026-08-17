@@ -230,8 +230,16 @@
           return;
         }
 
-        pecas = aplicarOrdenacao(objPecas);
+        pecas = ordenarDesativadasPorUltimo(aplicarOrdenacao(objPecas));
         renderTabela(pecas);
+      }
+
+      // Peças desativadas sempre por último, independente da ordenação de coluna
+      // ativa no momento. Array.sort é estável, então preserva a ordem interna
+      // de cada grupo (ativas / desativadas).
+      function ordenarDesativadasPorUltimo(lista) {
+        if (!Array.isArray(lista)) return lista;
+        return lista.slice().sort((a, b) => (a.desativada ? 1 : 0) - (b.desativada ? 1 : 0));
       }
 
       function filtrar() {
@@ -250,7 +258,7 @@
           return true;
         });
 
-        listaFiltrada = aplicarOrdenacao(listaFiltrada);
+        listaFiltrada = ordenarDesativadasPorUltimo(aplicarOrdenacao(listaFiltrada));
         renderTabela(listaFiltrada);
       }
 
@@ -267,8 +275,18 @@
 
         lista.forEach(p => {
           const tr = document.createElement('tr');
+          if (p.desativada) tr.classList.add('linha-desativada');
+
+          const btnEditar = p.desativada
+            ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
+            : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarPeca('${p.id}')">✏️</button>`;
+
+          const btnExcluir = p.desativada
+            ? '<button class="btn-acao btn-excluir-linha" title="Desativar" disabled style="opacity:0.3; cursor:not-allowed;">🗑️</button>'
+            : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="abrirModalExclusao('${p.id}')">🗑️</button>`;
+
           tr.innerHTML = `
-            <td>${escapeHtml(p.nome)}</td>
+            <td>${escapeHtml(p.nome)} ${p.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
             <td>${escapeHtml(p.marca)}</td>
             <td>${escapeHtml(p.modelo)}</td>
             <td>${escapeHtml(p.fornecedor)}</td>
@@ -278,8 +296,8 @@
             <td>${escapeHtml(p.dt_garantia)}</td>
             <td>${escapeHtml(p.sei_num)}</td>
             <td>
-              <button class="btn-acao btn-editar-linha" title="Editar" onclick="editarPeca('${p.id}')">✏️</button>
-              <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="abrirModalExclusao('${p.id}')">🗑️</button>
+              ${btnEditar}
+              ${btnExcluir}
             </td>
           `;
           tbody.appendChild(tr);
@@ -309,14 +327,33 @@
       }
 
       // abrirModalExclusao/fecharModal (genéricos) vivem em apps/Modal/ModalJS.html.
-      function executarExclusaoPeca() {
-        if (idExclusao !== null) {
-          const idx = pecas.findIndex(p => String(p.id) === String(idExclusao));
-          if (idx >= 0) pecas.splice(idx, 1);
+      async function executarExclusaoPeca() {
+        if (idExclusao === null) return;
+
+        if (typeof exibirModal === 'function') exibirModal('processando');
+
+        try {
+          const resposta = await runServerFunction('desativarPeca', idExclusao);
+
+          if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+          }
+
+          // Não remove da lista -- só marca como desativada, pra continuar
+          // aparecendo opaca na consulta (mesmo padrão da Marca).
+          const peca = pecas.find(p => String(p.id) === String(idExclusao));
+          if (peca) peca.desativada = true;
+
+          idExclusao = null;
+          fecharModal('modalExclusao');
+          filtrar();
+        } catch (err) {
+          console.error('Erro ao desativar peça:', err);
+          alert('Erro ao conectar com o servidor.');
+        } finally {
+          if (typeof fecharModal === 'function') fecharModal('processando');
         }
-        idExclusao = null;
-        fecharModal('modalExclusao');
-        filtrar();
       }
 
       // ===== INICIALIZAÇÃO ASSÍNCRONA =====

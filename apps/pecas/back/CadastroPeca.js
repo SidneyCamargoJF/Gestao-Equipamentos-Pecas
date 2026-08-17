@@ -82,7 +82,13 @@ function salvarPeca(dadosPeca) {
             ];
 
             abaRegistroPecas.getRange(linhaReal, 1, 1, linhaAtualizada.length).setValues([linhaAtualizada]);
-            return { sucesso: true, mensagem: "Peça aualizada com sucesso!", id: idBuscado};
+
+            // Marca a data de alteração sem mexer em dataCadastro (coluna anterior)
+            // nem em dataExclusao (coluna seguinte, usada pra desativar a peça).
+            const dataAlteracao = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+            abaRegistroPecas.getRange(linhaReal, partsDtAlteracaoCol + 1).setValue(dataAlteracao);
+
+            return { sucesso: true, mensagem: "Peça atualizada com sucesso!", id: idBuscado};
           }
         }
       }
