@@ -1,388 +1,388 @@
 <script>
 
-// =====================================================
-// CADASTRO DE FORNECEDOR - JS (CLIENTE)
-// Roda no navegador (dentro do HTML). A gravação na planilha
-// acontece no servidor, em Fornecedor_Backend.gs, chamado via
-// google.script.run.
-// =====================================================
+  // =====================================================
+  // CADASTRO DE FORNECEDOR - JS (CLIENTE)
+  // Roda no navegador (dentro do HTML). A gravação na planilha
+  // acontece no servidor, em Fornecedor_Backend.gs, chamado via
+  // google.script.run.
+  // =====================================================
 
-// 
-// MÁSCARA DE TELEFONE (igual ao padrão do Contrato)
-// 
-function mascaraTelefone(input) {
-  input.addEventListener('input', function() {
-    let valor = this.value.replace(/\D/g, '');
-    if (valor.length > 11) valor = valor.slice(0, 11);
+  // 
+  // MÁSCARA DE TELEFONE (igual ao padrão do Contrato)
+  // 
+  function mascaraTelefone(input) {
+    input.addEventListener('input', function () {
+      let valor = this.value.replace(/\D/g, '');
+      if (valor.length > 11) valor = valor.slice(0, 11);
 
-    if (valor.length <= 10) {
-      if (valor.length > 6) {
-        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 6) + '-' + valor.slice(6);
-      } else if (valor.length > 2) {
-        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
-      } else if (valor.length > 0) {
-        this.value = '(' + valor;
-      } else {
-        this.value = '';
-      }
-    } else {
-      if (valor.length > 7) {
-        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 7) + '-' + valor.slice(7);
-      } else if (valor.length > 2) {
-        this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
-      } else if (valor.length > 0) {
-        this.value = '(' + valor;
-      } else {
-        this.value = '';
-      }
-    }
-  });
-}
-
-// 
-// MÁSCARA DE CNPJ
-// 
-function mascaraCNPJ(input) {
-  input.addEventListener('input', function() {
-    let valor = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 14);
-
-    valor = valor.replace(/^([A-Z0-9]{2})([A-Z0-9])/, '$1.$2');
-    valor = valor.replace(/^([A-Z0-9]{2})\.([A-Z0-9]{3})([A-Z0-9])/, '$1.$2.$3');
-    valor = valor.replace(/\.([A-Z0-9]{3})([A-Z0-9])/, '.$1/$2');
-    valor = valor.replace(/([A-Z0-9]{4})([A-Z0-9])/, '$1-$2');
-
-    this.value = valor;
-  });
-}
-
-// 
-// MÁSCARA DE CEP
-// 
-function mascaraCEP(input) {
-  input.addEventListener('input', function() {
-    let valor = this.value.replace(/\D/g, '').slice(0, 8);
-    valor = valor.replace(/^(\d{5})(\d)/, '$1-$2');
-    this.value = valor;
-  });
-}
-
-// 
-// BUSCA DE ENDEREÇO PELO CEP (ViaCEP)
-// 
-function buscarCEP() {
-  const cepEl = document.getElementById('cep');
-  const cep = cepEl.value.replace(/\D/g, '');
-
-  if (cep.length !== 8) {
-    alert('Informe um CEP válido.');
-    return;
-  }
-
-  const btn = document.querySelector('.btn-buscar-cep');
-  const textoOriginal = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Buscando...';
-
-  fetch('https://viacep.com.br/ws/' + cep + '/json/')
-    .then(resp => resp.json())
-    .then(dados => {
-      if (dados.erro) {
-        alert('CEP não encontrado.');
-        return;
-      }
-      document.getElementById('ruaAvenida').value = dados.logradouro || '';
-      document.getElementById('bairro').value = dados.bairro || '';
-      document.getElementById('cidade').value = dados.localidade || '';
-      document.getElementById('estado').value = dados.uf || '';
-      document.getElementById('numeroFornecedor').focus();
-    })
-    .catch(() => {
-      alert('Não foi possível buscar o CEP. Verifique sua conexão.');
-    })
-    .finally(() => {
-      btn.disabled = false;
-      btn.textContent = textoOriginal;
-    });
-}
-
-// 
-// VERIFICAÇÃO DE CNPJ DUPLICADO (ao sair do campo)
-// Equivalente a verificarCnpj() do .gs original, adaptado para
-// disparar no blur do campo em vez de onEdit da planilha.
-// 
-function verificarCnpjAoSair() {
-  const cnpjField = document.getElementById('cnpj');
-  const cnpj = cnpjField.value.trim();
-
-  if (!cnpj) return;
-
-  const cnpjLimpo = cnpj.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-
-  if (cnpjLimpo.length !== 14) {
-    alert('Atenção: O CNPJ digitado não possui 14 dígitos. Verifique o valor inserido.');
-    return;
-  }
-
-  //Aqui será colocado o calculoVerificadorDeCNPJ
-  if(!validarCNPJAlfanumerico(cnpjLimpo)){
-    alert('Atenção: Esse CNPJ é inválido. Coloque um CNPJ válido. ');
-    return;
-  }
-
-  google.script.run
-    .withSuccessHandler(function (resultado) {
-      if (resultado && resultado.existe) {
-        const querEditar = confirm('AVISO DE CADASTRO\n\nJá existe um fornecedor com esse CNPJ. Deseja carregar os dados dele para edição?');
-        if (querEditar) {
-          buscarFornecedorPorCnpj(cnpj);
+      if (valor.length <= 10) {
+        if (valor.length > 6) {
+          this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 6) + '-' + valor.slice(6);
+        } else if (valor.length > 2) {
+          this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
+        } else if (valor.length > 0) {
+          this.value = '(' + valor;
         } else {
-          alert('Continuando com o cadastro. Coloque um CNPJ novo para cadastrá-lo.');
+          this.value = '';
+        }
+      } else {
+        if (valor.length > 7) {
+          this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 7) + '-' + valor.slice(7);
+        } else if (valor.length > 2) {
+          this.value = '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
+        } else if (valor.length > 0) {
+          this.value = '(' + valor;
+        } else {
+          this.value = '';
         }
       }
-    })
-    .withFailureHandler(function (erro) {
-      console.error('Erro ao verificar CNPJ:', erro.message);
-    })
-    .verificarCnpjExistente(cnpj);
-}
-
-
-function calcularDV(caracteres, pesos) {
-  let soma = 0;
-  for (let i = 0; i < caracteres.length; i++) {
-    const valor = caracteres[i].charCodeAt(0) - 48; // '0'-'9' -> 0-9, 'A'-'Z' -> 17-42
-    soma += valor * pesos[i];
+    });
   }
-  const resto = soma % 11;
-  return resto < 2 ? 0 : 11 - resto;
-}
+
+  // 
+  // MÁSCARA DE CNPJ
+  // 
+  function mascaraCNPJ(input) {
+    input.addEventListener('input', function () {
+      let valor = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 14);
+
+      valor = valor.replace(/^([A-Z0-9]{2})([A-Z0-9])/, '$1.$2');
+      valor = valor.replace(/^([A-Z0-9]{2})\.([A-Z0-9]{3})([A-Z0-9])/, '$1.$2.$3');
+      valor = valor.replace(/\.([A-Z0-9]{3})([A-Z0-9])/, '.$1/$2');
+      valor = valor.replace(/([A-Z0-9]{4})([A-Z0-9])/, '$1-$2');
+
+      this.value = valor;
+    });
+  }
+
+  // 
+  // MÁSCARA DE CEP
+  // 
+  function mascaraCEP(input) {
+    input.addEventListener('input', function () {
+      let valor = this.value.replace(/\D/g, '').slice(0, 8);
+      valor = valor.replace(/^(\d{5})(\d)/, '$1-$2');
+      this.value = valor;
+    });
+  }
+
+  // 
+  // BUSCA DE ENDEREÇO PELO CEP (ViaCEP)
+  // 
+  function buscarCEP() {
+    const cepEl = document.getElementById('cep');
+    const cep = cepEl.value.replace(/\D/g, '');
+
+    if (cep.length !== 8) {
+      alert('Informe um CEP válido.');
+      return;
+    }
+
+    const btn = document.querySelector('.btn-buscar-cep');
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Buscando...';
+
+    fetch('https://viacep.com.br/ws/' + cep + '/json/')
+      .then(resp => resp.json())
+      .then(dados => {
+        if (dados.erro) {
+          alert('CEP não encontrado.');
+          return;
+        }
+        document.getElementById('ruaAvenida').value = dados.logradouro || '';
+        document.getElementById('bairro').value = dados.bairro || '';
+        document.getElementById('cidade').value = dados.localidade || '';
+        document.getElementById('estado').value = dados.uf || '';
+        document.getElementById('numeroFornecedor').focus();
+      })
+      .catch(() => {
+        alert('Não foi possível buscar o CEP. Verifique sua conexão.');
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
+      });
+  }
+
+  // 
+  // VERIFICAÇÃO DE CNPJ DUPLICADO (ao sair do campo)
+  // Equivalente a verificarCnpj() do .gs original, adaptado para
+  // disparar no blur do campo em vez de onEdit da planilha.
+  // 
+  function verificarCnpjAoSair() {
+    const cnpjField = document.getElementById('cnpj');
+    const cnpj = cnpjField.value.trim();
+
+    if (!cnpj) return;
+
+    const cnpjLimpo = cnpj.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+    if (cnpjLimpo.length !== 14) {
+      alert('Atenção: O CNPJ digitado não possui 14 dígitos. Verifique o valor inserido.');
+      return;
+    }
+
+    //Aqui será colocado o calculoVerificadorDeCNPJ
+    if (!validarCNPJAlfanumerico(cnpjLimpo)) {
+      alert('Atenção: Esse CNPJ é inválido. Coloque um CNPJ válido. ');
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function (resultado) {
+        if (resultado && resultado.existe) {
+          const querEditar = confirm('AVISO DE CADASTRO\n\nJá existe um fornecedor com esse CNPJ. Deseja carregar os dados dele para edição?');
+          if (querEditar) {
+            buscarFornecedorPorCnpj(cnpj);
+          } else {
+            alert('Continuando com o cadastro. Coloque um CNPJ novo para cadastrá-lo.');
+          }
+        }
+      })
+      .withFailureHandler(function (erro) {
+        console.error('Erro ao verificar CNPJ:', erro.message);
+      })
+      .verificarCnpjExistente(cnpj);
+  }
 
 
-function validarCNPJAlfanumerico(cnpj) {
-  cnpj = String(cnpj).toUpperCase().trim();
-
-  if (/^(.)\1{13}$/.test(cnpj)) return false;
-
-  const base = cnpj.slice(0, 12);       // 12 primeiros (raiz + ordem + filial)
-  const dvInformado = cnpj.slice(12, 14); // 2 últimos (DVs)
-
-  const pesosDV1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-  const pesosDV2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-
-  const dv1 = calcularDV(base.split(''), pesosDV1);
-  const dv2 = calcularDV((base + dv1).split(''), pesosDV2);
-
-  return dvInformado === `${dv1}${dv2}`;
-}
+  function calcularDV(caracteres, pesos) {
+    let soma = 0;
+    for (let i = 0; i < caracteres.length; i++) {
+      const valor = caracteres[i].charCodeAt(0) - 48; // '0'-'9' -> 0-9, 'A'-'Z' -> 17-42
+      soma += valor * pesos[i];
+    }
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  }
 
 
-// 
-// BUSCA DE FORNECEDOR PELO CNPJ (carrega no formulário p/ edição)
-// Equivalente a buscarFornecedorPorCnpj() do .gs original.
-// 
-function buscarFornecedorPorCnpj(cnpj) {
-  google.script.run
-    .withSuccessHandler(function (dados) {
-      if (!dados) {
-        alert('Nenhum fornecedor encontrado com esse CNPJ.');
-        return;
+  function validarCNPJAlfanumerico(cnpj) {
+    cnpj = String(cnpj).toUpperCase().trim();
+
+    if (/^(.)\1{13}$/.test(cnpj)) return false;
+
+    const base = cnpj.slice(0, 12);       // 12 primeiros (raiz + ordem + filial)
+    const dvInformado = cnpj.slice(12, 14); // 2 últimos (DVs)
+
+    const pesosDV1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const pesosDV2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+    const dv1 = calcularDV(base.split(''), pesosDV1);
+    const dv2 = calcularDV((base + dv1).split(''), pesosDV2);
+
+    return dvInformado === `${dv1}${dv2}`;
+  }
+
+
+  // 
+  // BUSCA DE FORNECEDOR PELO CNPJ (carrega no formulário p/ edição)
+  // Equivalente a buscarFornecedorPorCnpj() do .gs original.
+  // 
+  function buscarFornecedorPorCnpj(cnpj) {
+    google.script.run
+      .withSuccessHandler(function (dados) {
+        if (!dados) {
+          alert('Nenhum fornecedor encontrado com esse CNPJ.');
+          return;
+        }
+        preencherFormulario(dados);
+        document.getElementById('formTitulo').textContent = 'Editar Fornecedor';
+        document.getElementById('formStatus').textContent = 'Editando';
+      })
+      .withFailureHandler(function (erro) {
+        alert('Erro ao buscar fornecedor: ' + erro.message);
+      })
+      .buscarFornecedorPorCnpjBackend(cnpj);
+  }
+
+  function preencherFormulario(dados) {
+    document.getElementById('razaoSocial').value = dados.razaoSocial || '';
+    document.getElementById('nomeFantasia').value = dados.nomeFantasia || '';
+    document.getElementById('cnpj').value = dados.cnpj || '';
+    document.getElementById('inscricaoEstadual').value = dados.inscricaoEstadual || '';
+    document.getElementById('inscricaoMunicipal').value = dados.inscricaoMunicipal || '';
+    document.getElementById('emailFornecedor').value = dados.email || '';
+    document.getElementById('telefoneFixo').value = dados.telefoneFixo || '';
+    document.getElementById('telefoneCelular').value = dados.telefoneCelular || '';
+    document.getElementById('whatsapp').value = dados.whatsapp || '';
+    document.getElementById('cep').value = dados.cep || '';
+    document.getElementById('ruaAvenida').value = dados.ruaAvenida || '';
+    document.getElementById('numeroFornecedor').value = dados.numero || '';
+    document.getElementById('bairro').value = dados.bairro || '';
+    document.getElementById('cidade').value = dados.cidade || '';
+    document.getElementById('estado').value = dados.estado || '';
+    document.getElementById('complemento').value = dados.complemento || '';
+  }
+
+
+  // AUTOPREENCHER WHATSAPP COM O TELEFONE CELULAR
+  // Equivalente a preencherWhatsapp() do .gs original.
+
+  function preencherWhatsapp() {
+    const celular = document.getElementById('telefoneCelular');
+    const whatsapp = document.getElementById('whatsapp');
+    celular.addEventListener('input', function () {
+      whatsapp.value = celular.value;
+    });
+  }
+
+  // 
+  // VALIDAÇÃO DE E-MAIL (ao sair do campo)
+  // Equivalente a verificarEmail() do .gs original — validado 100% no
+  // cliente, sem precisar chamar o servidor.
+  // 
+  function verificarEmailAoSair() {
+    const emailField = document.getElementById('emailFornecedor');
+    const valor = emailField.value.trim();
+
+    if (!valor) return;
+
+    const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    if (!regex.test(valor)) {
+      alert('E-mail inválido. Digite um e-mail válido.');
+    }
+  }
+
+  // 
+  // COLETA DOS DADOS DO FORMULÁRIO
+  // 
+  function coletarDadosFornecedor() {
+    return {
+      razaoSocial: document.getElementById('razaoSocial').value.trim(),
+      nomeFantasia: document.getElementById('nomeFantasia').value.trim(),
+      cnpj: document.getElementById('cnpj').value.trim(),
+      inscricaoEstadual: document.getElementById('inscricaoEstadual').value.trim(),
+      inscricaoMunicipal: document.getElementById('inscricaoMunicipal').value.trim(),
+      email: document.getElementById('emailFornecedor').value.trim(),
+      telefoneFixo: document.getElementById('telefoneFixo').value.trim(),
+      telefoneCelular: document.getElementById('telefoneCelular').value.trim(),
+      whatsapp: document.getElementById('whatsapp').value.trim(),
+      cep: document.getElementById('cep').value.trim(),
+      ruaAvenida: document.getElementById('ruaAvenida').value.trim(),
+      numero: document.getElementById('numeroFornecedor').value.trim(),
+      bairro: document.getElementById('bairro').value.trim(),
+      cidade: document.getElementById('cidade').value.trim(),
+      estado: document.getElementById('estado').value,
+      complemento: document.getElementById('complemento').value.trim()
+    };
+  }
+
+  // 
+  // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
+  // 
+  const CAMPOS_OBRIGATORIOS = [
+    'razaoSocial', 'nomeFantasia', 'cnpj', 'inscricaoEstadual', 'inscricaoMunicipal',
+    'cep', 'ruaAvenida', 'numeroFornecedor', 'bairro', 'cidade', 'estado'
+  ];
+
+  function validarFormulario() {
+    let primeiroInvalido = null;
+
+    CAMPOS_OBRIGATORIOS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el.value.trim()) {
+        el.classList.add('campo-invalido');
+        if (!primeiroInvalido) primeiroInvalido = el;
+      } else {
+        el.classList.remove('campo-invalido');
       }
-      preencherFormulario(dados);
-      document.getElementById('formTitulo').textContent = 'Editar Fornecedor';
-      document.getElementById('formStatus').textContent = 'Editando';
-    })
-    .withFailureHandler(function (erro) {
-      alert('Erro ao buscar fornecedor: ' + erro.message);
-    })
-    .buscarFornecedorPorCnpjBackend(cnpj);
-}
+    });
 
-function preencherFormulario(dados) {
-  document.getElementById('razaoSocial').value = dados.razaoSocial || '';
-  document.getElementById('nomeFantasia').value = dados.nomeFantasia || '';
-  document.getElementById('cnpj').value = dados.cnpj || '';
-  document.getElementById('inscricaoEstadual').value = dados.inscricaoEstadual || '';
-  document.getElementById('inscricaoMunicipal').value = dados.inscricaoMunicipal || '';
-  document.getElementById('emailFornecedor').value = dados.email || '';
-  document.getElementById('telefoneFixo').value = dados.telefoneFixo || '';
-  document.getElementById('telefoneCelular').value = dados.telefoneCelular || '';
-  document.getElementById('whatsapp').value = dados.whatsapp || '';
-  document.getElementById('cep').value = dados.cep || '';
-  document.getElementById('ruaAvenida').value = dados.ruaAvenida || '';
-  document.getElementById('numeroFornecedor').value = dados.numero || '';
-  document.getElementById('bairro').value = dados.bairro || '';
-  document.getElementById('cidade').value = dados.cidade || '';
-  document.getElementById('estado').value = dados.estado || '';
-  document.getElementById('complemento').value = dados.complemento || '';
-}
+    if (primeiroInvalido) {
+      primeiroInvalido.focus();
+      alert('ERRO: Faltam dados obrigatórios.');
+      return false;
+    }
 
-
-// AUTOPREENCHER WHATSAPP COM O TELEFONE CELULAR
-// Equivalente a preencherWhatsapp() do .gs original.
-
-function preencherWhatsapp() {
-  const celular = document.getElementById('telefoneCelular');
-  const whatsapp = document.getElementById('whatsapp');
-  celular.addEventListener('input', function () {
-    whatsapp.value = celular.value;
-  });
-}
-
-// 
-// VALIDAÇÃO DE E-MAIL (ao sair do campo)
-// Equivalente a verificarEmail() do .gs original — validado 100% no
-// cliente, sem precisar chamar o servidor.
-// 
-function verificarEmailAoSair() {
-  const emailField = document.getElementById('emailFornecedor');
-  const valor = emailField.value.trim();
-
-  if (!valor) return;
-
-  const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-  if (!regex.test(valor)) {
-    alert('E-mail inválido. Digite um e-mail válido.');
+    return true;
   }
-}
 
-// 
-// COLETA DOS DADOS DO FORMULÁRIO
-// 
-function coletarDadosFornecedor() {
-  return {
-    razaoSocial: document.getElementById('razaoSocial').value.trim(),
-    nomeFantasia: document.getElementById('nomeFantasia').value.trim(),
-    cnpj: document.getElementById('cnpj').value.trim(),
-    inscricaoEstadual: document.getElementById('inscricaoEstadual').value.trim(),
-    inscricaoMunicipal: document.getElementById('inscricaoMunicipal').value.trim(),
-    email: document.getElementById('emailFornecedor').value.trim(),
-    telefoneFixo: document.getElementById('telefoneFixo').value.trim(),
-    telefoneCelular: document.getElementById('telefoneCelular').value.trim(),
-    whatsapp: document.getElementById('whatsapp').value.trim(),
-    cep: document.getElementById('cep').value.trim(),
-    ruaAvenida: document.getElementById('ruaAvenida').value.trim(),
-    numero: document.getElementById('numeroFornecedor').value.trim(),
-    bairro: document.getElementById('bairro').value.trim(),
-    cidade: document.getElementById('cidade').value.trim(),
-    estado: document.getElementById('estado').value,
-    complemento: document.getElementById('complemento').value.trim()
-  };
-}
+  // 
+  // UTILITÁRIOS
+  // 
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
 
-// 
-// VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
-// 
-const CAMPOS_OBRIGATORIOS = [
-  'razaoSocial', 'nomeFantasia', 'cnpj', 'inscricaoEstadual', 'inscricaoMunicipal',
-  'cep', 'ruaAvenida', 'numeroFornecedor', 'bairro', 'cidade', 'estado'
-];
+  function limparFornecedor() {
+    document.querySelectorAll('.field__input, .field__select').forEach(el => {
+      el.value = '';
+    });
 
-function validarFormulario() {
-  let primeiroInvalido = null;
+    document.getElementById('formTitulo').textContent = 'Novo Fornecedor';
+    document.getElementById('formStatus').textContent = 'Rascunho';
+  }
 
-  CAMPOS_OBRIGATORIOS.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el.value.trim()) {
-      el.classList.add('campo-invalido');
-      if (!primeiroInvalido) primeiroInvalido = el;
-    } else {
-      el.classList.remove('campo-invalido');
+  // 
+  // SALVAR FORNECEDOR (cria ou atualiza, conforme o CNPJ)
+  // Chama salvarFornecedorBackend() no Fornecedor_Backend.gs
+  // 
+  function salvarFornecedor() {
+    if (!validarFormulario()) return;
+
+    const dados = coletarDadosFornecedor();
+    const btn = document.querySelector('.btn-primary');
+    btn.disabled = true;
+
+    google.script.run
+      .withSuccessHandler(function (resultado) {
+        btn.disabled = false;
+        if (!resultado.sucesso) {
+          alert(resultado.mensagem);
+          return;
+        }
+        alert(resultado.mensagem);
+        limparFornecedor();
+      })
+      .withFailureHandler(function (erro) {
+        btn.disabled = false;
+        alert('Erro ao salvar fornecedor: ' + erro.message);
+      })
+      .salvarFornecedorBackend(dados);
+  }
+
+  // 
+  // RENDER / INICIALIZAÇÃO DA TELA
+  // Chamada pelo sistema de navegação (SPA) logo depois de injetar o HTML
+  // do CadastroFornecedorForm no container da página — igual o padrão do
+  // renderContratosForm() do Contrato. Liga as máscaras e os eventos nos
+  // campos, já que aqui não existe um "DOMContentLoaded" novo (o HTML foi
+  // injetado dinamicamente, não carregado como página).
+
+  async function renderFornecedorForm() {
+
+
+    const cnpjField = document.getElementById('cnpj');
+    if (cnpjField) {
+      mascaraCNPJ(cnpjField);
+      cnpjField.addEventListener('blur', verificarCnpjAoSair);
+    }
+
+    const cepField = document.getElementById('cep');
+    if (cepField) mascaraCEP(cepField);
+
+    const telFixoField = document.getElementById('telefoneFixo');
+    if (telFixoField) mascaraTelefone(telFixoField);
+
+    const telCelularField = document.getElementById('telefoneCelular');
+    if (telCelularField) mascaraTelefone(telCelularField);
+    preencherWhatsapp();
+
+    const whatsappField = document.getElementById('whatsapp');
+    if (whatsappField) mascaraTelefone(whatsappField);
+
+    const emailField = document.getElementById('emailFornecedor');
+    if (emailField) emailField.addEventListener('blur', verificarEmailAoSair);
+  }
+
+  // Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante
+  // que a inicialização também rode no carregamento normal da página.
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('cnpj')) {
+      renderCadastroFornecedorForm();
     }
   });
-
-  if (primeiroInvalido) {
-    primeiroInvalido.focus();
-    alert('ERRO: Faltam dados obrigatórios.');
-    return false;
-  }
-
-  return true;
-}
-
-// 
-// UTILITÁRIOS
-// 
-function escapeHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function limparFornecedor() {
-  document.querySelectorAll('.field__input, .field__select').forEach(el => {
-    el.value = '';
-  });
-  
-  document.getElementById('formTitulo').textContent = 'Novo Fornecedor';
-  document.getElementById('formStatus').textContent = 'Rascunho';
-}
-
-// 
-// SALVAR FORNECEDOR (cria ou atualiza, conforme o CNPJ)
-// Chama salvarFornecedorBackend() no Fornecedor_Backend.gs
-// 
-function salvarFornecedor() {
-  if (!validarFormulario()) return;
-
-  const dados = coletarDadosFornecedor();
-  const btn = document.querySelector('.btn-primary');
-  btn.disabled = true;
-
-  google.script.run
-    .withSuccessHandler(function (resultado) {
-      btn.disabled = false;
-      if (!resultado.sucesso) {
-        alert(resultado.mensagem);
-        return;
-      }
-      alert(resultado.mensagem);
-      limparFornecedor();
-    })
-    .withFailureHandler(function (erro) {
-      btn.disabled = false;
-      alert('Erro ao salvar fornecedor: ' + erro.message);
-    })
-    .salvarFornecedorBackend(dados);
-}
-
-// 
-// RENDER / INICIALIZAÇÃO DA TELA
-// Chamada pelo sistema de navegação (SPA) logo depois de injetar o HTML
-// do CadastroFornecedorForm no container da página — igual o padrão do
-// renderContratosForm() do Contrato. Liga as máscaras e os eventos nos
-// campos, já que aqui não existe um "DOMContentLoaded" novo (o HTML foi
-// injetado dinamicamente, não carregado como página).
-
-async function renderCadastroFornecedorForm() {
-  
-
-  const cnpjField = document.getElementById('cnpj');
-  if (cnpjField) {
-    mascaraCNPJ(cnpjField);
-    cnpjField.addEventListener('blur', verificarCnpjAoSair);
-  }
-
-  const cepField = document.getElementById('cep');
-  if (cepField) mascaraCEP(cepField);
-
-  const telFixoField = document.getElementById('telefoneFixo');
-  if (telFixoField) mascaraTelefone(telFixoField);
-
-  const telCelularField = document.getElementById('telefoneCelular');
-  if (telCelularField) mascaraTelefone(telCelularField);
-  preencherWhatsapp();
-
-  const whatsappField = document.getElementById('whatsapp');
-  if (whatsappField) mascaraTelefone(whatsappField);
-
-  const emailField = document.getElementById('emailFornecedor');
-  if (emailField) emailField.addEventListener('blur', verificarEmailAoSair);
-}
-
-// Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante
-// que a inicialização também rode no carregamento normal da página.
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('cnpj')) {
-    renderCadastroFornecedorForm();
-  }
-});
 </script>
