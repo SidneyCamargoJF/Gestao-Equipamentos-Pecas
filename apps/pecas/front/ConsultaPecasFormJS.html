@@ -11,7 +11,7 @@
       }
 
       // ===== CARREGAR MARCAS =====
-      async function loadBrands() {
+      async function loadBrandsPecasConsulta() {
         try {
           const res = await runServerFunction("ReadBrands");
           if (!Array.isArray(res)) return [];
@@ -22,7 +22,7 @@
       }
 
       // ===== CARREGAR LOCALIZAÇÃO =====
-      async function loadLocations() {
+      async function loadLocationsPecasConsulta() {
         try {
           const res = await runServerFunction("ReadLocations");
           if (!Array.isArray(res)) return [];
@@ -33,7 +33,7 @@
       }
 
       // ===== CARREGAR FORNECEDORES =====
-      async function loadSuppliers() {
+      async function loadSuppliersPecasConsulta() {
         try {
           const res = await runServerFunction("ReadSuppliers");
           if (!Array.isArray(res)) return [];
@@ -44,7 +44,9 @@
       }
 
       // ===== COMPONENTE DE BUSCA COM DROPDOWN COMPLETO AO DAR FOCO =====
-      function initSearch(inputId, dropdownId, wrapperId, opcoes) {
+      // Função exclusiva desta tela para não colidir com o "initSearch" de outras páginas
+      // (todo <script> do Apps Script cai no mesmo escopo global).
+      function initSearchPecas(inputId, dropdownId, wrapperId, opcoes) {
         const input = document.getElementById(inputId);
         const dropdown = document.getElementById(dropdownId);
         const wrapper = document.getElementById(wrapperId);
@@ -56,8 +58,8 @@
         function renderLista(filtro) {
           const f = (filtro || '').toLowerCase().trim();
 
-          const itens = (f === '') 
-            ? listaOpcoes 
+          const itens = (f === '')
+            ? listaOpcoes
             : listaOpcoes.filter(o => String(o).toLowerCase().includes(f));
 
           dropdown.innerHTML = '';
@@ -185,19 +187,44 @@
       // ===== CONSULTAR, FILTRAR E RENDERIZAR =====
       function consultarPecas() {
         const nome = document.getElementById('filtro-nome')?.value.trim() || '';
-        const marca = document.getElementById('marcaSearch')?.value.trim() || '';
-        const localizacao = document.getElementById('localizacaoSearch')?.value.trim() || '';
-        const fornecedor = document.getElementById('fornecedorSearch')?.value.trim() || '';
+        const marca = document.getElementById('pecaMarcaSearch')?.value.trim() || '';
+        const localizacao = document.getElementById('pecaLocalizacaoSearch')?.value.trim() || '';
+        const fornecedor = document.getElementById('pecaFornecedorSearch')?.value.trim() || '';
         const garantia = document.getElementById('filtro-garantia')?.value || '';
 
         const criterios = { nome, marca, localizacao, fornecedor, garantia };
+        console.log('📤 [consultarPecas] Critérios enviados:', criterios);
+
+        mostrarCarregandoPecas(true);
 
         google.script.run
-          .withSuccessHandler(ReturnPecas)
+          .withSuccessHandler((objPecas) => {
+            mostrarCarregandoPecas(false);
+            ReturnPecas(objPecas);
+          })
+          .withFailureHandler((err) => {
+            mostrarCarregandoPecas(false);
+            console.error('❌ [consultarPecas] Erro ao consultar peças no servidor:', err);
+            alert('Erro ao consultar peças: ' + (err.message || err));
+          })
           .FiltrarPecas(criterios);
       }
 
+      function mostrarCarregandoPecas(carregando) {
+        const btn = document.getElementById('btnConsultarPecas');
+        if (btn) btn.disabled = carregando;
+
+        if (carregando) {
+          const tbody = document.getElementById('bodyPecasView');
+          if (tbody) {
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span>Buscando peças...</td></tr>';
+          }
+        }
+      }
+
       function ReturnPecas(objPecas) {
+        console.log('📥 [ReturnPecas] Resposta bruta do servidor:', objPecas);
+
         if (objPecas === "NoData" || !Array.isArray(objPecas)) {
           pecas = [];
           renderTabela([]);
@@ -210,9 +237,9 @@
 
       function filtrar() {
         const nome = document.getElementById('filtro-nome')?.value.trim().toLowerCase() || '';
-        const marca = document.getElementById('marcaSearch')?.value.trim().toLowerCase() || '';
-        const localizacao = document.getElementById('localizacaoSearch')?.value.trim().toLowerCase() || '';
-        const fornecedor = document.getElementById('fornecedorSearch')?.value.trim().toLowerCase() || '';
+        const marca = document.getElementById('pecaMarcaSearch')?.value.trim().toLowerCase() || '';
+        const localizacao = document.getElementById('pecaLocalizacaoSearch')?.value.trim().toLowerCase() || '';
+        const fornecedor = document.getElementById('pecaFornecedorSearch')?.value.trim().toLowerCase() || '';
         const garantia = document.getElementById('filtro-garantia')?.value || '';
 
         let listaFiltrada = pecas.filter(p => {
@@ -253,7 +280,7 @@
             <td>${escapeHtml(p.sei_num)}</td>
             <td>
               <button class="btn-acao btn-editar-linha" title="Editar" onclick="editarPeca('${p.id}')">✏️</button>
-              <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusao('${p.id}')">🗑️</button>
+              <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="abrirModalExclusao('${p.id}')">🗑️</button>
             </td>
           `;
           tbody.appendChild(tr);
@@ -263,9 +290,9 @@
       // ===== AÇÕES DA INTERFACE =====
       function limparFiltros() {
         if (document.getElementById('filtro-nome')) document.getElementById('filtro-nome').value = '';
-        if (document.getElementById('marcaSearch')) document.getElementById('marcaSearch').value = '';
-        if (document.getElementById('localizacaoSearch')) document.getElementById('localizacaoSearch').value = '';
-        if (document.getElementById('fornecedorSearch')) document.getElementById('fornecedorSearch').value = '';
+        if (document.getElementById('pecaMarcaSearch')) document.getElementById('pecaMarcaSearch').value = '';
+        if (document.getElementById('pecaLocalizacaoSearch')) document.getElementById('pecaLocalizacaoSearch').value = '';
+        if (document.getElementById('pecaFornecedorSearch')) document.getElementById('pecaFornecedorSearch').value = '';
         if (document.getElementById('filtro-garantia')) document.getElementById('filtro-garantia').value = '';
 
         sortState = { coluna: null, direcao: 'asc' };
@@ -277,46 +304,33 @@
       }
 
       function editarPeca(id) {
-        if (typeof carregarDadosPecaParaEdicao === 'function') {
-          carregarDadosPecaParaEdicao(id);
-        }
         if (typeof trocarPagina === 'function') {
-          trocarPagina('pecas-form');
+          trocarPagina('pecas-form', id);
         }
       }
 
-      function confirmarExclusao(id) {
-        idExclusao = id;
-        const modal = document.getElementById('modalExclusao');
-        if (modal) modal.classList.add('aberto');
-      }
-
-      function fecharModalExclusao() {
-        idExclusao = null;
-        const modal = document.getElementById('modalExclusao');
-        if (modal) modal.classList.remove('aberto');
-      }
-
-      function executarExclusaoPecas() {
+      // abrirModalExclusao/fecharModal (genéricos) vivem em apps/Modal/ModalJS.html.
+      function executarExclusaoPeca() {
         if (idExclusao !== null) {
           const idx = pecas.findIndex(p => String(p.id) === String(idExclusao));
           if (idx >= 0) pecas.splice(idx, 1);
-          fecharModalExclusao();
-          filtrar();
         }
+        idExclusao = null;
+        fecharModal('modalExclusao');
+        filtrar();
       }
 
       // ===== INICIALIZAÇÃO ASSÍNCRONA =====
       async function inicializarPecas() {
         const [opcoesMarca, opcoesLocalizacao, opcoesFornecedor] = await Promise.all([
-          loadBrands(),
-          loadLocations(),
-          loadSuppliers()
+          loadBrandsPecasConsulta(),
+          loadLocationsPecasConsulta(),
+          loadSuppliersPecasConsulta()
         ]);
 
-        initSearch('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca);
-        initSearch('localizacaoSearch', 'localizacaoDropdown', 'localizacaoWrapper', opcoesLocalizacao);
-        initSearch('fornecedorSearch', 'fornecedorDropdown', 'fornecedorWrapper', opcoesFornecedor);
+        initSearchPecas('pecaMarcaSearch', 'pecaMarcaDropdown', 'pecaMarcaWrapper', opcoesMarca);
+        initSearchPecas('pecaLocalizacaoSearch', 'pecaLocalizacaoDropdown', 'pecaLocalizacaoWrapper', opcoesLocalizacao);
+        initSearchPecas('pecaFornecedorSearch', 'pecaFornecedorDropdown', 'pecaFornecedorWrapper', opcoesFornecedor);
 
         const filtroNome = document.getElementById('filtro-nome');
         if (filtroNome) {
@@ -331,12 +345,12 @@
         const modalExclusao = document.getElementById('modalExclusao');
         if (modalExclusao) {
           modalExclusao.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-overlay')) fecharModalExclusao();
+            if (e.target.classList.contains('modal-overlay')) fecharModal('modalExclusao');
           });
         }
 
         document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') fecharModalExclusao();
+          if (e.key === 'Escape') fecharModal('modalExclusao');
         });
       }
 </script>

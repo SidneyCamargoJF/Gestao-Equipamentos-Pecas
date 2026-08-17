@@ -60,10 +60,10 @@
     });
 
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { 
-        e.preventDefault(); 
-        if (typeof consultar === 'function') consultar(); 
-        dropdown.classList.remove('visible'); 
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (typeof consultar === 'function') consultar();
+        dropdown.classList.remove('visible');
       }
       if (e.key === 'Escape') dropdown.classList.remove('visible');
     });
@@ -87,10 +87,10 @@
       cidade: cidade
     };
 
-    google.script.run.withSuccessHandler(Retorno).withFailureHandler(function(err) {
+    google.script.run.withSuccessHandler(Retorno).withFailureHandler(function (err) {
       console.error('Erro ao consultar fornecedores: ', err);
     })
-    .filtrarFornecedores(criterios);
+      .filtrarFornecedores(criterios);
   }
 
   function Retorno(objfornecedores) {
@@ -128,14 +128,14 @@
 
   function renderTabela(lista) {
     const tbody = document.getElementById('tabelaBody');
-    if(!tbody) return;
+    if (!tbody) return;
 
     tbody.innerHTML = '';
     if (!lista || lista.length === 0) {
       tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Nenhum fornecedor encontrado com os filtros informados.</td></tr>';
       return;
     }
-    
+
     lista.forEach(f => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -189,32 +189,32 @@
   // ==== INICIALIZAÇÃO ====
   document.addEventListener('DOMContentLoaded', () => {
     google.script.run
-    .withSuccessHandler((respostaDeServidor) => {
-      // Atribuir o retorno do servidor na variável fornecedores
-      fornecedores = respostaDeServidor || [];
+      .withSuccessHandler((respostaDeServidor) => {
+        // Atribuir o retorno do servidor na variável fornecedores
+        fornecedores = respostaDeServidor || [];
 
-      // Aplica a ordenação inicial, se houver
-      fornecedores = aplicarOrdenacao(fornecedores);
+        // Aplica a ordenação inicial, se houver
+        fornecedores = aplicarOrdenacao(fornecedores);
 
-      // 1. Renderiza os dados na tabela HTML
-      renderTabela(fornecedores);
+        // 1. Renderiza os dados na tabela HTML
+        renderTabela(fornecedores);
 
-      // 2. Extrai os valores únicos criando os Arrays para os dropdowns de filtro
-      const cnpjs = [...new Set(fornecedores.map(f => f.cnpj).filter(Boolean))];
-      const razoes = [...new Set(fornecedores.map(f => f.razaoSocial).filter(Boolean))];
-      const fantasias = [...new Set(fornecedores.map(f => f.nomeFantasia).filter(Boolean))];
-      const cidades = [...new Set(fornecedores.map(f => f.cidade).filter(Boolean))];
+        // 2. Extrai os valores únicos criando os Arrays para os dropdowns de filtro
+        const cnpjs = [...new Set(fornecedores.map(f => f.cnpj).filter(Boolean))];
+        const razoes = [...new Set(fornecedores.map(f => f.razaoSocial).filter(Boolean))];
+        const fantasias = [...new Set(fornecedores.map(f => f.nomeFantasia).filter(Boolean))];
+        const cidades = [...new Set(fornecedores.map(f => f.cidade).filter(Boolean))];
 
-      // 3. Inicializa o initSearch com os IDs EXATOS do HTML
-      initSearch('CNPJSearch', 'CNPJDropdown', 'CNPJWrapper', cnpjs);
-      initSearch('razaoSocialSearch', 'razaoSocialDropdown', 'razaoSocialWrapper', razoes);
-      initSearch('nomeFantasiaSearch', 'nomeFantasiaDropdown', 'nomeFantasiaWrapper', fantasias);
-      initSearch('cidadeSearch', 'cidadeDropdown', 'cidadeWrapper', cidades);
-    })
-    .withFailureHandler((err) => {
-      console.error("Erro ao carregar lista de fornecedores: ", err);
-    })
-    .filtrarFornecedores();
+        // 3. Inicializa o initSearch com os IDs EXATOS do HTML
+        initSearch('CNPJSearch', 'CNPJDropdown', 'CNPJWrapper', cnpjs);
+        initSearch('razaoSocialSearch', 'razaoSocialDropdown', 'razaoSocialWrapper', razoes);
+        initSearch('nomeFantasiaSearch', 'nomeFantasiaDropdown', 'nomeFantasiaWrapper', fantasias);
+        initSearch('cidadeSearch', 'cidadeDropdown', 'cidadeWrapper', cidades);
+      })
+      .withFailureHandler((err) => {
+        console.error("Erro ao carregar lista de fornecedores: ", err);
+      })
+      .filtrarFornecedores();
 
     // Fechar modal ao clicar fora
     const modalExclusao = document.getElementById('modalExclusao');
