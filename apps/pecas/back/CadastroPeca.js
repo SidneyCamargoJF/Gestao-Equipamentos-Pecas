@@ -51,17 +51,16 @@ function salvarPeca(dadosPeca) {
       return { sucesso: false, mensagem: "O campo 'Nome da Peça' é obrigatório." };
     }
 
-    // ==== MODO EDIÇÃO: atualiza a linha existente em vez de criar uma nova ====
     if (dadosPeca.id) {
-      const idBuscado = Number(dadosPeca.id);
-      const ultimaLinhaExistente = abaRegistroPecas.getLastRow();
+      const idBuscado = Number(dadosPeca.id)
+      const ultimaLinha = abaRegistroPecas.getLastRow();
 
-      if (ultimaLinhaExistente >= firstLineParts) {
-        const numLinhas = ultimaLinhaExistente - firstLineParts + 1;
-        const idsExistentes = abaRegistroPecas.getRange(firstLineParts, 1, numLinhas, 1).getValues();
+      if (ultimaLinha >= firstLineParts) {
+        const numLinhas = ultimaLinha - firstLineParts + 1;
+        const idExistentes = abaRegistroPecas.getRange(firstLineParts, 1, numLinhas, 1).getValues();
 
-        for (let i = 0; i < idsExistentes.length; i++) {
-          if (Number(idsExistentes[i][0]) === idBuscado) {
+        for (let i = 0; i < idExistentes.length; i++){
+          if (Number(idExistentes[i][0]) === idBuscado) {
             const linhaReal = i + firstLineParts;
 
             const linhaAtualizada = [
@@ -83,15 +82,19 @@ function salvarPeca(dadosPeca) {
             ];
 
             abaRegistroPecas.getRange(linhaReal, 1, 1, linhaAtualizada.length).setValues([linhaAtualizada]);
-            return { sucesso: true, mensagem: "Peça atualizada com sucesso!", id: idBuscado };
+
+            // Marca a data de alteração sem mexer em dataCadastro (coluna anterior)
+            // nem em dataExclusao (coluna seguinte, usada pra desativar a peça).
+            const dataAlteracao = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+            abaRegistroPecas.getRange(linhaReal, partsDtAlteracaoCol + 1).setValue(dataAlteracao);
+
+            return { sucesso: true, mensagem: "Peça atualizada com sucesso!", id: idBuscado};
           }
         }
       }
-
-      return { sucesso: false, mensagem: "Peça não encontrada para edição (ID " + idBuscado + ")." };
+      return { sucesso: false, mensagem: "Peça não econtrada para edição (ID "+ idBuscado +")"};
     }
 
-    // ==== MODO CRIAÇÃO ====
     const ultimaLinha = abaRegistroPecas.getLastRow();
     let novoId = 1;
 
@@ -131,11 +134,6 @@ function salvarPeca(dadosPeca) {
   }
 }
 
-/**
- * Busca uma peça pelo ID e devolve um objeto com os mesmos nomes de campo
- * usados no formulário de Cadastro de Peças, pra preencher a edição.
- * Retorna null se o ID não for encontrado.
- */
 function buscarPecaPorId(id) {
   try {
     const idBuscado = Number(id);

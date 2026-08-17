@@ -361,9 +361,16 @@
 
     console.log("📤 [salvarPeca] Enviando dados para salvarPeca() no servidor Apps Script...");
 
+    const btnSalvar = document.getElementById('btnSalvarPeca');
+    if (btnSalvar) btnSalvar.disabled = true;
+    if (typeof exibirModal === 'function') exibirModal('processando');
+
     google.script.run
       .withSuccessHandler((resposta) => {
         console.log("📥 [salvarPeca] Resposta do servidor:", resposta);
+        if (btnSalvar) btnSalvar.disabled = false;
+        if (typeof fecharModal === 'function') fecharModal('processando');
+
         if (resposta && resposta.sucesso) {
           alert(resposta.mensagem || 'Peça salva com sucesso!');
           limparPeca();
@@ -376,6 +383,8 @@
       })
       .withFailureHandler((err) => {
         console.error("❌ [salvarPeca] Erro ao se comunicar com o servidor:", err);
+        if (btnSalvar) btnSalvar.disabled = false;
+        if (typeof fecharModal === 'function') fecharModal('processando');
         alert('Erro de comunicação com o servidor: ' + (err.message || err));
       })
       .salvarPeca(dadosPeca);

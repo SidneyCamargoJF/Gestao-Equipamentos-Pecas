@@ -1,6 +1,6 @@
 let PartsTableName = 'tbl_pecas'
 let firstLineParts  = 3
-let numColumnsParts = 17
+let numColumnsParts = 18
 
 let partsIdCol = 0
 let partsNameCol  = 1
@@ -17,6 +17,9 @@ let partsDtGarantiaCol = 11
 let partsModalidadeCol = 12
 let partsValueCol = 13
 let partsSEINumCol = 14
+let partsDtCadastroCol = 15
+let partsDtAlteracaoCol = 16
+let partsDtExclusaoCol = 17
 
 function ReadParts() {
 

@@ -18,11 +18,13 @@
   }
 
   function exibirModal(id) {
-    document.getElementById(id).classList.add('aberto');
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.add('aberto');
   }
 
   function fecharModal(id) {
-    document.getElementById(id).classList.remove('aberto');
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.remove('aberto');
   }
 
   // Fecha os modais de cadastro rápido ao clicar fora ou apertar Escape.

@@ -13,7 +13,6 @@
 
     exibirModal('processando')
 
-
     // google.script.run não é uma Promise de verdade -- "await" nele sozinho não
     // espera a resposta do servidor. runServerFunction() (HelperJS.html) resolve isso.
     try {
@@ -27,6 +26,8 @@
       console.error('Erro ao desativar registro:', err);
       alert('Erro ao conectar com o servidor.');
       return false;
+    } finally {
+      fecharModal('processando');
     }
   }
 

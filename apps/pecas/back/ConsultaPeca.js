@@ -59,6 +59,9 @@ function FiltrarPecas(criterios) {
         dtGarantiaTexto = String(dtGarantiaRaw);
       }
 
+      let valorDtExclusao = dados[l][partsDtExclusaoCol];
+      let desativada = !!(valorDtExclusao && String(valorDtExclusao).trim() !== '');
+
       let objRes = {
         id: dados[l][partsIdCol],
         nome: String(dados[l][partsNameCol] || ''),
@@ -70,7 +73,8 @@ function FiltrarPecas(criterios) {
         dt_garantia: dtGarantiaTexto,
         dias_garantia: diasGarantia,
         valor: dados[l][partsValueCol],
-        sei_num: String(dados[l][partsSEINumCol] || '')
+        sei_num: String(dados[l][partsSEINumCol] || ''),
+        desativada: desativada
       };
 
       res.push(objRes);
@@ -81,5 +85,50 @@ function FiltrarPecas(criterios) {
     return "NoData";
   }
 
+  // Peças desativadas vão pro final da lista, mesmo padrão do filtrarMarcas.
+  res.sort((a, b) => (a.desativada ? 1 : 0) - (b.desativada ? 1 : 0));
+
   return res;
+}
+
+/**
+ * Desativa uma peça (não exclui de verdade -- marca a data de exclusão e
+ * pinta a linha de vermelho, mesmo padrão do desativarMarca). Chamado pelo
+ * botão de lixeira na Consulta de Peças.
+ */
+function desativarPeca(idInput) {
+  try {
+    const idBuscado = Number(idInput);
+    if (!idBuscado) {
+      return { sucesso: false, mensagem: "ID da peça inválido." };
+    }
+
+    const planilha = SpreadsheetApp.getActiveSpreadsheet();
+    const abaRegistroPecas = planilha.getSheetByName("tbl_pecas");
+    if (!abaRegistroPecas) {
+      return { sucesso: false, mensagem: "Aba 'tbl_pecas' não foi encontrada na planilha." };
+    }
+
+    const dados = ReadParts();
+    if (!dados) {
+      return { sucesso: false, mensagem: "Peça não encontrada (ID " + idBuscado + ")." };
+    }
+
+    for (let i = 0; i < dados.length; i++) {
+      if (Number(dados[i][partsIdCol]) === idBuscado) {
+        const linhaReal = i + firstLineParts;
+        const dataExclusao = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+
+        abaRegistroPecas.getRange(linhaReal, partsDtExclusaoCol + 1).setValue(dataExclusao);
+        abaRegistroPecas.getRange(linhaReal, 1, 1, numColumnsParts).setBackground("#F4CCCC");
+
+        return { sucesso: true, mensagem: "Peça desativada com sucesso!" };
+      }
+    }
+
+    return { sucesso: false, mensagem: "Peça não encontrada (ID " + idBuscado + ")." };
+  } catch (e) {
+    Logger.log("Erro ao desativar peça: " + e.message);
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
 }
