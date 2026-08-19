@@ -11,7 +11,7 @@ class MarcaController {
   // ===== INICIALIZAÇÃO =====
   init() {
     this.bindEvents();
-    this.consultarMarcas();
+    this.consultar();
   }
 
   bindEvents() {
@@ -47,18 +47,18 @@ class MarcaController {
   }
 
   // ===== CONSULTA E FILTROS =====
-  consultarMarcas() {
+  consultar() {
     const marcaInput = document.getElementById('marcaSearch');
     const marca = marcaInput ? marcaInput.value.trim().toLowerCase() : '';
     const criterios = { marca };
 
     google.script.run
-      .withSuccessHandler(objmarcas => this.retornoMarcas(objmarcas))
+      .withSuccessHandler(objmarcas => this.retorno(objmarcas))
       .withFailureHandler(err => console.error('Erro ao consultar: ', err))
-      .filtrarMarcas(criterios);
+      .filtrar(criterios);
   }
 
-  retornoMarcas(objmarcas) {
+  retorno(objmarcas) {
     this.marcas = Array.isArray(objmarcas) ? objmarcas : [];
     this.listaFiltrada = typeof aplicarOrdenacao === 'function' ? aplicarOrdenacao(this.marcas) : this.marcas;
 
@@ -67,10 +67,10 @@ class MarcaController {
       initSearch('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca);
     }
 
-    this.renderTabelaMarca(this.listaFiltrada);
+    this.renderTabela(this.listaFiltrada);
   }
 
-  filtrarMarca() {
+  filtrar() {
     const marcaInput = document.getElementById('marcaSearch');
     const marca = marcaInput ? marcaInput.value.trim().toLowerCase() : '';
 
@@ -82,22 +82,22 @@ class MarcaController {
     if (typeof aplicarOrdenacao === 'function') {
       this.listaFiltrada = aplicarOrdenacao(this.listaFiltrada);
     }
-    this.renderTabelaMarca(this.listaFiltrada);
+    this.renderTabela(this.listaFiltrada);
   }
 
-  limparFiltrosMarca() {
+  limparFiltros() {
     const inputMarca = document.getElementById('marcaSearch');
     if (inputMarca) inputMarca.value = '';
 
     this.sortState = { coluna: null, direcao: 'asc' };
     if (typeof atualizarIndicadores === 'function') atualizarIndicadores();
-    this.consultarMarcas();
+    this.consultar();
 
     if (inputMarca) inputMarca.focus();
   }
 
   // ===== RENDERIZAÇÃO DE TABELA =====
-  renderTabelaMarca(lista) {
+  renderTabela(lista) {
     const tbody = document.getElementById('tabelaBodyMarca');
     if (!tbody) return;
 
@@ -170,7 +170,7 @@ class MarcaController {
     google.script.run
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso) {
-          this.consultarMarcas();
+          this.consultar();
           if (typeof fecharModal === 'function') fecharModal('modalCadastroMarca');
         } else {
           alert(resposta ? resposta.mensagem : 'Erro ao cadastrar marca.');
@@ -207,7 +207,7 @@ class MarcaController {
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso) {
           if (typeof fecharModal === 'function') fecharModal('modalEdicaoMarca');
-          this.consultarMarcas();
+          this.consultar();
         } else {
           alert(resposta ? resposta.mensagem : "Erro ao atualizar a marca.");
         }
@@ -239,7 +239,7 @@ class MarcaController {
       await executarExclusao('tbl_marca', this.idExclusao);
     }
     this.idExclusao = null;
-    this.consultarMarcas();
+    this.consultar();
     if (typeof fecharModal === 'function') fecharModal('modalExclusaoMarca');
   }
 }

@@ -1,0 +1,125 @@
+<script>
+
+class EquipmentsController {
+
+  // =====================================================
+  // CADASTRO DE FORNECEDOR - JS (CLIENTE)
+  // Roda no navegador (dentro do HTML). A gravação na planilha
+  // acontece no servidor, em Fornecedor_Backend.gs, chamado via
+  // google.script.run.
+  // =====================================================
+
+  preencherFormulario(dados) {
+    document.getElementById('complemento').value = dados.complemento || '';
+  }
+
+  // 
+  // COLETA DOS DADOS DO FORMULÁRIO
+  // 
+  coletarDadosFornecedor() {
+    return {
+      complemento: document.getElementById('complemento').value.trim()
+    };
+  }
+
+  // 
+  // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
+  // 
+  validarFormulario() {
+    const CAMPOS_OBRIGATORIOS = [
+      'razaoSocial', 'nomeFantasia', 'cnpj', 'inscricaoEstadual', 'inscricaoMunicipal',
+      'cep', 'ruaAvenida', 'numeroFornecedor', 'bairro', 'cidade', 'estado'
+    ];
+
+    let primeiroInvalido = null;
+
+    CAMPOS_OBRIGATORIOS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el.value.trim()) {
+        el.classList.add('campo-invalido');
+        if (!primeiroInvalido) primeiroInvalido = el;
+      } else {
+        el.classList.remove('campo-invalido');
+      }
+    });
+
+    if (primeiroInvalido) {
+      primeiroInvalido.focus();
+      alert('ERRO: Faltam dados obrigatórios.');
+      return false;
+    }
+
+    return true;
+  }
+
+  // 
+  // UTILITÁRIOS
+  // 
+  escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  limpar() {
+    document.querySelectorAll('.field__input, .field__select').forEach(el => {
+      el.value = '';
+    });
+
+    document.getElementById('formTitulo').textContent = 'Novo Fornecedor';
+    document.getElementById('formStatus').textContent = 'Rascunho';
+  }
+
+  // 
+  // SALVAR FORNECEDOR (cria ou atualiza, conforme o CNPJ)
+  // Chama salvarFornecedorBackend() no Fornecedor_Backend.gs
+  // 
+  salvar() {
+    if (!validarFormulario()) return;
+
+    const dados = coletarDadosFornecedor();
+    const btn = document.querySelector('.btn-primary');
+    btn.disabled = true;
+
+    google.script.run
+      .withSuccessHandler(function (resultado) {
+        btn.disabled = false;
+        if (!resultado.sucesso) {
+          alert(resultado.mensagem);
+          return;
+        }
+        alert(resultado.mensagem);
+        limparFornecedor();
+      })
+      .withFailureHandler(function (erro) {
+        btn.disabled = false;
+        alert('Erro ao salvar fornecedor: ' + erro.message);
+      })
+      .salvarFornecedorBackend(dados);
+  }
+
+  // 
+  // RENDER / INICIALIZAÇÃO DA TELA
+  // Chamada pelo sistema de navegação (SPA) logo depois de injetar o HTML
+  // do CadastroFornecedorForm no container da página — igual o padrão do
+  // renderContratosForm() do Contrato. Liga as máscaras e os eventos nos
+  // campos, já que aqui não existe um "DOMContentLoaded" novo (o HTML foi
+  // injetado dinamicamente, não carregado como página).
+
+  async render() {
+      // Render
+
+  }
+
+}
+
+// Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante
+// que a inicialização também rode no carregamento normal da página.
+
+const fornecedorController = new FornecedorController()
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('cnpj')) {
+    fornecedorController.init();
+  }
+});
+
+</script>

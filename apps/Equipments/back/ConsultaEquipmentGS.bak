@@ -1,0 +1,165 @@
+function showEquipament() {
+  const form = HtmlService.createTemplateFromFile("ConsultaEquipamentForm");
+  const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  showForm.setTitle("Consulta de Equipamentos").setHeight(900).setWidth(800);
+  SpreadsheetApp.getUi().showModalDialog(showForm, "Consulta de Equipamentos");
+}
+
+
+function filtrarEquipaments(criterios) {
+  let dados = ReadBrands();
+  let res = [];
+
+  let equipamentBuscada = (criterios && criterios.equipament) ? criterios.equipament.trim().toLowerCase() : "";
+
+  for (let i = 0; i < dados.length; i++) {
+    let idEquipament = dados[i][0];
+    let nomeEquipament = dados[i][1] ? String(dados[i][1]).trim() : "";
+    let valorColunaExclusao = String(dados[i][3]).trim();
+
+    if (!nomeEquipament) continue;
+
+    let bateuBusca = (equipamentBuscada === "" || nomeEquipament.toLowerCase().includes(equipamentBuscada));
+
+    let estaDesativada =  (
+      valorColunaExclusao !== ""
+    );
+
+
+    if (bateuBusca) {
+      res.push({
+        id: idEquipament,
+        equipament: nomeEquipament,
+        desativada: estaDesativada
+      });
+    }
+  }
+
+  res.sort((a, b) => (a.desativada ? 1 : 0) - (b.desativada ? 1 : 0));
+
+  return res;
+}
+
+function cadastrarEquipament(nomeEquipamentInput) {
+  try {
+    const nomeEquipament = (nomeEquipamentInput || "").toString().trim();
+
+    if (nomeEquipament === "") {
+      return { sucesso: false, mensagem: "Digite o nome da equipament." };
+    }
+
+    const planilha = SpreadsheetApp.getActiveSpreadsheet();
+    const abaConsultaEquipament = planilha.getSheetByName(brandTableName);
+
+    if (!abaConsultaEquipament) {
+      return { sucesso: false, mensagem: "Aba '" + brandTableName + "' não foi encontrada na planilha." };
+    }
+
+    const ultimaLinha = abaConsultaEquipament.getLastRow();
+    const dataHoje = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+
+    if (ultimaLinha >= firstLineBrands) {
+      const numLinhas = ultimaLinha - (firstLineBrands - 1);
+      const dadosEquipaments = abaConsultaEquipament.getRange(firstLineBrands, 1, numLinhas, numColumnsBrands).getValues();
+      let linhaInativaEncontrada = -1;
+
+      for (let i = 0; i < dadosEquipaments.length; i++) {
+        const nomeTabela = dadosEquipaments[i][brandNameCol] ? dadosEquipaments[i][brandNameCol].toString().trim().toLowerCase() : "";
+        const dataExclusaoTabela = dadosEquipaments[i][brandDtExclusaoCol] ? dadosEquipaments[i][brandDtExclusaoCol].toString().trim() : "";
+
+        if (nomeTabela === nomeEquipament.toLowerCase()) {
+          if (dataExclusaoTabela === "") {
+            return { sucesso: false, mensagem: "Esta equipament já está cadastrada e ativa no sistema." };
+          } else {
+            linhaInativaEncontrada = i + firstLineBrands;
+          }
+        }
+      }
+
+      // Reativar equipament excluída
+      if (linhaInativaEncontrada !== -1) {
+        // Coluna 4 (brandDtExclusaoCol + 1) e Coluna 5 (brandDtAlteracaoCol + 1)
+        abaConsultaEquipament.getRange(linhaInativaEncontrada, brandDtExclusaoCol + 1).clearContent();
+        abaConsultaEquipament.getRange(linhaInativaEncontrada, brandDtAlteracaoCol + 1).setValue(dataHoje);
+        abaConsultaEquipament.getRange(linhaInativaEncontrada, 1, 1, numColumnsBrands).setBackground("#FFFFFF");
+
+        return { sucesso: true, mensagem: "Esta equipament já existia e foi reativada com sucesso!" };
+      }
+    }
+
+    // Cálculo do novo ID (Soma 1 em brandIdCol para pegar a coluna 1 da planilha)
+    let id = 1;
+    if (ultimaLinha >= firstLineBrands) {
+      const ultimoId = abaConsultaEquipament.getRange(ultimaLinha, brandIdCol + 1).getValue();
+      id = Number(ultimoId) + 1;
+    }
+
+    // Insere nova linha [ID, Nome, Data Cadastro, Data Exclusão, Data Alteração]
+    abaConsultaEquipament.appendRow([id, nomeEquipament, dataHoje, "", ""]);
+    const novaUltimaLinha = abaConsultaEquipament.getLastRow();
+    abaConsultaEquipament.getRange(novaUltimaLinha, 1, 1, numColumnsBrands).setBackground("#FFFFFF");
+
+    return { sucesso: true, mensagem: "Equipamento cadastrada com sucesso!" };
+
+  } catch (e) {
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
+}
+
+// desativarEquipamento() agora vive em apps/Model/back/EquipamentsModel.js (usada pelo
+// ExcluirRegistro genérico em Model.js) -- não duplicar aqui.
+
+function editarEquipament(idEquipamentInput, novoNome) {
+  try {
+    const idEquipament = Number(idEquipamentInput);
+
+    if (!idEquipament) {
+      return { sucesso: false, mensagem: "ID da equipament inválido." };
+    }
+
+    if (!novoNome || novoNome.trim() === "") {
+      return { sucesso: false, mensagem: "O nome da equipamento não pode ser vazio." };
+    }
+
+    const planilha = SpreadsheetApp.getActiveSpreadsheet();
+    const abaConsultaEquipament = planilha.getSheetByName('tbl_equipamento');
+
+    if (!abaConsultaEquipament) {
+      Logger.log("Aba 'tbl_equipamento' não foi encontrada na planilha.");
+      return { sucesso: false, mensagem: "Aba 'tbl_equipamento' não encontrada." };
+    }
+
+    const dadosEquipaments = ReadBrands();
+    let linhaLocalizada = -1;
+
+    for (let i = 0; i < dadosEquipaments.length; i++) {
+      if (Number(dadosEquipaments[i][0]) === idEquipament) {
+        linhaLocalizada = i + firstLineBrands;
+        break;
+      }
+    }
+
+    if (linhaLocalizada !== -1) {
+      const dataHoje = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+
+      abaConsultaEquipament.getRange(linhaLocalizada, 2).setValue(novoNome.trim());
+
+      abaConsultaEquipament.getRange(linhaLocalizada, 5).setValue(dataHoje);
+
+      Logger.log("Equipamento ID " + idEquipament + " editada na linha " + linhaLocalizada);
+      return {
+        sucesso: true,
+        mensagem: "Equipamento editada com sucesso.",
+        id: idEquipament,
+        equipament: novoNome.trim()
+      };
+
+    } else {
+      Logger.log("Equipamento não encontrada para o ID: " + idEquipament);
+      return { sucesso: false, mensagem: "Equipamento não encontrada na planilha." };
+    }
+  } catch (e) {
+    Logger.log("Erro no servidor ao editar equipamento: " + e.message);
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
+}

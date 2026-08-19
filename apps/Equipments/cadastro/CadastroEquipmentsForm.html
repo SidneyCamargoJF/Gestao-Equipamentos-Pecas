@@ -1,0 +1,83 @@
+<section id="page-equipments-view" class="spa-page">
+
+
+  <div class="page-header">
+          <div class="actions-bar">
+            <h1>🚚 Equipamentos</h1>
+          </div>  
+        </div>
+
+  <div class="card">
+      <!-- HEADER -->
+      <div class="form-header">
+        <h2 class="form-titulo" id="formTitulo">Novo</h2>
+        <!-- <span class="form-status" id="formStatus">Rascunho</span> --> 
+      </div>
+ 
+      <form autocomplete="off" onsubmit="return false;">
+ 
+        <!-- ============================================= -->
+        <!-- PARTE 1: INFORMAÇÕES PRINCIPAIS               -->
+        <!-- ============================================= -->
+        <fieldset class="fieldset-principal">
+          <legend class="fieldset-legend">Informações Principais</legend>
+ 
+          <div class="form-grid-1">
+ 
+            <div class="field">
+              <label class="field__label" for="patrimonio">Patrimonio</label>
+              <input class="field__input" type="text" id="patrimonio" placeholder="patrimonio" required>
+            </div>
+          </div>
+ 
+          <div class="form-grid-3">
+ 
+            <div class="field">
+              <label class="field__label" for="nome">Nome *</label>
+              <input class="field__input" type="text" id="nome" placeholder="Nome do equipamento" required> 
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="marca">Marca *</label>
+              <input class="field__input" type="text" id="marca" placeholder="Marca" required>
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="capacidade">Capacidade</label>
+              <input class="field__input" type="text" id="capacidade" placeholder="capacidade" required>
+            </div>
+
+          </div>
+ 
+          <div class="form-grid-3">
+
+            <div class="field">
+              <label class="field__label" for="modelo">Modelo</label>
+              <input class="field__input" type="text" id="modelo" placeholder="modelo" >
+            </div>
+ 
+            <div class="field">
+              <label class="field__label" for="sequencia">Sequencia</label>
+              <input class="field__input" type="text" id="sequencia" placeholder="55" >
+            </div>
+ 
+ 
+            <div class="field">
+              <label class="field__label" for="localizacao">Localização</label>
+              <input class="field__input" type="text" id="sequencia" placeholder="55" >
+            </div>
+
+          </div>
+ 
+        </fieldset>
+        <!-- ============================================= -->
+        <!-- BOTÕES DE AÇÃO                                -->
+        <!-- ============================================= -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="trocarPagina('equipments-view')">Cancelar</button>
+        <button type="button" class="btn btn-danger" onclick="equipmentsController.limpar()">Limpar</button>
+        <button type="button" class="btn-success" onclick="equipmentsController.salvar()">Salvar</button>
+      </div>
+      </form>
+    </div>
+  </section>

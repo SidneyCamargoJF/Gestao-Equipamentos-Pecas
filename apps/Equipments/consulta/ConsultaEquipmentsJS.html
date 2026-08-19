@@ -11,7 +11,7 @@ class EquipmentController {
   // ===== INICIALIZAÇÃO =====
   init() {
     this.bindEvents();
-    this.consultarEquipments();
+    this.consultar();
   }
 
   bindEvents() {
@@ -47,7 +47,7 @@ class EquipmentController {
   }
 
   // ===== CONSULTA E FILTROS =====
-  consultarEquipments() {
+  consultar() {
     const equipmentInput = document.getElementById('equipmentSearch');
     const equipment = equipmentInput ? equipmentInput.value.trim().toLowerCase() : '';
     const criterios = { equipment };
@@ -91,7 +91,7 @@ class EquipmentController {
 
     this.sortState = { coluna: null, direcao: 'asc' };
     if (typeof atualizarIndicadores === 'function') atualizarIndicadores();
-    this.consultarEquipments();
+    this.consultar();
 
     if (inputEquipment) inputEquipment.focus();
   }
@@ -148,7 +148,7 @@ class EquipmentController {
 
   // ===== MODAL DE CADASTRO =====
   abrirModalCadastroEquipment() {
-    const input = document.getElementById('novaEquipmentNome');
+    const input = document.getElementById('novoEquipmentNome');
     if (input) input.value = '';
 
     const modal = document.getElementById('modalCadastroEquipment');
@@ -158,8 +158,8 @@ class EquipmentController {
     }
   }
 
-  salvarNovaEquipment() {
-    const input = document.getElementById('novaEquipmentNome');
+  salvarNovoEquipment() {
+    const input = document.getElementById('novoEquipmentNome');
     const nomeEquipment = input ? input.value.trim() : '';
 
     if (!nomeEquipment) {
@@ -170,7 +170,7 @@ class EquipmentController {
     google.script.run
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso) {
-          this.consultarEquipments();
+          this.consultar();
           if (typeof fecharModal === 'function') fecharModal('modalCadastroEquipment');
         } else {
           alert(resposta ? resposta.mensagem : 'Erro ao cadastrar.');
@@ -207,7 +207,7 @@ class EquipmentController {
       .withSuccessHandler((resposta) => {
         if (resposta && resposta.sucesso) {
           if (typeof fecharModal === 'function') fecharModal('modalEdicaoEquipment');
-          this.consultarEquipments();
+          this.consultar();
         } else {
           alert(resposta ? resposta.mensagem : "Erro ao atualizar.");
         }
@@ -239,7 +239,7 @@ class EquipmentController {
       await executarExclusao('tbl_equipment', this.idExclusao);
     }
     this.idExclusao = null;
-    this.consultarEquipments();
+    this.consultar();
     if (typeof fecharModal === 'function') fecharModal('modalExclusaoEquipment');
   }
 }
@@ -250,4 +250,5 @@ const equipmentController = new EquipmentController();
 document.addEventListener('DOMContentLoaded', () => {
   equipmentController.init();
 });
+
 </script>
