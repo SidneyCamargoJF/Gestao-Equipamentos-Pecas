@@ -91,7 +91,7 @@ body {
 /* ===== FILTROS ===== */
 .filters-primary {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(13.75rem, 1fr));
   gap: 1rem;
   margin-bottom: 1.25rem;
 }
@@ -478,10 +478,6 @@ body {
   .app-header__title { font-size: 1.125rem; }
   .btn-back { left: 1.5rem; }
 
-  .filters-primary {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
   .actions-bar {
     flex-direction: row;
   }
@@ -494,10 +490,6 @@ body {
 
 @media (min-width: 64rem) {
   .main-container { padding: 2rem 1.5rem; }
-
-  .filters-primary {
-    grid-template-columns: repeat(5, 1fr);
-  }
 }
 
 .btn-primary,

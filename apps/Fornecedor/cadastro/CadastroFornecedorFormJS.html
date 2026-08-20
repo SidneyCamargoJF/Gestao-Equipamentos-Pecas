@@ -188,13 +188,37 @@
           return;
         }
         preencherFormulario(dados);
-        document.getElementById('formTitulo').textContent = 'Editar Fornecedor';
-        document.getElementById('formStatus').textContent = 'Editando';
+        const tituloEl = document.getElementById('formTitulo');
+        if (tituloEl) tituloEl.textContent = 'Editar Fornecedor';
+        const statusEl = document.getElementById('formStatus');
+        if (statusEl) statusEl.textContent = 'Editando';
       })
       .withFailureHandler(function (erro) {
         alert('Erro ao buscar fornecedor: ' + erro.message);
       })
       .buscarFornecedorPorCnpjBackend(cnpj);
+  }
+
+  //
+  // BUSCA DE FORNECEDOR PELO ID (vem da tela de Consulta, botão editar)
+  //
+  function carregarFornecedorParaEdicao(id) {
+    google.script.run
+      .withSuccessHandler(function (dados) {
+        if (!dados) {
+          alert('Fornecedor não encontrado.');
+          return;
+        }
+        preencherFormulario(dados);
+        const tituloEl = document.getElementById('formTitulo');
+        if (tituloEl) tituloEl.textContent = 'Editar Fornecedor';
+        const statusEl = document.getElementById('formStatus');
+        if (statusEl) statusEl.textContent = 'Editando';
+      })
+      .withFailureHandler(function (erro) {
+        alert('Erro ao carregar fornecedor: ' + erro.message);
+      })
+      .buscarFornecedorPorIdBackend(id);
   }
 
   function preencherFormulario(dados) {
@@ -311,8 +335,10 @@
       el.value = '';
     });
 
-    document.getElementById('formTitulo').textContent = 'Novo Fornecedor';
-    document.getElementById('formStatus').textContent = 'Rascunho';
+    const tituloEl = document.getElementById('formTitulo');
+    if (tituloEl) tituloEl.textContent = 'Novo Fornecedor';
+    const statusEl = document.getElementById('formStatus');
+    if (statusEl) statusEl.textContent = 'Rascunho';
   }
 
   // 
@@ -351,8 +377,9 @@
   // campos, já que aqui não existe um "DOMContentLoaded" novo (o HTML foi
   // injetado dinamicamente, não carregado como página).
 
-  async function renderFornecedorForm() {
+  async function renderFornecedorForm(id) {
 
+    limparFornecedor();
 
     const cnpjField = document.getElementById('cnpj');
     if (cnpjField) {
@@ -375,6 +402,10 @@
 
     const emailField = document.getElementById('emailFornecedor');
     if (emailField) emailField.addEventListener('blur', verificarEmailAoSair);
+
+    if (id) {
+      carregarFornecedorParaEdicao(id);
+    }
   }
 
   // Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante

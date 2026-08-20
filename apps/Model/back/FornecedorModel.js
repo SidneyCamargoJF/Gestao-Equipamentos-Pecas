@@ -25,7 +25,7 @@ let supplierStatusCol = 20
 
 function ReadSuppliers() {
 
-  const dados = ReadSheet(supplierTableName, 3, 14)
+  const dados = ReadSheet(supplierTableName, firstLineSupplier, numColumnsupplier)
 
   return dados.map(linha =>
     linha.map(valor => (valor instanceof Date) ? dateToString(valor) : valor)
