@@ -7,6 +7,8 @@
       const vencidas = mensais.filter(m => m.status === 'Vencida').length;
       const programadas = mensais.filter(m => m.status !== 'Vencida').length;
 
+      return
+
       document.querySelectorAll('.data-hoje').forEach(el => {
         el.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
       });
