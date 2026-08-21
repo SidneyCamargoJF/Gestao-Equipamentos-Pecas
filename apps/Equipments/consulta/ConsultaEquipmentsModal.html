@@ -36,13 +36,13 @@
     </div>
 
     <!-- MODAL DE EXCLUSÃO -->
-    <div class="modal-overlay" id="modalExclusaoEquipment">
+    <div class="modal-overlay" id="modalInativateEquipment">
       <div class="modal">
         <h3>Confirmar Exclusão</h3>
-        <p>Tem certeza que deseja fazer a exclusão? Esta ação não pode ser desfeita.</p>
+        <p>Tem certeza que deseja inativar? Esta ação não pode ser desfeita.</p>
         <div class="modal-actions">
           <button class="btn-secondary" onclick="fecharModal('modalExclusaoEquipment')" style="width:auto;">Cancelar</button>
-          <button class="btn-danger" onclick="equipmentController.executarExclusao()">Sim, Excluir</button>
+          <button class="btn-danger" onclick="equipmentController.status('I')">Sim, Excluir</button>
         </div>
       </div>
     </div>

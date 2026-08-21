@@ -4,12 +4,20 @@ class EquipmentsModel extends SheetModel {
     super('tbl_equipments', 3, 1);  // constructor(sheetName, firstLine, firstColumn)
 
     // Mapeamento de colunas e limites
-    this.numColumns = 5;
+    this.numColumns = 10;
     this.colId = 0;
     this.colName = 1;
-    this.colDtCadastro = 2;
-    this.colDtExclusao = 3;
-    this.colDtAlteracao = 4;
+    this.colBrand = 2;
+    this.colCapacity = 3;
+    this.colModel = 4;
+    this.colPatrimonio = 5;
+    this.colSequential = 6;
+    this.colLocation = 7;
+    this.colActive = 8;
+    this.colDtCadastro = 9;
+    this.colDtAlteracao = 10;
+    this.colDtExclusao = 11;
+
   }
 
   /**
@@ -19,11 +27,14 @@ class EquipmentsModel extends SheetModel {
     const rows = this.readAll(this.numColumns);
 
     return rows.map(item => {
+      item[this.colName] = typeof isEmpty === 'function' && isEmpty(item[this.colName]) ? "" : item[this.colName];
+
       item[this.colDtCadastro] = typeof isEmpty === 'function' && isEmpty(item[this.colDtCadastro]) ? "" : this.formatDate(item[this.colDtCadastro]);
       item[this.colDtExclusao] = typeof isEmpty === 'function' && isEmpty(item[this.colDtExclusao]) ? "" : this.formatDate(item[this.colDtExclusao]);
       item[this.colDtAlteracao] = typeof isEmpty === 'function' && isEmpty(item[this.colDtAlteracao]) ? "" : this.formatDate(item[this.colDtAlteracao]);
-      return item;
     });
+
+    return rows;
   }
 
   /**
@@ -58,11 +69,11 @@ class EquipmentsModel extends SheetModel {
   }
 
   /**
-   * Desativa um equipamento/marca aplicando preenchimento e data de exclusão
+   * Exclui um equipamento/marca aplicando preenchimento e data de exclusão
    */
-  desativar(idInput) {
+  delete(par_id) {
     try {
-      const id = Number(idInput);
+      const id = Number(par_id);
       if (!id) {
         return { sucesso: false, mensagem: "ID inválido." };
       }
@@ -96,6 +107,48 @@ class EquipmentsModel extends SheetModel {
       }
     } catch (e) {
       Logger.log(`Erro ao desativar equipamento: ${e.message}`);
+      return { sucesso: false, mensagem: `Erro no servidor: ${e.message}` };
+    }
+  }
+
+  /**
+   * Exclui um equipamento/marca aplicando preenchimento e data de exclusão
+   */
+  status(par_id, par_status) {
+    try {
+      const id = Number(par_id);
+      if (!id) {
+        return { sucesso: false, mensagem: "ID inválido." };
+      }
+
+      const sheet = this.getSheet();
+      const dados = this.read();
+      let linhaLocalizada = -1;
+
+      for (let i = 0; i < dados.length; i++) {
+        const idTabela = Number(dados[i][this.colId]);
+
+        if (idTabela === id && dataExclusao === "") {
+          linhaLocalizada = i + this.firstLine;
+          break;
+        }
+      }
+
+      if (linhaLocalizada !== -1) {
+        // Atualiza a data de exclusão (coluna 4/index colDtExclusao+1) e cor de fundo
+        sheet.getRange(linhaLocalizada, this.colActive).setValue(par_status);
+        if (par_status === 'I') {
+          sheet.getRange(linhaLocalizada, 1, 1, 4).setBackground("#F4CCCC");
+          Logger.log(`Equipamento ID ${id} desativado na linha ${linhaLocalizada}`);
+          return { sucesso: true, mensagem: "Equipamento desativado com sucesso." };
+        }
+
+      } else {
+        Logger.log(`Equipamento não encontrado para o ID: ${id}`);
+        return { sucesso: false, mensagem: "Equipamento não encontrado." };
+      }
+    } catch (e) {
+      Logger.log(`Erro ao alterar o status do equipamento: ${e.message}`);
       return { sucesso: false, mensagem: `Erro no servidor: ${e.message}` };
     }
   }

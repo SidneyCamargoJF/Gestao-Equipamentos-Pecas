@@ -26,7 +26,7 @@
 
     // Render view dynamic content
     if (paginaId === 'dashboard') renderDashboard();
-    if (paginaId === 'equipamentos') renderEquipamentos();
+    if (paginaId === 'equipments-view') equipmentController.consultar();
 
     if (paginaId === 'pecas-view') renderPecas();
     if (paginaId === 'pecas-form') renderCadastroPecas(param);

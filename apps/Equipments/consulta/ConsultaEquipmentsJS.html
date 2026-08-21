@@ -55,7 +55,7 @@ class EquipmentController {
     google.script.run
       .withSuccessHandler(objEquipments => this.retornoEquipments(objEquipments))
       .withFailureHandler(err => console.error('Erro ao consultar: ', err))
-      .filtrarEquipments(criterios);
+      .equipmentService.filtrar(criterios);
   }
 
   retornoEquipments(objEquipments) {
@@ -67,7 +67,7 @@ class EquipmentController {
       initSearch('equipmentSearch', 'equipmentDropdown', 'equipmentWrapper', opcoesEquipment);
     }
 
-    this.renderTabelaEquipment(this.listaFiltrada);
+    this.render(this.listaFiltrada);
   }
 
   filtrarEquipment() {
@@ -82,7 +82,7 @@ class EquipmentController {
     if (typeof aplicarOrdenacao === 'function') {
       this.listaFiltrada = aplicarOrdenacao(this.listaFiltrada);
     }
-    this.renderTabelaEquipment(this.listaFiltrada);
+    this.render(this.listaFiltrada);
   }
 
   limparFiltrosEquipment() {
@@ -97,7 +97,7 @@ class EquipmentController {
   }
 
   // ===== RENDERIZAÇÃO DE TABELA =====
-  renderTabelaEquipment(lista) {
+  render(lista) {
     const tbody = document.getElementById('tabelaBodyEquipment');
     if (!tbody) return;
 
@@ -107,6 +107,8 @@ class EquipmentController {
       tbody.innerHTML = '<tr class="empty-row"><td colspan="2">Nenhum registro encontrado.</td></tr>';
       return;
     }
+
+    console.log(lista)
 
     lista.forEach(m => {
       const tr = document.createElement('tr');
@@ -133,7 +135,7 @@ class EquipmentController {
       }
 
       const tdConteudo = document.createElement('td');
-      const textEscaped = typeof escapeHtml === 'function' ? escapeHtml(m.equipment) : m.equipment;
+      const textEscaped = typeof escapeHtml === 'function' ? escapeHtml(m.name) : m.mame;
       tdConteudo.innerHTML = `${textEscaped} ${m.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}`;
 
       const tdAcoes = document.createElement('td');
@@ -227,9 +229,9 @@ class EquipmentController {
     }
     this.idExclusao = id;
     if (typeof exibirModal === 'function') {
-      exibirModal('modalExclusaoEquipment');
+      exibirModal('modalInativateEquipment');
     } else {
-      const modal = document.getElementById('modalExclusaoEquipment');
+      const modal = document.getElementById('modalInativateEquipment');
       if (modal) modal.classList.add('aberto');
     }
   }
