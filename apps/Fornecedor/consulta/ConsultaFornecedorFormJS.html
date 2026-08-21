@@ -194,7 +194,7 @@
         : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarFornecedor('${f.id}')">✏️</button>`;
 
       const btnExcluir = f.desativado
-        ? '<button class="btn-acao btn-excluir-linha" title="Desativar" disabled style="opacity:0.3; cursor:not-allowed;">🗑️</button>'
+        ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarFornecedorUI('${f.id}')">♻️</button>`
         : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="confirmarExclusaoFornecedor('${f.id}')">🗑️</button>`;
 
       tr.innerHTML = `
@@ -228,6 +228,7 @@
   }
 
   function editarFornecedor(id) {
+    console.log('✏️ [editarFornecedor] id clicado:', id, '(tipo:', typeof id, ')');
     if (typeof trocarPagina === 'function') {
       trocarPagina('fornecedor-form', id);
     }
@@ -265,6 +266,33 @@
       renderTabelaFornecedor(aplicarOrdenacaoFornecedor(fornecedores));
     } catch (err) {
       console.error('Erro ao desativar fornecedor:', err);
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      if (typeof fecharModal === 'function') fecharModal('processando');
+    }
+  }
+
+  // ==== REATIVAR FORNECEDOR ====
+  async function reativarFornecedorUI(id) {
+    if (!id) return;
+    if (!confirm('Deseja reativar este fornecedor?')) return;
+
+    if (typeof exibirModal === 'function') exibirModal('processando');
+
+    try {
+      const resposta = await runServerFunction('reativarFornecedor', id);
+
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return;
+      }
+
+      const fornecedor = fornecedores.find(f => String(f.id) === String(id));
+      if (fornecedor) fornecedor.desativado = false;
+
+      renderTabelaFornecedor(aplicarOrdenacaoFornecedor(fornecedores));
+    } catch (err) {
+      console.error('Erro ao reativar fornecedor:', err);
       alert('Erro ao conectar com o servidor.');
     } finally {
       if (typeof fecharModal === 'function') fecharModal('processando');

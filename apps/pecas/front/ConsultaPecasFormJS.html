@@ -282,7 +282,7 @@
             : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarPeca('${p.id}')">✏️</button>`;
 
           const btnExcluir = p.desativada
-            ? '<button class="btn-acao btn-excluir-linha" title="Desativar" disabled style="opacity:0.3; cursor:not-allowed;">🗑️</button>'
+            ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarPecaUI('${p.id}')">♻️</button>`
             : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="abrirModalExclusao('${p.id}')">🗑️</button>`;
 
           tr.innerHTML = `
@@ -350,6 +350,33 @@
           filtrar();
         } catch (err) {
           console.error('Erro ao desativar peça:', err);
+          alert('Erro ao conectar com o servidor.');
+        } finally {
+          if (typeof fecharModal === 'function') fecharModal('processando');
+        }
+      }
+
+      // ==== REATIVAR PEÇA ====
+      async function reativarPecaUI(id) {
+        if (!id) return;
+        if (!confirm('Deseja reativar esta peça?')) return;
+
+        if (typeof exibirModal === 'function') exibirModal('processando');
+
+        try {
+          const resposta = await runServerFunction('reativarPeca', id);
+
+          if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+          }
+
+          const peca = pecas.find(p => String(p.id) === String(id));
+          if (peca) peca.desativada = false;
+
+          filtrar();
+        } catch (err) {
+          console.error('Erro ao reativar peça:', err);
           alert('Erro ao conectar com o servidor.');
         } finally {
           if (typeof fecharModal === 'function') fecharModal('processando');

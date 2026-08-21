@@ -132,3 +132,43 @@ function desativarPeca(idInput) {
     return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
   }
 }
+
+/**
+ * Reativa uma peça previamente desativada: limpa a data de exclusão e volta
+ * a linha para o fundo branco. Mesmo padrão do reativarFornecedor.
+ */
+function reativarPeca(idInput) {
+  try {
+    const idBuscado = Number(idInput);
+    if (!idBuscado) {
+      return { sucesso: false, mensagem: "ID da peça inválido." };
+    }
+
+    const planilha = SpreadsheetApp.getActiveSpreadsheet();
+    const abaRegistroPecas = planilha.getSheetByName("tbl_pecas");
+    if (!abaRegistroPecas) {
+      return { sucesso: false, mensagem: "Aba 'tbl_pecas' não foi encontrada na planilha." };
+    }
+
+    const dados = ReadParts();
+    if (!dados) {
+      return { sucesso: false, mensagem: "Peça não encontrada (ID " + idBuscado + ")." };
+    }
+
+    for (let i = 0; i < dados.length; i++) {
+      if (Number(dados[i][partsIdCol]) === idBuscado) {
+        const linhaReal = i + firstLineParts;
+
+        abaRegistroPecas.getRange(linhaReal, partsDtExclusaoCol + 1).clearContent();
+        abaRegistroPecas.getRange(linhaReal, 1, 1, numColumnsParts).setBackground("#FFFFFF");
+
+        return { sucesso: true, mensagem: "Peça reativada com sucesso!" };
+      }
+    }
+
+    return { sucesso: false, mensagem: "Peça não encontrada (ID " + idBuscado + ")." };
+  } catch (e) {
+    Logger.log("Erro ao reativar peça: " + e.message);
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
+}

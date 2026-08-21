@@ -289,6 +289,8 @@ function mapLinhaParaFornecedorCompleto(linha) {
  * buscarFornecedorPorCnpjBackend, ou null se não encontrar.
  */
 function buscarFornecedorPorIdBackend(id) {
+  Logger.log('📥 [buscarFornecedorPorIdBackend] id recebido: ' + JSON.stringify(id) + ' (tipo: ' + typeof id + ')');
+
   if (id === null || id === undefined || id === '') return null;
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -297,9 +299,16 @@ function buscarFornecedorPorIdBackend(id) {
 
   const dadosTabela = abaTabelaFornecedor.getDataRange().getValues();
 
+  const idsNaPlanilha = [];
+  for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
+    idsNaPlanilha.push(dadosTabela[i][0]);
+  }
+  Logger.log('📊 [buscarFornecedorPorIdBackend] idBuscado="' + idBuscado + '" | IDs na planilha: ' + JSON.stringify(idsNaPlanilha));
+
   for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
     const linha = dadosTabela[i];
     if (String(linha[0]).trim() === idBuscado) {
+      Logger.log('✅ [buscarFornecedorPorIdBackend] encontrado na linha ' + (i + 1));
       return mapLinhaParaFornecedorCompleto(linha);
     }
   }

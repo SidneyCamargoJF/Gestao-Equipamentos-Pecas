@@ -89,11 +89,57 @@ function desativarFornecedor(idInput) {
         const linhaReal = i + firstLineSupplier;
         const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
 
+        Logger.log('🔧 [desativarFornecedor] linha real na planilha: ' + linhaReal);
+        Logger.log('🔧 [desativarFornecedor] cabeçalho da coluna de data (linha 1, col ' + supplierDtAlteracaoCol + '): ' + abaTabelaFornecedor.getRange(1, supplierDtAlteracaoCol).getValue());
+        Logger.log('🔧 [desativarFornecedor] cabeçalho da coluna de status (linha 1, col ' + supplierStatusCol + '): ' + abaTabelaFornecedor.getRange(1, supplierStatusCol).getValue());
+
         abaTabelaFornecedor.getRange(linhaReal, supplierDtAlteracaoCol).setValue(dataAtual);
         abaTabelaFornecedor.getRange(linhaReal, supplierStatusCol).setValue("Inativo");
         abaTabelaFornecedor.getRange(linhaReal, 1, 1, numColumnsupplier).setBackground("#F4CCCC");
 
+        Logger.log('✅ [desativarFornecedor] valor gravado na coluna de data: ' + abaTabelaFornecedor.getRange(linhaReal, supplierDtAlteracaoCol).getValue());
+        Logger.log('✅ [desativarFornecedor] valor gravado na coluna de status: ' + abaTabelaFornecedor.getRange(linhaReal, supplierStatusCol).getValue());
+
         return { sucesso: true, mensagem: "Fornecedor desativado com sucesso." };
+      }
+    }
+
+    return { sucesso: false, mensagem: "Fornecedor não encontrado (ID " + idBuscado + ")." };
+  } catch (e) {
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
+}
+
+/**
+ * Reativa um fornecedor previamente desativado: volta o Status pra "Ativo",
+ * grava a data de alteração e remove o fundo vermelho da linha.
+ * Retorna { sucesso: boolean, mensagem: string }
+ */
+function reativarFornecedor(idInput) {
+  try {
+    const idBuscado = Number(idInput);
+    if (!idBuscado) {
+      return { sucesso: false, mensagem: "ID do fornecedor inválido." };
+    }
+
+    const planilha = SpreadsheetApp.getActiveSpreadsheet();
+    const abaTabelaFornecedor = planilha.getSheetByName(supplierTableName);
+    if (!abaTabelaFornecedor) {
+      return { sucesso: false, mensagem: "Aba 'tbl_fornecedor' não foi encontrada na planilha." };
+    }
+
+    const dados = ReadSuppliers();
+
+    for (let i = 0; i < dados.length; i++) {
+      if (Number(dados[i][0]) === idBuscado) {
+        const linhaReal = i + firstLineSupplier;
+        const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+
+        abaTabelaFornecedor.getRange(linhaReal, supplierDtAlteracaoCol).setValue(dataAtual);
+        abaTabelaFornecedor.getRange(linhaReal, supplierStatusCol).setValue("Ativo");
+        abaTabelaFornecedor.getRange(linhaReal, 1, 1, numColumnsupplier).setBackground("#FFFFFF");
+
+        return { sucesso: true, mensagem: "Fornecedor reativado com sucesso." };
       }
     }
 
