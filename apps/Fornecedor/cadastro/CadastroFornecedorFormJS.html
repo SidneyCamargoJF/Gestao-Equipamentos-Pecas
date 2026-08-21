@@ -138,12 +138,89 @@
           } else {
             alert('Continuando com o cadastro. Coloque um CNPJ novo para cadastrá-lo.');
           }
+        } else {
+          // Ainda não temos esse CNPJ cadastrado aqui -- confirma na Receita
+          // Federal se a empresa existe de verdade (checksum válido só prova
+          // que os dígitos são consistentes, não que a empresa existe).
+          consultarCnpjReceita(cnpjLimpo);
         }
       })
       .withFailureHandler(function (erro) {
         console.error('Erro ao verificar CNPJ:', erro.message);
       })
       .verificarCnpjExistente(cnpj);
+  }
+
+  //
+  // CONSULTA DO CNPJ NA RECEITA FEDERAL (via BrasilAPI)
+  // Confirma que a empresa existe de verdade e pré-preenche Razão Social /
+  // Nome Fantasia / Endereço, igual ao buscarCEP() já faz com o ViaCEP.
+  // A BrasilAPI hoje só reconhece CNPJ numérico (14 dígitos); se o CNPJ
+  // digitado tiver letras (formato alfanumérico novo da Receita, ainda não
+  // suportado pela API pública), pulamos essa consulta em silêncio -- o
+  // cadastro continua normalmente, só sem o preenchimento automático.
+  //
+  function consultarCnpjReceita(cnpjLimpo) {
+    if (!/^\d{14}$/.test(cnpjLimpo)) return;
+
+    const cnpjField = document.getElementById('cnpj');
+    cnpjField.disabled = true;
+
+    fetch('https://brasilapi.com.br/api/cnpj/v1/' + cnpjLimpo)
+      .then(resp => {
+        if (resp.status === 404) throw { naoExiste: true };
+        if (!resp.ok) throw { naoExiste: false };
+        return resp.json();
+      })
+      .then(dados => {
+        const querPreencher = confirm(
+          'CNPJ encontrado na Receita Federal:\n' + (dados.razao_social || '(nome não informado)') +
+          '\n\nDeseja preencher automaticamente os dados da empresa?'
+        );
+        if (querPreencher) preencherComDadosReceita(dados);
+      })
+      .catch((erro) => {
+        if (erro && erro.naoExiste) {
+          alert('CNPJ não existe.\n\nEsse CNPJ não foi encontrado na Receita Federal. Verifique se ele está correto antes de continuar.');
+        } else {
+          alert('Não foi possível consultar a Receita Federal agora. Verifique sua conexão e confira o CNPJ manualmente antes de continuar.');
+        }
+      })
+      .finally(() => {
+        cnpjField.disabled = false;
+      });
+  }
+
+  function preencherComDadosReceita(dados) {
+    const preencherSeVazio = (id, valor) => {
+      const el = document.getElementById(id);
+      if (el && !el.value.trim() && valor) el.value = valor;
+    };
+
+    preencherSeVazio('razaoSocial', dados.razao_social);
+    preencherSeVazio('nomeFantasia', dados.nome_fantasia || dados.razao_social);
+    preencherSeVazio('emailFornecedor', dados.email);
+    preencherSeVazio('cep', dados.cep);
+    preencherSeVazio('ruaAvenida', dados.logradouro);
+    preencherSeVazio('numeroFornecedor', dados.numero);
+    preencherSeVazio('bairro', dados.bairro);
+    preencherSeVazio('cidade', dados.municipio);
+    preencherSeVazio('estado', dados.uf);
+
+    if (dados.ddd_telefone_1) {
+      preencherSeVazio('telefoneFixo', formatarTelefoneReceita(dados.ddd_telefone_1));
+    }
+  }
+
+  function formatarTelefoneReceita(numero) {
+    const digitos = String(numero).replace(/\D/g, '');
+    if (digitos.length === 10) {
+      return '(' + digitos.slice(0, 2) + ') ' + digitos.slice(2, 6) + '-' + digitos.slice(6);
+    }
+    if (digitos.length === 11) {
+      return '(' + digitos.slice(0, 2) + ') ' + digitos.slice(2, 7) + '-' + digitos.slice(7);
+    }
+    return numero;
   }
 
 
@@ -188,13 +265,39 @@
           return;
         }
         preencherFormulario(dados);
-        document.getElementById('formTitulo').textContent = 'Editar Fornecedor';
-        document.getElementById('formStatus').textContent = 'Editando';
+        const tituloEl = document.getElementById('formTitulo');
+        if (tituloEl) tituloEl.textContent = 'Editar Fornecedor';
+        const statusEl = document.getElementById('formStatus');
+        if (statusEl) statusEl.textContent = 'Editando';
       })
       .withFailureHandler(function (erro) {
         alert('Erro ao buscar fornecedor: ' + erro.message);
       })
       .buscarFornecedorPorCnpjBackend(cnpj);
+  }
+
+  //
+  // BUSCA DE FORNECEDOR PELO ID (vem da tela de Consulta, botão editar)
+  //
+  function carregarFornecedorParaEdicao(id) {
+    console.log('📤 [carregarFornecedorParaEdicao] id enviado ao servidor:', id, '(tipo:', typeof id, ')');
+    google.script.run
+      .withSuccessHandler(function (dados) {
+        console.log('📥 [carregarFornecedorParaEdicao] resposta do servidor:', dados);
+        if (!dados) {
+          alert('Fornecedor não encontrado.');
+          return;
+        }
+        preencherFormulario(dados);
+        const tituloEl = document.getElementById('formTitulo');
+        if (tituloEl) tituloEl.textContent = 'Editar Fornecedor';
+        const statusEl = document.getElementById('formStatus');
+        if (statusEl) statusEl.textContent = 'Editando';
+      })
+      .withFailureHandler(function (erro) {
+        alert('Erro ao carregar fornecedor: ' + erro.message);
+      })
+      .buscarFornecedorPorIdBackend(id);
   }
 
   function preencherFormulario(dados) {
@@ -214,6 +317,8 @@
     document.getElementById('cidade').value = dados.cidade || '';
     document.getElementById('estado').value = dados.estado || '';
     document.getElementById('complemento').value = dados.complemento || '';
+    document.getElementById('prestadorServico').checked = !!dados.prestadorServico;
+    document.getElementById('distribuidorProdutos').checked = !!dados.distribuidorProdutos;
   }
 
 
@@ -265,7 +370,9 @@
       bairro: document.getElementById('bairro').value.trim(),
       cidade: document.getElementById('cidade').value.trim(),
       estado: document.getElementById('estado').value,
-      complemento: document.getElementById('complemento').value.trim()
+      complemento: document.getElementById('complemento').value.trim(),
+      prestadorServico: document.getElementById('prestadorServico').checked,
+      distribuidorProdutos: document.getElementById('distribuidorProdutos').checked
     };
   }
 
@@ -296,6 +403,17 @@
       return false;
     }
 
+    const prestadorServico = document.getElementById('prestadorServico').checked;
+    const distribuidorProdutos = document.getElementById('distribuidorProdutos').checked;
+    const erroTipoEl = document.getElementById('tipoFornecedorErro');
+
+    if (!prestadorServico && !distribuidorProdutos) {
+      if (erroTipoEl) erroTipoEl.classList.add('visible');
+      alert('ERRO: Selecione ao menos um tipo de fornecedor (Prestador de Serviço ou Distribuidor de Produtos).');
+      return false;
+    }
+    if (erroTipoEl) erroTipoEl.classList.remove('visible');
+
     return true;
   }
 
@@ -310,9 +428,15 @@
     document.querySelectorAll('.field__input, .field__select').forEach(el => {
       el.value = '';
     });
+    document.getElementById('prestadorServico').checked = false;
+    document.getElementById('distribuidorProdutos').checked = false;
+    const erroTipoEl = document.getElementById('tipoFornecedorErro');
+    if (erroTipoEl) erroTipoEl.classList.remove('visible');
 
-    document.getElementById('formTitulo').textContent = 'Novo Fornecedor';
-    document.getElementById('formStatus').textContent = 'Rascunho';
+    const tituloEl = document.getElementById('formTitulo');
+    if (tituloEl) tituloEl.textContent = 'Novo Fornecedor';
+    const statusEl = document.getElementById('formStatus');
+    if (statusEl) statusEl.textContent = 'Rascunho';
   }
 
   // 
@@ -351,8 +475,9 @@
   // campos, já que aqui não existe um "DOMContentLoaded" novo (o HTML foi
   // injetado dinamicamente, não carregado como página).
 
-  async function renderFornecedorForm() {
+  async function renderFornecedorForm(id) {
 
+    limparFornecedor();
 
     const cnpjField = document.getElementById('cnpj');
     if (cnpjField) {
@@ -375,6 +500,10 @@
 
     const emailField = document.getElementById('emailFornecedor');
     if (emailField) emailField.addEventListener('blur', verificarEmailAoSair);
+
+    if (id) {
+      carregarFornecedorParaEdicao(id);
+    }
   }
 
   // Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante

@@ -68,6 +68,18 @@
       </div>
     </div>
 
+    <!-- MODAL DE EXCLUSÃO DE FORNECEDOR -->
+    <div class="modal-overlay" id="modalExclusaoFornecedor">
+      <div class="modal">
+        <h3>Confirmar Exclusão</h3>
+        <p>Tem certeza que deseja fazer a exclusão? Esta ação não pode ser desfeita.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="fecharModal('modalExclusaoFornecedor')" style="width:auto;">Cancelar</button>
+          <button class="btn-danger" onclick="executarExclusaoFornecedor()">Sim, Excluir</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL DE PROCESSAMENTO -->
     <div class="modal-overlay" id="processando">
       <div class="modal">

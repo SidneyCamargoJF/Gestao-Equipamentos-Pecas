@@ -42,41 +42,25 @@
         </div>
 
         <div class="field">
-          <label class="field__label" for="filtro-fornecedor-cidade">Cidade</label>
-          <input class="field__input" type="text" id="filtro-fornecedor-cidade" placeholder="Digite a cidade...">
+          <label class="field__label" for="filtro-fornecedor-estado">Estado</label>
+          <select class="field__select" id="filtro-fornecedor-estado" onchange="atualizarCidadesPorEstado()">
+            <option value="">Todos</option>
+          </select>
         </div>
 
         <div class="field">
-          <label class="field__label" for="filtro-fornecedor-estado">Estado</label>
-          <select class="field__select" id="filtro-fornecedor-estado">
+          <label class="field__label" for="filtro-fornecedor-cidade">Cidade</label>
+          <select class="field__select" id="filtro-fornecedor-cidade">
+            <option value="">Todas</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="filtro-fornecedor-tipo">Tipo</label>
+          <select class="field__select" id="filtro-fornecedor-tipo" onchange="consultarFornecedores()">
             <option value="">Todos</option>
-            <option value="AC">AC</option>
-            <option value="AL">AL</option>
-            <option value="AP">AP</option>
-            <option value="AM">AM</option>
-            <option value="BA">BA</option>
-            <option value="CE">CE</option>
-            <option value="DF">DF</option>
-            <option value="ES">ES</option>
-            <option value="GO">GO</option>
-            <option value="MA">MA</option>
-            <option value="MT">MT</option>
-            <option value="MS">MS</option>
-            <option value="MG">MG</option>
-            <option value="PA">PA</option>
-            <option value="PB">PB</option>
-            <option value="PR">PR</option>
-            <option value="PE">PE</option>
-            <option value="PI">PI</option>
-            <option value="RJ">RJ</option>
-            <option value="RN">RN</option>
-            <option value="RS">RS</option>
-            <option value="RO">RO</option>
-            <option value="RR">RR</option>
-            <option value="SC">SC</option>
-            <option value="SP">SP</option>
-            <option value="SE">SE</option>
-            <option value="TO">TO</option>
+            <option value="prestador">Prestador de Serviço</option>
+            <option value="distribuidor">Distribuidor de Produtos</option>
           </select>
         </div>
       </div>
@@ -94,6 +78,7 @@
             <th onclick="ordenarFornecedor('telefone')">TELEFONE <span class="sort-arrow"></span></th>
             <th onclick="ordenarFornecedor('email')">E-MAIL <span class="sort-arrow"></span></th>
             <th onclick="ordenarFornecedor('cidade')">CIDADE/UF <span class="sort-arrow"></span></th>
+            <th style="cursor:default;">OBSERVAÇÃO</th>
             <th style="cursor:default;">AÇÕES</th>
           </tr>
         </thead>

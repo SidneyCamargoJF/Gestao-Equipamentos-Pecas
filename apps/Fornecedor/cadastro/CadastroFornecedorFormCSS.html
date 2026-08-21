@@ -19,6 +19,34 @@ body {
   box-shadow: 0 0.25rem 1.5rem rgba(15, 23, 42, 0.08);
 }
 
+/* ===== TIPO DE FORNECEDOR (CHECKBOXES) ===== */
+.checkbox-group {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.625rem 0;
+}
+
+.checkbox-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--color-slate-700);
+  cursor: pointer;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--color-indigo);
+  cursor: pointer;
+}
+
+.field__error-msg.visible {
+  display: block;
+}
+
 /* ===== HEADER DO FORMULÁRIO ===== */
 .form-header {
   display: flex;

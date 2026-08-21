@@ -1,233 +1,307 @@
 <script>
-  //=== CARREGAR DADOS DO SERVIDOR ===
-  async function loadSuppliersNames() {
-    try {
-      const res = await runServerFunction("ReadSuppliers");
-      if (!Array.isArray(res)) return [];
+  // Estado de ordenação exclusivo desta tela.
+  let sortStateFornecedor = { coluna: null, direcao: 'asc' };
 
-      return res.map(line => line[1]).filter(Boolean);
-    } catch (error) {
-      console.error("Erro ao carregar lista de fornecedores:", error);
-      return [];
-    }
+  // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
+  // Nome exigido pelo roteador da SPA (js/IndexSPAJS.html: trocarPagina).
+  async function renderFornecedorView() {
+    const inputNome = document.getElementById('filtro-fornecedor-nome');
+    if (inputNome) inputNome.focus();
   }
 
-  //=== SEARCH ===
-  function initSearch(inputId, dropdownId, wrapperId, opcoes) {
-    const input = document.getElementById(inputId);
-    const dropdown = document.getElementById(dropdownId);
-    const wrapper = document.getElementById(wrapperId);
+  // ===== CONSULTAR, FILTRAR E RENDERIZAR =====
+  function consultarFornecedores() {
+    const nome = document.getElementById('filtro-fornecedor-nome')?.value.trim() || '';
+    const cnpj = document.getElementById('filtro-fornecedor-cnpj')?.value.trim() || '';
+    const estado = document.getElementById('filtro-fornecedor-estado')?.value || '';
+    const cidade = document.getElementById('filtro-fornecedor-cidade')?.value || '';
+    const tipo = document.getElementById('filtro-fornecedor-tipo')?.value || '';
 
-    if (!input || !dropdown || !wrapper) {
-      console.warn("initSearch: Elementos do DOM não encontrados.", { inputId, dropdownId, wrapperId });
-      return;
-    }
+    // Um único campo de nome busca tanto em Razão Social quanto Nome Fantasia
+    // (o backend filtra os dois com o mesmo texto e junta o resultado).
+    const criterios = { cnpj, razaoSocial: nome, nomeFantasia: nome, estado, cidade, tipo };
 
-    function renderLista(filtro) {
-      const f = (filtro || '').toLowerCase();
+    console.log('📤 [consultarFornecedores] Critérios enviados:', criterios);
 
-      // Filtra o array de strings que foi passado
-      const itens = (opcoes || []).filter(o => String(o).toLowerCase().includes(f));
+    mostrarCarregandoFornecedores(true);
 
-      dropdown.innerHTML = '';
-      if (itens.length === 0) {
-        dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
-      } else {
-        itens.forEach(o => {
-          const div = document.createElement('div');
-          div.className = 'search-option';
-          div.textContent = o;
-          div.addEventListener('click', () => {
-            input.value = o;
-            dropdown.classList.remove('visible');
-            filtrar();
-          });
-          dropdown.appendChild(div);
-        });
-      }
-    }
-
-    input.addEventListener('focus', () => {
-      renderLista(input.value);
-      dropdown.classList.add('visible');
-    });
-
-    input.addEventListener('input', () => {
-      renderLista(input.value);
-      if (!dropdown.classList.contains('visible')) {
-        dropdown.classList.add('visible');
-      }
-    });
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (typeof consultar === 'function') consultar();
-        dropdown.classList.remove('visible');
-      }
-      if (e.key === 'Escape') dropdown.classList.remove('visible');
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
-    });
-  }
-
-  //=== CONSULTAR ===
-  function consultar() {
-    const cnpj = document.getElementById('CNPJSearch') ? document.getElementById('CNPJSearch').value.trim().toLowerCase() : '';
-    const razaoSocial = document.getElementById('razaoSocialSearch') ? document.getElementById('razaoSocialSearch').value.trim().toLowerCase() : '';
-    const nomeFantasia = document.getElementById('nomeFantasiaSearch') ? document.getElementById('nomeFantasiaSearch').value.trim().toLowerCase() : '';
-    const cidade = document.getElementById('cidadeSearch') ? document.getElementById('cidadeSearch').value.trim().toLowerCase() : '';
-
-    const criterios = {
-      cnpj: cnpj,
-      razaoSocial: razaoSocial,
-      nomeFantasia: nomeFantasia,
-      cidade: cidade
-    };
-
-    google.script.run.withSuccessHandler(Retorno).withFailureHandler(function (err) {
-      console.error('Erro ao consultar fornecedores: ', err);
-    })
+    google.script.run
+      .withSuccessHandler((objFornecedores) => {
+        mostrarCarregandoFornecedores(false);
+        console.log('📥 [consultarFornecedores] Resposta bruta do servidor:', objFornecedores);
+        console.log('📥 [consultarFornecedores] Quantidade recebida:', Array.isArray(objFornecedores) ? objFornecedores.length : 'não é array');
+        ReturnFornecedores(objFornecedores);
+      })
+      .withFailureHandler((err) => {
+        mostrarCarregandoFornecedores(false);
+        console.error('❌ [consultarFornecedores] Erro ao consultar fornecedores:', err);
+        alert('Erro ao consultar fornecedores: ' + (err.message || err));
+      })
       .filtrarFornecedores(criterios);
   }
 
-  function Retorno(objfornecedores) {
-    if (!Array.isArray(objfornecedores)) {
-      fornecedores = [];
-    } else {
-      fornecedores = aplicarOrdenacao(objfornecedores);
+  function mostrarCarregandoFornecedores(carregando) {
+    const btn = document.getElementById('btnConsultarFornecedores');
+    if (btn) btn.disabled = carregando;
+
+    if (carregando) {
+      const tbody = document.getElementById('bodyFornecedoresView');
+      if (tbody) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><span class="spinner"></span>Buscando fornecedores...</td></tr>';
+      }
     }
-    console.log('Ordenação Aplicada: ', fornecedores);
-    renderTabela(fornecedores);
   }
 
-  function filtrar() {
-    const cnpj = document.getElementById('CNPJSearch') ? document.getElementById('CNPJSearch').value.trim().toLowerCase() : '';
-    const razaoSocial = document.getElementById('razaoSocialSearch') ? document.getElementById('razaoSocialSearch').value.trim().toLowerCase() : '';
-    const nomeFantasia = document.getElementById('nomeFantasiaSearch') ? document.getElementById('nomeFantasiaSearch').value.trim().toLowerCase() : '';
-    const cidade = document.getElementById('cidadeSearch') ? document.getElementById('cidadeSearch').value.trim().toLowerCase() : '';
+  function ReturnFornecedores(objFornecedores) {
+    fornecedores = Array.isArray(objFornecedores) ? objFornecedores : [];
 
-    listaFiltrada = fornecedores.filter(f => {
-      const fCnpj = f.cnpj ? String(f.cnpj).toLowerCase() : '';
-      const fRazao = f.razaoSocial ? String(f.razaoSocial).toLowerCase() : '';
-      const fFantasia = f.nomeFantasia ? String(f.nomeFantasia).toLowerCase() : '';
-      const fCidade = f.cidade ? String(f.cidade).toLowerCase() : '';
+    // O select de Estado só é populado uma vez, com a 1ª resposta (sem filtros
+    // aplicados = dataset completo). Assim ele nunca fica refém do que o
+    // usuário já filtrou, e só mostra estados que realmente existem na base.
+    if (!estadosFornecedorCarregados) {
+      popularSelectEstados(fornecedores);
+      estadosFornecedorCarregados = true;
+    }
 
-      if (cnpj && !fCnpj.includes(cnpj)) return false;
-      if (razaoSocial && !fRazao.includes(razaoSocial)) return false;
-      if (nomeFantasia && !fFantasia.includes(nomeFantasia)) return false;
-      if (cidade && !fCidade.includes(cidade)) return false;
-      return true;
+    const estadoAtual = document.getElementById('filtro-fornecedor-estado')?.value || '';
+    popularSelectCidades(estadoAtual);
+
+    const listaOrdenada = aplicarOrdenacaoFornecedor(fornecedores);
+    renderTabelaFornecedor(listaOrdenada);
+  }
+
+  // ===== SELECT DE ESTADO (apenas estados com fornecedor cadastrado) =====
+  let estadosFornecedorCarregados = false;
+
+  function popularSelectEstados(lista) {
+    const selectEstado = document.getElementById('filtro-fornecedor-estado');
+    if (!selectEstado) return;
+
+    const estadoAtual = selectEstado.value;
+
+    const estadosUnicos = Array.from(new Set(
+      (lista || []).map(f => f.estado).filter(Boolean)
+    )).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+    selectEstado.innerHTML = '<option value="">Todos</option>';
+    estadosUnicos.forEach(estado => {
+      const opt = document.createElement('option');
+      opt.value = estado;
+      opt.textContent = estado;
+      selectEstado.appendChild(opt);
     });
 
-    listaFiltrada = aplicarOrdenacao(listaFiltrada);
-    renderTabela(listaFiltrada);
+    if (estadoAtual && estadosUnicos.includes(estadoAtual)) {
+      selectEstado.value = estadoAtual;
+    }
   }
 
-  function renderTabela(lista) {
-    const tbody = document.getElementById('tabelaBody');
+  // ===== SELECT DE CIDADE EM CASCATA (depende do Estado escolhido) =====
+  function atualizarCidadesPorEstado() {
+    const estado = document.getElementById('filtro-fornecedor-estado')?.value || '';
+    popularSelectCidades(estado);
+    consultarFornecedores();
+  }
+
+  function popularSelectCidades(estado) {
+    const selectCidade = document.getElementById('filtro-fornecedor-cidade');
+    if (!selectCidade) return;
+
+    const cidadeAtual = selectCidade.value;
+
+    const cidadesDisponiveis = fornecedores
+      .filter(f => !estado || String(f.estado || '').toUpperCase() === estado.toUpperCase())
+      .map(f => f.cidade)
+      .filter(Boolean);
+
+    const cidadesUnicas = Array.from(new Set(cidadesDisponiveis)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+    selectCidade.innerHTML = '<option value="">Todas</option>';
+    cidadesUnicas.forEach(cidade => {
+      const opt = document.createElement('option');
+      opt.value = cidade;
+      opt.textContent = cidade;
+      selectCidade.appendChild(opt);
+    });
+
+    // Mantém a cidade selecionada se ela continuar disponível na lista nova.
+    if (cidadeAtual && cidadesUnicas.includes(cidadeAtual)) {
+      selectCidade.value = cidadeAtual;
+    }
+  }
+
+  // ===== ORDENAÇÃO (própria, pra não colidir com a de Peças/Marca) =====
+  function ordenarFornecedor(coluna) {
+    if (sortStateFornecedor.coluna === coluna) {
+      sortStateFornecedor.direcao = sortStateFornecedor.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortStateFornecedor.coluna = coluna;
+      sortStateFornecedor.direcao = 'asc';
+    }
+    atualizarIndicadoresFornecedor();
+    renderTabelaFornecedor(aplicarOrdenacaoFornecedor(fornecedores));
+  }
+
+  function atualizarIndicadoresFornecedor() {
+    const ths = document.querySelectorAll('#page-fornecedor-view .data-table th');
+    ths.forEach(th => {
+      th.classList.remove('sorted');
+      const span = th.querySelector('.sort-arrow');
+      if (span) span.textContent = '';
+    });
+
+    const indices = { razaoSocial: 0, nomeFantasia: 1, cnpj: 2, telefone: 3, email: 4, cidade: 5 };
+    const idx = indices[sortStateFornecedor.coluna];
+    if (idx !== undefined && ths[idx]) {
+      ths[idx].classList.add('sorted');
+      const span = ths[idx].querySelector('.sort-arrow');
+      if (span) span.textContent = sortStateFornecedor.direcao === 'asc' ? '▲' : '▼';
+    }
+  }
+
+  function aplicarOrdenacaoFornecedor(lista) {
+    if (!sortStateFornecedor.coluna || !Array.isArray(lista)) return lista;
+    const col = sortStateFornecedor.coluna;
+    const dir = sortStateFornecedor.direcao === 'asc' ? 1 : -1;
+    const arr = lista.slice();
+    arr.sort((a, b) => {
+      const va = String(a[col] || '').toLowerCase();
+      const vb = String(b[col] || '').toLowerCase();
+      return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;
+    });
+    return arr;
+  }
+
+  // ===== RENDERIZAÇÃO DA TABELA =====
+  function renderTabelaFornecedor(lista) {
+    const tbody = document.getElementById('bodyFornecedoresView');
     if (!tbody) return;
 
     tbody.innerHTML = '';
+
     if (!lista || lista.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Nenhum fornecedor encontrado com os filtros informados.</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhum fornecedor encontrado com os filtros informados.</td></tr>';
       return;
     }
 
     lista.forEach(f => {
       const tr = document.createElement('tr');
+      if (f.desativado) tr.classList.add('linha-desativada');
+
+      const btnEditar = f.desativado
+        ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
+        : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarFornecedor('${f.id}')">✏️</button>`;
+
+      const btnExcluir = f.desativado
+        ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarFornecedorUI('${f.id}')">♻️</button>`
+        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="confirmarExclusaoFornecedor('${f.id}')">🗑️</button>`;
+
+      const observacao = [
+        f.prestadorServico ? 'Prestador de Serviço' : '',
+        f.distribuidorProdutos ? 'Distribuidor de Produtos' : ''
+      ].filter(Boolean).join(' / ');
+
       tr.innerHTML = `
-          <td>${escapeHtml(f.cnpj)}</td>
-          <td>${escapeHtml(f.razaoSocial)}</td>
-          <td>${escapeHtml(f.nomeFantasia)}</td>
-          <td>${escapeHtml(f.cidade)}</td>        
-          <td>
-          <button class="btn-acao btn-editar-linha" title="Editar" onclick="editarFornecedor(${f.id})">✏️</button>
-          <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusao(${f.id})">🗑️</button>
+        <td>${escapeHtml(f.razaoSocial)} ${f.desativado ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
+        <td>${escapeHtml(f.nomeFantasia)}</td>
+        <td>${escapeHtml(f.cnpj)}</td>
+        <td>${escapeHtml(f.telefone)}</td>
+        <td>${escapeHtml(f.email)}</td>
+        <td>${escapeHtml(f.cidade)}${f.estado ? '/' + escapeHtml(f.estado) : ''}</td>
+        <td>${escapeHtml(observacao)}</td>
+        <td>
+          ${btnEditar}
+          ${btnExcluir}
         </td>
       `;
       tbody.appendChild(tr);
     });
   }
 
-  function limparFiltros() {
-    document.getElementById('CNPJSearch').value = '';
-    document.getElementById('razaoSocialSearch').value = '';
-    document.getElementById('nomeFantasiaSearch').value = '';
-    document.getElementById('cidadeSearch').value = '';
-    sortState = { coluna: null, direcao: 'asc' };
-    atualizarIndicadores();
-    filtrar();
-    document.getElementById('CNPJSearch').focus();
+  // ===== AÇÕES DA INTERFACE =====
+  function limparFiltrosFornecedor() {
+    if (document.getElementById('filtro-fornecedor-nome')) document.getElementById('filtro-fornecedor-nome').value = '';
+    if (document.getElementById('filtro-fornecedor-cnpj')) document.getElementById('filtro-fornecedor-cnpj').value = '';
+    if (document.getElementById('filtro-fornecedor-estado')) document.getElementById('filtro-fornecedor-estado').value = '';
+    if (document.getElementById('filtro-fornecedor-tipo')) document.getElementById('filtro-fornecedor-tipo').value = '';
+
+    sortStateFornecedor = { coluna: null, direcao: 'asc' };
+    atualizarIndicadoresFornecedor();
+    consultarFornecedores();
+
+    const inputNome = document.getElementById('filtro-fornecedor-nome');
+    if (inputNome) inputNome.focus();
   }
 
   function editarFornecedor(id) {
-    window.location.href = 'cadastro-fornecedores.html?id=' + encodeURIComponent(id);
+    console.log('✏️ [editarFornecedor] id clicado:', id, '(tipo:', typeof id, ')');
+    if (typeof trocarPagina === 'function') {
+      trocarPagina('fornecedor-form', id);
+    }
   }
 
-  function confirmarExclusao(id) {
+  // ==== MODAL DE EXCLUSÃO (próprio de Fornecedor, ver apps/Modal/Modal.html) ====
+  // Desativação persistente (soft-delete), mesmo padrão de desativarPeca().
+  function confirmarExclusaoFornecedor(id) {
+    if (!id) {
+      alert('Erro: Nenhum registro selecionado.');
+      return;
+    }
     idExclusao = id;
-    document.getElementById('modalExclusao').classList.add('aberto');
+    if (typeof exibirModal === 'function') exibirModal('modalExclusaoFornecedor');
   }
 
-  function fecharModalExclusao() {
-    idExclusao = null;
-    document.getElementById('modalExclusao').classList.remove('aberto');
-  }
+  async function executarExclusaoFornecedor() {
+    if (idExclusao === null) return;
 
-  function executarExclusaoFornecedor() {
-    if (idExclusao !== null) {
-      const idx = fornecedores.findIndex(f => f.id === idExclusao);
-      if (idx >= 0) fornecedores.splice(idx, 1);
-      fecharModalExclusao();
-      filtrar();
+    if (typeof exibirModal === 'function') exibirModal('processando');
+
+    try {
+      const resposta = await runServerFunction('desativarFornecedor', idExclusao);
+
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return;
+      }
+
+      const fornecedor = fornecedores.find(f => String(f.id) === String(idExclusao));
+      if (fornecedor) fornecedor.desativado = true;
+
+      idExclusao = null;
+      fecharModal('modalExclusaoFornecedor');
+      renderTabelaFornecedor(aplicarOrdenacaoFornecedor(fornecedores));
+    } catch (err) {
+      console.error('Erro ao desativar fornecedor:', err);
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      if (typeof fecharModal === 'function') fecharModal('processando');
     }
   }
 
-  // ==== INICIALIZAÇÃO ====
-  document.addEventListener('DOMContentLoaded', () => {
-    google.script.run
-      .withSuccessHandler((respostaDeServidor) => {
-        // Atribuir o retorno do servidor na variável fornecedores
-        fornecedores = respostaDeServidor || [];
+  // ==== REATIVAR FORNECEDOR ====
+  async function reativarFornecedorUI(id) {
+    if (!id) return;
+    if (!confirm('Deseja reativar este fornecedor?')) return;
 
-        // Aplica a ordenação inicial, se houver
-        fornecedores = aplicarOrdenacao(fornecedores);
+    if (typeof exibirModal === 'function') exibirModal('processando');
 
-        // 1. Renderiza os dados na tabela HTML
-        renderTabela(fornecedores);
+    try {
+      const resposta = await runServerFunction('reativarFornecedor', id);
 
-        // 2. Extrai os valores únicos criando os Arrays para os dropdowns de filtro
-        const cnpjs = [...new Set(fornecedores.map(f => f.cnpj).filter(Boolean))];
-        const razoes = [...new Set(fornecedores.map(f => f.razaoSocial).filter(Boolean))];
-        const fantasias = [...new Set(fornecedores.map(f => f.nomeFantasia).filter(Boolean))];
-        const cidades = [...new Set(fornecedores.map(f => f.cidade).filter(Boolean))];
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return;
+      }
 
-        // 3. Inicializa o initSearch com os IDs EXATOS do HTML
-        initSearch('CNPJSearch', 'CNPJDropdown', 'CNPJWrapper', cnpjs);
-        initSearch('razaoSocialSearch', 'razaoSocialDropdown', 'razaoSocialWrapper', razoes);
-        initSearch('nomeFantasiaSearch', 'nomeFantasiaDropdown', 'nomeFantasiaWrapper', fantasias);
-        initSearch('cidadeSearch', 'cidadeDropdown', 'cidadeWrapper', cidades);
-      })
-      .withFailureHandler((err) => {
-        console.error("Erro ao carregar lista de fornecedores: ", err);
-      })
-      .filtrarFornecedores();
+      const fornecedor = fornecedores.find(f => String(f.id) === String(id));
+      if (fornecedor) fornecedor.desativado = false;
 
-    // Fechar modal ao clicar fora
-    const modalExclusao = document.getElementById('modalExclusao');
-    if (modalExclusao) {
-      modalExclusao.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal-overlay')) fecharModalExclusao();
-      });
+      renderTabelaFornecedor(aplicarOrdenacaoFornecedor(fornecedores));
+    } catch (err) {
+      console.error('Erro ao reativar fornecedor:', err);
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      if (typeof fecharModal === 'function') fecharModal('processando');
     }
-
-    // Fechar modal com tecla ESC
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') fecharModalExclusao();
-    });
-  });
-
+  }
 </script>

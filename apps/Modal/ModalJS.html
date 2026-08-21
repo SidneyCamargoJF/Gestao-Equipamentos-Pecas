@@ -27,9 +27,9 @@
     if (modal) modal.classList.remove('aberto');
   }
 
-  // Fecha os modais de cadastro rápido ao clicar fora ou apertar Escape.
+  // Fecha os modais de cadastro rápido / exclusão de Fornecedor ao clicar fora ou apertar Escape.
   document.addEventListener('DOMContentLoaded', () => {
-    ['modalCadastroFornecedor', 'modalCadastroLocalizacao'].forEach(idModal => {
+    ['modalCadastroFornecedor', 'modalCadastroLocalizacao', 'modalExclusaoFornecedor'].forEach(idModal => {
       const elModal = document.getElementById(idModal);
       if (elModal) {
         elModal.addEventListener('click', (e) => {
@@ -42,6 +42,7 @@
       if (e.key === 'Escape') {
         fecharModalCadastroFornecedor();
         fecharModalCadastroLocalizacao();
+        fecharModal('modalExclusaoFornecedor');
       }
     });
   });
