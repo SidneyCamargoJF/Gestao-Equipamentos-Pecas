@@ -35,9 +35,15 @@ function salvarFornecedorBackend(dados) {
   const cidade = dados.cidade;
   const estado = dados.estado;
   const complemento = dados.complemento;
+  const prestadorServico = dados.prestadorServico ? "Sim" : "";
+  const distribuidorProdutos = dados.distribuidorProdutos ? "Sim" : "";
 
   const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
   const status = "Ativo";
+
+  if (!dados.prestadorServico && !dados.distribuidorProdutos) {
+    return { sucesso: false, mensagem: 'ERRO: Selecione ao menos um: Prestador de Serviço ou Distribuidor de Produtos.' };
+  }
 
   // Validação de campos obrigatórios (repetida no servidor por segurança,
   // mesmo já validando no cliente antes de chamar essa função)
@@ -53,10 +59,10 @@ function salvarFornecedorBackend(dados) {
   const dadosTabela = abaTabelaFornecedor.getDataRange().getValues();
   let linhaDestino = -1;
 
-  // Busca se o CNPJ já existe na Coluna D (índice 3 da matriz).
+  // Busca se o CNPJ já existe na Coluna F (índice 5 da matriz).
   // dadosTabela[0] = linha 1, então a linha 3 corresponde ao índice 2.
   for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
-    if (dadosTabela[i][3].toString().trim() === cnpj) {
+    if (dadosTabela[i][5].toString().trim() === cnpj) {
       linhaDestino = i + 1; // Linha real encontrada para EDIÇÃO
       break;
     }
@@ -65,16 +71,20 @@ function salvarFornecedorBackend(dados) {
   if (linhaDestino !== -1) {
     // === MODO EDIÇÃO ===
     const idExistente = dadosTabela[linhaDestino - 1][0];
-    const dataCadastroOriginal = dadosTabela[linhaDestino - 1][17];
+    const dataCadastroOriginal = dadosTabela[linhaDestino - 1][19];
 
+    // Ordem real da planilha: id, prestador, distribuidor, razaoSocial,
+    // nomeFantasia, cnpj, inscEstadual, inscMunicipal, email, telefoneFixo,
+    // telefoneCelular, whatsapp, cep, ruaAvenida, numero, bairro, cidade,
+    // estado, complemento, dtCadastro, dtAlteracao, status.
     const dadosAtualizados = [
-      idExistente, razaoSocial, nomeFantasia, cnpj, inscricaoEstadual,
-      inscricaoMunicipal, email, telefoneFixo, telefoneCelular, whatsapp,
-      cep, ruaAvenida, numero, bairro, cidade,
-      estado, complemento, dataCadastroOriginal, dataAtual, status
+      idExistente, prestadorServico, distribuidorProdutos, razaoSocial, nomeFantasia,
+      cnpj, inscricaoEstadual, inscricaoMunicipal, email, telefoneFixo, telefoneCelular,
+      whatsapp, cep, ruaAvenida, numero, bairro, cidade, estado, complemento,
+      dataCadastroOriginal, dataAtual, status
     ];
 
-    abaTabelaFornecedor.getRange(linhaDestino, 1, 1, 20).setValues([dadosAtualizados]);
+    abaTabelaFornecedor.getRange(linhaDestino, 1, 1, numColumnsupplier).setValues([dadosAtualizados]);
     return { sucesso: true, mensagem: 'Fornecedor ATUALIZADO com sucesso!', modo: 'edicao', id: idExistente };
 
   } else {
@@ -96,13 +106,13 @@ function salvarFornecedorBackend(dados) {
     }
 
     const novosDados = [
-      novoId, razaoSocial, nomeFantasia, cnpj, inscricaoEstadual,
-      inscricaoMunicipal, email, telefoneFixo, telefoneCelular, whatsapp,
-      cep, ruaAvenida, numero, bairro, cidade,
-      estado, complemento, dataAtual, "", status
+      novoId, prestadorServico, distribuidorProdutos, razaoSocial, nomeFantasia,
+      cnpj, inscricaoEstadual, inscricaoMunicipal, email, telefoneFixo, telefoneCelular,
+      whatsapp, cep, ruaAvenida, numero, bairro, cidade, estado, complemento,
+      dataAtual, "", status
     ];
 
-    abaTabelaFornecedor.getRange(ultimaLinha + 1, 1, 1, 20).setValues([novosDados]);
+    abaTabelaFornecedor.getRange(ultimaLinha + 1, 1, 1, numColumnsupplier).setValues([novosDados]);
     return { sucesso: true, mensagem: 'Fornecedor CADASTRADO com sucesso!', modo: 'criacao', id: novoId };
   }
 }
@@ -136,7 +146,7 @@ function cadastrarFornecedorRapido(dados) {
     const dadosTabela = abaTabelaFornecedor.getDataRange().getValues();
 
     for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
-      if (dadosTabela[i][3] && dadosTabela[i][3].toString().trim() === cnpj) {
+      if (dadosTabela[i][5] && dadosTabela[i][5].toString().trim() === cnpj) {
         return { sucesso: false, mensagem: 'Já existe um fornecedor cadastrado com este CNPJ.' };
       }
     }
@@ -154,11 +164,14 @@ function cadastrarFornecedorRapido(dados) {
       novoId = Number(idAtual) + 1;
     }
 
-    // [id, razaoSocial, nomeFantasia, cnpj, inscEstadual, inscMunicipal, email,
-    //  telefoneFixo, celular, whatsapp, cep, logradouro, numero, bairro,
-    //  cidade, estado, complemento, dataCadastro, dataAlteracao, status]
+    // [id, prestadorServico, distribuidorProdutos, razaoSocial, nomeFantasia,
+    //  cnpj, inscEstadual, inscMunicipal, email, telefoneFixo, celular,
+    //  whatsapp, cep, logradouro, numero, bairro, cidade, estado, complemento,
+    //  dataCadastro, dataAlteracao, status]
     const novosDados = [
       novoId,
+      "",
+      "",
       razaoSocial,
       nomeFantasia,
       cnpj,
@@ -180,7 +193,7 @@ function cadastrarFornecedorRapido(dados) {
       "Ativo"
     ];
 
-    abaTabelaFornecedor.getRange(ultimaLinha + 1, 1, 1, 20).setValues([novosDados]);
+    abaTabelaFornecedor.getRange(ultimaLinha + 1, 1, 1, numColumnsupplier).setValues([novosDados]);
     return { sucesso: true, mensagem: 'Fornecedor cadastrado com sucesso!', id: novoId };
 
   } catch (e) {
@@ -203,7 +216,7 @@ function verificarCnpjExistente(cnpj) {
   const dadosTabela = abaTabelaFornecedor.getDataRange().getValues();
 
   for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
-    if (dadosTabela[i][3].toString().trim() === cnpjLimpo) {
+    if (dadosTabela[i][5].toString().trim() === cnpjLimpo) {
       return { existe: true };
     }
   }
@@ -227,25 +240,27 @@ function buscarFornecedorPorCnpjBackend(cnpj) {
 
   for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
     const linha = dadosTabela[i];
-    if (linha[3].toString().trim() === cnpjLimpo) {
+    if (linha[5].toString().trim() === cnpjLimpo) {
       return {
         id: linha[0],
-        razaoSocial: linha[1],
-        nomeFantasia: linha[2],
-        cnpj: linha[3],
-        inscricaoEstadual: linha[4],
-        inscricaoMunicipal: linha[5],
-        email: linha[6],
-        telefoneFixo: linha[7],
-        telefoneCelular: linha[8],
-        whatsapp: linha[9],
-        cep: linha[10],
-        ruaAvenida: linha[11],
-        numero: linha[12],
-        bairro: linha[13],
-        cidade: linha[14],
-        estado: linha[15],
-        complemento: linha[16]
+        prestadorServico: String(linha[1] || '').trim().toLowerCase() === 'sim',
+        distribuidorProdutos: String(linha[2] || '').trim().toLowerCase() === 'sim',
+        razaoSocial: linha[3],
+        nomeFantasia: linha[4],
+        cnpj: linha[5],
+        inscricaoEstadual: linha[6],
+        inscricaoMunicipal: linha[7],
+        email: linha[8],
+        telefoneFixo: linha[9],
+        telefoneCelular: linha[10],
+        whatsapp: linha[11],
+        cep: linha[12],
+        ruaAvenida: linha[13],
+        numero: linha[14],
+        bairro: linha[15],
+        cidade: linha[16],
+        estado: linha[17],
+        complemento: linha[18]
       };
     }
   }
@@ -258,27 +273,31 @@ function buscarFornecedorPorCnpjBackend(cnpj) {
  * Usado tanto por buscarFornecedorPorIdBackend quanto por FiltrarFornecedores.
  */
 function mapLinhaParaFornecedorCompleto(linha) {
+  const dataCadastroValor = linha[19];
+  const dataAtualizacaoValor = linha[20];
   return {
     id: linha[0],
-    razaoSocial: linha[1],
-    nomeFantasia: linha[2],
-    cnpj: linha[3],
-    inscricaoEstadual: linha[4],
-    inscricaoMunicipal: linha[5],
-    email: linha[6],
-    telefoneFixo: linha[7],
-    telefoneCelular: linha[8],
-    whatsapp: linha[9],
-    cep: linha[10],
-    ruaAvenida: linha[11],
-    numero: linha[12],
-    bairro: linha[13],
-    cidade: linha[14],
-    estado: linha[15],
-    complemento: linha[16],
-    dataCadastro: linha[17],
-    dataAtualizacao: linha[18],
-    status: linha[19]
+    prestadorServico: String(linha[1] || '').trim().toLowerCase() === 'sim',
+    distribuidorProdutos: String(linha[2] || '').trim().toLowerCase() === 'sim',
+    razaoSocial: linha[3],
+    nomeFantasia: linha[4],
+    cnpj: linha[5],
+    inscricaoEstadual: linha[6],
+    inscricaoMunicipal: linha[7],
+    email: linha[8],
+    telefoneFixo: linha[9],
+    telefoneCelular: linha[10],
+    whatsapp: linha[11],
+    cep: linha[12],
+    ruaAvenida: linha[13],
+    numero: linha[14],
+    bairro: linha[15],
+    cidade: linha[16],
+    estado: linha[17],
+    complemento: linha[18],
+    dataCadastro: (dataCadastroValor instanceof Date) ? dateToString(dataCadastroValor) : dataCadastroValor,
+    dataAtualizacao: (dataAtualizacaoValor instanceof Date) ? dateToString(dataAtualizacaoValor) : dataAtualizacaoValor,
+    status: linha[21]
   };
 }
 
@@ -289,26 +308,17 @@ function mapLinhaParaFornecedorCompleto(linha) {
  * buscarFornecedorPorCnpjBackend, ou null se não encontrar.
  */
 function buscarFornecedorPorIdBackend(id) {
-  Logger.log('📥 [buscarFornecedorPorIdBackend] id recebido: ' + JSON.stringify(id) + ' (tipo: ' + typeof id + ')');
-
   if (id === null || id === undefined || id === '') return null;
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const abaTabelaFornecedor = ss.getSheetByName('tbl_fornecedor');
-  const idBuscado = String(id).trim();
+  const idBuscado = Number(id);
 
   const dadosTabela = abaTabelaFornecedor.getDataRange().getValues();
 
-  const idsNaPlanilha = [];
-  for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
-    idsNaPlanilha.push(dadosTabela[i][0]);
-  }
-  Logger.log('📊 [buscarFornecedorPorIdBackend] idBuscado="' + idBuscado + '" | IDs na planilha: ' + JSON.stringify(idsNaPlanilha));
-
   for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
     const linha = dadosTabela[i];
-    if (String(linha[0]).trim() === idBuscado) {
-      Logger.log('✅ [buscarFornecedorPorIdBackend] encontrado na linha ' + (i + 1));
+    if (Number(linha[0]) === idBuscado) {
       return mapLinhaParaFornecedorCompleto(linha);
     }
   }
@@ -335,7 +345,7 @@ function FiltrarFornecedores(criterios) {
   const abaTabelaFornecedor = ss.getSheetByName('tbl_fornecedor');
 
   const sNome = String(criterios.nome || '').trim().toLowerCase();
-  const sCnpj = String(criterios.cnpj || '').replace(/\D/g, ''); // compara só os dígitos
+  const sCnpj = String(criterios.cnpj || '').replace(/\D/g, '');
   const sCidade = String(criterios.cidade || '').trim().toLowerCase();
   const sEstado = String(criterios.estado || '').trim().toLowerCase();
 

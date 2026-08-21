@@ -54,6 +54,15 @@
             <option value="">Todas</option>
           </select>
         </div>
+
+        <div class="field">
+          <label class="field__label" for="filtro-fornecedor-tipo">Tipo</label>
+          <select class="field__select" id="filtro-fornecedor-tipo" onchange="consultarFornecedores()">
+            <option value="">Todos</option>
+            <option value="prestador">Prestador de Serviço</option>
+            <option value="distribuidor">Distribuidor de Produtos</option>
+          </select>
+        </div>
       </div>
 
     </form>
@@ -69,6 +78,7 @@
             <th onclick="ordenarFornecedor('telefone')">TELEFONE <span class="sort-arrow"></span></th>
             <th onclick="ordenarFornecedor('email')">E-MAIL <span class="sort-arrow"></span></th>
             <th onclick="ordenarFornecedor('cidade')">CIDADE/UF <span class="sort-arrow"></span></th>
+            <th style="cursor:default;">OBSERVAÇÃO</th>
             <th style="cursor:default;">AÇÕES</th>
           </tr>
         </thead>

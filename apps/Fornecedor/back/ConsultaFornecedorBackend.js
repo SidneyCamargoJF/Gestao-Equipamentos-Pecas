@@ -6,15 +6,7 @@ function showFornecedor() {
 }
 
 function filtrarFornecedores(criterios) {
-  Logger.log('📥 [filtrarFornecedores] criterios recebidos: ' + JSON.stringify(criterios));
-
   let dados = ReadSuppliers();
-  Logger.log('📊 [filtrarFornecedores] ReadSuppliers() retornou ' + dados.length + ' linha(s) brutas da planilha');
-  if (dados.length > 0) {
-    Logger.log('📊 [filtrarFornecedores] Exemplo (primeira linha): ' + JSON.stringify(dados[0]));
-    Logger.log('📊 [filtrarFornecedores] Exemplo (última linha): ' + JSON.stringify(dados[dados.length - 1]));
-  }
-
   let res = [];
 
   let cnpjBuscado = (criterios && criterios.cnpj) ? String(criterios.cnpj).replace(/[^A-Za-z0-9]/g, '').toUpperCase() : "";
@@ -22,15 +14,19 @@ function filtrarFornecedores(criterios) {
   let fantasiaBuscada = (criterios && criterios.nomeFantasia) ? String(criterios.nomeFantasia).trim().toLowerCase() : "";
   let estadoBuscado = (criterios && criterios.estado) ? String(criterios.estado).trim().toLowerCase() : "";
   let cidadeBuscada = (criterios && criterios.cidade) ? String(criterios.cidade).trim().toLowerCase() : "";
+  // 'prestador' | 'distribuidor' | '' (todos)
+  let tipoBuscado = (criterios && criterios.tipo) ? String(criterios.tipo).trim().toLowerCase() : "";
 
   for (let i = 0; i < dados.length; i++) {
-    let colCNPJ = String(dados[i][3] || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    let colRazaoSocial = String(dados[i][1] || '').trim().toLowerCase();
-    let colNomeFantasia = String(dados[i][2] || '').trim().toLowerCase();
-    let colEstado = String(dados[i][15] || '').trim().toLowerCase();
-    let colCidade = String(dados[i][14] || '').trim().toLowerCase();
-    let colStatus = String(dados[i][19] || '').trim().toLowerCase();
+    let colCNPJ = String(dados[i][5] || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    let colRazaoSocial = String(dados[i][3] || '').trim().toLowerCase();
+    let colNomeFantasia = String(dados[i][4] || '').trim().toLowerCase();
+    let colEstado = String(dados[i][17] || '').trim().toLowerCase();
+    let colCidade = String(dados[i][16] || '').trim().toLowerCase();
+    let colStatus = String(dados[i][21] || '').trim().toLowerCase();
     let desativado = (colStatus === 'inativo');
+    let prestadorServico = String(dados[i][1] || '').trim().toLowerCase() === 'sim';
+    let distribuidorProdutos = String(dados[i][2] || '').trim().toLowerCase() === 'sim';
 
     // Campo único de nome busca em Razão Social OU Nome Fantasia (o cliente manda
     // o mesmo texto digitado nos dois critérios) -- por isso é OR, não AND.
@@ -40,18 +36,23 @@ function filtrarFornecedores(criterios) {
     let cNome  = (termoNomeBuscado === ""  || colRazaoSocial.includes(termoNomeBuscado) || colNomeFantasia.includes(termoNomeBuscado));
     let cEstado = (estadoBuscado === ""    || colEstado.includes(estadoBuscado));
     let cCidade = (cidadeBuscada === ""    || colCidade.includes(cidadeBuscada));
+    let cTipo = (tipoBuscado === "")
+      || (tipoBuscado === "prestador" && prestadorServico)
+      || (tipoBuscado === "distribuidor" && distribuidorProdutos);
 
-    if(cCNPJ && cNome && cEstado && cCidade) {
+    if(cCNPJ && cNome && cEstado && cCidade && cTipo) {
       res.push({
         id: dados[i][0],
-        cnpj: dados[i][3],
-        razaoSocial: dados[i][1],
-        nomeFantasia: dados[i][2],
-        telefone: dados[i][7] || dados[i][8] || '',
-        email: dados[i][6],
-        estado: dados[i][15],
-        cidade: dados[i][14],
-        desativado: desativado
+        cnpj: dados[i][5],
+        razaoSocial: dados[i][3],
+        nomeFantasia: dados[i][4],
+        telefone: dados[i][9] || dados[i][10] || '',
+        email: dados[i][8],
+        estado: dados[i][17],
+        cidade: dados[i][16],
+        desativado: desativado,
+        prestadorServico: prestadorServico,
+        distribuidorProdutos: distribuidorProdutos
       });
     }
   }
@@ -59,7 +60,6 @@ function filtrarFornecedores(criterios) {
   // Fornecedores desativados sempre por último na lista.
   res.sort((a, b) => (a.desativado ? 1 : 0) - (b.desativado ? 1 : 0));
 
-  Logger.log('✅ [filtrarFornecedores] resultado final: ' + res.length + ' fornecedor(es) após o filtro');
   return res;
 }
 
@@ -89,16 +89,9 @@ function desativarFornecedor(idInput) {
         const linhaReal = i + firstLineSupplier;
         const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
 
-        Logger.log('🔧 [desativarFornecedor] linha real na planilha: ' + linhaReal);
-        Logger.log('🔧 [desativarFornecedor] cabeçalho da coluna de data (linha 1, col ' + supplierDtAlteracaoCol + '): ' + abaTabelaFornecedor.getRange(1, supplierDtAlteracaoCol).getValue());
-        Logger.log('🔧 [desativarFornecedor] cabeçalho da coluna de status (linha 1, col ' + supplierStatusCol + '): ' + abaTabelaFornecedor.getRange(1, supplierStatusCol).getValue());
-
         abaTabelaFornecedor.getRange(linhaReal, supplierDtAlteracaoCol).setValue(dataAtual);
         abaTabelaFornecedor.getRange(linhaReal, supplierStatusCol).setValue("Inativo");
         abaTabelaFornecedor.getRange(linhaReal, 1, 1, numColumnsupplier).setBackground("#F4CCCC");
-
-        Logger.log('✅ [desativarFornecedor] valor gravado na coluna de data: ' + abaTabelaFornecedor.getRange(linhaReal, supplierDtAlteracaoCol).getValue());
-        Logger.log('✅ [desativarFornecedor] valor gravado na coluna de status: ' + abaTabelaFornecedor.getRange(linhaReal, supplierStatusCol).getValue());
 
         return { sucesso: true, mensagem: "Fornecedor desativado com sucesso." };
       }

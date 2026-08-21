@@ -317,6 +317,8 @@
     document.getElementById('cidade').value = dados.cidade || '';
     document.getElementById('estado').value = dados.estado || '';
     document.getElementById('complemento').value = dados.complemento || '';
+    document.getElementById('prestadorServico').checked = !!dados.prestadorServico;
+    document.getElementById('distribuidorProdutos').checked = !!dados.distribuidorProdutos;
   }
 
 
@@ -368,7 +370,9 @@
       bairro: document.getElementById('bairro').value.trim(),
       cidade: document.getElementById('cidade').value.trim(),
       estado: document.getElementById('estado').value,
-      complemento: document.getElementById('complemento').value.trim()
+      complemento: document.getElementById('complemento').value.trim(),
+      prestadorServico: document.getElementById('prestadorServico').checked,
+      distribuidorProdutos: document.getElementById('distribuidorProdutos').checked
     };
   }
 
@@ -399,6 +403,17 @@
       return false;
     }
 
+    const prestadorServico = document.getElementById('prestadorServico').checked;
+    const distribuidorProdutos = document.getElementById('distribuidorProdutos').checked;
+    const erroTipoEl = document.getElementById('tipoFornecedorErro');
+
+    if (!prestadorServico && !distribuidorProdutos) {
+      if (erroTipoEl) erroTipoEl.classList.add('visible');
+      alert('ERRO: Selecione ao menos um tipo de fornecedor (Prestador de Serviço ou Distribuidor de Produtos).');
+      return false;
+    }
+    if (erroTipoEl) erroTipoEl.classList.remove('visible');
+
     return true;
   }
 
@@ -413,6 +428,10 @@
     document.querySelectorAll('.field__input, .field__select').forEach(el => {
       el.value = '';
     });
+    document.getElementById('prestadorServico').checked = false;
+    document.getElementById('distribuidorProdutos').checked = false;
+    const erroTipoEl = document.getElementById('tipoFornecedorErro');
+    if (erroTipoEl) erroTipoEl.classList.remove('visible');
 
     const tituloEl = document.getElementById('formTitulo');
     if (tituloEl) tituloEl.textContent = 'Novo Fornecedor';

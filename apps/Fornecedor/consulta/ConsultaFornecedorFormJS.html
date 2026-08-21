@@ -5,8 +5,6 @@
   // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
   // Nome exigido pelo roteador da SPA (js/IndexSPAJS.html: trocarPagina).
   async function renderFornecedorView() {
-    consultarFornecedores();
-
     const inputNome = document.getElementById('filtro-fornecedor-nome');
     if (inputNome) inputNome.focus();
   }
@@ -17,10 +15,11 @@
     const cnpj = document.getElementById('filtro-fornecedor-cnpj')?.value.trim() || '';
     const estado = document.getElementById('filtro-fornecedor-estado')?.value || '';
     const cidade = document.getElementById('filtro-fornecedor-cidade')?.value || '';
+    const tipo = document.getElementById('filtro-fornecedor-tipo')?.value || '';
 
     // Um único campo de nome busca tanto em Razão Social quanto Nome Fantasia
     // (o backend filtra os dois com o mesmo texto e junta o resultado).
-    const criterios = { cnpj, razaoSocial: nome, nomeFantasia: nome, estado, cidade };
+    const criterios = { cnpj, razaoSocial: nome, nomeFantasia: nome, estado, cidade, tipo };
 
     console.log('📤 [consultarFornecedores] Critérios enviados:', criterios);
 
@@ -48,7 +47,7 @@
     if (carregando) {
       const tbody = document.getElementById('bodyFornecedoresView');
       if (tbody) {
-        tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><span class="spinner"></span>Buscando fornecedores...</td></tr>';
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><span class="spinner"></span>Buscando fornecedores...</td></tr>';
       }
     }
   }
@@ -181,7 +180,7 @@
     tbody.innerHTML = '';
 
     if (!lista || lista.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhum fornecedor encontrado com os filtros informados.</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhum fornecedor encontrado com os filtros informados.</td></tr>';
       return;
     }
 
@@ -197,6 +196,11 @@
         ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarFornecedorUI('${f.id}')">♻️</button>`
         : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="confirmarExclusaoFornecedor('${f.id}')">🗑️</button>`;
 
+      const observacao = [
+        f.prestadorServico ? 'Prestador de Serviço' : '',
+        f.distribuidorProdutos ? 'Distribuidor de Produtos' : ''
+      ].filter(Boolean).join(' / ');
+
       tr.innerHTML = `
         <td>${escapeHtml(f.razaoSocial)} ${f.desativado ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
         <td>${escapeHtml(f.nomeFantasia)}</td>
@@ -204,6 +208,7 @@
         <td>${escapeHtml(f.telefone)}</td>
         <td>${escapeHtml(f.email)}</td>
         <td>${escapeHtml(f.cidade)}${f.estado ? '/' + escapeHtml(f.estado) : ''}</td>
+        <td>${escapeHtml(observacao)}</td>
         <td>
           ${btnEditar}
           ${btnExcluir}
@@ -218,6 +223,7 @@
     if (document.getElementById('filtro-fornecedor-nome')) document.getElementById('filtro-fornecedor-nome').value = '';
     if (document.getElementById('filtro-fornecedor-cnpj')) document.getElementById('filtro-fornecedor-cnpj').value = '';
     if (document.getElementById('filtro-fornecedor-estado')) document.getElementById('filtro-fornecedor-estado').value = '';
+    if (document.getElementById('filtro-fornecedor-tipo')) document.getElementById('filtro-fornecedor-tipo').value = '';
 
     sortStateFornecedor = { coluna: null, direcao: 'asc' };
     atualizarIndicadoresFornecedor();
