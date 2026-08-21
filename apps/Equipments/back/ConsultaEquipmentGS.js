@@ -152,4 +152,7 @@ class EquipmentService {
   }
 }
 
-const equipmentService = new EquipmentService();
+function filtrarEquipamentos(criterios) {
+  const equipmentService = new EquipmentService();
+  return equipmentService.filtrar()
+}

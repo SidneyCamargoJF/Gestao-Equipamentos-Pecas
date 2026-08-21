@@ -11,7 +11,7 @@ class EquipmentController {
   // ===== INICIALIZAÇÃO =====
   init() {
     this.bindEvents();
-    this.consultar();
+    // this.consultar();
   }
 
   bindEvents() {
@@ -50,12 +50,14 @@ class EquipmentController {
   consultar() {
     const equipmentInput = document.getElementById('equipmentSearch');
     const equipment = equipmentInput ? equipmentInput.value.trim().toLowerCase() : '';
+    console.log('EquipmentController.consultar')
+    console.log(equipment)
     const criterios = { equipment };
 
     google.script.run
       .withSuccessHandler(objEquipments => this.retornoEquipments(objEquipments))
       .withFailureHandler(err => console.error('Erro ao consultar: ', err))
-      .equipmentService.filtrar(criterios);
+      .filtrarEquipamentos(criterios);
   }
 
   retornoEquipments(objEquipments) {
@@ -70,7 +72,7 @@ class EquipmentController {
     this.render(this.listaFiltrada);
   }
 
-  filtrarEquipment() {
+  filtrar() {
     const equipmentInput = document.getElementById('equipmentSearch');
     const equipment = equipmentInput ? equipmentInput.value.trim().toLowerCase() : '';
 
