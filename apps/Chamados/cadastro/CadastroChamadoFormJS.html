@@ -1,0 +1,170 @@
+<script>
+  // =====================================================
+  // CADASTRO DE CHAMADO - PRIMEIRO MODELO (front-end only)
+  // Ainda sem gravação na planilha -- "Salvar" só mostra o que seria
+  // enviado, pra validar a ideia antes de desenhar o schema no backend.
+  // =====================================================
+
+  let chamadoProximoId = 1;
+  let itensChamadoState = [];      // { id, tipo: 'equipamento'|'peca', nome, filhos: [] }
+
+  // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
+  async function renderChamadoForm() {
+    itensChamadoState = [];
+    chamadoProximoId = 1;
+
+    const motivoEl = document.getElementById('chamadoMotivo');
+    if (motivoEl) motivoEl.value = '';
+    const descricaoEl = document.getElementById('chamadoDescricao');
+    if (descricaoEl) descricaoEl.value = '';
+    const tipoEl = document.getElementById('chamadoTipo');
+    if (tipoEl) tipoEl.value = '';
+    const atribuidoEl = document.getElementById('chamadoAtribuidoA');
+    if (atribuidoEl) atribuidoEl.value = '';
+
+    const dataEl = document.getElementById('chamadoDataAbertura');
+    if (dataEl) dataEl.value = new Date().toLocaleDateString('pt-BR');
+
+    renderArvoreItensChamado();
+
+    const inputMotivo = document.getElementById('chamadoMotivo');
+    if (inputMotivo) inputMotivo.focus();
+  }
+
+  // ===== ÁRVORE DE ITENS ASSOCIADOS (equipamento -> peças, ou peça avulsa) =====
+  function adicionarItemChamado(tipo, paiId) {
+    const novoItem = {
+      id: chamadoProximoId++,
+      tipo: tipo,
+      nome: '',
+      filhos: tipo === 'equipamento' ? [] : undefined
+    };
+
+    if (paiId) {
+      const pai = encontrarItemChamado(paiId);
+      if (pai && pai.filhos) pai.filhos.push(novoItem);
+    } else {
+      itensChamadoState.push(novoItem);
+    }
+
+    renderArvoreItensChamado();
+  }
+
+  function encontrarItemChamado(id, lista) {
+    lista = lista || itensChamadoState;
+    for (const item of lista) {
+      if (item.id === id) return item;
+      if (item.filhos) {
+        const achado = encontrarItemChamado(id, item.filhos);
+        if (achado) return achado;
+      }
+    }
+    return null;
+  }
+
+  function removerItemChamado(id, lista) {
+    lista = lista || itensChamadoState;
+    const idx = lista.findIndex(i => i.id === id);
+    if (idx >= 0) {
+      lista.splice(idx, 1);
+      renderArvoreItensChamado();
+      return;
+    }
+    lista.forEach(item => {
+      if (item.filhos) removerItemChamado(id, item.filhos);
+    });
+    renderArvoreItensChamado();
+  }
+
+  function atualizarNomeItemChamado(id, valor) {
+    const item = encontrarItemChamado(id);
+    if (item) item.nome = valor;
+  }
+
+  function renderArvoreItensChamado() {
+    const container = document.getElementById('chamadoItensArvore');
+    if (!container) return;
+
+    if (itensChamadoState.length === 0) {
+      container.innerHTML = '<p class="chamado-itens-vazio">Nenhum item associado ainda -- o chamado pode continuar geral, sem problema.</p>';
+      return;
+    }
+
+    container.innerHTML = itensChamadoState.map(item => renderNoChamado(item)).join('');
+  }
+
+  function renderNoChamado(item) {
+    if (item.tipo === 'equipamento') {
+      const filhosHtml = (item.filhos || []).map(filho => renderNoChamado(filho)).join('');
+      return `
+        <div class="chamado-no-equipamento">
+          <div class="chamado-no-cabecalho">
+            <span class="chamado-no-icone">🔧</span>
+            <input class="chamado-no-input" type="text" placeholder="Nome do equipamento..."
+              value="${escapeHtmlChamado(item.nome)}"
+              oninput="atualizarNomeItemChamado(${item.id}, this.value)">
+            <button type="button" class="chamado-no-remover" title="Remover" onclick="removerItemChamado(${item.id})">🗑️</button>
+          </div>
+          ${filhosHtml ? `<div class="chamado-no-filhos">${filhosHtml}</div>` : ''}
+          <div class="chamado-no-add-filho">
+            <button type="button" onclick="adicionarItemChamado('peca', ${item.id})">+ Associar peça a este equipamento</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Peça (avulsa ou dentro de um equipamento)
+    return `
+      <div class="chamado-no-peca">
+        <span class="chamado-no-icone">⚙️</span>
+        <input class="chamado-no-input" type="text" placeholder="Nome da peça..."
+          value="${escapeHtmlChamado(item.nome)}"
+          oninput="atualizarNomeItemChamado(${item.id}, this.value)">
+        <button type="button" class="chamado-no-remover" title="Remover" onclick="removerItemChamado(${item.id})">🗑️</button>
+      </div>
+    `;
+  }
+
+  // ===== SALVAR =====
+  async function salvarChamado() {
+    const motivo = document.getElementById('chamadoMotivo')?.value.trim() || '';
+    if (!motivo) {
+      alert('Preencha o motivo do chamado.');
+      return;
+    }
+
+    const dadosChamado = {
+      motivo: motivo,
+      tipo: document.getElementById('chamadoTipo')?.value || '',
+      classificacao: document.getElementById('chamadoClassificacao')?.value || '',
+      atribuidoA: document.getElementById('chamadoAtribuidoA')?.value.trim() || '',
+      dataAbertura: document.getElementById('chamadoDataAbertura')?.value || '',
+      descricao: document.getElementById('chamadoDescricao')?.value.trim() || '',
+      itens: itensChamadoState
+    };
+
+    if (typeof exibirModal === 'function') exibirModal('processando');
+
+    try {
+      const resposta = await runServerFunction('salvarChamadoBackend', dadosChamado);
+
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return;
+      }
+
+      alert(resposta.mensagem);
+      trocarPagina('chamados');
+    } catch (err) {
+      console.error('Erro ao salvar chamado:', err);
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      if (typeof fecharModal === 'function') fecharModal('processando');
+    }
+  }
+
+  function escapeHtmlChamado(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+</script>

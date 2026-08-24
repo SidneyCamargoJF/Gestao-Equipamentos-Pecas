@@ -1,0 +1,108 @@
+<section id="page-chamado-form" class="spa-page">
+
+  <div class="page-header">
+    <div class="actions-bar">
+      <h1>📩 Abrir Chamado</h1>
+    </div>
+  </div>
+
+  <div class="card">
+
+    <form autocomplete="off" onsubmit="return false;">
+
+      <!-- ============================================= -->
+      <!-- PARTE 1: DADOS GERAIS DO CHAMADO              -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal">
+        <legend class="fieldset-legend">Dados do Chamado</legend>
+
+        <div class="form-grid-3">
+          <div class="field field-full-2">
+            <label class="field__label" for="chamadoMotivo">Motivo / Título *</label>
+            <input class="field__input" type="text" id="chamadoMotivo" placeholder="Ex: Ar-condicionado não liga">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="chamadoTipo">Tipo *</label>
+            <select class="field__select" id="chamadoTipo">
+              <option value="">Selecione...</option>
+              <option value="corretiva">Corretiva</option>
+              <option value="preventiva">Preventiva</option>
+              <option value="instalacao">Instalação</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label" for="chamadoClassificacao">Classificação *</label>
+            <select class="field__select" id="chamadoClassificacao">
+              <option value="baixa">Baixa</option>
+              <option value="media" selected>Média</option>
+              <option value="alta">Alta</option>
+              <option value="urgente">Urgente</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="chamadoAtribuidoA">Atribuído a</label>
+            <input class="field__input" type="text" id="chamadoAtribuidoA" placeholder="Técnico ou fornecedor responsável">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="chamadoDataAbertura">Data de Abertura</label>
+            <input class="field__input" type="text" id="chamadoDataAbertura" disabled>
+          </div>
+        </div>
+
+        <div class="form-grid-3">
+          <div class="field field-full-3">
+            <label class="field__label" for="chamadoDescricao">Descrição do Chamado</label>
+            <textarea class="field__input" id="chamadoDescricao" rows="3" placeholder="Detalhes do problema, contexto, observações..."></textarea>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ============================================= -->
+      <!-- PARTE 2: ITENS ASSOCIADOS (equipamento / peça) -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal">
+        <legend class="fieldset-legend">Itens Associados</legend>
+        <p class="chamado-itens-ajuda">
+          O chamado é geral por padrão. Associe equipamentos e/ou peças se fizer sentido —
+          e dentro de cada equipamento você pode associar as peças relacionadas a ele.
+        </p>
+
+        <div class="chamado-itens-acoes">
+          <button type="button" class="btn-secondary" onclick="adicionarItemChamado('equipamento')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar Equipamento
+          </button>
+          <button type="button" class="btn-secondary" onclick="adicionarItemChamado('peca')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar Peça
+          </button>
+        </div>
+
+        <div id="chamadoItensArvore" class="chamado-itens-arvore">
+          <!-- Preenchido via JS: renderArvoreItensChamado() -->
+        </div>
+      </fieldset>
+
+      <!-- Histórico/Movimentações não fica aqui -- é uma tela de consulta
+           (modal ao clicar num chamado da lista), não faz sentido no
+           momento de abrir um chamado novo, que ainda não tem histórico. -->
+
+      <!-- ============================================= -->
+      <!-- BOTÕES DE AÇÃO                                -->
+      <!-- ============================================= -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="trocarPagina('chamados')">Cancelar</button>
+        <button type="button" class="btn-success" onclick="salvarChamado()">Salvar Chamado</button>
+      </div>
+
+    </form>
+  </div>
+
+</section>
