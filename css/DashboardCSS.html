@@ -192,44 +192,11 @@ tbody td {
 .bar-blue { background: #2563eb; }
 .bar-gray { background: #cbd5e1; }
 
-/* ===== DROPDOWN MENU ===== */
+/* Dropdown "Cadastros" -- estilo real vive em css/IndexCSS.html; esse bloco
+   duplicado foi removido porque, carregando depois, sobrescrevia z-index,
+   cores de hover e outras propriedades da versão certa. */
 .menu-dropdown {
   cursor: pointer;
-}
-
-.dropdown-content {
-  background: #1e293b;
-  border: 0.0625rem solid #334155;
-  border-radius: 0 0.5rem 0.5rem 0.5rem;
-  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.3);
-  z-index: 200;
-  padding: 0.375rem;
-  /* Ponte invisível para evitar perda de hover */
-  margin-top: -0.375rem;
-}
-
-/* Mantém o dropdown visível ao passar mouse sobre ele */
-.menu-dropdown:hover .dropdown-content,
-.dropdown-content:hover {
-  display: block;
-}
-
-/* Impede que o hover do pai feche quando estiver sobre o dropdown */
-.dropdown-content {
-  pointer-events: auto;
-}
-
-.dropdown-item {
-  padding: 0.5rem 0.75rem;
-}
-
-.dropdown-item:hover {
-  background: #334155;
-  color: #fff;
-}
-
-.dropdown-item:hover svg {
-  color: #94a3b8;
 }
 
 </style>

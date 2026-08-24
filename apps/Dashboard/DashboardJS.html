@@ -401,10 +401,6 @@ function verDetalhes(id) {
   document.getElementById('modalDetalhes').classList.add('aberto');
 }
 
-function fecharModal() {
-  document.getElementById('modalDetalhes').classList.remove('aberto');
-}
-
 function verTodasAnuais() {
   const anuais = gerarAnuais().filter(a => a.diasRestantes <= 365);
   document.getElementById('modalTitulo').textContent = 'Todas as Anuais Pendentes';
@@ -442,37 +438,6 @@ document.addEventListener('keydown', (e) => {
 // ========================================
 
 document.addEventListener('DOMContentLoaded', renderizar);
-
-// ========================================
-// NAVEGAÇÃO ENTRE PÁGINAS
-// ========================================
-
-function trocarPagina(pagina) {
-  const nomes = {
-    'dashboard': 'Dashboard de Manutenção',
-    'equipamentos': 'Cadastro de Equipamentos',
-    'pecas': 'Cadastro de Peças',
-    'chamados': 'Cadastro de Chamados',
-    'configuracoes': 'Configurações',
-    'ordens': 'Ordens de Serviço',
-    'agenda': 'Agenda de Manutenção',
-    'relatorios': 'Relatórios'
-  };
-
-  // Atualiza item ativo no menu
-  document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
-  // Marca o Dashboard como ativo por padrão
-  if (pagina === 'dashboard') {
-    document.querySelectorAll('.menu-item')[0].classList.add('active');
-  }
-
-  if (pagina === 'pecas') {
-    console.log('pecas')
-      google.script.run.withSuccessHandler().showPecas();
-  }
-
-  // alert('Navegando para: ' + (nomes[pagina] || pagina) + '\n\nFuncionalidade em desenvolvimento.');
-}
 
 function Response() {
   console.log('response')

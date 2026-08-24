@@ -317,8 +317,10 @@
     document.getElementById('cidade').value = dados.cidade || '';
     document.getElementById('estado').value = dados.estado || '';
     document.getElementById('complemento').value = dados.complemento || '';
-    document.getElementById('prestadorServico').checked = !!dados.prestadorServico;
-    document.getElementById('distribuidorProdutos').checked = !!dados.distribuidorProdutos;
+    const prestadorPreencher = document.getElementById('prestadorServico');
+    if (prestadorPreencher) prestadorPreencher.checked = !!dados.prestadorServico;
+    const distribuidorPreencher = document.getElementById('distribuidorProdutos');
+    if (distribuidorPreencher) distribuidorPreencher.checked = !!dados.distribuidorProdutos;
   }
 
 
@@ -328,6 +330,7 @@
   function preencherWhatsapp() {
     const celular = document.getElementById('telefoneCelular');
     const whatsapp = document.getElementById('whatsapp');
+    if (!celular || !whatsapp) return;
     celular.addEventListener('input', function () {
       whatsapp.value = celular.value;
     });
@@ -371,15 +374,15 @@
       cidade: document.getElementById('cidade').value.trim(),
       estado: document.getElementById('estado').value,
       complemento: document.getElementById('complemento').value.trim(),
-      prestadorServico: document.getElementById('prestadorServico').checked,
-      distribuidorProdutos: document.getElementById('distribuidorProdutos').checked
+      prestadorServico: document.getElementById('prestadorServico')?.checked || false,
+      distribuidorProdutos: document.getElementById('distribuidorProdutos')?.checked || false
     };
   }
 
   // 
   // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
   // 
-  const CAMPOS_OBRIGATORIOS = [
+  const CAMPOS_OBRIGATORIOS_FORNECEDOR = [
     'razaoSocial', 'nomeFantasia', 'cnpj', 'inscricaoEstadual', 'inscricaoMunicipal',
     'cep', 'ruaAvenida', 'numeroFornecedor', 'bairro', 'cidade', 'estado'
   ];
@@ -387,7 +390,7 @@
   function validarFormulario() {
     let primeiroInvalido = null;
 
-    CAMPOS_OBRIGATORIOS.forEach(id => {
+    CAMPOS_OBRIGATORIOS_FORNECEDOR.forEach(id => {
       const el = document.getElementById(id);
       if (!el.value.trim()) {
         el.classList.add('campo-invalido');
@@ -403,8 +406,8 @@
       return false;
     }
 
-    const prestadorServico = document.getElementById('prestadorServico').checked;
-    const distribuidorProdutos = document.getElementById('distribuidorProdutos').checked;
+    const prestadorServico = document.getElementById('prestadorServico')?.checked || false;
+    const distribuidorProdutos = document.getElementById('distribuidorProdutos')?.checked || false;
     const erroTipoEl = document.getElementById('tipoFornecedorErro');
 
     if (!prestadorServico && !distribuidorProdutos) {
@@ -428,8 +431,10 @@
     document.querySelectorAll('.field__input, .field__select').forEach(el => {
       el.value = '';
     });
-    document.getElementById('prestadorServico').checked = false;
-    document.getElementById('distribuidorProdutos').checked = false;
+    const prestadorEl = document.getElementById('prestadorServico');
+    if (prestadorEl) prestadorEl.checked = false;
+    const distribuidorEl = document.getElementById('distribuidorProdutos');
+    if (distribuidorEl) distribuidorEl.checked = false;
     const erroTipoEl = document.getElementById('tipoFornecedorErro');
     if (erroTipoEl) erroTipoEl.classList.remove('visible');
 
@@ -511,7 +516,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('cnpj')) {
-      renderCadastroFornecedorForm();
+      renderFornecedorForm();
     }
   });
 </script>
