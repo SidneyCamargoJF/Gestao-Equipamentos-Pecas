@@ -13,8 +13,11 @@
  *   se não achar por Patrimônio, tenta pela Localização (só resolve se
  *   bater com exatamente 1 equipamento). Se não resolver nenhum dos dois,
  *   o chamado é salvo mesmo assim, sem vínculo (e o cliente é avisado).
- * - Peças: várias, vêm prontas do cliente (array de IDs); gravadas na
- *   mesma célula separadas por "-" (ex: "1-3-5").
+ * - Peças: várias, vêm do cliente como texto livre (Nome + opcionais); o
+ *   servidor tenta achar o ID em tbl_pecas pelo Nome (só resolve se bater
+ *   com exatamente 1) e grava os IDs achados na mesma célula separados por
+ *   "-" (ex: "1-3-5"). Peça sem ID resolvido não é linkada, mas não impede
+ *   o chamado de ser salvo.
  *
  * Retorna { sucesso: boolean, mensagem: string, id?: number, equipamentoEncontrado?: boolean }
  */
@@ -60,9 +63,14 @@ function salvarChamadoBackend(dados) {
     }
     const equipamentoEncontrado = !!equipamentoId;
 
-    const pecaIdsTexto = (Array.isArray(dados.pecaIds) && dados.pecaIds.length > 0)
-      ? dados.pecaIds.join('-')
-      : '';
+    // Peças ainda não têm identificador único (podem ter nome repetido), então
+    // só entra na tbl_chamados quem bater com exatamente 1 peça em tbl_pecas
+    // pelo Nome digitado. As demais infos do bloco (Sequência/Localização/
+    // Marca/Modelo) só ajudam o usuário a diferenciar, não são gravadas.
+    const pecaIdsResolvidos = (Array.isArray(dados.pecas) ? dados.pecas : [])
+      .map(p => resolverPecaIdPorNomeChamado(p.nome))
+      .filter(Boolean);
+    const pecaIdsTexto = pecaIdsResolvidos.length > 0 ? pecaIdsResolvidos.join('-') : '';
 
     // Ordem: ID, ID_EQUIPAMENTO, ID_PECA, DEFEITO, TIPO, PRIORIDADE,
     // DATA_ABERTURA, ATRIBUIDO_A, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO,
@@ -107,7 +115,7 @@ function salvarChamadoBackend(dados) {
  * Chamado ao sair do campo Patrimônio (evento blur), igual
  * verificarCnpjAoSair() do Cadastro de Fornecedor. Nunca bloqueia o
  * cadastro -- só informa.
- * Retorna { existe: boolean, marca?: string, modelo?: string }
+ * Retorna { existe, localizacao?, btus?, marca?, modelo?, sequencia? }
  */
 function verificarPatrimonioChamado(patrimonio) {
   const patrimonioBuscado = String(patrimonio || '').trim().toLowerCase();
@@ -117,10 +125,33 @@ function verificarPatrimonioChamado(patrimonio) {
   for (let i = 0; i < dados.length; i++) {
     const patrimonioLinha = String(dados[i][5] || '').trim().toLowerCase();
     if (patrimonioLinha === patrimonioBuscado) {
-      return { existe: true, marca: dados[i][3] || '', modelo: dados[i][4] || '' };
+      return {
+        existe: true,
+        localizacao: dados[i][1] || '',
+        btus: dados[i][2] || '',
+        marca: dados[i][3] || '',
+        modelo: dados[i][4] || '',
+        sequencia: dados[i][6] || ''
+      };
     }
   }
   return { existe: false };
+}
+
+/**
+ * Busca o ID de uma peça em tbl_pecas pelo Nome -- só resolve se bater com
+ * exatamente 1 (peças podem ter nome repetido, então em caso de
+ * ambiguidade não arrisca vincular a errada).
+ * Retorna o ID ou '' se não encontrar ou encontrar mais de uma.
+ */
+function resolverPecaIdPorNomeChamado(nome) {
+  const nomeBuscado = String(nome || '').trim().toLowerCase();
+  if (!nomeBuscado) return '';
+
+  const dados = ReadParts();
+  const encontrados = dados.filter(linha => String(linha[1] || '').trim().toLowerCase() === nomeBuscado);
+
+  return (encontrados.length === 1) ? encontrados[0][0] : '';
 }
 
 /**

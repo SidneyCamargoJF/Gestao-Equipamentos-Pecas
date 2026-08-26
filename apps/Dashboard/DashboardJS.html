@@ -191,8 +191,11 @@ function renderizar() {
   const hoje = new Date();
 
   // Data atual no header
-  document.getElementById('dataAtual').textContent =
-    hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const dataAtualEl = document.getElementById('dataAtual');
+  if (dataAtualEl) {
+    dataAtualEl.textContent =
+      hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
 
   const mensais = gerarPreventivasMensais();
   const anuais = gerarAnuais();

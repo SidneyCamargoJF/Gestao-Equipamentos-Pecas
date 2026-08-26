@@ -119,31 +119,19 @@
       <fieldset class="fieldset-principal">
         <legend class="fieldset-legend">Peças</legend>
         <p class="chamado-itens-ajuda">
-          Opcional. Pode adicionar mais de uma (ex: trocar 2 peças do mesmo equipamento).
-          Só permite escolher peças já cadastradas -- o chamado guarda os IDs, nunca duplica o nome.
+          Opcional. Pode adicionar mais de uma (ex: trocar 2 peças do mesmo equipamento). Por
+          enquanto só o Nome é obrigatório por peça -- ainda não temos um jeito de identificar
+          cada peça de forma única (podem ter nomes repetidos), então Sequência/Localização/
+          Marca/Modelo ajudam a diferenciar, mas são opcionais.
         </p>
 
-        <div class="form-grid-3">
-          <div class="field field-full-2">
-            <label class="field__label" for="chamadoPeca">Peça</label>
-            <select class="field__select" id="chamadoPeca">
-              <option value="">Selecione...</option>
-            </select>
-          </div>
-          <div class="field chamado-peca-add-campo">
-            <label class="field__label">&nbsp;</label>
-            <button type="button" class="btn-secondary" onclick="adicionarPecaChamado()">+ Adicionar Peça</button>
-          </div>
-        </div>
-
-        <div id="chamadoPecasSelecionadas" class="chamado-pecas-selecionadas">
+        <div id="chamadoPecasBlocos" class="chamado-pecas-blocos">
           <!-- Preenchido via JS: renderPecasChamadoSelecionadas() -->
         </div>
+
+        <button type="button" class="btn-secondary" onclick="adicionarBlocoPecaChamado()">+ Adicionar Peça</button>
       </fieldset>
 
-      <!-- Histórico/Movimentações não fica aqui -- é uma tela de consulta
-          (modal ao clicar num chamado da lista), não faz sentido no
-          momento de abrir um chamado novo, que ainda não tem histórico. -->
 
       <!-- ============================================= -->
       <!-- BOTÕES DE AÇÃO                                -->

@@ -2,15 +2,18 @@
   // =====================================================
   // CADASTRO DE CHAMADO
   // Equipamento é obrigatório (Patrimônio e/ou Localização, achado em
-  // tbl_equipamentos). Peças são opcionais e podem ser várias (seleciona de
-  // tbl_pecas, guarda só os IDs -- nunca duplica dado).
+  // tbl_equipamentos -- ao achar pelo Patrimônio, preenche os demais campos
+  // sozinho). Peças são opcionais e podem ser várias -- por enquanto são
+  // texto livre (Nome + opcionais), já que peça ainda não tem identificador
+  // único; o servidor tenta linkar por Nome ao salvar.
   // =====================================================
 
-  let pecasCacheChamado = [];       // [{id, nome}] -- todas as peças de tbl_pecas
-  let pecasChamadoState = [];       // [{id, nome}] -- peças adicionadas a este chamado
+  let pecaProximoId = 1;
+  let pecasChamadoState = [];  // [{id, nome, sequencia, localizacao, marca, modelo}] -- blocos de peça deste chamado
 
   // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
   async function renderChamadoForm() {
+    pecaProximoId = 1;
     pecasChamadoState = [];
 
     const motivoEl = document.getElementById('chamadoMotivo');
@@ -35,14 +38,10 @@
     travarCampoCarregandoChamado('chamadoEquipLocalizacao', 'Resgatando localizações...');
     travarCampoCarregandoChamado('chamadoAtribuidoA', 'Resgatando prestadores de serviço...');
 
-    const [locais, fornecedoresPrestadores, pecas] = await Promise.all([
+    const [locais, fornecedoresPrestadores] = await Promise.all([
       carregarLocaisChamado(),
-      carregarFornecedoresPrestadoresChamado(),
-      carregarPecasChamado()
+      carregarFornecedoresPrestadoresChamado()
     ]);
-
-    pecasCacheChamado = pecas;
-    popularSelectPecaChamado();
 
     destravarCampoCarregandoChamado('chamadoEquipLocalizacao', 'Selecione a localização...');
     initSearchChamado('chamadoEquipLocalizacao', 'chamadoEquipLocalizacaoDropdown', 'chamadoEquipLocalizacaoWrapper', locais);
@@ -118,6 +117,7 @@
       if (resultado && resultado.existe) {
         statusEl.textContent = 'Equipamento encontrado' + (resultado.marca ? ' (' + resultado.marca + (resultado.modelo ? ' - ' + resultado.modelo : '') + ')' : '');
         statusEl.className = 'chamado-patrimonio-status encontrado';
+        preencherCamposEquipamentoChamado(resultado);
       } else {
         statusEl.textContent = 'Patrimônio não encontrado -- pode continuar, o chamado ainda é salvo';
         statusEl.className = 'chamado-patrimonio-status nao-encontrado';
@@ -126,6 +126,22 @@
       statusEl.textContent = '';
       statusEl.className = 'chamado-patrimonio-status';
     }
+  }
+
+  // Preenche os demais campos do equipamento de acordo com o que está
+  // cadastrado em tbl_equipamentos, quando o Patrimônio bate com um real.
+  function preencherCamposEquipamentoChamado(dados) {
+    const localizacaoEl = document.getElementById('chamadoEquipLocalizacao');
+    if (localizacaoEl && dados.localizacao) localizacaoEl.value = dados.localizacao;
+
+    const marcaEl = document.getElementById('chamadoEquipMarca');
+    if (marcaEl && dados.marca) marcaEl.value = dados.marca;
+
+    const modeloEl = document.getElementById('chamadoEquipModelo');
+    if (modeloEl && dados.modelo) modeloEl.value = dados.modelo;
+
+    const btusEl = document.getElementById('chamadoEquipBtus');
+    if (btusEl && dados.btus) btusEl.value = dados.btus;
   }
 
   // ===== LOCALIZAÇÃO: BUSCA REAL EM tbl_localizacao =====
@@ -146,62 +162,77 @@
     }
   }
 
-  // ===== PEÇAS: SELECT + LISTA DE ADICIONADAS (várias por chamado) =====
-  async function carregarPecasChamado() {
-    try {
-      const res = await runServerFunction('ReadParts');
-      if (!Array.isArray(res)) return [];
-      return res
-        .map(line => ({ id: line[0], nome: line[1] }))
-        .filter(p => p.id != null && p.nome);
-    } catch (error) {
-      return [];
-    }
-  }
-
-  function popularSelectPecaChamado() {
-    const select = document.getElementById('chamadoPeca');
-    if (!select) return;
-
-    const idsJaAdicionados = pecasChamadoState.map(p => String(p.id));
-    const disponiveis = pecasCacheChamado.filter(p => !idsJaAdicionados.includes(String(p.id)));
-
-    select.innerHTML = '<option value="">Selecione...</option>' +
-      disponiveis.map(p => `<option value="${p.id}">${escapeHtmlChamado(p.nome)}</option>`).join('');
-  }
-
-  function adicionarPecaChamado() {
-    const select = document.getElementById('chamadoPeca');
-    if (!select || !select.value) return;
-
-    const peca = pecasCacheChamado.find(p => String(p.id) === String(select.value));
-    if (!peca) return;
-
-    pecasChamadoState.push(peca);
-    popularSelectPecaChamado();
+  // ===== PEÇAS: blocos de Nome (obrigatório) + Sequência/Localização/Marca/
+  // Modelo (opcionais). Ainda sem chave única pra peça, então é tudo texto
+  // livre por enquanto -- ao salvar, o servidor tenta achar o ID em
+  // tbl_pecas pelo Nome (só se bater com exatamente 1 peça). =====
+  function adicionarBlocoPecaChamado() {
+    pecasChamadoState.push({
+      id: pecaProximoId++,
+      nome: '',
+      sequencia: '',
+      localizacao: '',
+      marca: '',
+      modelo: ''
+    });
     renderPecasChamadoSelecionadas();
   }
 
   function removerPecaChamado(id) {
-    pecasChamadoState = pecasChamadoState.filter(p => String(p.id) !== String(id));
-    popularSelectPecaChamado();
+    pecasChamadoState = pecasChamadoState.filter(p => p.id !== id);
     renderPecasChamadoSelecionadas();
   }
 
+  function atualizarCampoPecaChamado(id, campo, valor) {
+    const peca = pecasChamadoState.find(p => p.id === id);
+    if (peca) peca[campo] = valor;
+  }
+
   function renderPecasChamadoSelecionadas() {
-    const container = document.getElementById('chamadoPecasSelecionadas');
+    const container = document.getElementById('chamadoPecasBlocos');
     if (!container) return;
 
-    if (pecasChamadoState.length === 0) {
-      container.innerHTML = '';
-      return;
-    }
-
     container.innerHTML = pecasChamadoState.map(p => `
-      <span class="chamado-peca-chip">
-        ${escapeHtmlChamado(p.nome)}
-        <button type="button" title="Remover" onclick="removerPecaChamado(${p.id})">×</button>
-      </span>
+      <div class="chamado-peca-bloco">
+        <div class="chamado-peca-bloco-cabecalho">
+          <span>⚙️ Peça</span>
+          <button type="button" class="chamado-no-remover" title="Remover" onclick="removerPecaChamado(${p.id})">🗑️</button>
+        </div>
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label">Nome *</label>
+            <input class="field__input" type="text" placeholder="Ex: Filtro de ar"
+              value="${escapeHtmlChamado(p.nome)}"
+              oninput="atualizarCampoPecaChamado(${p.id}, 'nome', this.value)">
+          </div>
+          <div class="field">
+            <label class="field__label">Sequência</label>
+            <input class="field__input" type="text"
+              value="${escapeHtmlChamado(p.sequencia)}"
+              oninput="atualizarCampoPecaChamado(${p.id}, 'sequencia', this.value)">
+          </div>
+          <div class="field">
+            <label class="field__label">Localização</label>
+            <input class="field__input" type="text"
+              value="${escapeHtmlChamado(p.localizacao)}"
+              oninput="atualizarCampoPecaChamado(${p.id}, 'localizacao', this.value)">
+          </div>
+        </div>
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label">Marca</label>
+            <input class="field__input" type="text"
+              value="${escapeHtmlChamado(p.marca)}"
+              oninput="atualizarCampoPecaChamado(${p.id}, 'marca', this.value)">
+          </div>
+          <div class="field">
+            <label class="field__label">Modelo</label>
+            <input class="field__input" type="text"
+              value="${escapeHtmlChamado(p.modelo)}"
+              oninput="atualizarCampoPecaChamado(${p.id}, 'modelo', this.value)">
+          </div>
+        </div>
+      </div>
     `).join('');
   }
 
@@ -303,6 +334,11 @@
       return;
     }
 
+    if (pecasChamadoState.some(p => !p.nome.trim())) {
+      alert('Tem uma peça adicionada sem nome. Preencha o nome ou remova o bloco.');
+      return;
+    }
+
     const dadosChamado = {
       motivo: motivo,
       tipo: document.getElementById('chamadoTipo')?.value || '',
@@ -314,7 +350,13 @@
       marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
       modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
       btus: document.getElementById('chamadoEquipBtus')?.value.trim() || '',
-      pecaIds: pecasChamadoState.map(p => p.id)
+      pecas: pecasChamadoState.map(p => ({
+        nome: p.nome.trim(),
+        sequencia: p.sequencia.trim(),
+        localizacao: p.localizacao.trim(),
+        marca: p.marca.trim(),
+        modelo: p.modelo.trim()
+      }))
     };
 
     if (typeof exibirModal === 'function') exibirModal('processando');
