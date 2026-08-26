@@ -53,7 +53,12 @@
     <?!= include('ConsultaFornecedorForm'); ?>
     <?!= include('CadastroFornecedorForm'); ?>
     <?!= include('CadastroChamadoForm'); ?>
-    <?!= include('ConsultaEquipmentsHTML'); ?>
+    <!-- ConsultaEquipmentsHTML: TEMPORARIAMENTE REMOVIDO (a linha precisa
+         ser apagada de verdade, não só comentada -- o include() roda no
+         servidor antes do HTML existir, então um comentário HTML não
+         impede a execução). Arquivo do Sidney ainda não colado no Apps
+         Script. Reativar colando de volta a linha do include quando o
+         arquivo existir lá. -->
 
     <?!= include('Pages'); ?>
 
@@ -64,7 +69,9 @@
   <?!= include('Modal'); ?>
   <?!= include('IndexModalDetalhes'); ?>
   <?!= include('ConsultaContratoModal'); ?>
-  <?!= include('ConsultaEquipmentsModal'); ?>
+  <!-- ConsultaEquipmentsModal: TEMPORARIAMENTE REMOVIDO (linha apagada, não
+       comentada -- ver explicação acima do CadastroChamadoForm). Arquivo do
+       Sidney ainda não colado no Apps Script. -->
 
   <?!= include("ConsultaMarcaFormModal") ?>
 
@@ -96,7 +103,9 @@
   <?!= include('ConsultaFornecedorFormJS'); ?>
   <?!= include('CadastroFornecedorFormJS'); ?>
   <?!= include('CadastroChamadoFormJS'); ?>
-  <?!= include('ConsultaEquipmentsJS'); ?>
+  <!-- ConsultaEquipmentsJS: TEMPORARIAMENTE REMOVIDO (linha apagada, não
+       comentada -- ver explicação acima do CadastroChamadoForm). Arquivo do
+       Sidney ainda não colado no Apps Script. -->
 
   <?!= include("IndexPagesJS") ?>
   <?!= include("IndexJS") ?>  

@@ -1,17 +1,17 @@
 <script>
   // =====================================================
-  // CADASTRO DE CHAMADO - PRIMEIRO MODELO (front-end only)
-  // Ainda sem gravação na planilha -- "Salvar" só mostra o que seria
-  // enviado, pra validar a ideia antes de desenhar o schema no backend.
+  // CADASTRO DE CHAMADO
+  // Equipamento é obrigatório (Patrimônio e/ou Localização, achado em
+  // tbl_equipamentos). Peças são opcionais e podem ser várias (seleciona de
+  // tbl_pecas, guarda só os IDs -- nunca duplica dado).
   // =====================================================
 
-  let chamadoProximoId = 1;
-  let itensChamadoState = [];      // { id, tipo: 'equipamento'|'peca', nome, filhos: [] }
+  let pecasCacheChamado = [];       // [{id, nome}] -- todas as peças de tbl_pecas
+  let pecasChamadoState = [];       // [{id, nome}] -- peças adicionadas a este chamado
 
   // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
   async function renderChamadoForm() {
-    itensChamadoState = [];
-    chamadoProximoId = 1;
+    pecasChamadoState = [];
 
     const motivoEl = document.getElementById('chamadoMotivo');
     if (motivoEl) motivoEl.value = '';
@@ -21,108 +21,270 @@
     if (tipoEl) tipoEl.value = '';
     const atribuidoEl = document.getElementById('chamadoAtribuidoA');
     if (atribuidoEl) atribuidoEl.value = '';
+    ['chamadoEquipPatrimonio', 'chamadoEquipLocalizacao', 'chamadoEquipMarca', 'chamadoEquipModelo', 'chamadoEquipBtus'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
 
-    const dataEl = document.getElementById('chamadoDataAbertura');
-    if (dataEl) dataEl.value = new Date().toLocaleDateString('pt-BR');
+    const statusEl = document.getElementById('chamadoPatrimonioStatus');
+    if (statusEl) { statusEl.textContent = ''; statusEl.className = 'chamado-patrimonio-status'; }
 
-    renderArvoreItensChamado();
+    atualizarContadorDescricaoChamado();
+    renderPecasChamadoSelecionadas();
+
+    travarCampoCarregandoChamado('chamadoEquipLocalizacao', 'Resgatando localizações...');
+    travarCampoCarregandoChamado('chamadoAtribuidoA', 'Resgatando prestadores de serviço...');
+
+    const [locais, fornecedoresPrestadores, pecas] = await Promise.all([
+      carregarLocaisChamado(),
+      carregarFornecedoresPrestadoresChamado(),
+      carregarPecasChamado()
+    ]);
+
+    pecasCacheChamado = pecas;
+    popularSelectPecaChamado();
+
+    destravarCampoCarregandoChamado('chamadoEquipLocalizacao', 'Selecione a localização...');
+    initSearchChamado('chamadoEquipLocalizacao', 'chamadoEquipLocalizacaoDropdown', 'chamadoEquipLocalizacaoWrapper', locais);
+
+    destravarCampoCarregandoChamado('chamadoAtribuidoA', 'Técnico interno ou fornecedor prestador de serviço...');
+    initSearchChamado('chamadoAtribuidoA', 'chamadoAtribuidoDropdown', 'chamadoAtribuidoWrapper', fornecedoresPrestadores);
+
+    const patrimonioEl = document.getElementById('chamadoEquipPatrimonio');
+    if (patrimonioEl) patrimonioEl.addEventListener('blur', verificarPatrimonioAoSairChamado);
 
     const inputMotivo = document.getElementById('chamadoMotivo');
     if (inputMotivo) inputMotivo.focus();
   }
 
-  // ===== ÁRVORE DE ITENS ASSOCIADOS (equipamento -> peças, ou peça avulsa) =====
-  function adicionarItemChamado(tipo, paiId) {
-    const novoItem = {
-      id: chamadoProximoId++,
-      tipo: tipo,
-      nome: '',
-      filhos: tipo === 'equipamento' ? [] : undefined
-    };
-
-    if (paiId) {
-      const pai = encontrarItemChamado(paiId);
-      if (pai && pai.filhos) pai.filhos.push(novoItem);
-    } else {
-      itensChamadoState.push(novoItem);
-    }
-
-    renderArvoreItensChamado();
+  function limparChamado() {
+    renderChamadoForm();
   }
 
-  function encontrarItemChamado(id, lista) {
-    lista = lista || itensChamadoState;
-    for (const item of lista) {
-      if (item.id === id) return item;
-      if (item.filhos) {
-        const achado = encontrarItemChamado(id, item.filhos);
-        if (achado) return achado;
-      }
-    }
-    return null;
+  // ===== TRAVA VISUAL ENQUANTO OS DROPDOWNS DE BUSCA CARREGAM (Localização /
+  // Atribuído a demoram porque dependem de consultas no servidor) =====
+  function travarCampoCarregandoChamado(inputId, mensagem) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.disabled = true;
+    input.placeholder = mensagem;
+    input.value = '';
   }
 
-  function removerItemChamado(id, lista) {
-    lista = lista || itensChamadoState;
-    const idx = lista.findIndex(i => i.id === id);
-    if (idx >= 0) {
-      lista.splice(idx, 1);
-      renderArvoreItensChamado();
+  function destravarCampoCarregandoChamado(inputId, placeholderNormal) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.disabled = false;
+    input.placeholder = placeholderNormal;
+  }
+
+  // ===== CONTADOR DE CARACTERES DA DESCRIÇÃO =====
+  const CHAMADO_DESCRICAO_MAX = 500;
+
+  function atualizarContadorDescricaoChamado() {
+    const descricaoEl = document.getElementById('chamadoDescricao');
+    const contadorEl = document.getElementById('chamadoDescricaoContador');
+    if (!descricaoEl || !contadorEl) return;
+
+    const restantes = CHAMADO_DESCRICAO_MAX - descricaoEl.value.length;
+    contadorEl.textContent = restantes + ' caracteres restantes';
+  }
+
+  document.addEventListener('input', (e) => {
+    if (e.target && e.target.id === 'chamadoDescricao') {
+      atualizarContadorDescricaoChamado();
+    }
+  });
+
+  // ===== PATRIMÔNIO: verificação ao sair do campo (igual verificarCnpjAoSair
+  // do Cadastro de Fornecedor) -- só avisa se achou ou não, nunca bloqueia. =====
+  async function verificarPatrimonioAoSairChamado() {
+    const patrimonioEl = document.getElementById('chamadoEquipPatrimonio');
+    const statusEl = document.getElementById('chamadoPatrimonioStatus');
+    if (!patrimonioEl || !statusEl) return;
+
+    const patrimonio = patrimonioEl.value.trim();
+    if (!patrimonio) {
+      statusEl.textContent = '';
+      statusEl.className = 'chamado-patrimonio-status';
       return;
     }
-    lista.forEach(item => {
-      if (item.filhos) removerItemChamado(id, item.filhos);
-    });
-    renderArvoreItensChamado();
+
+    statusEl.textContent = 'Buscando...';
+    statusEl.className = 'chamado-patrimonio-status';
+
+    try {
+      const resultado = await runServerFunction('verificarPatrimonioChamado', patrimonio);
+      if (resultado && resultado.existe) {
+        statusEl.textContent = 'Equipamento encontrado' + (resultado.marca ? ' (' + resultado.marca + (resultado.modelo ? ' - ' + resultado.modelo : '') + ')' : '');
+        statusEl.className = 'chamado-patrimonio-status encontrado';
+      } else {
+        statusEl.textContent = 'Patrimônio não encontrado -- pode continuar, o chamado ainda é salvo';
+        statusEl.className = 'chamado-patrimonio-status nao-encontrado';
+      }
+    } catch (error) {
+      statusEl.textContent = '';
+      statusEl.className = 'chamado-patrimonio-status';
+    }
   }
 
-  function atualizarNomeItemChamado(id, valor) {
-    const item = encontrarItemChamado(id);
-    if (item) item.nome = valor;
+  // ===== LOCALIZAÇÃO: BUSCA REAL EM tbl_localizacao =====
+  async function carregarLocaisChamado() {
+    console.log('⏳ [renderLocalização] Buscando localizações em tbl_localizacao...');
+    try {
+      const res = await runServerFunction('ReadLocations');
+      if (!Array.isArray(res)) {
+        console.log('⚠️ [renderLocalização] Resposta não é array:', res);
+        return [];
+      }
+      const locais = res.map(line => line[1]).filter(Boolean);
+      console.log('✅ [renderLocalização] ' + locais.length + ' localização(ões) carregada(s):', locais);
+      return locais;
+    } catch (error) {
+      console.error('❌ [renderLocalização] Erro ao buscar localizações:', error);
+      return [];
+    }
   }
 
-  function renderArvoreItensChamado() {
-    const container = document.getElementById('chamadoItensArvore');
+  // ===== PEÇAS: SELECT + LISTA DE ADICIONADAS (várias por chamado) =====
+  async function carregarPecasChamado() {
+    try {
+      const res = await runServerFunction('ReadParts');
+      if (!Array.isArray(res)) return [];
+      return res
+        .map(line => ({ id: line[0], nome: line[1] }))
+        .filter(p => p.id != null && p.nome);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function popularSelectPecaChamado() {
+    const select = document.getElementById('chamadoPeca');
+    if (!select) return;
+
+    const idsJaAdicionados = pecasChamadoState.map(p => String(p.id));
+    const disponiveis = pecasCacheChamado.filter(p => !idsJaAdicionados.includes(String(p.id)));
+
+    select.innerHTML = '<option value="">Selecione...</option>' +
+      disponiveis.map(p => `<option value="${p.id}">${escapeHtmlChamado(p.nome)}</option>`).join('');
+  }
+
+  function adicionarPecaChamado() {
+    const select = document.getElementById('chamadoPeca');
+    if (!select || !select.value) return;
+
+    const peca = pecasCacheChamado.find(p => String(p.id) === String(select.value));
+    if (!peca) return;
+
+    pecasChamadoState.push(peca);
+    popularSelectPecaChamado();
+    renderPecasChamadoSelecionadas();
+  }
+
+  function removerPecaChamado(id) {
+    pecasChamadoState = pecasChamadoState.filter(p => String(p.id) !== String(id));
+    popularSelectPecaChamado();
+    renderPecasChamadoSelecionadas();
+  }
+
+  function renderPecasChamadoSelecionadas() {
+    const container = document.getElementById('chamadoPecasSelecionadas');
     if (!container) return;
 
-    if (itensChamadoState.length === 0) {
-      container.innerHTML = '<p class="chamado-itens-vazio">Nenhum item associado ainda -- o chamado pode continuar geral, sem problema.</p>';
+    if (pecasChamadoState.length === 0) {
+      container.innerHTML = '';
       return;
     }
 
-    container.innerHTML = itensChamadoState.map(item => renderNoChamado(item)).join('');
+    container.innerHTML = pecasChamadoState.map(p => `
+      <span class="chamado-peca-chip">
+        ${escapeHtmlChamado(p.nome)}
+        <button type="button" title="Remover" onclick="removerPecaChamado(${p.id})">×</button>
+      </span>
+    `).join('');
   }
 
-  function renderNoChamado(item) {
-    if (item.tipo === 'equipamento') {
-      const filhosHtml = (item.filhos || []).map(filho => renderNoChamado(filho)).join('');
-      return `
-        <div class="chamado-no-equipamento">
-          <div class="chamado-no-cabecalho">
-            <span class="chamado-no-icone">🔧</span>
-            <input class="chamado-no-input" type="text" placeholder="Nome do equipamento..."
-              value="${escapeHtmlChamado(item.nome)}"
-              oninput="atualizarNomeItemChamado(${item.id}, this.value)">
-            <button type="button" class="chamado-no-remover" title="Remover" onclick="removerItemChamado(${item.id})">🗑️</button>
-          </div>
-          ${filhosHtml ? `<div class="chamado-no-filhos">${filhosHtml}</div>` : ''}
-          <div class="chamado-no-add-filho">
-            <button type="button" onclick="adicionarItemChamado('peca', ${item.id})">+ Associar peça a este equipamento</button>
-          </div>
-        </div>
-      `;
+  // ===== "ATRIBUÍDO A": BUSCA COM SUGESTÃO DE FORNECEDORES PRESTADORES DE
+  // SERVIÇO, MAS ACEITA QUALQUER TEXTO DIGITADO (técnico interno, etc.) =====
+  async function carregarFornecedoresPrestadoresChamado() {
+    console.log('⏳ [renderPrestadoresDeServiço] Buscando fornecedores prestadores de serviço...');
+    try {
+      const res = await runServerFunction('filtrarFornecedores', { tipo: 'prestador' });
+      if (!Array.isArray(res)) {
+        console.log('⚠️ [renderPrestadoresDeServiço] Resposta não é array:', res);
+        return [];
+      }
+      const nomes = res.map(f => f.nomeFantasia || f.razaoSocial).filter(Boolean);
+      console.log('✅ [renderPrestadoresDeServiço] ' + nomes.length + ' prestador(es) carregado(s):', nomes);
+      return nomes;
+    } catch (error) {
+      console.error('❌ [renderPrestadoresDeServiço] Erro ao buscar fornecedores prestadores de serviço:', error);
+      return [];
+    }
+  }
+
+  function initSearchChamado(inputId, dropdownId, wrapperId, opcoes) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const wrapper = document.getElementById(wrapperId);
+
+    if (!input || !dropdown || !wrapper) return;
+
+    const listaOpcoes = Array.isArray(opcoes) ? opcoes : [];
+
+    function renderLista(filtro) {
+      const f = (filtro || '').toLowerCase().trim();
+
+      const itens = (f === '')
+        ? listaOpcoes
+        : listaOpcoes.filter(o => String(o).toLowerCase().includes(f));
+
+      dropdown.innerHTML = '';
+
+      if (itens.length === 0) {
+        dropdown.innerHTML = '<div class="search-no-result" style="padding: 8px; color: #888;">Nenhum resultado -- pode digitar livremente</div>';
+      } else {
+        itens.forEach(o => {
+          const div = document.createElement('div');
+          div.className = 'search-option';
+          div.textContent = o;
+
+          div.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            input.value = o;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            dropdown.classList.remove('visible', 'active');
+          });
+          dropdown.appendChild(div);
+        });
+      }
     }
 
-    // Peça (avulsa ou dentro de um equipamento)
-    return `
-      <div class="chamado-no-peca">
-        <span class="chamado-no-icone">⚙️</span>
-        <input class="chamado-no-input" type="text" placeholder="Nome da peça..."
-          value="${escapeHtmlChamado(item.nome)}"
-          oninput="atualizarNomeItemChamado(${item.id}, this.value)">
-        <button type="button" class="chamado-no-remover" title="Remover" onclick="removerItemChamado(${item.id})">🗑️</button>
-      </div>
-    `;
+    function abrirListaCompleta() {
+      renderLista('');
+      dropdown.classList.add('visible', 'active');
+    }
+
+    input.addEventListener('focus', abrirListaCompleta);
+    input.addEventListener('click', abrirListaCompleta);
+
+    input.addEventListener('input', () => {
+      renderLista(input.value);
+      dropdown.classList.add('visible', 'active');
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === 'Escape') {
+        dropdown.classList.remove('visible', 'active');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!wrapper.contains(e.target)) {
+        dropdown.classList.remove('visible', 'active');
+      }
+    });
   }
 
   // ===== SALVAR =====
@@ -133,14 +295,26 @@
       return;
     }
 
+    const patrimonio = document.getElementById('chamadoEquipPatrimonio')?.value.trim() || '';
+    const localizacao = document.getElementById('chamadoEquipLocalizacao')?.value.trim() || '';
+
+    if (!patrimonio && !localizacao) {
+      alert('Informe pelo menos o Patrimônio ou a Localização do equipamento -- é o mínimo pra saber sobre qual equipamento é o chamado.');
+      return;
+    }
+
     const dadosChamado = {
       motivo: motivo,
       tipo: document.getElementById('chamadoTipo')?.value || '',
       classificacao: document.getElementById('chamadoClassificacao')?.value || '',
       atribuidoA: document.getElementById('chamadoAtribuidoA')?.value.trim() || '',
-      dataAbertura: document.getElementById('chamadoDataAbertura')?.value || '',
       descricao: document.getElementById('chamadoDescricao')?.value.trim() || '',
-      itens: itensChamadoState
+      patrimonio: patrimonio,
+      localizacao: localizacao,
+      marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
+      modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
+      btus: document.getElementById('chamadoEquipBtus')?.value.trim() || '',
+      pecaIds: pecasChamadoState.map(p => p.id)
     };
 
     if (typeof exibirModal === 'function') exibirModal('processando');

@@ -4,18 +4,31 @@
 // =====================================================
 
 /**
- * Salva um novo chamado em tbl_chamados, grava a árvore de itens associados
- * em tbl_chamado_itens (se houver) e registra a abertura em
- * tbl_chamado_historico. Local/Capacidade/Marca/Patrimônio/Seq ainda não são
- * coletados no formulário (aguardando o cadastro de Equipamentos ficar
- * pronto), então por enquanto entram em branco.
+ * Salva um novo chamado em tbl_chamados e registra a abertura em
+ * tbl_chamado_historico. Exige Patrimônio e/ou Localização (validado aqui
+ * de novo, por segurança, mesmo já validado no cliente). Equipamento e
+ * peças são guardados só por ID (nunca duplica dado de
+ * tbl_equipamentos/tbl_pecas):
+ * - Equipamento: localizado em tbl_equipamentos pelo Patrimônio digitado;
+ *   se não achar por Patrimônio, tenta pela Localização (só resolve se
+ *   bater com exatamente 1 equipamento). Se não resolver nenhum dos dois,
+ *   o chamado é salvo mesmo assim, sem vínculo (e o cliente é avisado).
+ * - Peças: várias, vêm prontas do cliente (array de IDs); gravadas na
+ *   mesma célula separadas por "-" (ex: "1-3-5").
  *
- * Retorna { sucesso: boolean, mensagem: string, id?: number }
+ * Retorna { sucesso: boolean, mensagem: string, id?: number, equipamentoEncontrado?: boolean }
  */
 function salvarChamadoBackend(dados) {
   try {
     if (!dados || !String(dados.motivo || '').trim()) {
       return { sucesso: false, mensagem: 'Preencha o motivo do chamado.' };
+    }
+
+    const patrimonioDigitado = String(dados.patrimonio || '').trim();
+    const localizacaoDigitada = String(dados.localizacao || '').trim();
+
+    if (!patrimonioDigitado && !localizacaoDigitada) {
+      return { sucesso: false, mensagem: 'Informe pelo menos o Patrimônio ou a Localização do equipamento.' };
     }
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -38,20 +51,30 @@ function salvarChamadoBackend(dados) {
 
     const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
 
-    // Ordem: ID, LOCAL, CAPACIDADE, MARCA, PATRIMONIO, SEQ, DEFEITO, TIPO,
-    // PRIORIDADE, DATA_ABERTURA, ATRIBUIDO, DATA_INICIO_ATENDIMENTO,
-    // DATA_FINALIZACAO, OBSERVACAO, RELATORIO, NOTA_FISCAL, STATUS, DT_ALTERACAO
+    let equipamentoId = '';
+    if (patrimonioDigitado) {
+      equipamentoId = buscarEquipamentoIdPorPatrimonio(patrimonioDigitado);
+    }
+    if (!equipamentoId && localizacaoDigitada) {
+      equipamentoId = buscarEquipamentoIdPorLocalizacao(localizacaoDigitada);
+    }
+    const equipamentoEncontrado = !!equipamentoId;
+
+    const pecaIdsTexto = (Array.isArray(dados.pecaIds) && dados.pecaIds.length > 0)
+      ? dados.pecaIds.join('-')
+      : '';
+
+    // Ordem: ID, ID_EQUIPAMENTO, ID_PECA, DEFEITO, TIPO, PRIORIDADE,
+    // DATA_ABERTURA, ATRIBUIDO_A, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO,
+    // OBSERVACAO, RELATORIO, NOTA_FISCAL, STATUS, DATA_ALTERACAO
     const novaLinha = [
       novoId,
-      dados.local || '',
-      dados.capacidade || '',
-      dados.marca || '',
-      dados.patrimonio || '',
-      dados.seq || '',
+      equipamentoId,
+      pecaIdsTexto,
       dados.motivo,
       dados.tipo || '',
       dados.classificacao || '',
-      dados.dataAbertura || dataAtual,
+      dataAtual,
       dados.atribuidoA || '',
       '',
       '',
@@ -64,42 +87,74 @@ function salvarChamadoBackend(dados) {
 
     abaChamados.getRange(ultimaLinha + 1, 1, 1, numColumnsTickets).setValues([novaLinha]);
 
-    if (dados.itens && dados.itens.length > 0) {
-      salvarItensChamado(novoId, dados.itens, '');
-    }
-
     adicionarHistoricoChamado(novoId, 'Chamado aberto');
 
-    return { sucesso: true, mensagem: 'Chamado aberto com sucesso!', id: novoId };
+    return {
+      sucesso: true,
+      mensagem: equipamentoEncontrado
+        ? 'Chamado aberto com sucesso!'
+        : 'Chamado aberto com sucesso! (Não foi possível vincular a um equipamento cadastrado -- confira o Patrimônio/Localização quando o cadastro de Equipamentos estiver mais completo.)',
+      id: novoId,
+      equipamentoEncontrado: equipamentoEncontrado
+    };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
   }
 }
 
 /**
- * Grava recursivamente a árvore de itens (equipamento -> peças, ou peça
- * avulsa) em tbl_chamado_itens. paiId vazio = item raiz.
+ * Verifica se existe um equipamento com esse Patrimônio em tbl_equipamentos.
+ * Chamado ao sair do campo Patrimônio (evento blur), igual
+ * verificarCnpjAoSair() do Cadastro de Fornecedor. Nunca bloqueia o
+ * cadastro -- só informa.
+ * Retorna { existe: boolean, marca?: string, modelo?: string }
  */
-function salvarItensChamado(chamadoId, itens, paiId) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const abaItens = ss.getSheetByName(ticketItensTableName);
-  if (!abaItens) return;
+function verificarPatrimonioChamado(patrimonio) {
+  const patrimonioBuscado = String(patrimonio || '').trim().toLowerCase();
+  if (!patrimonioBuscado) return { existe: false };
 
-  itens.forEach(item => {
-    const ultimaLinhaPlanilha = abaItens.getLastRow();
-    const ultimaLinha = Math.max(ultimaLinhaPlanilha, firstLineTicketItens - 1);
-
-    let idAtual = (ultimaLinha >= firstLineTicketItens) ? abaItens.getRange(ultimaLinha, 1).getValue() : 0;
-    if (idAtual === '' || isNaN(Number(idAtual))) idAtual = 0;
-    const novoItemId = Number(idAtual) + 1;
-
-    const novaLinha = [novoItemId, chamadoId, item.tipo, item.nome || '', paiId || ''];
-    abaItens.getRange(ultimaLinha + 1, 1, 1, numColumnsTicketItens).setValues([novaLinha]);
-
-    if (item.filhos && item.filhos.length > 0) {
-      salvarItensChamado(chamadoId, item.filhos, novoItemId);
+  const dados = ReadEquipments();
+  for (let i = 0; i < dados.length; i++) {
+    const patrimonioLinha = String(dados[i][5] || '').trim().toLowerCase();
+    if (patrimonioLinha === patrimonioBuscado) {
+      return { existe: true, marca: dados[i][3] || '', modelo: dados[i][4] || '' };
     }
-  });
+  }
+  return { existe: false };
+}
+
+/**
+ * Busca o ID de um equipamento em tbl_equipamentos pelo Patrimônio.
+ * Retorna o ID ou '' se não encontrar.
+ */
+function buscarEquipamentoIdPorPatrimonio(patrimonio) {
+  const patrimonioBuscado = String(patrimonio || '').trim().toLowerCase();
+  if (!patrimonioBuscado) return '';
+
+  const dados = ReadEquipments();
+  for (let i = 0; i < dados.length; i++) {
+    const patrimonioLinha = String(dados[i][5] || '').trim().toLowerCase();
+    if (patrimonioLinha === patrimonioBuscado) {
+      return dados[i][0];
+    }
+  }
+  return '';
+}
+
+/**
+ * Busca o ID de um equipamento em tbl_equipamentos pela Localização --
+ * só resolve se bater com exatamente 1 equipamento (Localização sozinha
+ * não é uma chave única, então em caso de ambiguidade não arrisca).
+ * Retorna o ID ou '' se não encontrar ou encontrar mais de um.
+ */
+function buscarEquipamentoIdPorLocalizacao(localizacao) {
+  const localizacaoBuscada = String(localizacao || '').trim().toLowerCase();
+  if (!localizacaoBuscada) return '';
+
+  const dados = ReadEquipments();
+  const encontrados = dados.filter(linha => String(linha[1] || '').trim().toLowerCase() === localizacaoBuscada);
+
+  return (encontrados.length === 1) ? encontrados[0][0] : '';
 }
 
 /**

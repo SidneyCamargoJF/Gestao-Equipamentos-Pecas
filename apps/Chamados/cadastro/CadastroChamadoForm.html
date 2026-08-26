@@ -45,60 +45,112 @@
             </select>
           </div>
 
-          <div class="field">
-            <label class="field__label" for="chamadoAtribuidoA">Atribuído a</label>
-            <input class="field__input" type="text" id="chamadoAtribuidoA" placeholder="Técnico ou fornecedor responsável">
-          </div>
-
-          <div class="field">
-            <label class="field__label" for="chamadoDataAbertura">Data de Abertura</label>
-            <input class="field__input" type="text" id="chamadoDataAbertura" disabled>
+          <div class="field field-full-2">
+            <label class="field__label">Atribuído a</label>
+            <div class="search-wrapper" id="chamadoAtribuidoWrapper">
+              <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
+              <input class="search-input" type="text" id="chamadoAtribuidoA" placeholder="Técnico interno ou fornecedor prestador de serviço..." autocomplete="off">
+              <div class="search-dropdown" id="chamadoAtribuidoDropdown"></div>
+            </div>
           </div>
         </div>
 
         <div class="form-grid-3">
           <div class="field field-full-3">
             <label class="field__label" for="chamadoDescricao">Descrição do Chamado</label>
-            <textarea class="field__input" id="chamadoDescricao" rows="3" placeholder="Detalhes do problema, contexto, observações..."></textarea>
+            <textarea class="field__input" id="chamadoDescricao" rows="3" maxlength="500" placeholder="Detalhes do problema, contexto, observações..."></textarea>
+            <span class="chamado-contador-caracteres" id="chamadoDescricaoContador">500 caracteres restantes</span>
           </div>
         </div>
       </fieldset>
 
       <!-- ============================================= -->
-      <!-- PARTE 2: ITENS ASSOCIADOS (equipamento / peça) -->
+      <!-- PARTE 2: EQUIPAMENTO (opcional, no máximo 1)  -->
       <!-- ============================================= -->
       <fieldset class="fieldset-principal">
-        <legend class="fieldset-legend">Itens Associados</legend>
+        <legend class="fieldset-legend">Equipamento</legend>
         <p class="chamado-itens-ajuda">
-          O chamado é geral por padrão. Associe equipamentos e/ou peças se fizer sentido —
-          e dentro de cada equipamento você pode associar as peças relacionadas a ele.
+          Obrigatório informar pelo menos o Patrimônio ou a Localização (pode ser os dois) --
+          são o mínimo pra saber sobre qual equipamento é o chamado.
         </p>
 
-        <div class="chamado-itens-acoes">
-          <button type="button" class="btn-secondary" onclick="adicionarItemChamado('equipamento')">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Adicionar Equipamento
-          </button>
-          <button type="button" class="btn-secondary" onclick="adicionarItemChamado('peca')">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Adicionar Peça
-          </button>
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label" for="chamadoEquipPatrimonio">Patrimônio</label>
+            <input class="field__input" type="text" id="chamadoEquipPatrimonio" placeholder="Ex: 21384">
+            <span class="chamado-patrimonio-status" id="chamadoPatrimonioStatus"></span>
+          </div>
+          <div class="field">
+            <label class="field__label">Localização</label>
+            <div class="search-wrapper" id="chamadoEquipLocalizacaoWrapper">
+              <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
+              <input class="search-input" type="text" id="chamadoEquipLocalizacao" placeholder="Selecione a localização..." autocomplete="off">
+              <div class="search-dropdown" id="chamadoEquipLocalizacaoDropdown"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="chamadoEquipMarca">Marca</label>
+            <input class="field__input" type="text" id="chamadoEquipMarca" placeholder="Ex: Gree">
+          </div>
+        </div>
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label" for="chamadoEquipModelo">Modelo</label>
+            <input class="field__input" type="text" id="chamadoEquipModelo" placeholder="Ex: Split Hi-Wall">
+          </div>
+          <div class="field">
+            <label class="field__label" for="chamadoEquipBtus">Capacidade (BTUs)</label>
+            <input class="field__input" type="text" id="chamadoEquipBtus" placeholder="Ex: 36.000">
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ============================================= -->
+      <!-- PARTE 3: PEÇA (opcional, no máximo 1)         -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal">
+        <legend class="fieldset-legend">Peças</legend>
+        <p class="chamado-itens-ajuda">
+          Opcional. Pode adicionar mais de uma (ex: trocar 2 peças do mesmo equipamento).
+          Só permite escolher peças já cadastradas -- o chamado guarda os IDs, nunca duplica o nome.
+        </p>
+
+        <div class="form-grid-3">
+          <div class="field field-full-2">
+            <label class="field__label" for="chamadoPeca">Peça</label>
+            <select class="field__select" id="chamadoPeca">
+              <option value="">Selecione...</option>
+            </select>
+          </div>
+          <div class="field chamado-peca-add-campo">
+            <label class="field__label">&nbsp;</label>
+            <button type="button" class="btn-secondary" onclick="adicionarPecaChamado()">+ Adicionar Peça</button>
+          </div>
         </div>
 
-        <div id="chamadoItensArvore" class="chamado-itens-arvore">
-          <!-- Preenchido via JS: renderArvoreItensChamado() -->
+        <div id="chamadoPecasSelecionadas" class="chamado-pecas-selecionadas">
+          <!-- Preenchido via JS: renderPecasChamadoSelecionadas() -->
         </div>
       </fieldset>
 
       <!-- Histórico/Movimentações não fica aqui -- é uma tela de consulta
-           (modal ao clicar num chamado da lista), não faz sentido no
-           momento de abrir um chamado novo, que ainda não tem histórico. -->
+          (modal ao clicar num chamado da lista), não faz sentido no
+          momento de abrir um chamado novo, que ainda não tem histórico. -->
 
       <!-- ============================================= -->
       <!-- BOTÕES DE AÇÃO                                -->
       <!-- ============================================= -->
       <div class="form-actions">
         <button type="button" class="btn-secondary" onclick="trocarPagina('chamados')">Cancelar</button>
+        <button type="button" class="btn btn-danger" onclick="limparChamado()">Limpar</button>
         <button type="button" class="btn-success" onclick="salvarChamado()">Salvar Chamado</button>
       </div>
 
