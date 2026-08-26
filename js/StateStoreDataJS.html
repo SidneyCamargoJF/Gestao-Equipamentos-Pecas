@@ -13,20 +13,6 @@
       { id: 9, nome:'VRF 60000 BTUs', patrimonio:'AC-020', marca:'Daikin', localizacao:'Central' }
     ];
 
-    const pecasMock = [
-      { codigo: 'P-01', desc: 'Filtro Lavável Hi-Wall', cat: 'Filtros', qtd: 14, min: 5, status: 'OK' },
-      { codigo: 'P-02', desc: 'Gás Refrigerante R410A (Kg)', cat: 'Insumos', qtd: 2, min: 5, status: 'Baixo' },
-      { codigo: 'P-03', desc: 'Capacitor de Partida 35uF', cat: 'Elétrica', qtd: 8, min: 3, status: 'OK' },
-      { codigo: 'P-04', desc: 'Placa Universal Ar Condicionado', cat: 'Eletrônica', qtd: 1, min: 2, status: 'Crítico' }
-    ];
-
-    const chamadosMock = [
-      { id: 'CH-101', req: 'Carlos Lima', eq: 'Split Hi-Wall 12000 BTUs', prio: 'Alta', status: 'Aberto' },
-      { id: 'CH-102', req: 'Ana Souza', eq: 'Cassete 36000 BTUs', prio: 'Média', status: 'Em Atendimento' },
-      { id: 'CH-103', req: 'Marcos R.', eq: 'VRF 60000 BTUs', prio: 'Baixa', status: 'Concluído' }
-    ];
-
-
     // Base de equipamentos cadastrados (mock) — Ar Condicionado
     const baseEquipamentos = [
       { patrimonio:'AC-001', nome:'Split Hi-Wall 9000 BTUs', capacidade:'9000 BTUs', marca:'LG', modelo:'S9WT', localizacao:'Sala 101' },

@@ -42,34 +42,10 @@
       `).join('');
     }
 
-/**
-    function renderPecas() {
-      const tbody = document.getElementById('bodyPecasView');
-      tbody.innerHTML = pecasMock.map(p => `
-        <tr>
-          <td><strong>${p.codigo}</strong></td>
-          <td>${p.desc}</td>
-          <td>${p.cat}</td>
-          <td><strong>${p.qtd}</strong></td>
-          <td>${p.min}</td>
-          <td><span class="status-pill ${p.status === 'OK' ? 'pill-green' : 'pill-red'}">${p.status}</span></td>
-        </tr>
-      `).join('');
-    }
-
-*/
-    function renderChamados() {
-      const tbody = document.getElementById('bodyChamadosView');
-      tbody.innerHTML = chamadosMock.map(c => `
-        <tr>
-          <td><strong>${c.id}</strong></td>
-          <td>${c.req}</td>
-          <td>${c.eq}</td>
-          <td><span class="status-pill ${c.prio === 'Alta' ? 'pill-red' : 'pill-amber'}">${c.prio}</span></td>
-          <td><span class="status-pill ${c.status === 'Concluído' ? 'pill-green' : 'pill-blue'}">${c.status}</span></td>
-        </tr>
-      `).join('');
-    }
+    // renderChamados() (mock) removido -- a Consulta de Chamados de verdade
+    // está sendo construída em apps/Chamados/consulta/. Lembre de religar o
+    // roteador (js/IndexSPAJS.html, "if (paginaId === 'chamados') ...")
+    // pra a função nova quando ela estiver pronta.
 
     function renderOrdens() {
       const tbody = document.getElementById('bodyOrdensView');

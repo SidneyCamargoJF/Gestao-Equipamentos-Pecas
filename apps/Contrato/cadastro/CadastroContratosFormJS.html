@@ -1,17 +1,10 @@
 <script> // CadastroContratosFormJS.html
 
   function renderContratosForm() {
-    const tbody = document.getElementById('bodyPecasView');
-    tbody.innerHTML = pecasMock.map(p => `
-      <tr>
-        <td><strong>${p.codigo}</strong></td>
-        <td>${p.desc}</td>
-        <td>${p.cat}</td>
-        <td><strong>${p.qtd}</strong></td>
-        <td>${p.min}</td>
-        <td><span class="status-pill ${p.status === 'OK' ? 'pill-green' : 'pill-red'}">${p.status}</span></td>
-      </tr>
-    `).join('');
+    // Antes escrevia pecasMock em #bodyPecasView -- o mesmo ID da tabela
+    // real de Peças, então navegar pra Contratos sujava a tela de Peças
+    // com dado falso. Removido; a inicialização de verdade do formulário
+    // de Contratos, se precisar de alguma, entra aqui.
   }
 
 
