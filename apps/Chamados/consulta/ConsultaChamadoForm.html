@@ -1,0 +1,110 @@
+<section id="page-chamado-view" class="spa-page">
+
+<div class="page-header">
+    <div class="actions-bar">
+        <h1>📋 Chamados</h1>
+    </div>
+    <div class="actions-bar">
+        <button type="button" class="btn-secondary" onclick="limparFiltrosChamado()">Limpar</button>
+        <button type="button" class="btn-success" onclick="trocarPagina('chamado-form')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Adicionar
+        </button>
+        <button type="button" id="btnConsultarChamados" class="btn-primary"
+            onclick="consultarChamados()">
+            <!-- filtrar() -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            Consultar
+        </button>
+    </div>
+</div>
+
+    <div class="panel">
+        <!-- FILTROS -->
+        <form autocomplete="off" onsubmit="return false;">
+            <div class="filters-primary">
+                <div class="field">
+                    <label class="field__label" for="filtro-chamado-equipamento">Equipamento</label>
+                    <input class="field__input" type="text" id="filtro-chamado-equipamento"
+                        placeholder="Digite o patrimônio do equipamento..." autofocus>
+                </div>
+
+            <div class="field">
+                <label class="field__label" for="filtro-chamado-motivo">Motivo / Título *</label>
+                <select class="field__select" id="filtro-chamado-motivo" onchange="alterarMotivoOutroFiltro()">
+                    <option value="">Selecione...</option>
+                    <option value="Falta de Refrigeração">Falta de Refrigeração</option>
+                    <option value="Vazamento de água">Vazamento de água</option>
+                    <option value="Mal Cheiro">Mal Cheiro</option>
+                    <option value="Barulhos Anormais">Barulhos Anormais</option>
+                    <option value="Congelamento">Congelamento</option>
+                    <option value="Aparelho não liga">Aparelho não liga</option>
+                    <option value="outro">Outro</option>
+                </select>
+                <input class="field__input" type="text" id="chamadoMotivoOutroFiltro" placeholder="Descreva o motivo para filtrar..." style="display:none; margin-top:0.5rem;">
+            </div>
+
+                <div class="field">
+                    <label class="field__label" for="filtro-chamado-tipo">Tipo</label>
+                    <select class="field__select" id="filtro-chamado-tipo" onchange="consultarChamados()">
+                        <option value="">Todos</option>
+                        <option value="corretiva">Corretiva</option>
+                        <option value="preventiva">Preventiva</option>
+                        <option value="instalacao">Instalação</option>
+                        <option value="outro">Outro</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="filtro-chamado-prioridade">Prioridade</label>
+                    <select class="field__select" id="filtro-chamado-prioridade"
+                        onchange="consultarChamados()">
+                        <option value="">Todas</option>
+                        <option value="baixa">Baixa</option>
+                        <option value="media">Média</option>
+                        <option value="alta">Alta</option>
+                        <option value="urgente">Urgente</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="filtro-chamado-status">Status</label>
+                    <select class="field__select" id="filtro-chamado-status"
+                        onchange="consultarChamados()">
+                        <option value="">Todos</option>
+                        <option value="aberto">Aberto</option>
+                        <option value="em andamento">Em Andamento</option>
+                        <option value="concluido">Concluído</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Motivo / Título</th>
+                        <th>Tipo</th>
+                        <th>Prioridade</th>
+                        <th>Status</th>
+                        <th>Atribuído a</th>
+                        <th>Data de Abertura</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="chamadosTableBody">
+                    <!-- Linhas da tabela serão preenchidas dinamicamente via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>

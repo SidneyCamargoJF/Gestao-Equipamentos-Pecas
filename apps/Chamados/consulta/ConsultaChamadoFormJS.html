@@ -1,0 +1,17 @@
+<script>
+    function alterarMotivoOutroFiltro() {
+        const motivoSelect = document.getElementById('filtro-chamado-motivo');
+        const motivoOutroInput = document.getElementById('chamadoMotivoOutroFiltro');
+
+        if (!motivoSelect || !motivoOutroInput) return;
+
+        if (motivoSelect.value === 'outro') {
+            motivoOutroInput.style.display = 'block';
+        } else {
+            motivoOutroInput.style.display = 'none';
+            motivoOutroInput.value = '';
+        }
+    }
+
+
+</script>

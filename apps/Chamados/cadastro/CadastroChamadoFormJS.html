@@ -16,6 +16,11 @@
     pecaProximoId = 1;
     pecasChamadoState = [];
 
+    const motivoOutroEl = document.getElementById('chamadoMotivoOutro');
+    if (motivoOutroEl) {
+      motivoOutroEl.value = '';
+      motivoOutroEl.style.display = 'none';
+    }    
     const motivoEl = document.getElementById('chamadoMotivo');
     if (motivoEl) motivoEl.value = '';
     const descricaoEl = document.getElementById('chamadoDescricao');
@@ -78,7 +83,7 @@
   }
 
   // ===== CONTADOR DE CARACTERES DA DESCRIÇÃO =====
-  const CHAMADO_DESCRICAO_MAX = 500;
+  const CHAMADO_DESCRICAO_MAX = 300;
 
   function atualizarContadorDescricaoChamado() {
     const descricaoEl = document.getElementById('chamadoDescricao');
@@ -125,6 +130,19 @@
     } catch (error) {
       statusEl.textContent = '';
       statusEl.className = 'chamado-patrimonio-status';
+    }
+  }
+
+  // mostrar o campo para digitar o motivo quando a opção "outro" for selecionada
+  function alterarMotivoOutro(){
+    const select = document.getElementById('chamadoMotivo');
+    const campoOutro = document.getElementById('chamadoMotivoOutro');
+    const mostrarCampo = select.value === 'outro';
+
+    // o none esconde o elemento e o block mostra o elemento (bloco)
+    campoOutro.style.display = mostrarCampo ? 'block' : 'none';
+    if (mostrarCampo) {
+        campoOutro.focus();
     }
   }
 
@@ -320,9 +338,18 @@
 
   // ===== SALVAR =====
   async function salvarChamado() {
-    const motivo = document.getElementById('chamadoMotivo')?.value.trim() || '';
+    const selectMotivo = document.getElementById('chamadoMotivo')?.value || '';
+    const motivo = selectMotivo === 'outro'
+      ? document.getElementById('chamadoMotivoOutro')?.value.trim() || ''
+      : selectMotivo;
     if (!motivo) {
       alert('Preencha o motivo do chamado.');
+      return;
+    }
+
+    const tipo = document.getElementById('chamadoTipo')?.value || '';
+    if (!tipo) {
+      alert('Preencha o tipo do chamado.');
       return;
     }
 

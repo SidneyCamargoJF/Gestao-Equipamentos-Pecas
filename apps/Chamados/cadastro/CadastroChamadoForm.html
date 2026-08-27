@@ -17,9 +17,19 @@
         <legend class="fieldset-legend">Dados do Chamado</legend>
 
         <div class="form-grid-3">
-          <div class="field field-full-2">
+          <div class="field">
             <label class="field__label" for="chamadoMotivo">Motivo / Título *</label>
-            <input class="field__input" type="text" id="chamadoMotivo" placeholder="Ex: Ar-condicionado não liga">
+            <select class="field__select" id="chamadoMotivo" onchange="alterarMotivoOutro()">
+              <option value="">Selecione...</option>
+              <option value="Falta de Refrigeração">Falta de Refrigeração</option>
+              <option value="Vazamento de água">Vazamento de água</option>
+              <option value="Mal Cheiro">Mal Cheiro</option>
+              <option value="Barulhos Anormais">Barulhos Anormais</option>
+              <option value="Congelamento">Congelamento</option>
+              <option value="Aparelho não liga">Aparelho não liga</option>
+              <option value="outro">Outro</option>
+            </select>
+            <input class="field__input" type="text" id="chamadoMotivoOutro" placeholder="Descreva o motivo..." style="display:none; margin-top:0.5rem;">
           </div>
 
           <div class="field">
@@ -29,6 +39,7 @@
               <option value="corretiva">Corretiva</option>
               <option value="preventiva">Preventiva</option>
               <option value="instalacao">Instalação</option>
+              <option value="limpeza">Limpeza</option>
               <option value="outro">Outro</option>
             </select>
           </div>
@@ -62,8 +73,8 @@
         <div class="form-grid-3">
           <div class="field field-full-3">
             <label class="field__label" for="chamadoDescricao">Descrição do Chamado</label>
-            <textarea class="field__input" id="chamadoDescricao" rows="3" maxlength="500" placeholder="Detalhes do problema, contexto, observações..."></textarea>
-            <span class="chamado-contador-caracteres" id="chamadoDescricaoContador">500 caracteres restantes</span>
+            <textarea class="field__input" id="chamadoDescricao" rows="3" maxlength="300" placeholder="Detalhes do problema, contexto, observações..."></textarea>
+            <span class="chamado-contador-caracteres" id="chamadoDescricaoContador">300 caracteres restantes</span>
           </div>
         </div>
       </fieldset>
@@ -74,8 +85,7 @@
       <fieldset class="fieldset-principal">
         <legend class="fieldset-legend">Equipamento</legend>
         <p class="chamado-itens-ajuda">
-          Obrigatório informar pelo menos o Patrimônio ou a Localização (pode ser os dois) --
-          são o mínimo pra saber sobre qual equipamento é o chamado.
+          Obrigatório informar pelo menos o Patrimônio ou a Localização.
         </p>
 
         <div class="form-grid-3">
@@ -120,9 +130,7 @@
         <legend class="fieldset-legend">Peças</legend>
         <p class="chamado-itens-ajuda">
           Opcional. Pode adicionar mais de uma (ex: trocar 2 peças do mesmo equipamento). Por
-          enquanto só o Nome é obrigatório por peça -- ainda não temos um jeito de identificar
-          cada peça de forma única (podem ter nomes repetidos), então Sequência/Localização/
-          Marca/Modelo ajudam a diferenciar, mas são opcionais.
+          enquanto só o Nome é obrigatório por peça.
         </p>
 
         <div id="chamadoPecasBlocos" class="chamado-pecas-blocos">
