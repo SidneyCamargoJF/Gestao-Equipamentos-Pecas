@@ -72,6 +72,9 @@ function salvarChamadoBackend(dados) {
       .filter(Boolean);
     const pecaIdsTexto = pecaIdsResolvidos.length > 0 ? pecaIdsResolvidos.join('-') : '';
 
+    const relatorioUrl = salvarArquivoAnexoChamado(dados.relatorio);
+    const notaFiscalUrl = salvarArquivoAnexoChamado(dados.notaFiscal);
+
     // Ordem: ID, ID_EQUIPAMENTO, ID_PECA, DEFEITO, TIPO, PRIORIDADE,
     // DATA_ABERTURA, ATRIBUIDO_A, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO,
     // OBSERVACAO, RELATORIO, NOTA_FISCAL, STATUS, DATA_ALTERACAO
@@ -87,8 +90,8 @@ function salvarChamadoBackend(dados) {
       '',
       '',
       dados.descricao || '',
-      '',
-      '',
+      relatorioUrl,
+      notaFiscalUrl,
       'Aberto',
       ''
     ];
@@ -186,6 +189,35 @@ function buscarEquipamentoIdPorLocalizacao(localizacao) {
   const encontrados = dados.filter(linha => String(linha[1] || '').trim().toLowerCase() === localizacaoBuscada);
 
   return (encontrados.length === 1) ? encontrados[0][0] : '';
+}
+
+/**
+ * Salva um anexo (Relatório ou Nota Fiscal) no Google Drive, numa pasta
+ * fixa "Chamados - Anexos" (criada na primeira vez que for preciso).
+ * "arquivo" vem do cliente como { nome, tipo, base64 } (ver
+ * lerArquivoComoBase64 em CadastroChamadoFormJS.html) ou null se o campo
+ * ficou vazio. Retorna a URL do arquivo no Drive, ou '' se não veio nada.
+ *
+ * OBS: na primeira vez que isso rodar, o Google vai pedir uma nova
+ * autorização (permissão de acesso ao Drive) -- é esperado, só aceitar.
+ */
+function salvarArquivoAnexoChamado(arquivo) {
+  if (!arquivo || !arquivo.base64) return '';
+
+  const pasta = obterPastaAnexosChamados();
+  const bytes = Utilities.base64Decode(arquivo.base64);
+  const blob = Utilities.newBlob(bytes, arquivo.tipo || 'application/octet-stream', arquivo.nome || 'anexo');
+  const arquivoDrive = pasta.createFile(blob);
+  arquivoDrive.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return arquivoDrive.getUrl();
+}
+
+function obterPastaAnexosChamados() {
+  const nomePasta = 'Chamados - Anexos';
+  const pastas = DriveApp.getFoldersByName(nomePasta);
+  if (pastas.hasNext()) return pastas.next();
+  return DriveApp.createFolder(nomePasta);
 }
 
 /**

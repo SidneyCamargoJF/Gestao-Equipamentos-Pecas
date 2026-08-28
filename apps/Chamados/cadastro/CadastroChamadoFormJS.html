@@ -29,7 +29,7 @@
     if (tipoEl) tipoEl.value = '';
     const atribuidoEl = document.getElementById('chamadoAtribuidoA');
     if (atribuidoEl) atribuidoEl.value = '';
-    ['chamadoEquipPatrimonio', 'chamadoEquipLocalizacao', 'chamadoEquipMarca', 'chamadoEquipModelo', 'chamadoEquipBtus'].forEach(id => {
+    ['chamadoEquipPatrimonio', 'chamadoEquipLocalizacao', 'chamadoEquipMarca', 'chamadoEquipModelo', 'chamadoEquipBtus', 'chamadoRelatorioArquivo', 'chamadoNotaFiscalArquivo'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -366,6 +366,15 @@
       return;
     }
 
+    let relatorioArquivo, notaFiscalArquivo;
+    try {
+      relatorioArquivo = await lerArquivoComoBase64(document.getElementById('chamadoRelatorioArquivo'));
+      notaFiscalArquivo = await lerArquivoComoBase64(document.getElementById('chamadoNotaFiscalArquivo'));
+    } catch (erroArquivo) {
+      alert(erroArquivo.message);
+      return;
+    }
+
     const dadosChamado = {
       motivo: motivo,
       tipo: document.getElementById('chamadoTipo')?.value || '',
@@ -383,7 +392,9 @@
         localizacao: p.localizacao.trim(),
         marca: p.marca.trim(),
         modelo: p.modelo.trim()
-      }))
+      })),
+      relatorio: relatorioArquivo,
+      notaFiscal: notaFiscalArquivo
     };
 
     if (typeof exibirModal === 'function') exibirModal('processando');
@@ -397,13 +408,39 @@
       }
 
       alert(resposta.mensagem);
-      trocarPagina('chamados');
+      trocarPagina('chamado-view');
     } catch (err) {
       console.error('Erro ao salvar chamado:', err);
       alert('Erro ao conectar com o servidor.');
     } finally {
       if (typeof fecharModal === 'function') fecharModal('processando');
     }
+  }
+
+  // ===== ANEXOS: lê um <input type="file"> e devolve {nome, tipo, base64}
+  // pronto pra mandar pro servidor (google.script.run não aceita objetos
+  // File/Blob do navegador direto -- só base64 como string mesmo). =====
+  const CHAMADO_ANEXO_TAMANHO_MAX = 5 * 1024 * 1024; // 5MB
+
+  function lerArquivoComoBase64(inputEl) {
+    return new Promise((resolve, reject) => {
+      if (!inputEl || !inputEl.files || inputEl.files.length === 0) {
+        resolve(null);
+        return;
+      }
+      const arquivo = inputEl.files[0];
+      if (arquivo.size > CHAMADO_ANEXO_TAMANHO_MAX) {
+        reject(new Error('O arquivo "' + arquivo.name + '" passa de 5MB.'));
+        return;
+      }
+      const leitor = new FileReader();
+      leitor.onload = () => {
+        const base64 = String(leitor.result).split(',')[1] || '';
+        resolve({ nome: arquivo.name, tipo: arquivo.type || 'application/octet-stream', base64: base64 });
+      };
+      leitor.onerror = () => reject(new Error('Erro ao ler o arquivo "' + arquivo.name + '".'));
+      leitor.readAsDataURL(arquivo);
+    });
   }
 
   function escapeHtmlChamado(s) {

@@ -80,6 +80,29 @@
       </div>
     </div>
 
+    <!-- MODAL DE DETALHES DO CHAMADO -->
+    <div class="modal-overlay" id="modalDetalheChamado">
+      <div class="modal modal-lg">
+        <h3>Detalhes do Chamado</h3>
+        <div id="detalheChamadoConteudo"><!-- preenchido via JS: montarDetalheChamadoHtml() --></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalDetalheChamado')" style="width:auto;">Fechar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE EXCLUSÃO DE CHAMADO -->
+    <div class="modal-overlay" id="modalExclusaoChamado">
+      <div class="modal">
+        <h3>Confirmar Exclusão</h3>
+        <p>Tem certeza que deseja desativar este chamado? Esta ação não pode ser desfeita.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="fecharModal('modalExclusaoChamado')" style="width:auto;">Cancelar</button>
+          <button class="btn-danger" onclick="executarExclusaoChamado()">Sim, Excluir</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL DE PROCESSAMENTO -->
     <div class="modal-overlay" id="processando">
       <div class="modal">

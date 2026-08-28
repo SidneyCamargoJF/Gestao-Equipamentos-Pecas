@@ -39,10 +39,8 @@
 
     if (paginaId === 'chamado-form') renderChamadoForm();
 
-    // Consulta de Chamados (paginaId === 'chamado-view') ainda sendo
-    // construída -- religar aqui quando o consultarChamados() (ou uma
-    // função de inicialização) estiver pronta, ex:
-    // if (paginaId === 'chamado-view') consultarChamados();
+    if (paginaId === 'chamado-view') renderConsultaChamados();
+
 
     if (paginaId === 'ordens') renderOrdens();
     if (paginaId === 'agenda') renderAgenda();

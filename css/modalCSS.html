@@ -41,4 +41,36 @@
   gap: 0.75rem;
 }
 
+/* modal mais largo -- usado pelo detalhe do chamado, que tem várias linhas de info */
+.modal-lg {
+  max-width: 40rem;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.detalhe-chamado-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 0.0625rem solid var(--color-slate-100, #f1f5f9);
+  font-size: 0.9rem;
+}
+
+.detalhe-chamado-linha:last-child {
+  border-bottom: none;
+}
+
+.detalhe-chamado-rotulo {
+  font-weight: 600;
+  color: var(--color-slate-500, #64748b);
+  flex-shrink: 0;
+}
+
+.detalhe-chamado-valor {
+  text-align: right;
+  color: var(--color-slate-700, #334155);
+  word-break: break-word;
+}
+
 </style>

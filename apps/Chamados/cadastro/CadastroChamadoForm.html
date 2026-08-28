@@ -140,12 +140,35 @@
         <button type="button" class="btn-secondary" onclick="adicionarBlocoPecaChamado()">+ Adicionar Peça</button>
       </fieldset>
 
+      <!-- ============================================= -->
+      <!-- PARTE 4: ANEXOS (opcional -- normalmente só existem depois que o
+           serviço contratado é concluído, mas o campo já fica disponível
+           aqui pra quando o chamado já for aberto com eles em mãos)     -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal">
+        <legend class="fieldset-legend">Anexos</legend>
+        <p class="chamado-itens-ajuda">
+          Opcional. PDF ou foto, até 5MB cada.
+        </p>
+
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label" for="chamadoRelatorioArquivo">Relatório</label>
+            <input class="field__input" type="file" id="chamadoRelatorioArquivo" accept="application/pdf,image/*">
+          </div>
+          <div class="field">
+            <label class="field__label" for="chamadoNotaFiscalArquivo">Nota Fiscal</label>
+            <input class="field__input" type="file" id="chamadoNotaFiscalArquivo" accept="application/pdf,image/*">
+          </div>
+        </div>
+      </fieldset>
+
 
       <!-- ============================================= -->
       <!-- BOTÕES DE AÇÃO                                -->
       <!-- ============================================= -->
       <div class="form-actions">
-        <button type="button" class="btn-secondary" onclick="trocarPagina('chamados')">Cancelar</button>
+        <button type="button" class="btn-secondary" onclick="trocarPagina('chamado-view')">Cancelar</button>
         <button type="button" class="btn btn-danger" onclick="limparChamado()">Limpar</button>
         <button type="button" class="btn-success" onclick="salvarChamado()">Salvar Chamado</button>
       </div>

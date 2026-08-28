@@ -1,17 +1,223 @@
 <script>
-    function alterarMotivoOutroFiltro() {
-        const motivoSelect = document.getElementById('filtro-chamado-motivo');
-        const motivoOutroInput = document.getElementById('chamadoMotivoOutroFiltro');
+async function renderConsultaChamados() {
+    const motivos = await carregarMotivosChamado();
+    initSearchChamado('motivoChamadoSearch', 'motivoChamadoDropdown', 'motivoChamadoWrapper', motivos);
+    
+    consultarChamados(); 
+}
 
-        if (!motivoSelect || !motivoOutroInput) return;
+async function carregarMotivosChamado() {
+try {
+    const res = await runServerFunction('buscarMotivosUnicosChamado');
+    return Array.isArray(res) ? res : [];
+} catch (error) {
+    console.error('Erro ao buscar motivos de chamado:', error);
+    return [];
+}
+}
 
-        if (motivoSelect.value === 'outro') {
-            motivoOutroInput.style.display = 'block';
-        } else {
-            motivoOutroInput.style.display = 'none';
-            motivoOutroInput.value = '';
+function consultarChamados() {
+    const equipamento = document.getElementById('filtro-chamado-equipamento').value.trim();
+    const motivo = document.getElementById('motivoChamadoSearch').value.trim();
+    const tipo = document.getElementById('filtro-chamado-tipo').value.trim();
+    const prioridade = document.getElementById('filtro-chamado-prioridade').value.trim();
+    const status = document.getElementById('filtro-chamado-status').value.trim();
+    
+    const criterios = {
+        equipamento: equipamento,
+        motivo: motivo,
+        tipo: tipo,
+        prioridade: prioridade,
+        status: status
+    };
+
+    console.log('Criterios de busca:', criterios);
+
+    mostrarCarregandoChamados(true);
+
+    google.script.run
+        .withSuccessHandler((objChamados) => {
+            mostrarCarregandoChamados(false);
+            console.log('Resposta bruta do servidor:', objChamados);
+            console.log('Quantidade de chamados recebidos:', Array.isArray(objChamados) ? objChamados.length : 'não é array');
+            ReturnChamados(objChamados);
+        })
+        .withFailureHandler((error) => {
+            mostrarCarregandoChamados(false);
+            console.error('Erro ao consultar chamados:', error);
+            alert('Erro ao consultar chamados: ' + (error.message || error));
+        })
+        .filtrarChamados(criterios);
+}
+
+function mostrarCarregandoChamados(carregando) {
+    const btn = document.getElementById('btnConsultarChamados');
+    if (btn) btn.disabled = carregando;
+
+    if (carregando) {
+        const tbody = document.getElementById('chamadosTableBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>';
         }
     }
+}
+
+let chamados = [];
+
+function ReturnChamados(objChamados) {
+    chamados = Array.isArray(objChamados) ? objChamados : [];
+    renderTabelaChamados(chamados);
+}
+
+function limparFiltrosChamado() {
+    document.getElementById('filtro-chamado-equipamento').value = '';
+    document.getElementById('motivoChamadoSearch').value = '';
+    document.getElementById('filtro-chamado-tipo').value = '';
+    document.getElementById('filtro-chamado-prioridade').value = '';
+    document.getElementById('filtro-chamado-status').value = '';
+    consultarChamados();
+}
+
+function renderTabelaChamados(lista) {
+    const tbody = document.getElementById('chamadosTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    if(!lista || lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum chamado encontrado.</td></tr>';
+        return;
+    }
+
+    lista.forEach(f => {
+        const tr = document.createElement('tr');
+        if (f.desativado) tr.classList.add('linha-desativada');
+
+        const btnEditar = f.desativado 
+        ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
+        : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarChamado('${f.id}')">✏️</button>`;
+
+        const btnExcluir = f.desativado
+        ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarChamadoUI('${f.id}')">♻️</button>`
+        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="confirmarExclusaoChamado('${f.id}')">🗑️</button>`;
+        
+        const btnVer = `<button class="btn-acao" title="Ver detalhes" onclick="abrirDetalhesChamado('${f.id}')">👁️</button>`;
+
+        tr.innerHTML = `
+        <td>${escapeHtml(f.motivo)}</td>
+        <td>${escapeHtml(f.tipo)}</td>
+        <td>${escapeHtml(f.prioridade)}</td>
+        <td>${escapeHtml(f.status)}</td>
+        <td>${escapeHtml(f.atribuidoA)}</td>
+        <td>${escapeHtml(f.dataAbertura)}</td>
+        <td class="acao-cell">
+            ${btnVer}
+            ${btnEditar}
+            ${btnExcluir}
+        </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// ===== DETALHES DO CHAMADO (botão "olho" -- abre modal com todas as
+// colunas de tbl_chamados pro chamado clicado, incluindo Relatório/Nota
+// Fiscal quando existirem) =====
+async function abrirDetalhesChamado(chamadoId) {
+    const conteudo = document.getElementById('detalheChamadoConteudo');
+    if (conteudo) conteudo.innerHTML = '<p>Carregando...</p>';
+    if (typeof exibirModal === 'function') exibirModal('modalDetalheChamado');
+
+    try {
+        const resposta = await runServerFunction('buscarChamadoDetalhado', chamadoId);
+        if (!resposta || resposta.sucesso === false) {
+            if (conteudo) conteudo.innerHTML = `<p>${escapeHtml(resposta ? resposta.mensagem : 'Chamado não encontrado.')}</p>`;
+            return;
+        }
+        if (conteudo) conteudo.innerHTML = montarDetalheChamadoHtml(resposta.chamado);
+    } catch (error) {
+        console.error('Erro ao buscar detalhes do chamado:', error);
+        if (conteudo) conteudo.innerHTML = '<p>Erro ao buscar detalhes do chamado.</p>';
+    }
+}
+
+function montarDetalheChamadoHtml(c) {
+    const linha = (rotulo, valor) => `
+        <div class="detalhe-chamado-linha">
+            <span class="detalhe-chamado-rotulo">${rotulo}</span>
+            <span class="detalhe-chamado-valor">${valor && String(valor).trim() ? escapeHtml(valor) : '--'}</span>
+        </div>`;
+
+    const linhaLink = (rotulo, url, texto) => `
+        <div class="detalhe-chamado-linha">
+            <span class="detalhe-chamado-rotulo">${rotulo}</span>
+            <span class="detalhe-chamado-valor">${url ? `<a href="${url}" target="_blank" rel="noopener">${texto}</a>` : '--'}</span>
+        </div>`;
+
+    return `
+        ${linha('Motivo', c.motivo)}
+        ${linha('Tipo', c.tipo)}
+        ${linha('Prioridade', c.prioridade)}
+        ${linha('Status', c.status)}
+        ${linha('Equipamento', c.equipamento)}
+        ${linha('Peça(s)', c.peca)}
+        ${linha('Atribuído a', c.atribuidoA)}
+        ${linha('Data de Abertura', c.dataAbertura)}
+        ${linha('Data de Início do Atendimento', c.dataInicioAndamento)}
+        ${linha('Data de Finalização', c.dataFinalizacao)}
+        ${linha('Observação', c.observacao)}
+        ${linhaLink('Relatório', c.relatorioUrl, 'Abrir relatório')}
+        ${linhaLink('Nota Fiscal', c.notaFiscalUrl, 'Abrir nota fiscal')}
+        ${linha('Última Alteração', c.dataAlteracao)}
+    `;
+}
+
+// ===== DESATIVAR / REATIVAR (mesmo padrão soft-delete de Peças/Fornecedor) =====
+let idChamadoExclusao = null;
+
+function confirmarExclusaoChamado(id) {
+    idChamadoExclusao = id;
+    if (typeof exibirModal === 'function') exibirModal('modalExclusaoChamado');
+}
+
+async function executarExclusaoChamado() {
+    if (!idChamadoExclusao) return;
+    try {
+        const resposta = await runServerFunction('desativarChamado', idChamadoExclusao);
+        if (typeof fecharModal === 'function') fecharModal('modalExclusaoChamado');
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        consultarChamados();
+    } catch (error) {
+        console.error('Erro ao desativar chamado:', error);
+        alert('Erro ao desativar chamado.');
+    }
+}
+
+async function reativarChamadoUI(id) {
+    try {
+        const resposta = await runServerFunction('reativarChamado', id);
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        consultarChamados();
+    } catch (error) {
+        console.error('Erro ao reativar chamado:', error);
+        alert('Erro ao reativar chamado.');
+    }
+}
+
+// Edição de chamado ainda não existe (Cadastro só cria) -- placeholder pra
+// não quebrar o botão de editar até essa parte ser construída.
+function editarChamado(id) {
+    alert('Edição de chamados ainda não implementada.');
+}
+
+
+
 
 
 </script>
