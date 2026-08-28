@@ -420,7 +420,12 @@
   // ===== ANEXOS: lê um <input type="file"> e devolve {nome, tipo, base64}
   // pronto pra mandar pro servidor (google.script.run não aceita objetos
   // File/Blob do navegador direto -- só base64 como string mesmo). =====
-  const CHAMADO_ANEXO_TAMANHO_MAX = 5 * 1024 * 1024; // 5MB
+  const CHAMADO_ANEXO_TAMANHO_MAX = 3 * 1024 * 1024; // 3MB -- acima disso o google.script.run fica instável pra mandar o base64 de uma vez só
+
+  function removerAnexoChamado(inputId) {
+    const input = document.getElementById(inputId);
+    if (input) input.value = '';
+  }
 
   function lerArquivoComoBase64(inputEl) {
     return new Promise((resolve, reject) => {
@@ -430,7 +435,7 @@
       }
       const arquivo = inputEl.files[0];
       if (arquivo.size > CHAMADO_ANEXO_TAMANHO_MAX) {
-        reject(new Error('O arquivo "' + arquivo.name + '" passa de 5MB.'));
+        reject(new Error('O arquivo "' + arquivo.name + '" passa de 3MB.'));
         return;
       }
       const leitor = new FileReader();

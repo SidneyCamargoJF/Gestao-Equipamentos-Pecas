@@ -57,7 +57,7 @@ function mostrarCarregandoChamados(carregando) {
     if (carregando) {
         const tbody = document.getElementById('chamadosTableBody');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Carregando...</td></tr>';
         }
     }
 }
@@ -85,7 +85,7 @@ function renderTabelaChamados(lista) {
     tbody.innerHTML = '';
 
     if(!lista || lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum chamado encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Nenhum chamado encontrado.</td></tr>';
         return;
     }
 
@@ -104,20 +104,30 @@ function renderTabelaChamados(lista) {
         const btnVer = `<button class="btn-acao" title="Ver detalhes" onclick="abrirDetalhesChamado('${f.id}')">👁️</button>`;
 
         tr.innerHTML = `
+        <td class="acao-cell">${btnVer}</td>
+        <td>${f.equipamento ? escapeHtml(f.equipamento) : '--'}</td>
         <td>${escapeHtml(f.motivo)}</td>
         <td>${escapeHtml(f.tipo)}</td>
-        <td>${escapeHtml(f.prioridade)}</td>
+        <td>${montarBadgePrioridadeChamado(f.prioridade)}</td>
         <td>${escapeHtml(f.status)}</td>
         <td>${escapeHtml(f.atribuidoA)}</td>
         <td>${escapeHtml(f.dataAbertura)}</td>
         <td class="acao-cell">
-            ${btnVer}
             ${btnEditar}
             ${btnExcluir}
         </td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+// ===== BADGE COLORIDO DE PRIORIDADE (mesmo padrão do garantia-badge de Peças) =====
+function montarBadgePrioridadeChamado(prioridade) {
+    const chave = String(prioridade || '').trim().toLowerCase();
+    const rotulos = { baixa: 'Baixa', media: 'Média', alta: 'Alta', urgente: 'Urgente' };
+    const texto = rotulos[chave] || (prioridade || '--');
+    if (!chave) return '--';
+    return `<span class="prioridade-badge ${chave}">${escapeHtml(texto)}</span>`;
 }
 
 // ===== DETALHES DO CHAMADO (botão "olho" -- abre modal com todas as

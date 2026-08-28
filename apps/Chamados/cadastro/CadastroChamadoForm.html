@@ -55,8 +55,25 @@
               <option value="urgente">Urgente</option>
             </select>
           </div>
+        </div>
 
-          <div class="field field-full-2">
+        <div class="form-grid-3">
+          <div class="field field-full-3">
+            <label class="field__label" for="chamadoDescricao">Descrição do Chamado</label>
+            <textarea class="field__input" id="chamadoDescricao" rows="3" maxlength="300" placeholder="Detalhes do problema, contexto, observações..."></textarea>
+            <span class="chamado-contador-caracteres" id="chamadoDescricaoContador">300 caracteres restantes</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ============================================= -->
+      <!-- PARTE 2: SERVIÇO (quem atende + anexos do atendimento)  -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal">
+        <legend class="fieldset-legend">Serviço</legend>
+
+        <div class="form-grid-3">
+          <div class="field field-full-3">
             <label class="field__label">Atribuído a</label>
             <div class="search-wrapper" id="chamadoAtribuidoWrapper">
               <span class="search-icon">
@@ -70,17 +87,30 @@
           </div>
         </div>
 
+        <p class="chamado-itens-ajuda">
+          Anexos opcionais. PDF ou foto, até 3MB cada. Se o arquivo for maior, tenta comprimir antes de anexar.
+        </p>
+
         <div class="form-grid-3">
-          <div class="field field-full-3">
-            <label class="field__label" for="chamadoDescricao">Descrição do Chamado</label>
-            <textarea class="field__input" id="chamadoDescricao" rows="3" maxlength="300" placeholder="Detalhes do problema, contexto, observações..."></textarea>
-            <span class="chamado-contador-caracteres" id="chamadoDescricaoContador">300 caracteres restantes</span>
+          <div class="field">
+            <label class="field__label" for="chamadoRelatorioArquivo">Relatório</label>
+            <div class="chamado-anexo-linha">
+              <input class="field__input" type="file" id="chamadoRelatorioArquivo" accept="application/pdf,image/*">
+              <button type="button" class="chamado-anexo-remover" title="Remover arquivo selecionado" onclick="removerAnexoChamado('chamadoRelatorioArquivo')">✕</button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="chamadoNotaFiscalArquivo">Nota Fiscal</label>
+            <div class="chamado-anexo-linha">
+              <input class="field__input" type="file" id="chamadoNotaFiscalArquivo" accept="application/pdf,image/*">
+              <button type="button" class="chamado-anexo-remover" title="Remover arquivo selecionado" onclick="removerAnexoChamado('chamadoNotaFiscalArquivo')">✕</button>
+            </div>
           </div>
         </div>
       </fieldset>
 
       <!-- ============================================= -->
-      <!-- PARTE 2: EQUIPAMENTO (opcional, no máximo 1)  -->
+      <!-- PARTE 3: EQUIPAMENTO (opcional, no máximo 1)  -->
       <!-- ============================================= -->
       <fieldset class="fieldset-principal">
         <legend class="fieldset-legend">Equipamento</legend>
@@ -124,7 +154,7 @@
       </fieldset>
 
       <!-- ============================================= -->
-      <!-- PARTE 3: PEÇA (opcional, no máximo 1)         -->
+      <!-- PARTE 4: PEÇA (opcional, no máximo 1)         -->
       <!-- ============================================= -->
       <fieldset class="fieldset-principal">
         <legend class="fieldset-legend">Peças</legend>
@@ -138,29 +168,6 @@
         </div>
 
         <button type="button" class="btn-secondary" onclick="adicionarBlocoPecaChamado()">+ Adicionar Peça</button>
-      </fieldset>
-
-      <!-- ============================================= -->
-      <!-- PARTE 4: ANEXOS (opcional -- normalmente só existem depois que o
-           serviço contratado é concluído, mas o campo já fica disponível
-           aqui pra quando o chamado já for aberto com eles em mãos)     -->
-      <!-- ============================================= -->
-      <fieldset class="fieldset-principal">
-        <legend class="fieldset-legend">Anexos</legend>
-        <p class="chamado-itens-ajuda">
-          Opcional. PDF ou foto, até 5MB cada.
-        </p>
-
-        <div class="form-grid-3">
-          <div class="field">
-            <label class="field__label" for="chamadoRelatorioArquivo">Relatório</label>
-            <input class="field__input" type="file" id="chamadoRelatorioArquivo" accept="application/pdf,image/*">
-          </div>
-          <div class="field">
-            <label class="field__label" for="chamadoNotaFiscalArquivo">Nota Fiscal</label>
-            <input class="field__input" type="file" id="chamadoNotaFiscalArquivo" accept="application/pdf,image/*">
-          </div>
-        </div>
       </fieldset>
 
 

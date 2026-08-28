@@ -1,12 +1,13 @@
 function showChamado() {
     const form = HtmlService.createTemplateFromFile("ConsultaChamado");
     const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);
-    showForm.setTitle("Consulta de Chamado").setHeight(900).setWidth(1400);
+    showForm.setTitle("Consulta de Chamado").setHeight(100).setWidth(1600);
     SpreadsheetApp.getUi().showModalDialog(showForm, "Consulta de Chamado");
 }
 
 function filtrarChamados(criterios) {
     let dados = ReadTickets();
+    let equipamentos = ReadEquipments();
     let res = [];
 
     let equipamentoBuscado = (criterios && criterios.equipamento) ? String(criterios.equipamento).trim().toLowerCase() : "";
@@ -16,7 +17,12 @@ function filtrarChamados(criterios) {
     let statusBuscado = (criterios && criterios.status) ? String(criterios.status).trim().toLowerCase() : "";
 
     for (let i = 0; i < dados.length; i++) {
-        let colEquipamento = String(dados[i][1] || '').trim().toLowerCase();
+        // ID_EQUIPAMENTO (dados[i][1]) é só o ID -- traduz pra "Patrimônio - Marca/Modelo"
+        // pra mostrar na tabela e pra poder filtrar pelo patrimônio digitado de verdade.
+        let equip = equipamentos.find(e => Number(e[0]) === Number(dados[i][1]));
+        let equipamentoTexto = equip ? (equip[5] + ' - ' + equip[3] + (equip[4] ? '/' + equip[4] : '')) : '';
+
+        let colEquipamento = equipamentoTexto.toLowerCase();
         let colMotivo = String(dados[i][3] || '').trim().toLowerCase();
         let colTipo = String(dados[i][4] || '').trim().toLowerCase();
         let colPrioridade = String(dados[i][5] || '').trim().toLowerCase();
@@ -32,7 +38,7 @@ function filtrarChamados(criterios) {
         if(cEquipamento && cMotivo && cTipo && cPrioridade && cStatus) {
             res.push({
                 id: dados[i][0],
-                equipamento: dados[i][1],
+                equipamento: equipamentoTexto,
                 peca: dados[i][2],
                 motivo: dados[i][3],
                 tipo: dados[i][4],

@@ -205,7 +205,14 @@ function salvarArquivoAnexoChamado(arquivo) {
   if (!arquivo || !arquivo.base64) return '';
 
   const pasta = obterPastaAnexosChamados();
-  const bytes = Utilities.base64Decode(arquivo.base64);
+
+  let bytes;
+  try {
+    bytes = Utilities.base64Decode(arquivo.base64);
+  } catch (e) {
+    throw new Error('Não foi possível ler o arquivo "' + arquivo.nome + '" -- geralmente é o arquivo grande demais pro sistema conseguir enviar de uma vez. Tente um arquivo menor.');
+  }
+
   const blob = Utilities.newBlob(bytes, arquivo.tipo || 'application/octet-stream', arquivo.nome || 'anexo');
   const arquivoDrive = pasta.createFile(blob);
   arquivoDrive.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
