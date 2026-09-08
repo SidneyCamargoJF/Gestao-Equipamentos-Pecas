@@ -1,16 +1,19 @@
 let equipTableName = 'tbl_equipamentos'
 let firstLineEquipments = 3
-let numColumnsEquipments = 9
+let numColumnsEquipments = 12
 
 let equipIdCol = 1
-let equipLocalizacaoCol = 2
-let equipBtusCol = 3
-let equipMarcaCol = 4
+let equipNomeCol = 2
+let equipMarcaCol = 3
+let equipCapacidadeCol = 4
 let equipModeloCol = 5
 let equipPatrimonioCol = 6
 let equipSequenciaCol = 7
-let equipDtCadastroCol = 8
-let equipDtAlteracaoCol = 9
+let equipLocalizacaoCol = 8
+let equipActiveCol = 9
+let equipDtCadastroCol = 10
+let equipDtAlteracaoCol = 11
+let equipDtExclusaoCol = 12
 
 function ReadEquipments() {
   const objRows = ReadSheet(equipTableName, firstLineEquipments, numColumnsEquipments)

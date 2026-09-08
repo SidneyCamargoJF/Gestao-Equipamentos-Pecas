@@ -2,7 +2,7 @@
 
   <div class="page-header">
     <div class="actions-bar">
-      <h1>📩 Abrir Chamado</h1>
+      <h1 class="page-title">📩 Abrir Chamado</h1>
     </div>
   </div>
 
@@ -43,9 +43,7 @@
               <option value="outro">Outro</option>
             </select>
           </div>
-        </div>
 
-        <div class="form-grid-3">
           <div class="field">
             <label class="field__label" for="chamadoClassificacao">Classificação *</label>
             <select class="field__select" id="chamadoClassificacao">
@@ -59,8 +57,23 @@
 
         <div class="form-grid-3">
           <div class="field field-full-3">
+            <label class="field__label">Aberto por</label>
+            <div class="search-wrapper" id="chamadoAbertoPorWrapper">
+              <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
+              <input class="search-input" type="text" id="chamadoAbertoPor" placeholder="Funcionário ou servidor..." autocomplete="off">
+              <div class="search-dropdown" id="chamadoAbertoPorDropdown"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid-3">
+          <div class="field field-full-3">
             <label class="field__label" for="chamadoDescricao">Descrição do Chamado</label>
-            <textarea class="field__input" id="chamadoDescricao" rows="3" maxlength="300" placeholder="Detalhes do problema, contexto, observações..."></textarea>
+            <textarea class="field__input" id="chamadoDescricao" rows="3" maxlength="300" placeholder="Detalhes do problema, contexto, observações, peças..."></textarea>
             <span class="chamado-contador-caracteres" id="chamadoDescricaoContador">300 caracteres restantes</span>
           </div>
         </div>
@@ -152,25 +165,6 @@
           </div>
         </div>
       </fieldset>
-
-      <!-- ============================================= -->
-      <!-- PARTE 4: PEÇA (opcional, no máximo 1)         -->
-      <!-- ============================================= -->
-      <fieldset class="fieldset-principal">
-        <legend class="fieldset-legend">Peças</legend>
-        <p class="chamado-itens-ajuda">
-          Opcional. Pode adicionar mais de uma (ex: trocar 2 peças do mesmo equipamento). Por
-          enquanto só o Nome é obrigatório por peça.
-        </p>
-
-        <div id="chamadoPecasBlocos" class="chamado-pecas-blocos">
-          <!-- Preenchido via JS: renderPecasChamadoSelecionadas() -->
-        </div>
-
-        <button type="button" class="btn-secondary" onclick="adicionarBlocoPecaChamado()">+ Adicionar Peça</button>
-      </fieldset>
-
-
       <!-- ============================================= -->
       <!-- BOTÕES DE AÇÃO                                -->
       <!-- ============================================= -->
@@ -179,8 +173,6 @@
         <button type="button" class="btn btn-danger" onclick="limparChamado()">Limpar</button>
         <button type="button" class="btn-success" onclick="salvarChamado()">Salvar Chamado</button>
       </div>
-
     </form>
   </div>
-
 </section>

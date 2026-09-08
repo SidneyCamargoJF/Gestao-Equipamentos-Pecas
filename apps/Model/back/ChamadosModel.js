@@ -1,6 +1,6 @@
 let ticketsTableName = 'tbl_chamados'
 let firstLineTickets = 3
-let numColumnsTickets = 15
+let numColumnsTickets = 16
 
 // Colunas base-1 (mesmo padrão de FornecedorModel.js/PecasModel.js -- usadas
 // direto em getRange(linha, coluna), que no Apps Script começa em 1).
@@ -13,14 +13,15 @@ let ticketsReasonCol = 4
 let ticketsTypeCol = 5
 let ticketsPriorityCol = 6
 let ticketsDtAberturaCol = 7
-let ticketsAtribuidoCol = 8
-let ticketsDtInicioAndamentoCol = 9
-let ticketsDtFinalizacaoCol = 10
-let ticketsObservacaoCol = 11
-let ticketsRelatorioCol = 12
-let ticketsNotaFiscalCol = 13
-let ticketsStatusCol = 14
-let ticketsDtAlteracaoCol = 15
+let ticketsAbertoPorCol = 8
+let ticketsAtribuidoCol = 9
+let ticketsDtInicioAndamentoCol = 10
+let ticketsDtFinalizacaoCol = 11
+let ticketsObservacaoCol = 12
+let ticketsRelatorioCol = 13
+let ticketsNotaFiscalCol = 14
+let ticketsStatusCol = 15
+let ticketsDtAlteracaoCol = 16
 
 function ReadTickets() {
   const objRows = ReadSheet(ticketsTableName, firstLineTickets, numColumnsTickets)

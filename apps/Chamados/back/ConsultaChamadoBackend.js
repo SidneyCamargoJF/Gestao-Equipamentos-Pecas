@@ -17,16 +17,16 @@ function filtrarChamados(criterios) {
     let statusBuscado = (criterios && criterios.status) ? String(criterios.status).trim().toLowerCase() : "";
 
     for (let i = 0; i < dados.length; i++) {
-        // ID_EQUIPAMENTO (dados[i][1]) é só o ID -- traduz pra "Patrimônio - Marca/Modelo"
+        // ID_EQUIPAMENTO (dados[i][1]) é só o ID -- traduz pra "Patrimônio - Nome/Modelo"
         // pra mostrar na tabela e pra poder filtrar pelo patrimônio digitado de verdade.
         let equip = equipamentos.find(e => Number(e[0]) === Number(dados[i][1]));
-        let equipamentoTexto = equip ? (equip[5] + ' - ' + equip[3] + (equip[4] ? '/' + equip[4] : '')) : '';
+        let equipamentoTexto = equip ? (equip[5] + ' - ' + equip[1] + (equip[4] ? '/' + equip[4] : '')) : '';
 
         let colEquipamento = equipamentoTexto.toLowerCase();
         let colMotivo = String(dados[i][3] || '').trim().toLowerCase();
         let colTipo = String(dados[i][4] || '').trim().toLowerCase();
         let colPrioridade = String(dados[i][5] || '').trim().toLowerCase();
-        let colStatus = String(dados[i][13] || '').trim().toLowerCase();
+        let colStatus = String(dados[i][14] || '').trim().toLowerCase();
         let desativado = (colStatus === 'cancelado' || colStatus === 'concluido');
 
         let cEquipamento = (equipamentoBuscado === "" || colEquipamento.includes(equipamentoBuscado));
@@ -39,13 +39,14 @@ function filtrarChamados(criterios) {
             res.push({
                 id: dados[i][0],
                 equipamento: equipamentoTexto,
-                peca: dados[i][2],
+                localizacao: equip ? equip[7] : '',
                 motivo: dados[i][3],
                 tipo: dados[i][4],
                 prioridade: dados[i][5],
-                atribuidoA: dados[i][7],
+                abertoPor: dados[i][7],
+                atribuidoA: dados[i][8],
                 dataAbertura: dados[i][6],
-                status: dados[i][13],
+                status: dados[i][14],
                 desativado: desativado
             })
         }
@@ -56,7 +57,6 @@ function filtrarChamados(criterios) {
 
 /**
  * Busca um chamado pelo ID com TODAS as colunas de tbl_chamados, já
- * traduzindo ID_EQUIPAMENTO/ID_PECA pra texto legível (patrimônio/nome),
  * pra alimentar o modal de detalhes (botão "olho" da consulta).
  * Retorna { sucesso, chamado } ou { sucesso: false, mensagem }.
  */
@@ -73,37 +73,31 @@ function buscarChamadoDetalhado(idInput) {
         if (linha[1]) {
             const equipamentos = ReadEquipments();
             const equip = equipamentos.find(e => Number(e[0]) === Number(linha[1]));
-            equipamentoTexto = equip ? ('Patrimônio ' + equip[5] + ' - ' + equip[1]) : ('ID ' + linha[1]);
+            equipamentoTexto = equip
+                ? ('Patrimônio ' + equip[5] + ' - ' + equip[1] + (equip[4] ? '/' + equip[4] : '') + (equip[7] ? ' (' + equip[7] + ')' : ''))
+                : ('ID ' + linha[1]);
         }
 
-        let pecaTexto = '';
-        if (linha[2]) {
-            const pecas = ReadParts();
-            const nomes = String(linha[2]).split('-').filter(Boolean).map(idPeca => {
-                const p = pecas.find(x => Number(x[0]) === Number(idPeca));
-                return p ? p[1] : null;
-            }).filter(Boolean);
-            pecaTexto = nomes.join(', ');
-        }
+
 
         return {
             sucesso: true,
             chamado: {
                 id: linha[0],
                 equipamento: equipamentoTexto,
-                peca: pecaTexto,
                 motivo: linha[3],
                 tipo: linha[4],
                 prioridade: linha[5],
                 dataAbertura: linha[6],
-                atribuidoA: linha[7],
-                dataInicioAndamento: linha[8],
-                dataFinalizacao: linha[9],
-                observacao: linha[10],
-                relatorioUrl: linha[11],
-                notaFiscalUrl: linha[12],
-                status: linha[13],
-                dataAlteracao: linha[14]
+                abertoPor: linha[7],
+                atribuidoA: linha[8],
+                dataInicioAndamento: linha[9],
+                dataFinalizacao: linha[10],
+                observacao: linha[11],
+                relatorioUrl: linha[12],
+                notaFiscalUrl: linha[13],
+                status: linha[14],
+                dataAlteracao: linha[15]
             }
         };
     } catch (e) {

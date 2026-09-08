@@ -57,7 +57,7 @@ function mostrarCarregandoChamados(carregando) {
     if (carregando) {
         const tbody = document.getElementById('chamadosTableBody');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Carregando...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Carregando...</td></tr>';
         }
     }
 }
@@ -85,7 +85,7 @@ function renderTabelaChamados(lista) {
     tbody.innerHTML = '';
 
     if(!lista || lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Nenhum chamado encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Nenhum chamado encontrado.</td></tr>';
         return;
     }
 
@@ -106,6 +106,7 @@ function renderTabelaChamados(lista) {
         tr.innerHTML = `
         <td class="acao-cell">${btnVer}</td>
         <td>${f.equipamento ? escapeHtml(f.equipamento) : '--'}</td>
+        <td>${f.localizacao ? escapeHtml(f.localizacao) : '--'}</td>
         <td>${escapeHtml(f.motivo)}</td>
         <td>${escapeHtml(f.tipo)}</td>
         <td>${montarBadgePrioridadeChamado(f.prioridade)}</td>
@@ -170,7 +171,7 @@ function montarDetalheChamadoHtml(c) {
         ${linha('Prioridade', c.prioridade)}
         ${linha('Status', c.status)}
         ${linha('Equipamento', c.equipamento)}
-        ${linha('Peça(s)', c.peca)}
+        ${linha('Aberto por', c.abertoPor)}
         ${linha('Atribuído a', c.atribuidoA)}
         ${linha('Data de Abertura', c.dataAbertura)}
         ${linha('Data de Início do Atendimento', c.dataInicioAndamento)}

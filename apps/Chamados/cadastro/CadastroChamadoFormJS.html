@@ -8,13 +8,9 @@
   // único; o servidor tenta linkar por Nome ao salvar.
   // =====================================================
 
-  let pecaProximoId = 1;
-  let pecasChamadoState = [];  // [{id, nome, sequencia, localizacao, marca, modelo}] -- blocos de peça deste chamado
 
   // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
   async function renderChamadoForm() {
-    pecaProximoId = 1;
-    pecasChamadoState = [];
 
     const motivoOutroEl = document.getElementById('chamadoMotivoOutro');
     if (motivoOutroEl) {
@@ -29,6 +25,8 @@
     if (tipoEl) tipoEl.value = '';
     const atribuidoEl = document.getElementById('chamadoAtribuidoA');
     if (atribuidoEl) atribuidoEl.value = '';
+        const abertoPorEl = document.getElementById('chamadoAbertoPor');
+    if (abertoPorEl) abertoPorEl.value = '';
     ['chamadoEquipPatrimonio', 'chamadoEquipLocalizacao', 'chamadoEquipMarca', 'chamadoEquipModelo', 'chamadoEquipBtus', 'chamadoRelatorioArquivo', 'chamadoNotaFiscalArquivo'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
@@ -38,22 +36,26 @@
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'chamado-patrimonio-status'; }
 
     atualizarContadorDescricaoChamado();
-    renderPecasChamadoSelecionadas();
 
     travarCampoCarregandoChamado('chamadoEquipLocalizacao', 'Resgatando localizações...');
     travarCampoCarregandoChamado('chamadoAtribuidoA', 'Resgatando prestadores de serviço...');
+    travarCampoCarregandoChamado('chamadoAbertoPor', 'Resgatando funcionários...');
 
-    const [locais, fornecedoresPrestadores] = await Promise.all([
+    const [locais, fornecedoresPrestadores, funcionarios] = await Promise.all([
       carregarLocaisChamado(),
-      carregarFornecedoresPrestadoresChamado()
+      carregarFornecedoresPrestadoresChamado(),
+      carregarFuncionariosChamado()
     ]);
 
     destravarCampoCarregandoChamado('chamadoEquipLocalizacao', 'Selecione a localização...');
     initSearchChamado('chamadoEquipLocalizacao', 'chamadoEquipLocalizacaoDropdown', 'chamadoEquipLocalizacaoWrapper', locais);
 
     destravarCampoCarregandoChamado('chamadoAtribuidoA', 'Técnico interno ou fornecedor prestador de serviço...');
-    initSearchChamado('chamadoAtribuidoA', 'chamadoAtribuidoDropdown', 'chamadoAtribuidoWrapper', fornecedoresPrestadores);
-
+    initSearchChamado('chamadoAtribuidoA', 'chamadoAtribuidoDropdown', 'chamadoAtribuidoWrapper', fornecedoresPrestadores);    
+    
+    destravarCampoCarregandoChamado('chamadoAbertoPor', 'Funcionário ou servidor...');
+    initSearchChamado('chamadoAbertoPor', 'chamadoAbertoPorDropdown', 'chamadoAbertoPorWrapper', funcionarios);    
+    
     const patrimonioEl = document.getElementById('chamadoEquipPatrimonio');
     if (patrimonioEl) patrimonioEl.addEventListener('blur', verificarPatrimonioAoSairChamado);
 
@@ -180,80 +182,6 @@
     }
   }
 
-  // ===== PEÇAS: blocos de Nome (obrigatório) + Sequência/Localização/Marca/
-  // Modelo (opcionais). Ainda sem chave única pra peça, então é tudo texto
-  // livre por enquanto -- ao salvar, o servidor tenta achar o ID em
-  // tbl_pecas pelo Nome (só se bater com exatamente 1 peça). =====
-  function adicionarBlocoPecaChamado() {
-    pecasChamadoState.push({
-      id: pecaProximoId++,
-      nome: '',
-      sequencia: '',
-      localizacao: '',
-      marca: '',
-      modelo: ''
-    });
-    renderPecasChamadoSelecionadas();
-  }
-
-  function removerPecaChamado(id) {
-    pecasChamadoState = pecasChamadoState.filter(p => p.id !== id);
-    renderPecasChamadoSelecionadas();
-  }
-
-  function atualizarCampoPecaChamado(id, campo, valor) {
-    const peca = pecasChamadoState.find(p => p.id === id);
-    if (peca) peca[campo] = valor;
-  }
-
-  function renderPecasChamadoSelecionadas() {
-    const container = document.getElementById('chamadoPecasBlocos');
-    if (!container) return;
-
-    container.innerHTML = pecasChamadoState.map(p => `
-      <div class="chamado-peca-bloco">
-        <div class="chamado-peca-bloco-cabecalho">
-          <span>⚙️ Peça</span>
-          <button type="button" class="chamado-no-remover" title="Remover" onclick="removerPecaChamado(${p.id})">🗑️</button>
-        </div>
-        <div class="form-grid-3">
-          <div class="field">
-            <label class="field__label">Nome *</label>
-            <input class="field__input" type="text" placeholder="Ex: Filtro de ar"
-              value="${escapeHtmlChamado(p.nome)}"
-              oninput="atualizarCampoPecaChamado(${p.id}, 'nome', this.value)">
-          </div>
-          <div class="field">
-            <label class="field__label">Sequência</label>
-            <input class="field__input" type="text"
-              value="${escapeHtmlChamado(p.sequencia)}"
-              oninput="atualizarCampoPecaChamado(${p.id}, 'sequencia', this.value)">
-          </div>
-          <div class="field">
-            <label class="field__label">Localização</label>
-            <input class="field__input" type="text"
-              value="${escapeHtmlChamado(p.localizacao)}"
-              oninput="atualizarCampoPecaChamado(${p.id}, 'localizacao', this.value)">
-          </div>
-        </div>
-        <div class="form-grid-3">
-          <div class="field">
-            <label class="field__label">Marca</label>
-            <input class="field__input" type="text"
-              value="${escapeHtmlChamado(p.marca)}"
-              oninput="atualizarCampoPecaChamado(${p.id}, 'marca', this.value)">
-          </div>
-          <div class="field">
-            <label class="field__label">Modelo</label>
-            <input class="field__input" type="text"
-              value="${escapeHtmlChamado(p.modelo)}"
-              oninput="atualizarCampoPecaChamado(${p.id}, 'modelo', this.value)">
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-
   // ===== "ATRIBUÍDO A": BUSCA COM SUGESTÃO DE FORNECEDORES PRESTADORES DE
   // SERVIÇO, MAS ACEITA QUALQUER TEXTO DIGITADO (técnico interno, etc.) =====
   async function carregarFornecedoresPrestadoresChamado() {
@@ -269,6 +197,23 @@
       return nomes;
     } catch (error) {
       console.error('❌ [renderPrestadoresDeServiço] Erro ao buscar fornecedores prestadores de serviço:', error);
+      return [];
+    }
+  }
+
+  async function carregarFuncionariosChamado() {
+    console.log('⏳ [renderFuncionarios] Buscando funcionários...');
+    try {
+      const res = await runServerFunction('filtrarFuncionarios');
+      if (!Array.isArray(res)) {
+        console.log('⚠️ [renderFuncionarios] Resposta não é array:', res);
+        return [];
+      }
+      const nomes = res.map(f => f.nome).filter(Boolean);
+      console.log('✅ [renderFuncionarios] ' + nomes.length + ' funcionário(s) carregado(s):', nomes);
+      return nomes;
+    } catch (error) {
+      console.error('❌ [renderFuncionarios] Erro ao buscar funcionários:', error);
       return [];
     }
   }
@@ -361,10 +306,6 @@
       return;
     }
 
-    if (pecasChamadoState.some(p => !p.nome.trim())) {
-      alert('Tem uma peça adicionada sem nome. Preencha o nome ou remova o bloco.');
-      return;
-    }
 
     let relatorioArquivo, notaFiscalArquivo;
     try {
@@ -379,6 +320,7 @@
       motivo: motivo,
       tipo: document.getElementById('chamadoTipo')?.value || '',
       classificacao: document.getElementById('chamadoClassificacao')?.value || '',
+      abertoPor: document.getElementById('chamadoAbertoPor')?.value.trim() || '',
       atribuidoA: document.getElementById('chamadoAtribuidoA')?.value.trim() || '',
       descricao: document.getElementById('chamadoDescricao')?.value.trim() || '',
       patrimonio: patrimonio,
@@ -386,13 +328,6 @@
       marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
       modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
       btus: document.getElementById('chamadoEquipBtus')?.value.trim() || '',
-      pecas: pecasChamadoState.map(p => ({
-        nome: p.nome.trim(),
-        sequencia: p.sequencia.trim(),
-        localizacao: p.localizacao.trim(),
-        marca: p.marca.trim(),
-        modelo: p.modelo.trim()
-      })),
       relatorio: relatorioArquivo,
       notaFiscal: notaFiscalArquivo
     };
