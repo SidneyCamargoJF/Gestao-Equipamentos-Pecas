@@ -118,7 +118,7 @@ function filtrarFuncionarios() {
  * Chamado ao sair do campo Patrimônio (evento blur), igual
  * verificarCnpjAoSair() do Cadastro de Fornecedor. Nunca bloqueia o
  * cadastro -- só informa.
- * Retorna { existe, localizacao?, btus?, marca?, modelo?, sequencia? }
+ * Retorna { existe, localizacao?, capacidade?, marca?, modelo?, sequencia? }
  */
 function verificarPatrimonioChamado(patrimonio) {
   const patrimonioBuscado = String(patrimonio || '').trim().toLowerCase();
@@ -131,7 +131,7 @@ function verificarPatrimonioChamado(patrimonio) {
       return {
         existe: true,
         localizacao: dados[i][7] || '',
-        btus: dados[i][3] || '',
+        capacidade: dados[i][3] || '',
         marca: dados[i][2] || '',
         modelo: dados[i][4] || '',
         sequencia: dados[i][6] || ''

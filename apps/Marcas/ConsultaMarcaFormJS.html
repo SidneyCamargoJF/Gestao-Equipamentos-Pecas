@@ -55,7 +55,7 @@ class MarcaController {
     google.script.run
       .withSuccessHandler(objmarcas => this.retorno(objmarcas))
       .withFailureHandler(err => console.error('Erro ao consultar: ', err))
-      .filtrar(criterios);
+      .filtrarMarcas(criterios);
   }
 
   retorno(objmarcas) {
@@ -68,6 +68,22 @@ class MarcaController {
     }
 
     this.renderTabela(this.listaFiltrada);
+    this.atualizarResumo(this.listaFiltrada);
+  }
+
+  // ===== RESUMO DA BUSCA (total + ativas/desativadas) =====
+  atualizarResumo(lista) {
+    const resumo = document.getElementById('resumoMarcas');
+    if (!resumo) return;
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+      resumo.textContent = 'Nenhuma marca encontrada.';
+      return;
+    }
+
+    const desativadas = lista.filter(m => m.desativada).length;
+    const ativas = lista.length - desativadas;
+    resumo.textContent = `${lista.length} marca${lista.length === 1 ? '' : 's'} — ${ativas} ativa${ativas === 1 ? '' : 's'}, ${desativadas} desativada${desativadas === 1 ? '' : 's'}`;
   }
 
   filtrar() {
@@ -83,6 +99,7 @@ class MarcaController {
       this.listaFiltrada = aplicarOrdenacao(this.listaFiltrada);
     }
     this.renderTabela(this.listaFiltrada);
+    this.atualizarResumo(this.listaFiltrada);
   }
 
   limparFiltros() {

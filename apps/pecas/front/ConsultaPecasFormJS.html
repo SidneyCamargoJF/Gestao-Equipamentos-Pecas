@@ -226,11 +226,28 @@
         if (objPecas === "NoData" || !Array.isArray(objPecas)) {
           pecas = [];
           renderTabela([]);
+          atualizarResumoPecas([]);
           return;
         }
 
         pecas = ordenarDesativadasPorUltimo(aplicarOrdenacao(objPecas));
         renderTabela(pecas);
+        atualizarResumoPecas(pecas);
+      }
+
+      // ===== RESUMO DA BUSCA (total + ativas/desativadas) =====
+      function atualizarResumoPecas(lista) {
+        const resumo = document.getElementById('resumoPecas');
+        if (!resumo) return;
+
+        if (!Array.isArray(lista) || lista.length === 0) {
+          resumo.textContent = 'Nenhuma peça encontrada.';
+          return;
+        }
+
+        const desativadas = lista.filter(p => p.desativada).length;
+        const ativas = lista.length - desativadas;
+        resumo.textContent = `${lista.length} peça${lista.length === 1 ? '' : 's'} — ${ativas} ativa${ativas === 1 ? '' : 's'}, ${desativadas} desativada${desativadas === 1 ? '' : 's'}`;
       }
 
       // Peças desativadas sempre por último, independente da ordenação de coluna
@@ -259,6 +276,7 @@
 
         listaFiltrada = ordenarDesativadasPorUltimo(aplicarOrdenacao(listaFiltrada));
         renderTabela(listaFiltrada);
+        atualizarResumoPecas(listaFiltrada);
       }
 
       function renderTabela(lista) {

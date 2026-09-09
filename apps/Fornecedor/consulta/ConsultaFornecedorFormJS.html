@@ -68,6 +68,22 @@
 
     const listaOrdenada = aplicarOrdenacaoFornecedor(fornecedores);
     renderTabelaFornecedor(listaOrdenada);
+    atualizarResumoFornecedores(fornecedores);
+  }
+
+  // ===== RESUMO DA BUSCA (total + ativos/inativos) =====
+  function atualizarResumoFornecedores(lista) {
+    const resumo = document.getElementById('resumoFornecedores');
+    if (!resumo) return;
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+      resumo.textContent = 'Nenhum fornecedor encontrado.';
+      return;
+    }
+
+    const desativados = lista.filter(f => f.desativado).length;
+    const ativos = lista.length - desativados;
+    resumo.textContent = `${lista.length} fornecedor${lista.length === 1 ? '' : 'es'} — ${ativos} ativo${ativos === 1 ? '' : 's'}, ${desativados} inativo${desativados === 1 ? '' : 's'}`;
   }
 
   // ===== SELECT DE ESTADO (apenas estados com fornecedor cadastrado) =====
@@ -270,6 +286,7 @@
       idExclusao = null;
       fecharModal('modalExclusaoFornecedor');
       renderTabelaFornecedor(aplicarOrdenacaoFornecedor(fornecedores));
+      atualizarResumoFornecedores(fornecedores);
     } catch (err) {
       console.error('Erro ao desativar fornecedor:', err);
       alert('Erro ao conectar com o servidor.');
@@ -297,6 +314,7 @@
       if (fornecedor) fornecedor.desativado = false;
 
       renderTabelaFornecedor(aplicarOrdenacaoFornecedor(fornecedores));
+      atualizarResumoFornecedores(fornecedores);
     } catch (err) {
       console.error('Erro ao reativar fornecedor:', err);
       alert('Erro ao conectar com o servidor.');

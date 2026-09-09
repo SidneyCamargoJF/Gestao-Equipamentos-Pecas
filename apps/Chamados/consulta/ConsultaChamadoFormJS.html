@@ -2,8 +2,13 @@
 async function renderConsultaChamados() {
     const motivos = await carregarMotivosChamado();
     initSearchChamado('motivoChamadoSearch', 'motivoChamadoDropdown', 'motivoChamadoWrapper', motivos);
-    
-    consultarChamados(); 
+
+    // Não busca sozinho ao entrar na tela -- só quando clicar em "Consultar".
+    const tbody = document.getElementById('chamadosTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Clique em "Consultar" para buscar os chamados.</td></tr>';
+
+    const resumo = document.getElementById('resumoChamados');
+    if (resumo) resumo.textContent = '';
 }
 
 async function carregarMotivosChamado() {
@@ -68,6 +73,28 @@ let sortStateChamado = { coluna: null, direcao: 'asc' };
 function ReturnChamados(objChamados) {
     chamados = Array.isArray(objChamados) ? objChamados : [];
     renderTabelaChamados(aplicarOrdenacaoChamado(chamados));
+    atualizarResumoChamados(chamados);
+}
+
+// ===== RESUMO DA BUSCA (total + por status) =====
+function atualizarResumoChamados(lista) {
+    const resumo = document.getElementById('resumoChamados');
+    if (!resumo) return;
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+        resumo.textContent = 'Nenhum chamado encontrado.';
+        return;
+    }
+
+    let abertos = 0, emAndamento = 0, fechados = 0;
+    lista.forEach(f => {
+        const status = String(f.status || '').trim().toLowerCase();
+        if (status === 'aberto') abertos++;
+        else if (status === 'em andamento') emAndamento++;
+        else if (f.desativado) fechados++;
+    });
+
+    resumo.textContent = `${lista.length} chamado${lista.length === 1 ? '' : 's'} encontrado${lista.length === 1 ? '' : 's'} — ${abertos} aberto${abertos === 1 ? '' : 's'}, ${emAndamento} em andamento, ${fechados} fechado${fechados === 1 ? '' : 's'}/cancelado${fechados === 1 ? '' : 's'}`;
 }
 
 // ===== ORDENAÇÃO POR COLUNA (clicar no cabeçalho) =====
