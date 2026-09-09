@@ -44,7 +44,13 @@ let ticketHistoricoDataCol = 4
 function ReadTicketHistorico() {
   const objRows = ReadSheet(ticketHistoricoTableName, firstLineTicketHistorico, numColumnsTicketHistorico)
 
+  // A coluna DATA (índice 3) usa dateTimeToString (com hora) -- o Sheets
+  // converte o texto "dd/MM/yyyy HH:mm" gravado em Date sozinho, e se a
+  // gente formatar de volta só com dateToString a hora desaparece.
   return objRows.map(linha =>
-    linha.map(valor => (valor instanceof Date) ? dateToString(valor) : valor)
+    linha.map((valor, idx) => {
+      if (!(valor instanceof Date)) return valor
+      return (idx === ticketHistoricoDataCol - 1) ? dateTimeToString(valor) : dateToString(valor)
+    })
   )
 }

@@ -89,7 +89,7 @@ function salvarChamadoBackend(dados) {
 
     abaChamados.getRange(ultimaLinha + 1, 1, 1, numColumnsTickets).setValues([novaLinha]);
 
-    adicionarHistoricoChamado(novoId, 'Chamado aberto');
+    adicionarHistoricoSistema(novoId, 'Chamado aberto');
 
     return {
       sucesso: true,
@@ -268,4 +268,15 @@ function adicionarHistoricoChamado(chamadoId, texto) {
   const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
   const novaLinha = [novoId, chamadoId, texto, dataAtual];
   abaHistorico.getRange(ultimaLinha + 1, 1, 1, numColumnsTicketHistorico).setValues([novaLinha]);
+}
+
+// Prefixo usado pra marcar entradas de histórico geradas automaticamente
+// pelo sistema (abertura, troca de status, desativação...), pra diferenciar
+// de anotações manuais -- sem precisar de coluna nova na planilha. O
+// prefixo nunca aparece pro usuário (buscarHistoricoChamado remove antes
+// de devolver pro cliente).
+const HISTORICO_CHAMADO_PREFIXO_SISTEMA = '[SISTEMA] ';
+
+function adicionarHistoricoSistema(chamadoId, texto) {
+  adicionarHistoricoChamado(chamadoId, HISTORICO_CHAMADO_PREFIXO_SISTEMA + texto);
 }

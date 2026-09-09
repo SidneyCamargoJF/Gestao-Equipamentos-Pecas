@@ -78,28 +78,25 @@ function buscarChamadoDetalhado(idInput) {
                 : ('ID ' + linha[1]);
         }
 
-
-
-        return {
-            sucesso: true,
-            chamado: {
-                id: linha[0],
-                equipamento: equipamentoTexto,
-                motivo: linha[3],
-                tipo: linha[4],
-                prioridade: linha[5],
-                dataAbertura: linha[6],
-                abertoPor: linha[7],
-                atribuidoA: linha[8],
-                dataInicioAndamento: linha[9],
-                dataFinalizacao: linha[10],
-                observacao: linha[11],
-                relatorioUrl: linha[12],
-                notaFiscalUrl: linha[13],
-                status: linha[14],
-                dataAlteracao: linha[15]
-            }
+        const chamado = {
+            id: linha[0],
+            equipamento: equipamentoTexto,
+            motivo: linha[3],
+            tipo: linha[4],
+            prioridade: linha[5],
+            dataAbertura: linha[6],
+            abertoPor: linha[7],
+            atribuidoA: linha[8],
+            dataInicioAndamento: linha[9],
+            dataFinalizacao: linha[10],
+            observacao: linha[11],
+            relatorioUrl: linha[12],
+            notaFiscalUrl: linha[13],
+            status: linha[14],
+            dataAlteracao: linha[15]
         };
+
+        return { sucesso: true, chamado: chamado };
     } catch (e) {
         return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
     }
@@ -128,7 +125,61 @@ function desativarChamado(idInput) {
                 abaChamados.getRange(linhaReal, ticketsDtAlteracaoCol).setValue(dataAtual);
                 abaChamados.getRange(linhaReal, ticketsStatusCol).setValue("Cancelado");
                 abaChamados.getRange(linhaReal, 1, 1, numColumnsTickets).setBackground("#F4CCCC");
+                adicionarHistoricoSistema(idBuscado, 'Chamado desativado');
                 return { sucesso: true, mensagem: "Chamado desativado com sucesso." };
+            }
+        }
+        return { sucesso: false, mensagem: "Chamado não encontrado (ID " + idBuscado + ")." };
+    } catch (e) {
+        return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
+    }
+}
+
+/**
+ * Muda o status do chamado (Aberto / Em Andamento / Concluído -- botões do
+ * modal de detalhes). Preenche DATA_INICIO_ANDAMENTO ou DATA_FINALIZACAO
+ * quando faz sentido, e registra a troca no histórico.
+ */
+function alterarStatusChamado(idInput, novoStatus) {
+    try {
+        const idBuscado = Number(idInput);
+        if (!idBuscado) {
+            return { sucesso: false, mensagem: "ID do chamado inválido." };
+        }
+
+        // "Concluido" sem acento de propósito -- bate com o value="concluido"
+        // do filtro de Status da Consulta e com o "=== 'concluido'" que já
+        // existe em filtrarChamados (comparação exata, sem acento quebraria).
+        const statusValidos = ['Aberto', 'Em Andamento', 'Concluido'];
+        if (statusValidos.indexOf(novoStatus) === -1) {
+            return { sucesso: false, mensagem: "Status inválido." };
+        }
+
+        const planilha = SpreadsheetApp.getActiveSpreadsheet();
+        const abaChamados = planilha.getSheetByName("tbl_chamados");
+        if (!abaChamados) {
+            return { sucesso: false, mensagem: "Aba 'tbl_chamados' não encontrada na planilha." };
+        }
+
+        const dados = ReadTickets();
+
+        for (let i = 0; i < dados.length; i++) {
+            if (Number(dados[i][0]) === idBuscado) {
+                const linhaReal = i + firstLineTickets;
+                const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+
+                abaChamados.getRange(linhaReal, ticketsStatusCol).setValue(novoStatus);
+                abaChamados.getRange(linhaReal, ticketsDtAlteracaoCol).setValue(dataAtual);
+
+                if (novoStatus === 'Em Andamento') {
+                    abaChamados.getRange(linhaReal, ticketsDtInicioAndamentoCol).setValue(dataAtual);
+                }
+                if (novoStatus === 'Concluido') {
+                    abaChamados.getRange(linhaReal, ticketsDtFinalizacaoCol).setValue(dataAtual);
+                }
+
+                adicionarHistoricoSistema(idBuscado, 'Status alterado para "' + novoStatus + '".');
+                return { sucesso: true, mensagem: 'Status atualizado para "' + novoStatus + '".' };
             }
         }
         return { sucesso: false, mensagem: "Chamado não encontrado (ID " + idBuscado + ")." };
@@ -160,6 +211,7 @@ function reativarChamado(idInput) {
                 abaChamados.getRange(linhaReal, ticketsDtAlteracaoCol).setValue(dataAtual);
                 abaChamados.getRange(linhaReal, ticketsStatusCol).setValue("Aberto");
                 abaChamados.getRange(linhaReal, 1, 1, numColumnsTickets).setBackground(null);
+                adicionarHistoricoSistema(idBuscado, 'Chamado reativado');
                 return { sucesso: true, mensagem: "Chamado reativado com sucesso." };
             }
         }
@@ -173,4 +225,85 @@ function buscarMotivosUnicosChamado() {
     const dados = ReadTickets();
     const motivos = dados.map(linha => linha[3]).filter(Boolean);
     return [...new Set(motivos)]
+}
+
+/**
+ * Lista as entradas de tbl_chamado_historico de um chamado (aba Histórico
+ * do modal de detalhes), mais recente primeiro. Cada entrada vem com
+ * "tipo" pra a tela colorir/mostrar botão de excluir diferente:
+ * - 'sistema': gerada automaticamente (abertura, troca de status,
+ *   reativação...) -- imutável, sem botão de excluir.
+ * - 'alerta': igual sistema, mas destacada em vermelho (chamado desativado).
+ * - 'anotacao': digitada manualmente por alguém -- pode ser excluída.
+ */
+function buscarHistoricoChamado(chamadoId) {
+    const idBuscado = Number(chamadoId);
+    const dados = ReadTicketHistorico();
+
+    return dados
+        .filter(linha => Number(linha[1]) === idBuscado)
+        .map(linha => {
+            const textoOriginal = String(linha[2] || '');
+            const ehSistema = textoOriginal.indexOf(HISTORICO_CHAMADO_PREFIXO_SISTEMA) === 0;
+            const textoLimpo = ehSistema ? textoOriginal.slice(HISTORICO_CHAMADO_PREFIXO_SISTEMA.length) : textoOriginal;
+
+            let tipo = 'anotacao';
+            if (ehSistema) {
+                tipo = (textoLimpo === 'Chamado desativado') ? 'alerta' : 'sistema';
+            }
+
+            return { id: linha[0], texto: textoLimpo, data: linha[3], tipo: tipo };
+        })
+        .reverse();
+}
+
+/**
+ * Adiciona uma anotação manual ao histórico do chamado (aba Histórico --
+ * campo de texto livre, tipo "Serviço acompanhado no período da manhã").
+ * Reaproveita adicionarHistoricoChamado (mesma função usada ao abrir o
+ * chamado), sem o prefixo de sistema -- por isso entra como tipo
+ * "anotacao" (editável/excluível) quando lida de volta.
+ */
+function adicionarAnotacaoChamado(chamadoId, texto) {
+    const textoLimpo = String(texto || '').trim();
+    if (!textoLimpo) {
+        return { sucesso: false, mensagem: 'Escreva algo antes de adicionar.' };
+    }
+
+    adicionarHistoricoChamado(chamadoId, textoLimpo);
+    return { sucesso: true, mensagem: 'Anotação adicionada.' };
+}
+
+/**
+ * Exclui uma anotação MANUAL do histórico (nunca uma entrada de sistema --
+ * confere o prefixo antes de deixar excluir, mesmo que a tela já esconda o
+ * botão pra essas).
+ */
+function excluirAnotacaoChamado(historicoId) {
+    try {
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        const abaHistorico = ss.getSheetByName(ticketHistoricoTableName);
+        if (!abaHistorico) {
+            return { sucesso: false, mensagem: "Aba 'tbl_chamado_historico' não encontrada na planilha." };
+        }
+
+        const idBuscado = Number(historicoId);
+        const dados = ReadTicketHistorico();
+
+        for (let i = 0; i < dados.length; i++) {
+            if (Number(dados[i][0]) === idBuscado) {
+                const texto = String(dados[i][2] || '');
+                if (texto.indexOf(HISTORICO_CHAMADO_PREFIXO_SISTEMA) === 0) {
+                    return { sucesso: false, mensagem: 'Não é possível excluir um registro do sistema.' };
+                }
+
+                const linhaReal = i + firstLineTicketHistorico;
+                abaHistorico.deleteRow(linhaReal);
+                return { sucesso: true, mensagem: 'Anotação excluída.' };
+            }
+        }
+        return { sucesso: false, mensagem: 'Anotação não encontrada.' };
+    } catch (e) {
+        return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+    }
 }

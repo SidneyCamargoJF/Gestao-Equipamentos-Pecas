@@ -27,3 +27,15 @@ function dateToString(data) {
 
     return Utilities.formatDate(new Date(data), fusoHorario, "dd/MM/yyyy");
 }
+
+// Igual dateToString, mas com hora:minuto -- usado onde o horário importa
+// (ex: histórico de chamado). O Sheets converte texto tipo "26/08/2026
+// 14:30" pra um valor Date de verdade sozinho quando a célula recebe um
+// setValue() com essa cara; se ao ler de volta a gente formatar só com
+// dateToString (sem HH:mm), a hora que foi digitada existe no valor mas
+// desaparece na exibição.
+function dateTimeToString(data) {
+    let fusoHorario = Session.getScriptTimeZone();
+
+    return Utilities.formatDate(new Date(data), fusoHorario, "dd/MM/yyyy HH:mm");
+}
