@@ -1,11 +1,19 @@
 <script>
+// Ligada pelo Cadastro (salvarChamado) logo antes de voltar pra essa tela
+// depois de criar/editar um chamado -- assim, só nesse caso específico, a
+// consulta roda sozinha de novo (pra já mostrar o resultado atualizado),
+// sem voltar a carregar sozinha sempre que alguém só navega pra essa tela.
+let forcarConsultaAoAbrirChamados = false;
+
 async function renderConsultaChamados() {
     const motivos = await carregarMotivosChamado();
     initSearchChamado('motivoChamadoSearch', 'motivoChamadoDropdown', 'motivoChamadoWrapper', motivos);
 
-    // Não busca sozinho ao entrar na tela -- só quando clicar em "Consultar".
-    const tbody = document.getElementById('chamadosTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Clique em "Consultar" para buscar os chamados.</td></tr>';
+    if (forcarConsultaAoAbrirChamados) {
+        forcarConsultaAoAbrirChamados = false;
+        consultarChamados();
+        return;
+    }
 
     const resumo = document.getElementById('resumoChamados');
     if (resumo) resumo.textContent = '';
@@ -126,14 +134,24 @@ function atualizarIndicadoresChamado() {
     }
 }
 
+// Prioridade não ordena por alfabeto (Alta, Baixa, Média, Urgente) -- ordena
+// pela gravidade de verdade (Baixa < Média < Alta < Urgente).
+const CHAMADO_PRIORIDADE_RANK = { baixa: 1, media: 2, alta: 3, urgente: 4 };
+
 function aplicarOrdenacaoChamado(lista) {
     if (!sortStateChamado.coluna || !Array.isArray(lista)) return lista;
     const col = sortStateChamado.coluna;
     const dir = sortStateChamado.direcao === 'asc' ? 1 : -1;
     const arr = lista.slice();
     arr.sort((a, b) => {
-        const va = String(a[col] || '').toLowerCase();
-        const vb = String(b[col] || '').toLowerCase();
+        let va, vb;
+        if (col === 'prioridade') {
+            va = CHAMADO_PRIORIDADE_RANK[String(a[col] || '').trim().toLowerCase()] || 0;
+            vb = CHAMADO_PRIORIDADE_RANK[String(b[col] || '').trim().toLowerCase()] || 0;
+        } else {
+            va = String(a[col] || '').toLowerCase();
+            vb = String(b[col] || '').toLowerCase();
+        }
         return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;
     });
     return arr;
@@ -458,23 +476,28 @@ const CHAMADO_STATUS_OPCOES = [
     { valor: 'Concluido', rotulo: 'Concluído' }
 ];
 
+// Cada status tem sua própria cor (mesma ideia dos badges de prioridade),
+// em vez de todos ficarem cinza/roxo genérico -- fica mais fácil bater o
+// olho e reconhecer o status sem precisar ler o texto do botão.
+const CHAMADO_STATUS_CORES = {
+    'Aberto': { bg: '#dbeafe', cor: '#1d4ed8', bgAtual: '#1d4ed8', borda: '#1d4ed8' },
+    'Em Andamento': { bg: '#fef3c7', cor: '#92400e', bgAtual: '#b45309', borda: '#b45309' },
+    'Concluido': { bg: '#dcfce7', cor: '#166534', bgAtual: '#15803d', borda: '#15803d' }
+};
+
 function montarBotoesStatusChamado(statusAtual) {
     const statusNormalizado = String(statusAtual || '').trim().toLowerCase();
-
-    const estiloBase = 'width:auto; padding:0.625rem 1.25rem; border-radius:0.5rem; font-family:inherit; font-weight:600; font-size:0.875rem; cursor:pointer;';
-    const estiloInativo = estiloBase + 'background:var(--color-slate-100,#f1f5f9); color:var(--color-slate-700,#334155); border:0.0625rem solid var(--color-slate-200,#e2e8f0); box-shadow:none;';
-    // "afundado": fundo mais escuro que o roxo normal, sombra pra DENTRO
-    // (inset) simulando profundidade, e um leve deslocamento pra baixo --
-    // é o mesmo truque visual de botão "apertado" que apps nativos usam.
-    const estiloAtual = estiloBase + 'background:var(--color-indigo-hover,#4338ca); color:#fff; border:0.0625rem solid var(--color-indigo-hover,#4338ca); cursor:not-allowed; ' +
-        'box-shadow: inset 0 0.1875rem 0.3rem rgba(0,0,0,0.4), inset 0 0.0625rem 0.125rem rgba(0,0,0,0.3); ' +
-        'transform: translateY(0.0625rem);';
+    const estiloBase = 'width:auto; padding:0.625rem 1.25rem; border-radius:0.5rem; font-family:inherit; font-weight:600; font-size:0.875rem; cursor:pointer; border-width:0.0625rem; border-style:solid;';
 
     return `
         <div style="display:flex; gap:0.75rem; padding-top:1rem; margin-top:1rem; border-top:0.0625rem solid var(--color-slate-100, #f1f5f9);">
             ${CHAMADO_STATUS_OPCOES.map(opcao => {
                 const ehAtual = opcao.valor.toLowerCase() === statusNormalizado;
-                return `<button type="button" style="${ehAtual ? estiloAtual : estiloInativo}" ${ehAtual ? 'disabled' : ''}
+                const cores = CHAMADO_STATUS_CORES[opcao.valor];
+                const estilo = ehAtual
+                    ? estiloBase + `background:${cores.bgAtual}; color:#fff; border-color:${cores.borda}; cursor:not-allowed; box-shadow: inset 0 0.1875rem 0.3rem rgba(0,0,0,0.4), inset 0 0.0625rem 0.125rem rgba(0,0,0,0.3); transform: translateY(0.0625rem);`
+                    : estiloBase + `background:${cores.bg}; color:${cores.cor}; border-color:${cores.bg};`;
+                return `<button type="button" style="${estilo}" ${ehAtual ? 'disabled' : ''}
                     onclick="alterarStatusChamadoUI('${opcao.valor}')">${opcao.rotulo}</button>`;
             }).join('')}
         </div>
@@ -539,7 +562,9 @@ async function reativarChamadoUI(id) {
 // Edição de chamado ainda não existe (Cadastro só cria) -- placeholder pra
 // não quebrar o botão de editar até essa parte ser construída.
 function editarChamado(id) {
-    alert('Edição de chamados ainda não implementada.');
+    if (typeof trocarPagina === 'function') {
+        trocarPagina('chamado-form', id);
+    }
 }
 
 

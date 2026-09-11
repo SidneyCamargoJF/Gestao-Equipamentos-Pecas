@@ -2,13 +2,14 @@
 
   <div class="page-header">
     <div class="actions-bar">
-      <h1 class="page-title">📩 Abrir Chamado</h1>
+      <h1 class="page-title" id="chamadoFormTitulo">📩 Abrir Chamado</h1>
     </div>
   </div>
 
   <div class="card">
 
     <form autocomplete="off" onsubmit="return false;">
+      <input type="hidden" id="chamadoId" value="">
 
       <!-- ============================================= -->
       <!-- PARTE 1: DADOS GERAIS DO CHAMADO              -->
@@ -111,6 +112,7 @@
               <input class="field__input" type="file" id="chamadoRelatorioArquivo" accept="application/pdf,image/*">
               <button type="button" class="chamado-anexo-remover" title="Remover arquivo selecionado" onclick="removerAnexoChamado('chamadoRelatorioArquivo')">✕</button>
             </div>
+            <span id="chamadoRelatorioArquivoAtual" style="font-size:0.75rem; color:var(--color-slate-500,#64748b); display:block; margin-top:0.25rem;"></span>
           </div>
           <div class="field">
             <label class="field__label" for="chamadoNotaFiscalArquivo">Nota Fiscal</label>
@@ -118,6 +120,7 @@
               <input class="field__input" type="file" id="chamadoNotaFiscalArquivo" accept="application/pdf,image/*">
               <button type="button" class="chamado-anexo-remover" title="Remover arquivo selecionado" onclick="removerAnexoChamado('chamadoNotaFiscalArquivo')">✕</button>
             </div>
+            <span id="chamadoNotaFiscalArquivoAtual" style="font-size:0.75rem; color:var(--color-slate-500,#64748b); display:block; margin-top:0.25rem;"></span>
           </div>
         </div>
       </fieldset>
@@ -171,7 +174,7 @@
       <div class="form-actions">
         <button type="button" class="btn-secondary" onclick="trocarPagina('chamado-view')">Cancelar</button>
         <button type="button" class="btn btn-danger" onclick="limparChamado()">Limpar</button>
-        <button type="button" class="btn-success" onclick="salvarChamado()">Salvar Chamado</button>
+        <button type="button" class="btn-success" id="chamadoBtnSalvar" onclick="salvarChamado()">Salvar Chamado</button>
       </div>
     </form>
   </div>

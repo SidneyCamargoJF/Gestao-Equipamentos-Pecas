@@ -4,18 +4,20 @@
 // =====================================================
 
 /**
- * Salva um novo chamado em tbl_chamados e registra a abertura em
- * tbl_chamado_historico. Exige Patrimônio e/ou Localização (validado aqui
- * de novo, por segurança, mesmo já validado no cliente). Equipamento e
- * peças são guardados só por ID (nunca duplica dado de
+ * Salva um chamado em tbl_chamados -- cria um novo (dados.id vazio) ou
+ * atualiza um existente (dados.id preenchido, modo edição), e registra a
+ * ação em tbl_chamado_historico. Exige Patrimônio e/ou Localização
+ * Equipamento é guardado só por ID (nunca duplica dado de
+ * tbl_equipamentos):
  * - Equipamento: localizado em tbl_equipamentos pelo Patrimônio digitado;
  *   se não achar por Patrimônio, tenta pela Localização (só resolve se
  *   bater com exatamente 1 equipamento). Se não resolver nenhum dos dois,
  *   o chamado é salvo mesmo assim, sem vínculo (e o cliente é avisado).
- * - Peças: várias, vêm do cliente como texto livre (Nome + opcionais); o
- *   com exatamente 1) e grava os IDs achados na mesma célula separados por
- *   "-" (ex: "1-3-5"). Peça sem ID resolvido não é linkada, mas não impede
- *   o chamado de ser salvo.
+ * - No modo edição, campos que não fazem parte do formulário (ID_PECA,
+ *   DATA_ABERTURA, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO, STATUS) são
+ *   preservados como estavam -- só mudam pelos fluxos próprios (botões de
+ *   status na Consulta). Anexos só são substituídos se um arquivo novo for
+ *   enviado; senão, mantém a URL que já existia.
  *
  * Retorna { sucesso: boolean, mensagem: string, id?: number, equipamentoEncontrado?: boolean }
  */
@@ -38,6 +40,64 @@ function salvarChamadoBackend(dados) {
       return { sucesso: false, mensagem: "Aba 'tbl_chamados' não foi encontrada na planilha." };
     }
 
+    let equipamentoId = '';
+    if (patrimonioDigitado) {
+      equipamentoId = buscarEquipamentoIdPorPatrimonio(patrimonioDigitado);
+    }
+    if (!equipamentoId && localizacaoDigitada) {
+      equipamentoId = buscarEquipamentoIdPorLocalizacao(localizacaoDigitada);
+    }
+    const equipamentoEncontrado = !!equipamentoId;
+
+    const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+    const idEdicao = dados.id ? Number(dados.id) : null;
+
+    // ===== MODO EDIÇÃO =====
+    if (idEdicao) {
+      const todasLinhas = ReadTickets();
+      const idx = todasLinhas.findIndex(l => Number(l[0]) === idEdicao);
+      if (idx === -1) {
+        return { sucesso: false, mensagem: 'Chamado não encontrado para edição (ID ' + idEdicao + ').' };
+      }
+
+      const linhaReal = idx + firstLineTickets;
+      // cópia do conteúdo da linha atual 
+      const linhaAtual = todasLinhas[idx];
+
+      // Só sobrescreve o anexo se um arquivo novo foi enviado; senão mantém o atual.
+      const relatorioUrl = dados.relatorio ? salvarArquivoAnexoChamado(dados.relatorio) : (linhaAtual[11] || '');
+      const notaFiscalUrl = dados.notaFiscal ? salvarArquivoAnexoChamado(dados.notaFiscal) : (linhaAtual[12] || '');
+
+      const linhaAtualizada = [
+        idEdicao,
+        equipamentoId,
+        dados.motivo,
+        dados.tipo || '',
+        dados.classificacao || '',
+        linhaAtual[5],
+        dados.abertoPor || '',
+        dados.atribuidoA || '',
+        linhaAtual[8],
+        linhaAtual[9],
+        dados.descricao || '',
+        relatorioUrl,
+        notaFiscalUrl,
+        linhaAtual[13],
+        dataAtual
+      ];
+
+      abaChamados.getRange(linhaReal, 1, 1, numColumnsTickets).setValues([linhaAtualizada]);
+      adicionarHistoricoSistema(idEdicao, 'Chamado editado');
+
+      return {
+        sucesso: true,
+        mensagem: 'Chamado atualizado com sucesso!',
+        id: idEdicao,
+        equipamentoEncontrado: equipamentoEncontrado
+      };
+    }
+
+    // ===== MODO CRIAÇÃO =====
     const ultimaLinhaPlanilha = abaChamados.getLastRow();
     const ultimaLinha = Math.max(ultimaLinhaPlanilha, firstLineTickets - 1);
 
@@ -50,28 +110,15 @@ function salvarChamadoBackend(dados) {
       novoId = Number(idAtual) + 1;
     }
 
-    const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
-
-    let equipamentoId = '';
-    if (patrimonioDigitado) {
-      equipamentoId = buscarEquipamentoIdPorPatrimonio(patrimonioDigitado);
-    }
-    if (!equipamentoId && localizacaoDigitada) {
-      equipamentoId = buscarEquipamentoIdPorLocalizacao(localizacaoDigitada);
-    }
-    const equipamentoEncontrado = !!equipamentoId;
-
     const relatorioUrl = salvarArquivoAnexoChamado(dados.relatorio);
     const notaFiscalUrl = salvarArquivoAnexoChamado(dados.notaFiscal);
 
-    // Ordem: ID, ID_EQUIPAMENTO, ID_PECA (sempre vazio), DEFEITO, TIPO,
-    // PRIORIDADE, DATA_ABERTURA, ABERTO_POR, ATRIBUIDO_A,
-    // DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO, OBSERVACAO, RELATORIO,
-    // NOTA_FISCAL, STATUS, DATA_ALTERACAO
+    // Ordem: ID, ID_EQUIPAMENTO, DEFEITO, TIPO, PRIORIDADE, DATA_ABERTURA,
+    // ABERTO_POR, ATRIBUIDO_A, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO,
+    // OBSERVACAO, RELATORIO, NOTA_FISCAL, STATUS, DATA_ALTERACAO
     const novaLinha = [
       novoId,
       equipamentoId,
-      '',
       dados.motivo,
       dados.tipo || '',
       dados.classificacao || '',
@@ -101,6 +148,54 @@ function salvarChamadoBackend(dados) {
     };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+  }
+}
+
+/**
+ * Busca um chamado pelo ID pra pré-preencher o formulário de Cadastro no
+ * modo edição (diferente de buscarChamadoDetalhado, que é só leitura pro
+ * modal de detalhes -- esta aqui devolve os campos "crus" que o formulário
+ * precisa, incluindo os dados do equipamento vinculado). Retorna null se
+ * não encontrar.
+ */
+function buscarChamadoParaEdicao(idInput) {
+  try {
+    const idBuscado = Number(idInput);
+    const dados = ReadTickets();
+    const linha = dados.find(l => Number(l[0]) === idBuscado);
+    if (!linha) return null;
+
+    let patrimonio = '', localizacao = '', marca = '', modelo = '', capacidade = '';
+    if (linha[1]) {
+      const equipamentos = ReadEquipments();
+      const equip = equipamentos.find(e => Number(e[0]) === Number(linha[1]));
+      if (equip) {
+        patrimonio = equip[5] || '';
+        localizacao = equip[7] || '';
+        marca = equip[2] || '';
+        modelo = equip[4] || '';
+        capacidade = equip[3] || '';
+      }
+    }
+
+    return {
+      id: linha[0],
+      motivo: linha[2],
+      tipo: linha[3],
+      classificacao: linha[4],
+      abertoPor: linha[6],
+      atribuidoA: linha[7],
+      descricao: linha[10],
+      patrimonio: patrimonio,
+      localizacao: localizacao,
+      marca: marca,
+      modelo: modelo,
+      capacidade: capacidade,
+      relatorioUrl: linha[11],
+      notaFiscalUrl: linha[12]
+    };
+  } catch (e) {
+    return null;
   }
 }
 
@@ -280,3 +375,5 @@ const HISTORICO_CHAMADO_PREFIXO_SISTEMA = '[SISTEMA] ';
 function adicionarHistoricoSistema(chamadoId, texto) {
   adicionarHistoricoChamado(chamadoId, HISTORICO_CHAMADO_PREFIXO_SISTEMA + texto);
 }
+
+

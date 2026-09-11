@@ -23,10 +23,10 @@ function filtrarChamados(criterios) {
         let equipamentoTexto = equip ? (equip[5] + ' - ' + equip[1] + (equip[4] ? '/' + equip[4] : '')) : '';
 
         let colEquipamento = equipamentoTexto.toLowerCase();
-        let colMotivo = String(dados[i][3] || '').trim().toLowerCase();
-        let colTipo = String(dados[i][4] || '').trim().toLowerCase();
-        let colPrioridade = String(dados[i][5] || '').trim().toLowerCase();
-        let colStatus = String(dados[i][14] || '').trim().toLowerCase();
+        let colMotivo = String(dados[i][2] || '').trim().toLowerCase();
+        let colTipo = String(dados[i][3] || '').trim().toLowerCase();
+        let colPrioridade = String(dados[i][4] || '').trim().toLowerCase();
+        let colStatus = String(dados[i][13] || '').trim().toLowerCase();
         let desativado = (colStatus === 'cancelado' || colStatus === 'concluido');
 
         let cEquipamento = (equipamentoBuscado === "" || colEquipamento.includes(equipamentoBuscado));
@@ -40,13 +40,13 @@ function filtrarChamados(criterios) {
                 id: dados[i][0],
                 equipamento: equipamentoTexto,
                 localizacao: equip ? equip[7] : '',
-                motivo: dados[i][3],
-                tipo: dados[i][4],
-                prioridade: dados[i][5],
-                abertoPor: dados[i][7],
-                atribuidoA: dados[i][8],
-                dataAbertura: dados[i][6],
-                status: dados[i][14],
+                motivo: dados[i][2],
+                tipo: dados[i][3],
+                prioridade: dados[i][4],
+                abertoPor: dados[i][6],
+                atribuidoA: dados[i][7],
+                dataAbertura: dados[i][5],
+                status: dados[i][13],
                 desativado: desativado
             })
         }
@@ -81,19 +81,19 @@ function buscarChamadoDetalhado(idInput) {
         const chamado = {
             id: linha[0],
             equipamento: equipamentoTexto,
-            motivo: linha[3],
-            tipo: linha[4],
-            prioridade: linha[5],
-            dataAbertura: linha[6],
-            abertoPor: linha[7],
-            atribuidoA: linha[8],
-            dataInicioAndamento: linha[9],
-            dataFinalizacao: linha[10],
-            observacao: linha[11],
-            relatorioUrl: linha[12],
-            notaFiscalUrl: linha[13],
-            status: linha[14],
-            dataAlteracao: linha[15]
+            motivo: linha[2],
+            tipo: linha[3],
+            prioridade: linha[4],
+            dataAbertura: linha[5],
+            abertoPor: linha[6],
+            atribuidoA: linha[7],
+            dataInicioAndamento: linha[8],
+            dataFinalizacao: linha[9],
+            observacao: linha[10],
+            relatorioUrl: linha[11],
+            notaFiscalUrl: linha[12],
+            status: linha[13],
+            dataAlteracao: linha[14]
         };
 
         return { sucesso: true, chamado: chamado };
@@ -223,7 +223,7 @@ function reativarChamado(idInput) {
 
 function buscarMotivosUnicosChamado() {
     const dados = ReadTickets();
-    const motivos = dados.map(linha => linha[3]).filter(Boolean);
+    const motivos = dados.map(linha => linha[2]).filter(Boolean);
     return [...new Set(motivos)]
 }
 
