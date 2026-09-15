@@ -1,155 +1,176 @@
+// =====================================================
+// MODEL - EquipamentoModel.gs
+// Camada de acesso a dados da aba "tbl_equipamentos".
+// Herda de SheetModel (classe base genérica de leitura).
+// =====================================================
+
 class EquipmentsModel extends SheetModel {
+
   constructor() {
-    // Inicializa a classe pai (SheetModel) com a aba e linha inicial
-    super('tbl_equipments', 3, 1);  // constructor(sheetName, firstLine, firstColumn)
+    // tableName, firstLine (1ª linha onde começam os dados), firstColumn
+    super('tbl_equipamentos', 3, 1); // ajuste o firstLine conforme sua aba
 
-    // Mapeamento de colunas e limites
-    this.numColumns = 10;
-    this.colId = 0;
-    this.colName = 1;
-    this.colBrand = 2;
-    this.colCapacity = 3;
-    this.colModel = 4;
-    this.colPatrimonio = 5;
-    this.colSequential = 6;
-    this.colLocation = 7;
-    this.colActive = 8;
-    this.colDtCadastro = 9;
-    this.colDtAlteracao = 10;
-    this.colDtExclusao = 11;
+
+    setIdColumn(0)            // A - ID
+    setActiveColumn(8)        // I - Active
+    setDtCadastroColumn(9)    // J - dt_cadastro
+    setDtAlteracaoColumn(10)  // K - dt_alteracao
+    setDtExclusaoColumn(11)   // L - dt_exclusao
+
+    // 12 colunas (índice base 0)
+    this.setNumColumns(12)
+    
+    this.colNome        = 1;  // B - Nome
+    this.colMarca       = 2;  // C - Marca
+    this.colCapacidade  = 3;  // D - Capacidade
+    this.colModelo      = 4;  // E - Modelo
+    this.colPatrimonio  = 5;  // F - Patrimônio
+    this.colSequencia   = 6;  // G - Sequência
+    this.colLocalizacao = 7;  // H - Localização
+
 
   }
 
-  /**
-   * Lê todos os equipamentos e formata as colunas de data
-   */
-  read() {
-    const rows = this.readAll(this.numColumns);
+  // -----------------------------------------------------
+  // Converte linha crua da planilha em objeto de domínio
+  // -----------------------------------------------------
+  mapLinhaParaObjeto(row, linha) {
+    Logger.log('mapLinhaParaObjeto de EquipamentosModelOOP')
 
-    return rows.map(item => {
-      item[this.colName] = typeof isEmpty === 'function' && isEmpty(item[this.colName]) ? "" : item[this.colName];
+    return {
+      row: row,
+      id: linha[this.colId],
+      nome: linha[this.colNome],
+      marca: linha[this.colMarca],
+      capacidade: linha[this.colCapacidade],
+      modelo: linha[this.colModelo],
+      patrimonio: linha[this.colPatrimonio],
+      sequencia: linha[this.colSequencia],
+      localizacao: linha[this.colLocalizacao],
+      active: linha[this.colActive],
+      dtCadastro: linha[this.colDtCadastro],
+      dtAlteracao: linha[this.colDtAlteracao],
+      dtExclusao: linha[this.colDtExclusao]
+    };
+  }
 
-      item[this.colDtCadastro] = typeof isEmpty === 'function' && isEmpty(item[this.colDtCadastro]) ? "" : this.formatDate(item[this.colDtCadastro]);
-      item[this.colDtExclusao] = typeof isEmpty === 'function' && isEmpty(item[this.colDtExclusao]) ? "" : this.formatDate(item[this.colDtExclusao]);
-      item[this.colDtAlteracao] = typeof isEmpty === 'function' && isEmpty(item[this.colDtAlteracao]) ? "" : this.formatDate(item[this.colDtAlteracao]);
+  // -----------------------------------------------------
+  // MÓDULO SAVE ÚNICO — inclusão OU alteração.
+  // Prioridade de localização: 1º por ID, 2º por Patrimônio.
+  // Se o registro existir -> ALTERA; senão -> INCLUI.
+  // -----------------------------------------------------
+  save(dados) {
+    try {
+      const sheet = this.getSheet();
+      const hoje = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+
+      const id        = String(dados.id || '').trim();
+      const patrimonio = String(dados.patrimonio || '').trim();
+
+      // Validação mínima
+      if (!dados.nome || !dados.marca || !dados.modelo) {
+        return { sucesso: false, mensagem: 'ERRO: preencha Nome, Marca e Modelo.' };
+      }
+
+      // Monta a linha no formato físico da planilha
+      const montarLinha = (idFinal, dtCadastro, dtAlteracao, dtExclusao) => [
+        idFinal,
+        dados.nome,
+        dados.marca,
+        dados.capacidade || '',
+        dados.modelo,
+        patrimonio,
+        dados.sequencia || '',
+        dados.localizacao || '',
+        dados.active === false ? 'Não' : 'Sim',
+        dtCadastro,
+        dtAlteracao,
+        dtExclusao
+      ];
+
+      const dadosTabela = sheet.getDataRange().getValues();
+
+      // ---- MODO ALTERAÇÃO: localiza o registro ----
+      const linhaEncontrada = this.localizarLinha(dadosTabela, id, patrimonio);
+      if (linhaEncontrada !== -1) {
+        const dtCadastroOriginal = dadosTabela[linhaEncontrada][this.colDtCadastro];
+        const dtExclusaoOriginal = dadosTabela[linhaEncontrada][this.colDtExclusao];
+        const idExistente = dadosTabela[linhaEncontrada][this.colId];
+
+        const linhaAtualizada = montarLinha(idExistente, dtCadastroOriginal, hoje, dtExclusaoOriginal);
+        sheet.getRange(linhaEncontrada + 1, 1, 1, this.numColumns).setValues([linhaAtualizada]);
+        return { sucesso: true, mensagem: 'Equipamento ATUALIZADO com sucesso!', modo: 'edicao', id: idExistente };
+      }
+
+      // ---- MODO INCLUSÃO: calcula o próximo ID e insere ----
+      const ultimaLinha = Math.max(sheet.getLastRow(), this.firstLine - 1);
+      let novoId;
+      if (ultimaLinha < this.firstLine) {
+        novoId = 1; // nenhum registro ainda
+      } else {
+        let idAtual = sheet.getRange(ultimaLinha, 1).getValue();
+        if (idAtual === '' || idAtual === 'ID' || isNaN(Number(idAtual))) idAtual = 0;
+        novoId = Number(idAtual) + 1;
+      }
+
+      const novaLinha = montarLinha(novoId, hoje, '', '');
+      sheet.getRange(ultimaLinha + 1, 1, 1, this.numColumns).setValues([novaLinha]);
+      return { sucesso: true, mensagem: 'Equipamento CADASTRADO com sucesso!', modo: 'criacao', id: novoId };
+
+    } catch (e) {
+      Logger.log('Erro em EquipamentoModel.save: ' + e.message);
+      return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+    }
+  }
+
+  // -----------------------------------------------------
+  // Auxiliar: procura a linha (índice 0-based) por ID ou
+  // por Patrimônio. Retorna -1 se não encontrar.
+  // -----------------------------------------------------
+  localizarLinha(dadosTabela, id, patrimonio) {
+    for (let i = this.firstLine - 1; i < dadosTabela.length; i++) {
+      if (id !== '' && String(dadosTabela[i][this.colId] || '').trim() === id) {
+        return i;
+      }
+      if (patrimonio !== '' && String(dadosTabela[i][this.colPatrimonio] || '').trim() === patrimonio) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  // -----------------------------------------------------
+  // Busca por ID
+  // -----------------------------------------------------
+  findById(id) {
+    const idBuscado = String(id || '').trim();
+    if (idBuscado === '') return null;
+    const dados = this.readAll(this.numColumns);
+    for (const linha of dados) {
+      if (String(linha[this.colId] || '').trim() === idBuscado) {
+        return this.mapLinhaParaObjeto(linha);
+      }
+    }
+    return null;
+  }
+
+  // -----------------------------------------------------
+  // Filtro dinâmico por Nome, Marca, Localização, Status
+  // -----------------------------------------------------
+  filtrar(criterios) {
+    criterios = criterios || {};
+    const sNome       = String(criterios.nome || '').trim().toLowerCase();
+    const sMarca      = String(criterios.marca || '').trim().toLowerCase();
+    const sLocalizacao = String(criterios.localizacao || '').trim().toLowerCase();
+    const sStatus     = String(criterios.status || '').trim().toLowerCase();
+
+    return this.read().filter(eq => {
+      const nomeOk  = sNome === '' || String(eq.nome || '').toLowerCase().includes(sNome);
+      const marcaOk = sMarca === '' || String(eq.marca || '').toLowerCase().includes(sMarca);
+      const locOk   = sLocalizacao === '' || String(eq.localizacao || '').toLowerCase().includes(sLocalizacao);
+      const statusOk = sStatus === '' || String(eq.active || '').toLowerCase() === sStatus;
+      return nomeOk && marcaOk && locOk && statusOk;
     });
-
-    return rows;
   }
 
-  /**
-   * Função auxiliar para formatação de data
-   */
-  formatDate(val) {
-    if (!val) return "";
-    return typeof dateToString === 'function' ? dateToString(val) : String(val);
-  }
-
-  /**
-   * Busca um ID exato na planilha
-   */
-  findId(id) {
-    const cell = this.searchContext(id, true, this.numColumns);
-    return cell ? cell.getRow() : null;
-  }
-
-  /**
-   * Busca um equipamento por campo específico ou no escopo geral
-   */
-  find(columnName, context) {
-    switch (columnName) {
-      case 'id':
-        return this.searchContext(context, true, this.colId + 1);
-      case 'name':
-      case 'nome':
-        return this.searchContext(context, true, this.colName + 1);
-      default:
-        return this.searchContext(context, false, this.numColumns);
-    }
-  }
-
-  /**
-   * Exclui um equipamento/marca aplicando preenchimento e data de exclusão
-   */
-  delete(par_id) {
-    try {
-      const id = Number(par_id);
-      if (!id) {
-        return { sucesso: false, mensagem: "ID inválido." };
-      }
-
-      const sheet = this.getSheet();
-      const dados = this.read();
-      let linhaLocalizada = -1;
-
-      for (let i = 0; i < dados.length; i++) {
-        const idTabela = Number(dados[i][this.colId]);
-        const dataExclusao = dados[i][this.colDtExclusao] ? String(dados[i][this.colDtExclusao]).trim() : "";
-
-        if (idTabela === id && dataExclusao === "") {
-          linhaLocalizada = i + this.firstLine;
-          break;
-        }
-      }
-
-      if (linhaLocalizada !== -1) {
-        const dataHoje = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
-
-        // Atualiza a data de exclusão (coluna 4/index colDtExclusao+1) e cor de fundo
-        sheet.getRange(linhaLocalizada, this.colDtExclusao + 1).setValue(dataHoje);
-        sheet.getRange(linhaLocalizada, 1, 1, 4).setBackground("#F4CCCC");
-
-        Logger.log(`Equipamento ID ${id} desativado na linha ${linhaLocalizada}`);
-        return { sucesso: true, mensagem: "Equipamento desativado com sucesso." };
-      } else {
-        Logger.log(`Equipamento ativo não encontrado para o ID: ${id}`);
-        return { sucesso: false, mensagem: "Equipamento ativo não encontrado." };
-      }
-    } catch (e) {
-      Logger.log(`Erro ao desativar equipamento: ${e.message}`);
-      return { sucesso: false, mensagem: `Erro no servidor: ${e.message}` };
-    }
-  }
-
-  /**
-   * Exclui um equipamento/marca aplicando preenchimento e data de exclusão
-   */
-  status(par_id, par_status) {
-    try {
-      const id = Number(par_id);
-      if (!id) {
-        return { sucesso: false, mensagem: "ID inválido." };
-      }
-
-      const sheet = this.getSheet();
-      const dados = this.read();
-      let linhaLocalizada = -1;
-
-      for (let i = 0; i < dados.length; i++) {
-        const idTabela = Number(dados[i][this.colId]);
-
-        if (idTabela === id && dataExclusao === "") {
-          linhaLocalizada = i + this.firstLine;
-          break;
-        }
-      }
-
-      if (linhaLocalizada !== -1) {
-        // Atualiza a data de exclusão (coluna 4/index colDtExclusao+1) e cor de fundo
-        sheet.getRange(linhaLocalizada, this.colActive).setValue(par_status);
-        if (par_status === 'I') {
-          sheet.getRange(linhaLocalizada, 1, 1, 4).setBackground("#F4CCCC");
-          Logger.log(`Equipamento ID ${id} desativado na linha ${linhaLocalizada}`);
-          return { sucesso: true, mensagem: "Equipamento desativado com sucesso." };
-        }
-
-      } else {
-        Logger.log(`Equipamento não encontrado para o ID: ${id}`);
-        return { sucesso: false, mensagem: "Equipamento não encontrado." };
-      }
-    } catch (e) {
-      Logger.log(`Erro ao alterar o status do equipamento: ${e.message}`);
-      return { sucesso: false, mensagem: `Erro no servidor: ${e.message}` };
-    }
-  }
 }

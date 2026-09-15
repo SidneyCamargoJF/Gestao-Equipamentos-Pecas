@@ -83,6 +83,7 @@
   }
 
   function aplicarOrdenacao(lista) {
+    console.log('aplicarOrdenacao - lista ' - lista)
     if (!sortState.coluna) return lista;
     const col = sortState.coluna;
     const dir = sortState.direcao === 'asc' ? 1 : -1;

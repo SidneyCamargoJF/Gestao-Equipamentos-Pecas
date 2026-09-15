@@ -1,18 +1,8 @@
 <!-- JAVASCRIPT ORIENTADO A OBJETOS -->
 <script>
-class EquipmentController {
-  constructor() {
-    this.equipments = [];
-    this.listaFiltrada = [];
-    this.idExclusao = null;
-    this.sortState = { coluna: null, direcao: 'asc' };
-  }
+class EquipmentViewController extends SearchOOP {
 
   // ===== INICIALIZAÇÃO =====
-  init() {
-    this.bindEvents();
-    // this.consultar();
-  }
 
   bindEvents() {
     const inputEquipment = document.getElementById('equipmentSearch');
@@ -55,20 +45,26 @@ class EquipmentController {
     const criterios = { equipment };
 
     google.script.run
-      .withSuccessHandler(objEquipments => this.retornoEquipments(objEquipments))
+      .withSuccessHandler(objEquipments => this.retorno(objEquipments))
       .withFailureHandler(err => console.error('Erro ao consultar: ', err))
       .filtrarEquipamentos(criterios);
   }
 
-  retornoEquipments(objEquipments) {
-    this.Equipments = Array.isArray(objEquipments) ? objEquipments : [];
-    this.listaFiltrada = typeof aplicarOrdenacao === 'function' ? aplicarOrdenacao(this.Equipments) : this.Equipments;
-
-    const opcoesEquipment = [...new Set(this.Equipments.map(m => m.Equipment).filter(Boolean))];
+  retorno(objectList) {
+    console.log( 'retorno: ')
+    console.log(objectList)
+    this.list = Array.isArray(objectList) ? objectList : [];
+    console.log( 'list: ' + this.list)
+    this.listaFiltrada = typeof this.aplicarOrdenacao === 'function' ? this.aplicarOrdenacao(this.list) : this.list;
+console.log(this.listaFiltrada)
+    const opcoesEquipment = [...new Set(this.list.map(it => it.Equipment).filter(Boolean))];
     if (typeof initSearch === 'function') {
+      console.log('if typeof initSearch')
       initSearch('equipmentSearch', 'equipmentDropdown', 'equipmentWrapper', opcoesEquipment);
     }
 
+    console.log('retorno - Lista Filtrada: ')
+    console.log(this.listaFiltrada)
     this.render(this.listaFiltrada);
   }
 
@@ -76,18 +72,18 @@ class EquipmentController {
     const equipmentInput = document.getElementById('equipmentSearch');
     const equipment = equipmentInput ? equipmentInput.value.trim().toLowerCase() : '';
 
-    this.listaFiltrada = this.equipments.filter(m => {
-      if (equipment && !(m.equipment || '').toLowerCase().includes(equipment)) return false;
+    this.listaFiltrada = this.list.filter(it => {
+      if (equipment && !(it.equipment || '').toLowerCase().includes(equipment)) return false;
       return true;
     });
 
     if (typeof aplicarOrdenacao === 'function') {
-      this.listaFiltrada = aplicarOrdenacao(this.listaFiltrada);
+      this.listaFiltrada = this.aplicarOrdenacao(this.listaFiltrada);
     }
     this.render(this.listaFiltrada);
   }
 
-  limparFiltrosEquipment() {
+  limparFiltros() {
     const inputEquipment = document.getElementById('equipmentSearch');
     if (inputEquipment) inputEquipment.value = '';
 
@@ -112,46 +108,36 @@ class EquipmentController {
 
     console.log(lista)
 
-    lista.forEach(m => {
+    lista.forEach(it => {
       const tr = document.createElement('tr');
-      if (m.desativada) tr.classList.add('linha-desativada');
+      if (it.desativada) tr.classList.add('linha-desativada');
 
-      const btnEditar = document.createElement('button');
-      btnEditar.className = 'btn-acao btn-editar-linha';
-      btnEditar.title = 'Editar';
-      btnEditar.innerText = '✏️';
+      const btnEditar = it.desativada
+        ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
+        : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="equipmentViewController.edit('${it.id}')">✏️</button>`;
 
-      const btnExcluir = document.createElement('button');
-      btnExcluir.className = 'btn-acao btn-excluir-linha';
-      btnExcluir.title = 'Desativar';
-      btnExcluir.innerText = '🗑️';
+      const btnExcluir = it.desativada
+        ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="equipmentViewController.reativar('${it.id}')">♻️</button>`
+        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="equipmentViewController.confirmaExclusao('${it.id}')">🗑️</button>`;
 
-      if (m.desativada) {
-        btnEditar.disabled = true;
-        btnEditar.style.cssText = 'opacity:0.3; cursor:not-allowed;';
-        btnExcluir.disabled = true;
-        btnExcluir.style.cssText = 'opacity:0.3; cursor:not-allowed;';
-      } else {
-        btnEditar.addEventListener('click', () => this.abrirModalEdicao(m.id));
-        btnExcluir.addEventListener('click', () => this.confirmaExclusao(m.id));
-      }
-
-      const tdConteudo = document.createElement('td');
-      const textEscaped = typeof escapeHtml === 'function' ? escapeHtml(m.name) : m.mame;
-      tdConteudo.innerHTML = `${textEscaped} ${m.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}`;
-
-      const tdAcoes = document.createElement('td');
-      tdAcoes.appendChild(btnEditar);
-      tdAcoes.appendChild(btnExcluir);
-
-      tr.appendChild(tdConteudo);
-      tr.appendChild(tdAcoes);
+      tr.innerHTML = `
+        <td>${escapeHtml(it.patrimonio)} ${it.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
+        <td>${escapeHtml(it.nome)}</td>
+        <td>${escapeHtml(it.marca)}</td>
+        <td>${escapeHtml(it.modelo)}</td>
+        <td>${escapeHtml(it.localizacao)}</td>
+        <td>
+          ${btnEditar}
+          ${btnExcluir}
+        </td>
+      `;
       tbody.appendChild(tr);
+
     });
   }
 
   // ===== MODAL DE CADASTRO =====
-  abrirModalCadastroEquipment() {
+  abrirModalCadastro() {
     const input = document.getElementById('novoEquipmentNome');
     if (input) input.value = '';
 
@@ -184,12 +170,12 @@ class EquipmentController {
         console.error('Erro ao cadastrar:', err);
         alert('Ocorreu um erro no script: ' + (err.message || err));
       })
-      .cadastrarEquipment(nomeEquipment);
+      .saveEquipment(nomeEquipment);
   }
 
   // ===== MODAL DE EDIÇÃO =====
   abrirModalEdicao(id) {
-    const equipmentEncontrada = this.equipments.find(m => String(m.id) === String(id));
+    const equipmentEncontrada = this.list.find(it => String(it.id) === String(id));
 
     document.getElementById('editEquipmentId').value = id;
     document.getElementById('editEquipmentNome').value = equipmentEncontrada ? equipmentEncontrada.equipment : '';
@@ -198,7 +184,7 @@ class EquipmentController {
     if (modal) modal.classList.add('aberto');
   }
 
-  executarEdicao() {
+  edit() {
     const id = document.getElementById('editEquipmentId').value;
     const novoNome = document.getElementById('editEquipmentNome').value;
 
@@ -223,36 +209,38 @@ class EquipmentController {
       .editarEquipment(id, novoNome.trim());
   }
 
+  reativar(id) {
+    return;
+  }
+
   // ===== MODAL DE EXCLUSÃO =====
   confirmaExclusao(id) {
+    const btnDelete = document.getElementById('btn-modal-delete');
+    btnDelete.onclick = () => this.excluir(id);
+
     if (!id) {
       alert("Erro: Nenhum registro selecionado.");
       return;
     }
-    this.idExclusao = id;
-    if (typeof exibirModal === 'function') {
-      exibirModal('modalInativateEquipment');
-    } else {
-      const modal = document.getElementById('modalInativateEquipment');
-      if (modal) modal.classList.add('aberto');
-    }
+    exibirModal('modalExclusao');
   }
 
-  async executarExclusao() {
+
+  async excluir(id) {
+    console.log('executaExclusão de equipmentViewController')
     if (typeof executarExclusao === 'function') {
-      await executarExclusao('tbl_equipment', this.idExclusao);
+      executarExclusao('tbl_equipment', id);
     }
-    this.idExclusao = null;
     this.consultar();
     if (typeof fecharModal === 'function') fecharModal('modalExclusaoEquipment');
   }
 }
 
 // Instanciação da Controller
-const equipmentController = new EquipmentController();
+const equipmentViewController = new EquipmentViewController();
 
 document.addEventListener('DOMContentLoaded', () => {
-  equipmentController.init();
+  equipmentViewController.init();
 });
 
 </script>

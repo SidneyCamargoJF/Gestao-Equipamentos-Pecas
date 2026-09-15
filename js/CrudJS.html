@@ -1,6 +1,7 @@
 <script>
   
   async function executarExclusao(table, id) {
+    console.log('function executarExclusao em crudJS')
     if (!id) {
       alert("Nenhum registro selecionado.");
       return false;
@@ -11,12 +12,14 @@
       return false;
     }
 
+    fecharModal('modalExclusao')
     exibirModal('processando')
 
     // google.script.run não é uma Promise de verdade -- "await" nele sozinho não
     // espera a resposta do servidor. runServerFunction() (HelperJS.html) resolve isso.
     try {
       const resposta = await runServerFunction('ExcluirRegistro', table, id);
+      console.log('executarExclusao resposta de runServerFunction: ' + resposta)
       if (resposta && resposta.sucesso === false) {
         alert(resposta.mensagem);
         return false;

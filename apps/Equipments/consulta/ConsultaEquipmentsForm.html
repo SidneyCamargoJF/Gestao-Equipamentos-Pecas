@@ -8,14 +8,14 @@
           <!-- Botoes de limpar e adicionar -->
 
           <div class="actions-bar">
-            <button type="button" class="btn-secondary" onclick="equipmentController.limparFiltros()">Limpar</button>
-            <button type="button" class="btn-success" onclick="equipmentController.abrirModalCadastro()">
+            <button type="button" class="btn-secondary" onclick="equipmentViewController.limparFiltros()">Limpar</button>
+            <button type="button" class="btn-success" onclick="equipmentViewController.abrirModalCadastro()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
               Adicionar
             </button>
-            <button type="button" class="btn-primary" onclick="equipmentController.consultar()"> <!-- filtrar() -->
+            <button type="button" class="btn-primary" onclick="equipmentViewController.consultar()"> <!-- filtrar() -->
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
@@ -50,11 +50,11 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th onclick="ordenar('patrimonio')">PATRIMONIO <span class="sort-arrow"></span></th>
-                <th onclick="ordenar('equipamento')">EQUIPAMENTO <span class="sort-arrow"></span></th>
-                <th onclick="ordenar('marca')">MARCA <span class="sort-arrow"></span></th>
-                <th onclick="ordenar('modelo')">MODELO <span class="sort-arrow"></span></th>
-                <th onclick="ordenar('localizacao')">LOCALIZAÇÃO <span class="sort-arrow"></span></th>
+                <th onclick="equipmentViewController.ordenar('patrimonio')">PATRIMONIO <span class="sort-arrow"></span></th>
+                <th onclick="equipmentViewController.ordenar('equipamento')">EQUIPAMENTO <span class="sort-arrow"></span></th>
+                <th onclick="equipmentViewController.ordenar('marca')">MARCA <span class="sort-arrow"></span></th>
+                <th onclick="equipmentViewController.ordenar('modelo')">MODELO <span class="sort-arrow"></span></th>
+                <th onclick="equipmentViewController.ordenar('localizacao')">LOCALIZAÇÃO <span class="sort-arrow"></span></th>
                 <th style="cursor:default;">AÇÕES</th>
               </tr>
             </thead>

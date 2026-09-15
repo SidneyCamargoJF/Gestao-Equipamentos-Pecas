@@ -1,0 +1,119 @@
+<script>
+  // SearchOOP.html
+  // ===== SEARCH DROPDOWN =====
+  class SearchOOP {
+    
+    constructor() {
+      this.list = [];
+      this.listaFiltrada = [];
+      this.sortState = { coluna: null, direcao: 'asc' };
+    }
+
+    init() {
+      this.bindEvents();
+      // this.consultar();
+    }
+
+
+    initSearch(inputId, dropdownId, wrapperId, opcoes) {
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      const wrapper = document.getElementById(wrapperId);
+
+      if (!input || !dropdown || !wrapper) return;
+
+      function renderLista(filtro) {
+        const f = (filtro || '').toLowerCase();
+        const itens = (opcoes || []).filter(o => String(o).toLowerCase().includes(f));
+
+        dropdown.innerHTML = '';
+        if (itens.length === 0) {
+          dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+        } else {
+          itens.forEach(o => {
+            const div = document.createElement('div');
+            div.className = 'search-option';
+            div.textContent = o;
+            div.addEventListener('click', () => {
+              input.value = o;
+              dropdown.classList.remove('visible');
+              this.filtrar();
+            });
+            dropdown.appendChild(div);
+          });
+        }
+      }
+
+      input.addEventListener('focus', () => {
+        renderLista(input.value);
+        dropdown.classList.add('visible');
+      });
+
+      input.addEventListener('input', () => {
+        renderLista(input.value);
+        if (!dropdown.classList.contains('visible')) {
+          dropdown.classList.add('visible');
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { 
+          e.preventDefault(); 
+          dropdown.classList.remove('visible'); 
+        }
+        if (e.key === 'Escape') dropdown.classList.remove('visible');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+      });
+    }
+
+    // ===== ORDENAÇÃO =====
+    ordenar(coluna) {
+      console.log('ordenar( '+ coluna + ' )')
+      if (this.sortState.coluna === coluna) {
+        this.sortState.direcao = this.sortState.direcao === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortState.coluna = coluna;
+        this.sortState.direcao = 'asc';
+      }
+      this.atualizarIndicadores();
+      this.filtrar();
+    }
+
+    atualizarIndicadores() {
+      console.log('atualizarIndicadores()')
+      document.querySelectorAll('.data-table th').forEach(th => {
+        th.classList.remove('sorted');
+        const span = th.querySelector('.sort-arrow');
+        if (span) span.textContent = '';
+      });
+      const ths = document.querySelectorAll('.data-table th');
+      const indices = { marca: 0 };
+      const idx = indices[this.sortState.coluna];
+      if (idx !== undefined && ths[idx]) {
+        ths[idx].classList.add('sorted');
+        const span = ths[idx].querySelector('.sort-arrow');
+        if (span) span.textContent = this.sortState.direcao === 'asc' ? '▲' : '▼';
+      }
+    }
+
+    aplicarOrdenacao(lista) {
+      console.log('aplicarOrdenacao - lista ' - lista)
+      if (!this.sortState.coluna) return lista;
+      const col = this.sortState.coluna;
+      const dir = this.sortState.direcao === 'asc' ? 1 : -1;
+      const arr = lista.slice();
+      arr.sort((a, b) => {
+        let va = a[col], vb = b[col];
+        va = String(va).toLowerCase();
+        vb = String(vb).toLowerCase();
+        return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;
+      });
+      return arr;
+    }
+
+  }
+
+ </script>

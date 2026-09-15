@@ -1,9 +1,9 @@
 <script>
 
-class EquipmentsController {
+class EquipmentFormController {
 
   // =====================================================
-  // CADASTRO DE FORNECEDOR - JS (CLIENTE)
+  // CADASTRO DE EQUIPAMENTOS - JS (CLIENTE)
   // Roda no navegador (dentro do HTML). A gravação na planilha
   // acontece no servidor, em Fornecedor_Backend.gs, chamado via
   // google.script.run.
@@ -114,11 +114,11 @@ class EquipmentsController {
 // Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante
 // que a inicialização também rode no carregamento normal da página.
 
-const fornecedorController = new FornecedorController()
+const equipmentFormController = new EquipmentFormController()
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('cnpj')) {
-    fornecedorController.init();
+    equipmentFormController.init();
   }
 });
 

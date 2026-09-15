@@ -73,7 +73,10 @@ function ExcluirRegistro( table, id) {
 
   if (table === 'tbl_marca') {
     return (desativarMarca(id))
-
+  }
+  if (table === 'tbl_equipment') {
+    equipmentModel = new EquipmentModel()
+    equipmentModel.excluir(id)
   }
 
 }
