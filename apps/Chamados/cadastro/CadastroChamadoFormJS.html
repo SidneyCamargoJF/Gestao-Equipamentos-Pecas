@@ -10,13 +10,24 @@
 
 
   // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
-  async function renderChamadoForm() {
+  // "id" só vem preenchido quando chega pela Consulta (botão editar), via
+  // trocarPagina('chamado-form', id) -- ver editarChamado() na Consulta.
+  async function renderChamadoForm(id) {
+
+    const idEl = document.getElementById('chamadoId');
+    if (idEl) idEl.value = id || '';
+
+    const tituloEl = document.getElementById('chamadoFormTitulo');
+    if (tituloEl) tituloEl.textContent = id ? '✏️ Editar Chamado' : '📩 Abrir Chamado';
+
+    const btnSalvarEl = document.getElementById('chamadoBtnSalvar');
+    if (btnSalvarEl) btnSalvarEl.textContent = id ? 'Salvar Alterações' : 'Salvar Chamado';
 
     const motivoOutroEl = document.getElementById('chamadoMotivoOutro');
     if (motivoOutroEl) {
       motivoOutroEl.value = '';
       motivoOutroEl.style.display = 'none';
-    }    
+    }
     const motivoEl = document.getElementById('chamadoMotivo');
     if (motivoEl) motivoEl.value = '';
     const descricaoEl = document.getElementById('chamadoDescricao');
@@ -27,10 +38,12 @@
     if (atribuidoEl) atribuidoEl.value = '';
         const abertoPorEl = document.getElementById('chamadoAbertoPor');
     if (abertoPorEl) abertoPorEl.value = '';
-    ['chamadoEquipPatrimonio', 'chamadoEquipLocalizacao', 'chamadoEquipMarca', 'chamadoEquipModelo', 'chamadoEquipBtus', 'chamadoRelatorioArquivo', 'chamadoNotaFiscalArquivo'].forEach(id => {
+    ['chamadoEquipPatrimonio', 'chamadoEquipLocalizacao', 'chamadoEquipMarca', 'chamadoEquipModelo', 'chamadoEquipCapacidade', 'chamadoRelatorioArquivo', 'chamadoNotaFiscalArquivo'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
+    mostrarAnexoExistenteChamado('chamadoRelatorioArquivo', '', 'Relatório');
+    mostrarAnexoExistenteChamado('chamadoNotaFiscalArquivo', '', 'Nota Fiscal');
 
     const statusEl = document.getElementById('chamadoPatrimonioStatus');
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'chamado-patrimonio-status'; }
@@ -51,20 +64,105 @@
     initSearchChamado('chamadoEquipLocalizacao', 'chamadoEquipLocalizacaoDropdown', 'chamadoEquipLocalizacaoWrapper', locais);
 
     destravarCampoCarregandoChamado('chamadoAtribuidoA', 'Técnico interno ou fornecedor prestador de serviço...');
-    initSearchChamado('chamadoAtribuidoA', 'chamadoAtribuidoDropdown', 'chamadoAtribuidoWrapper', fornecedoresPrestadores);    
-    
+    initSearchChamado('chamadoAtribuidoA', 'chamadoAtribuidoDropdown', 'chamadoAtribuidoWrapper', fornecedoresPrestadores);
+
     destravarCampoCarregandoChamado('chamadoAbertoPor', 'Funcionário ou servidor...');
-    initSearchChamado('chamadoAbertoPor', 'chamadoAbertoPorDropdown', 'chamadoAbertoPorWrapper', funcionarios);    
-    
+    initSearchChamado('chamadoAbertoPor', 'chamadoAbertoPorDropdown', 'chamadoAbertoPorWrapper', funcionarios);
+
     const patrimonioEl = document.getElementById('chamadoEquipPatrimonio');
     if (patrimonioEl) patrimonioEl.addEventListener('blur', verificarPatrimonioAoSairChamado);
 
-    const inputMotivo = document.getElementById('chamadoMotivo');
-    if (inputMotivo) inputMotivo.focus();
+    if (id) {
+      if (typeof exibirModal === 'function') exibirModal('processando');
+      try {
+        await preencherFormularioChamadoParaEdicao(id);
+      } finally {
+        if (typeof fecharModal === 'function') fecharModal('processando');
+      }
+    } else {
+      const inputMotivo = document.getElementById('chamadoMotivo');
+      if (inputMotivo) inputMotivo.focus();
+    }
   }
 
   function limparChamado() {
     renderChamadoForm();
+  }
+
+  // ===== CARREGAR CHAMADO EXISTENTE PARA EDIÇÃO =====
+  async function preencherFormularioChamadoParaEdicao(id) {
+    try {
+      const dados = await runServerFunction('buscarChamadoParaEdicao', id);
+      if (!dados) {
+        alert('Não foi possível carregar esse chamado para edição.');
+        return;
+      }
+
+      const motivoSelect = document.getElementById('chamadoMotivo');
+      const motivoOutroEl = document.getElementById('chamadoMotivoOutro');
+      const opcoesFixas = motivoSelect ? Array.from(motivoSelect.options).map(o => o.value) : [];
+
+      if (motivoSelect) {
+        if (dados.motivo && opcoesFixas.includes(dados.motivo)) {
+          motivoSelect.value = dados.motivo;
+          if (motivoOutroEl) { motivoOutroEl.value = ''; motivoOutroEl.style.display = 'none'; }
+        } else {
+          motivoSelect.value = 'outro';
+          if (motivoOutroEl) {
+            motivoOutroEl.value = dados.motivo || '';
+            motivoOutroEl.style.display = 'block';
+          }
+        }
+      }
+
+      const tipoEl = document.getElementById('chamadoTipo');
+      if (tipoEl) tipoEl.value = dados.tipo || '';
+
+      const classificacaoEl = document.getElementById('chamadoClassificacao');
+      if (classificacaoEl) classificacaoEl.value = dados.classificacao || '';
+
+      const abertoPorEl = document.getElementById('chamadoAbertoPor');
+      if (abertoPorEl) abertoPorEl.value = dados.abertoPor || '';
+
+      const atribuidoEl = document.getElementById('chamadoAtribuidoA');
+      if (atribuidoEl) atribuidoEl.value = dados.atribuidoA || '';
+
+      const descricaoEl = document.getElementById('chamadoDescricao');
+      if (descricaoEl) descricaoEl.value = dados.descricao || '';
+      atualizarContadorDescricaoChamado();
+
+      const patrimonioEl = document.getElementById('chamadoEquipPatrimonio');
+      if (patrimonioEl) patrimonioEl.value = dados.patrimonio || '';
+
+      const localizacaoEl = document.getElementById('chamadoEquipLocalizacao');
+      if (localizacaoEl) localizacaoEl.value = dados.localizacao || '';
+
+      const marcaEl = document.getElementById('chamadoEquipMarca');
+      if (marcaEl) marcaEl.value = dados.marca || '';
+
+      const modeloEl = document.getElementById('chamadoEquipModelo');
+      if (modeloEl) modeloEl.value = dados.modelo || '';
+
+      const capacidadeEl = document.getElementById('chamadoEquipCapacidade');
+      if (capacidadeEl) capacidadeEl.value = dados.capacidade || '';
+
+      mostrarAnexoExistenteChamado('chamadoRelatorioArquivo', dados.relatorioUrl, 'Relatório');
+      mostrarAnexoExistenteChamado('chamadoNotaFiscalArquivo', dados.notaFiscalUrl, 'Nota Fiscal');
+    } catch (error) {
+      console.error('Erro ao carregar chamado para edição:', error);
+      alert('Erro ao carregar chamado para edição.');
+    }
+  }
+
+  // Mostra (ou limpa) o avisinho de "já existe um anexo" abaixo do campo de
+  // arquivo -- não dá pra pré-selecionar um <input type="file"> por
+  // segurança do navegador, então isso só avisa e linka o que já existe.
+  function mostrarAnexoExistenteChamado(inputId, url, rotulo) {
+    const span = document.getElementById(inputId + 'Atual');
+    if (!span) return;
+    span.innerHTML = url
+      ? `${rotulo} atual: <a href="${url}" target="_blank" rel="noopener">abrir</a> (escolher um novo arquivo substitui este)`
+      : '';
   }
 
   // ===== TRAVA VISUAL ENQUANTO OS DROPDOWNS DE BUSCA CARREGAM (Localização /
@@ -160,8 +258,8 @@
     const modeloEl = document.getElementById('chamadoEquipModelo');
     if (modeloEl && dados.modelo) modeloEl.value = dados.modelo;
 
-    const btusEl = document.getElementById('chamadoEquipBtus');
-    if (btusEl && dados.btus) btusEl.value = dados.btus;
+    const capacidadeEl = document.getElementById('chamadoEquipCapacidade');
+    if (capacidadeEl && dados.capacidade) capacidadeEl.value = dados.capacidade;
   }
 
   // ===== LOCALIZAÇÃO: BUSCA REAL EM tbl_localizacao =====
@@ -317,6 +415,7 @@
     }
 
     const dadosChamado = {
+      id: document.getElementById('chamadoId')?.value || '',
       motivo: motivo,
       tipo: document.getElementById('chamadoTipo')?.value || '',
       classificacao: document.getElementById('chamadoClassificacao')?.value || '',
@@ -327,7 +426,7 @@
       localizacao: localizacao,
       marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
       modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
-      btus: document.getElementById('chamadoEquipBtus')?.value.trim() || '',
+      capacidade: document.getElementById('chamadoEquipCapacidade')?.value.trim() || '',
       relatorio: relatorioArquivo,
       notaFiscal: notaFiscalArquivo
     };
@@ -343,6 +442,7 @@
       }
 
       alert(resposta.mensagem);
+      if (typeof forcarConsultaAoAbrirChamados !== 'undefined') forcarConsultaAoAbrirChamados = true;
       trocarPagina('chamado-view');
     } catch (err) {
       console.error('Erro ao salvar chamado:', err);

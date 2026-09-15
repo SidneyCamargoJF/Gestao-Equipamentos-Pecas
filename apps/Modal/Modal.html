@@ -82,11 +82,33 @@
 
     <!-- MODAL DE DETALHES DO CHAMADO -->
     <div class="modal-overlay" id="modalDetalheChamado">
-      <div class="modal modal-lg">
-        <h3>Detalhes do Chamado</h3>
-        <div id="detalheChamadoConteudo"><!-- preenchido via JS: montarDetalheChamadoHtml() --></div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModal('modalDetalheChamado')" style="width:auto;">Fechar</button>
+      <div class="modal modal-xl" id="modalDetalheChamadoBox">
+        <div class="detalhe-chamado-cabecalho">
+          <h3>Chamado <span id="detalheChamadoIdTitulo"></span></h3>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalDetalheChamado')">✕</button>
+        </div>
+
+        <div class="tabs-nav">
+          <button type="button" class="tab-btn active" id="tabBtnInfoChamado" onclick="trocarAbaModalChamado('info')">Informações do Chamado</button>
+          <button type="button" class="tab-btn" id="tabBtnHistoricoChamado" onclick="trocarAbaModalChamado('historico')">Histórico</button>
+        </div>
+
+        <div class="tab-panel active" id="tabPanelInfoChamado" style="display:flex; flex-direction:column;">
+          <div id="detalheChamadoConteudo"><!-- preenchido via JS: montarDetalheChamadoHtml() --></div>
+          <div id="detalheChamadoStatusBotoes" class="chamado-status-botoes"><!-- preenchido via JS: montarBotoesStatusChamado() --></div>
+        </div>
+
+        <div class="tab-panel" id="tabPanelHistoricoChamado" style="display:none;">
+          <div class="chamado-historico-nova">
+            <textarea class="field__input" id="novaAnotacaoChamado" rows="2" placeholder="Adicionar anotação (ex: &quot;Serviço no período da manhã&quot;)..."></textarea>
+            <button type="button" class="btn-primary" style="width:auto;" onclick="adicionarAnotacaoChamadoUI()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+              </svg>
+              Adicionar
+            </button>
+          </div>
+          <div id="historicoChamadoLista" class="chamado-historico-lista"><!-- preenchido via JS: montarHistoricoChamadoHtml() --></div>
         </div>
       </div>
     </div>

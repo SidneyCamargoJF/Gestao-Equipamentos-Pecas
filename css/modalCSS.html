@@ -48,11 +48,59 @@
   overflow-y: auto;
 }
 
-.detalhe-chamado-linha {
+/* modal quase tela cheia -- detalhe do chamado, com abas Informações/Histórico.
+   Seletor duplicado (.modal.modal-xl) de propósito: várias telas têm sua
+   própria cópia de ".modal { max-width: 420px }" carregada depois desse
+   arquivo, e com a mesma força de CSS (uma classe) quem carrega por último
+   vence o empate. Duas classes juntas tem mais força e nunca perde.
+
+   Altura FIXA (não max-height) -- sem isso o modal encolhe/cresce conforme
+   o conteúdo de cada aba (a aba Histórico vazia ficava baixinha, por
+   exemplo), o que também causava a troca de aba parecer "sumir" o conteúdo
+   no meio da mudança de tamanho. */
+.modal.modal-xl {
+  width: 92vw;
+  max-width: 75rem;
+  height: 85vh;
+  overflow: hidden;
   display: flex;
+  flex-direction: column;
+}
+
+.modal.modal-xl .detalhe-chamado-cabecalho {
+  flex-shrink: 0;
+}
+
+.modal.modal-xl .tabs-nav {
+  flex-shrink: 0;
+}
+
+/* a aba ativa preenche todo o espaço que sobra dentro do modal (abaixo do
+   cabeçalho e das abas) e rola por dentro se o conteúdo for maior */
+.modal.modal-xl .tab-panel.active {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.detalhe-chamado-cabecalho {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.detalhe-chamado-cabecalho h3 {
+  margin-bottom: 0;
+}
+
+/* label à esquerda, valor logo em seguida -- sem esticar pras pontas opostas */
+.detalhe-chamado-linha {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
   gap: 1rem;
-  padding: 0.5rem 0;
+  padding: 0.625rem 0;
   border-bottom: 0.0625rem solid var(--color-slate-100, #f1f5f9);
   font-size: 0.9rem;
 }
@@ -64,13 +112,54 @@
 .detalhe-chamado-rotulo {
   font-weight: 600;
   color: var(--color-slate-500, #64748b);
-  flex-shrink: 0;
 }
 
 .detalhe-chamado-valor {
-  text-align: right;
+  text-align: left;
   color: var(--color-slate-700, #334155);
   word-break: break-word;
+}
+
+/* ===== ABA HISTÓRICO DO CHAMADO ===== */
+.chamado-historico-nova {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1.25rem;
+}
+
+.chamado-historico-nova textarea {
+  flex: 1;
+  resize: vertical;
+  min-height: 2.75rem;
+}
+
+.chamado-historico-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 28rem;
+  overflow-y: auto;
+}
+
+.chamado-historico-item {
+  border: 0.0625rem solid var(--color-slate-200, #e2e8f0);
+  border-radius: 0.5rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--color-slate-50, #f8fafc);
+}
+
+.chamado-historico-item-data {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-slate-400, #94a3b8);
+  margin-bottom: 0.25rem;
+}
+
+.chamado-historico-item-texto {
+  font-size: 0.875rem;
+  color: var(--color-slate-700, #334155);
+  white-space: pre-wrap;
 }
 
 </style>
