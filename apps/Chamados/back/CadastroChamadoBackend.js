@@ -142,7 +142,7 @@ function salvarChamadoBackend(dados) {
       sucesso: true,
       mensagem: equipamentoEncontrado
         ? 'Chamado aberto com sucesso!'
-        : 'Chamado aberto com sucesso! (Não foi possível vincular a um equipamento cadastrado -- confira o Patrimônio/Localização quando o cadastro de Equipamentos estiver mais completo.)',
+        : 'Chamado aberto com sucesso! (Não foi possível vincular a um equipamento cadastrado -- confira o Patrimônio/Localização e edite o chamado posteriormente.)',
       id: novoId,
       equipamentoEncontrado: equipamentoEncontrado
     };

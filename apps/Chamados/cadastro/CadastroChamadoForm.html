@@ -4,6 +4,14 @@
     <div class="actions-bar">
       <h1 class="page-title" id="chamadoFormTitulo">📩 Abrir Chamado</h1>
     </div>
+      <!-- ============================================= -->
+      <!-- BOTÕES DE AÇÃO                                -->
+      <!-- ============================================= -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="trocarPagina('chamado-view')">Cancelar</button>
+        <button type="button" class="btn btn-danger" onclick="limparChamado()">Limpar</button>
+        <button type="button" class="btn-success" id="chamadoBtnSalvar" onclick="salvarChamado()">Salvar Chamado</button>
+      </div>
   </div>
 
   <div class="card">
@@ -19,21 +27,6 @@
 
         <div class="form-grid-3">
           <div class="field">
-            <label class="field__label" for="chamadoMotivo">Motivo / Título *</label>
-            <select class="field__select" id="chamadoMotivo" onchange="alterarMotivoOutro()">
-              <option value="">Selecione...</option>
-              <option value="Falta de Refrigeração">Falta de Refrigeração</option>
-              <option value="Vazamento de água">Vazamento de água</option>
-              <option value="Mal Cheiro">Mal Cheiro</option>
-              <option value="Barulhos Anormais">Barulhos Anormais</option>
-              <option value="Congelamento">Congelamento</option>
-              <option value="Aparelho não liga">Aparelho não liga</option>
-              <option value="outro">Outro</option>
-            </select>
-            <input class="field__input" type="text" id="chamadoMotivoOutro" placeholder="Descreva o motivo..." style="display:none; margin-top:0.5rem;">
-          </div>
-
-          <div class="field">
             <label class="field__label" for="chamadoTipo">Tipo *</label>
             <select class="field__select" id="chamadoTipo">
               <option value="">Selecione...</option>
@@ -43,6 +36,22 @@
               <option value="limpeza">Limpeza</option>
               <option value="outro">Outro</option>
             </select>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="chamadoMotivo">Motivo / Título *</label>
+            <select class="field__select" id="chamadoMotivo" onchange="alterarMotivoOutro()">
+              <option value="">Selecione...</option>
+              <option value="Contrato">Contrato</option>
+              <option value="Falta de Refrigeração">Falta de Refrigeração</option>
+              <option value="Vazamento de água">Vazamento de água</option>
+              <option value="Mal Cheiro">Mal Cheiro</option>
+              <option value="Barulhos Anormais">Barulhos Anormais</option>
+              <option value="Congelamento">Congelamento</option>
+              <option value="Aparelho não liga">Aparelho não liga</option>
+              <option value="outro">Outro</option>
+            </select>
+            <input class="field__input" type="text" id="chamadoMotivoOutro" placeholder="Descreva o motivo..." style="display:none; margin-top:0.5rem;">
           </div>
 
           <div class="field">
@@ -73,7 +82,7 @@
 
         <div class="form-grid-3">
           <div class="field field-full-3">
-            <label class="field__label" for="chamadoDescricao">Descrição do Chamado</label>
+            <label class="field__label" for="chamadoDescricao">Descrição breve do Chamado</label>
             <textarea class="field__input" id="chamadoDescricao" rows="3" maxlength="300" placeholder="Detalhes do problema, contexto, observações, peças..."></textarea>
             <span class="chamado-contador-caracteres" id="chamadoDescricaoContador">300 caracteres restantes</span>
           </div>
@@ -81,52 +90,7 @@
       </fieldset>
 
       <!-- ============================================= -->
-      <!-- PARTE 2: SERVIÇO (quem atende + anexos do atendimento)  -->
-      <!-- ============================================= -->
-      <fieldset class="fieldset-principal">
-        <legend class="fieldset-legend">Serviço</legend>
-
-        <div class="form-grid-3">
-          <div class="field field-full-3">
-            <label class="field__label">Atribuído a</label>
-            <div class="search-wrapper" id="chamadoAtribuidoWrapper">
-              <span class="search-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </span>
-              <input class="search-input" type="text" id="chamadoAtribuidoA" placeholder="Técnico interno ou fornecedor prestador de serviço..." autocomplete="off">
-              <div class="search-dropdown" id="chamadoAtribuidoDropdown"></div>
-            </div>
-          </div>
-        </div>
-
-        <p class="chamado-itens-ajuda">
-          Anexos opcionais. PDF ou foto, até 3MB cada. Se o arquivo for maior, tenta comprimir antes de anexar.
-        </p>
-
-        <div class="form-grid-3">
-          <div class="field">
-            <label class="field__label" for="chamadoRelatorioArquivo">Relatório</label>
-            <div class="chamado-anexo-linha">
-              <input class="field__input" type="file" id="chamadoRelatorioArquivo" accept="application/pdf,image/*">
-              <button type="button" class="chamado-anexo-remover" title="Remover arquivo selecionado" onclick="removerAnexoChamado('chamadoRelatorioArquivo')">✕</button>
-            </div>
-            <span id="chamadoRelatorioArquivoAtual" style="font-size:0.75rem; color:var(--color-slate-500,#64748b); display:block; margin-top:0.25rem;"></span>
-          </div>
-          <div class="field">
-            <label class="field__label" for="chamadoNotaFiscalArquivo">Nota Fiscal</label>
-            <div class="chamado-anexo-linha">
-              <input class="field__input" type="file" id="chamadoNotaFiscalArquivo" accept="application/pdf,image/*">
-              <button type="button" class="chamado-anexo-remover" title="Remover arquivo selecionado" onclick="removerAnexoChamado('chamadoNotaFiscalArquivo')">✕</button>
-            </div>
-            <span id="chamadoNotaFiscalArquivoAtual" style="font-size:0.75rem; color:var(--color-slate-500,#64748b); display:block; margin-top:0.25rem;"></span>
-          </div>
-        </div>
-      </fieldset>
-
-      <!-- ============================================= -->
-      <!-- PARTE 3: EQUIPAMENTO (opcional, no máximo 1)  -->
+      <!-- PARTE 2: EQUIPAMENTO (opcional, no máximo 1)  -->
       <!-- ============================================= -->
       <fieldset class="fieldset-principal">
         <legend class="fieldset-legend">Equipamento</legend>
@@ -168,6 +132,51 @@
           </div>
         </div>
       </fieldset>
+
+      <!-- ============================================= -->
+      <!-- PARTE 3: SERVIÇO (quem atende + anexos do atendimento)  -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal">
+        <legend class="fieldset-legend">Serviço</legend>
+
+        <div class="form-grid-3">
+          <div class="field field-full-3">
+            <label class="field__label">Atribuído a</label>
+            <div class="search-wrapper" id="chamadoAtribuidoWrapper">
+              <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
+              <input class="search-input" type="text" id="chamadoAtribuidoA" placeholder="Técnico interno ou fornecedor prestador de serviço..." autocomplete="off">
+              <div class="search-dropdown" id="chamadoAtribuidoDropdown"></div>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label" for="chamadoRelatorioArquivo">Relatório</label>
+            <div class="chamado-anexo-linha">
+              <input class="field__input" type="file" id="chamadoRelatorioArquivo" accept="application/pdf,image/*">
+              <button type="button" class="chamado-anexo-remover" title="Remover arquivo selecionado" onclick="removerAnexoChamado('chamadoRelatorioArquivo')">✕</button>
+            </div>
+            <span id="chamadoRelatorioArquivoAtual" style="font-size:0.75rem; color:var(--color-slate-500,#64748b); display:block; margin-top:0.25rem;"></span>
+          </div>
+          <div class="field">
+            <label class="field__label" for="chamadoNotaFiscalArquivo">Nota Fiscal</label>
+            <div class="chamado-anexo-linha">
+              <input class="field__input" type="file" id="chamadoNotaFiscalArquivo" accept="application/pdf,image/*">
+              <button type="button" class="chamado-anexo-remover" title="Remover arquivo selecionado" onclick="removerAnexoChamado('chamadoNotaFiscalArquivo')">✕</button>
+            </div>
+            <span id="chamadoNotaFiscalArquivoAtual" style="font-size:0.75rem; color:var(--color-slate-500,#64748b); display:block; margin-top:0.25rem;"></span>
+          </div>
+        </div>
+        <p class="chamado-itens-ajuda">
+          Anexos opcionais. PDF ou foto, até 3MB cada. Se o arquivo for maior, comprimir antes de anexar.
+        </p>
+      </fieldset>
       <!-- ============================================= -->
       <!-- BOTÕES DE AÇÃO                                -->
       <!-- ============================================= -->
@@ -175,7 +184,7 @@
         <button type="button" class="btn-secondary" onclick="trocarPagina('chamado-view')">Cancelar</button>
         <button type="button" class="btn btn-danger" onclick="limparChamado()">Limpar</button>
         <button type="button" class="btn-success" id="chamadoBtnSalvar" onclick="salvarChamado()">Salvar Chamado</button>
-      </div>
+      </div>F
     </form>
   </div>
 </section>

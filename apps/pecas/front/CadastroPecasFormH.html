@@ -5,7 +5,15 @@
   <div class="page-header">
     <div class="actions-bar">
       <h1>⚙️ Peças</h1>
-    </div>   
+    </div> 
+      <!-- ============================================= -->
+      <!-- BOTÕES DE AÇÃO                                -->
+      <!-- ============================================= -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="trocarPagina('pecas-view')">Cancelar</button>
+        <button type="button" class="btn btn-danger" onclick="limparPeca()">Limpar</button>
+        <button type="button" id="btnSalvarPeca" class="btn-success" onclick="salvarPeca()">Salvar</button>
+      </div>
   </div>
 
   <div class="panel">
@@ -13,7 +21,6 @@
     <!-- HEADER -->
     <div class="form-header">
       <h2 class="form-titulo" id="formTituloPeca">Nova Peça</h2>
-      <span class="form-status" id="formStatusPeca">Rascunho</span>
     </div>
 
     <form id="formPeca" autocomplete="off" onsubmit="return false;">
