@@ -54,9 +54,9 @@ class EquipmentViewController extends SearchOOP {
     console.log( 'retorno: ')
     console.log(objectList)
     this.list = Array.isArray(objectList) ? objectList : [];
-    console.log( 'list: ' + this.list)
+    // console.log( 'list: ' + this.list)
     this.listaFiltrada = typeof this.aplicarOrdenacao === 'function' ? this.aplicarOrdenacao(this.list) : this.list;
-console.log(this.listaFiltrada)
+console.log('listaFiltrada: ' + this.listaFiltrada)
     const opcoesEquipment = [...new Set(this.list.map(it => it.Equipment).filter(Boolean))];
     if (typeof initSearch === 'function') {
       console.log('if typeof initSearch')
@@ -65,6 +65,7 @@ console.log(this.listaFiltrada)
 
     console.log('retorno - Lista Filtrada: ')
     console.log(this.listaFiltrada)
+
     this.render(this.listaFiltrada);
   }
 
@@ -184,8 +185,9 @@ console.log(this.listaFiltrada)
     if (modal) modal.classList.add('aberto');
   }
 
-  edit() {
-    const id = document.getElementById('editEquipmentId').value;
+  edit(id) {
+console.log('edit')
+console.log('id: ' + id)
     const novoNome = document.getElementById('editEquipmentNome').value;
 
     if (!novoNome || !novoNome.trim()) {
@@ -215,19 +217,23 @@ console.log(this.listaFiltrada)
 
   // ===== MODAL DE EXCLUSÃO =====
   confirmaExclusao(id) {
-    const btnDelete = document.getElementById('btn-modal-delete');
-    btnDelete.onclick = () => this.excluir(id);
+    const btnDelete = document.getElementById('btn-delete');
 
     if (!id) {
       alert("Erro: Nenhum registro selecionado.");
       return;
     }
+console.log('confirmaExclusao')
+console.log(btnDelete)
+console.log(id)
+    btnDelete.onclick = () => this.excluir(id);
+
     exibirModal('modalExclusao');
   }
 
 
   async excluir(id) {
-    console.log('executaExclusão de equipmentViewController')
+    console.log('excluir(id) de equipmentViewController')
     if (typeof executarExclusao === 'function') {
       executarExclusao('tbl_equipment', id);
     }

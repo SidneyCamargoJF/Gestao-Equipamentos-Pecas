@@ -11,11 +11,11 @@ class EquipmentsModel extends SheetModel {
     super('tbl_equipamentos', 3, 1); // ajuste o firstLine conforme sua aba
 
 
-    setIdColumn(0)            // A - ID
-    setActiveColumn(8)        // I - Active
-    setDtCadastroColumn(9)    // J - dt_cadastro
-    setDtAlteracaoColumn(10)  // K - dt_alteracao
-    setDtExclusaoColumn(11)   // L - dt_exclusao
+    this.setIdColumn(0)            // A - ID
+    this.setActiveColumn(8)        // I - Active
+    this.setDtCadastroColumn(9)    // J - dt_cadastro
+    this.setDtAlteracaoColumn(10)  // K - dt_alteracao
+    this.setDtExclusaoColumn(11)   // L - dt_exclusao
 
     // 12 colunas (índice base 0)
     this.setNumColumns(12)

@@ -1,5 +1,5 @@
 <script>
-  // SearchOOP.html
+  // SearchOOPJS.html
   // ===== SEARCH DROPDOWN =====
   class SearchOOP {
     
@@ -16,6 +16,9 @@
 
 
     initSearch(inputId, dropdownId, wrapperId, opcoes) {
+
+      console.log('initSearch')
+
       const input = document.getElementById(inputId);
       const dropdown = document.getElementById(dropdownId);
       const wrapper = document.getElementById(wrapperId);
@@ -100,7 +103,7 @@
     }
 
     aplicarOrdenacao(lista) {
-      console.log('aplicarOrdenacao - lista ' - lista)
+      console.log('aplicarOrdenacao - lista ' + lista)
       if (!this.sortState.coluna) return lista;
       const col = this.sortState.coluna;
       const dir = this.sortState.direcao === 'asc' ? 1 : -1;
