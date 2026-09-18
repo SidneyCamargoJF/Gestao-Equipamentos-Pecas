@@ -53,14 +53,9 @@
     <?!= include('CadastroFornecedorForm'); ?>
     <?!= include('CadastroChamadoForm'); ?>
     <?!= include('ConsultaChamadoForm'); ?>
+
     <?!= include('ConsultaEquipmentsHTML'); ?>
     <?!= include('CadastroEquipmentsForm'); ?>
-    <!-- ConsultaEquipmentsHTML: TEMPORARIAMENTE REMOVIDO (a linha precisa
-         ser apagada de verdade, não só comentada -- o include() roda no
-         servidor antes do HTML existir, então um comentário HTML não
-         impede a execução). Arquivo do Sidney ainda não colado no Apps
-         Script. Reativar colando de volta a linha do include quando o
-         arquivo existir lá. -->
 
     <?!= include('Pages'); ?>
 
@@ -105,8 +100,10 @@
 
   <?!= include('ConsultaFornecedorFormJS'); ?>
   <?!= include('CadastroFornecedorFormJS'); ?>
+
   <?!= include('CadastroChamadoFormJS'); ?>
   <?!= include('ConsultaChamadoFormJS'); ?>
+
   <?!= include('ConsultaEquipmentsJS'); ?>
   <?!= include('CadastroEquipmentsJS'); ?>
 

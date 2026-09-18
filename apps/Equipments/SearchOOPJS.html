@@ -4,16 +4,20 @@
   class SearchOOP {
     
     constructor() {
+      this.table = ''
       this.list = [];
       this.listaFiltrada = [];
       this.sortState = { coluna: null, direcao: 'asc' };
+    }
+
+    setTable(name) {
+      this.table = name
     }
 
     init() {
       this.bindEvents();
       // this.consultar();
     }
-
 
     initSearch(inputId, dropdownId, wrapperId, opcoes) {
 

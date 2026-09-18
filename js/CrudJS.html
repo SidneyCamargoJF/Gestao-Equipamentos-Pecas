@@ -38,5 +38,33 @@
     if (table === 'tbl_marca') marcaController.consultarMarcas();
   }
 
+  class CrudJs {
+    constructor(table) {
+      this.table = table
+    }
+    readContext(field, operator, value) {
+      console.log('SearchOOPJS.readContext')
+
+      let criterios = [{
+        table: this.table,
+        field: field,
+        oparator: operator,
+        value: value
+      }]
+
+      google.script.run
+        .withSuccessHandler(objData => this.returnRead(objData))
+        .withFailureHandler(err => console.error('Erro ao consultar: ', err))
+        .readContext(criterios);
+
+      return false
+    }
+
+    returnRead(objData) {
+      console.log('CrudJs.returnRead')
+      console.log(objData)
+      return true
+    }
+  }
 
 </script>

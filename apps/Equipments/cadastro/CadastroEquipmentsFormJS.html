@@ -1,125 +1,180 @@
 <script>
 
-class EquipmentFormController {
+  class EquipmentFormController {
 
-  // =====================================================
-  // CADASTRO DE EQUIPAMENTOS - JS (CLIENTE)
-  // Roda no navegador (dentro do HTML). A gravação na planilha
-  // acontece no servidor, em Fornecedor_Backend.gs, chamado via
-  // google.script.run.
-  // =====================================================
+    constructor() {
+      console.log('EquipmentFormController.constructor()')
+        this.equipPatrimonio = document.getElementById('cadEquipPatrimonio')
+        this.equipNome = document.getElementById('cadEquipNome')
+        this.equipMarca = document.getElementById('cadEquipMarca')
+        this.equipCapacidade = document.getElementById('cadEquipCapacidade')
+        this.equipModelo = document.getElementById('cadEquipModelo')
+        this.equipSequencia = document.getElementById('cadEquipSequencia')
+        this.equipLocalizacao = document.getElementById('cadEquipLocalizacao')
+        this.btnEquipSave = document.getElementById('cadEquipSave')
 
-  preencherFormulario(dados) {
-    document.getElementById('complemento').value = dados.complemento || '';
-  }
-
-  // 
-  // COLETA DOS DADOS DO FORMULÁRIO
-  // 
-  coletarDadosFornecedor() {
-    return {
-      complemento: document.getElementById('complemento').value.trim()
-    };
-  }
-
-  // 
-  // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
-  // 
-  validarFormulario() {
-    const CAMPOS_OBRIGATORIOS = [
-      'razaoSocial', 'nomeFantasia', 'cnpj', 'inscricaoEstadual', 'inscricaoMunicipal',
-      'cep', 'ruaAvenida', 'numeroFornecedor', 'bairro', 'cidade', 'estado'
-    ];
-
-    let primeiroInvalido = null;
-
-    CAMPOS_OBRIGATORIOS.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el.value.trim()) {
-        el.classList.add('campo-invalido');
-        if (!primeiroInvalido) primeiroInvalido = el;
-      } else {
-        el.classList.remove('campo-invalido');
-      }
-    });
-
-    if (primeiroInvalido) {
-      primeiroInvalido.focus();
-      alert('ERRO: Faltam dados obrigatórios.');
-      return false;
+        this.tblEquipment = new CrudJs();
+        console.log(this.tblEquipment)
+        this.tblEquipment.readContext('a', '=', 'b')
     }
 
-    return true;
-  }
+    // =====================================================
+    // CADASTRO DE EQUIPAMENTOS - JS (CLIENTE)
+    // Roda no navegador (dentro do HTML). A gravação na planilha
+    // acontece no servidor, em Fornecedor_Backend.gs, chamado via
+    // google.script.run.
+    // =====================================================
 
-  // 
-  // UTILITÁRIOS
-  // 
-  escapeHtml(s) {
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
+    preencherFormulario(dados) {
+      document.getElementById('complemento').value = dados.complemento || '';
+    }
 
-  limpar() {
-    document.querySelectorAll('.field__input, .field__select').forEach(el => {
-      el.value = '';
-    });
+    // 
+    // COLETA DOS DADOS DO FORMULÁRIO
+    // 
+    coletarDados() {
+    console.log('coletarDados')
+      let dados = [];
+      if ( !this.validarFormulario() ) return false;
 
-    document.getElementById('formTitulo').textContent = 'Novo Fornecedor';
-    document.getElementById('formStatus').textContent = 'Rascunho';
-  }
+      let patrimonio = document.getElementById('cadEquipPatrimonio').value.trim()
 
-  // 
-  // SALVAR FORNECEDOR (cria ou atualiza, conforme o CNPJ)
-  // Chama salvarFornecedorBackend() no Fornecedor_Backend.gs
-  // 
-  salvar() {
-    if (!validarFormulario()) return;
+      return dados;
+    }
 
-    const dados = coletarDadosFornecedor();
-    const btn = document.querySelector('.btn-primary');
-    btn.disabled = true;
+    jaExistePatrimonio() {
+      console.log('jaExistePatrimonio()')
 
-    google.script.run
-      .withSuccessHandler(function (resultado) {
-        btn.disabled = false;
-        if (!resultado.sucesso) {
-          alert(resultado.mensagem);
-          return;
+      if (!this.buscaPatrimonio()) {
+        this.btnEquipSave.style.display = 'inline-block'
+        return false
+      }
+
+      console.log('Já existe um Patrimônio com este número cadastrado.')
+      this.btnEquipSave.style.display = 'none'
+
+      return true
+    }
+
+    /**
+     *  verifica se existe o patrimonio no bd quando for novo, para não deixar cadastrar repetido
+     */
+    buscaPatrimonio() {
+      console.log('conferePatrimonio()')
+
+      let patrimonio = this.equipPatrimonio.value;
+      let dados = this.tblEquipment.readContext('patrimonio', '=', patrimonio );
+
+      if (dados) return dados;
+
+      return false
+    }
+
+    // 
+    // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
+    // 
+    validarFormulario() {
+      const CAMPOS_OBRIGATORIOS = [
+        'patrimonio', 'nome', 'marca', 'localizacao'
+      ];
+
+      let primeiroInvalido = null;
+
+      CAMPOS_OBRIGATORIOS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el.value.trim()) {
+          el.classList.add('campo-invalido');
+          if (!primeiroInvalido) primeiroInvalido = el;
+        } else {
+          el.classList.remove('campo-invalido');
         }
-        alert(resultado.mensagem);
-        limparFornecedor();
-      })
-      .withFailureHandler(function (erro) {
-        btn.disabled = false;
-        alert('Erro ao salvar fornecedor: ' + erro.message);
-      })
-      .salvarFornecedorBackend(dados);
+      });
+
+      if (primeiroInvalido) {
+        primeiroInvalido.focus();
+        alert('ERRO: Faltam dados obrigatórios.');
+        return false;
+      }
+
+      return true;
+    }
+
+    // 
+    // UTILITÁRIOS
+    // 
+    escapeHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    limpar() {
+      document.querySelectorAll('.field__input, .field__select').forEach(el => {
+        el.value = '';
+      });
+
+      document.getElementById('formTitulo').textContent = 'Novo';
+      document.getElementById('formStatus').textContent = 'Rascunho';
+    }
+
+    // 
+    // SALVAR FORNECEDOR (cria ou atualiza, conforme o CNPJ)
+    // Chama salvarFornecedorBackend() no Fornecedor_Backend.gs
+    // 
+    salvar() {
+      if (!this.validarFormulario()) return;
+
+      const dados = this.coletarDados();
+      const btn = document.querySelector('.btn-primary');
+      btn.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(function (resultado) {
+          btn.disabled = false;
+          if (!resultado.sucesso) {
+            alert(resultado.mensagem);
+            return;
+          }
+          alert(resultado.mensagem);
+          this.limpar();
+        })
+        .withFailureHandler(function (erro) {
+          btn.disabled = false;
+          alert('Erro ao salvar fornecedor: ' + erro.message);
+        })
+        .saveEquipments(dados);
+    }
+
+    // RENDER / INICIALIZAÇÃO DA TELA
+    // Chamada pelo sistema de navegação (SPA) logo depois de injetar o HTML
+    // do CadastroFornecedorForm no container da página — igual o padrão do
+    // renderContratosForm() do Contrato. Liga as máscaras e os eventos nos
+    // campos, já que aqui não existe um "DOMContentLoaded" novo (o HTML foi
+    // injetado dinamicamente, não carregado como página).
+
+    async render(id) {
+      console.log('EquipmentFormController.render(' + id + ')')
+
+      this.equipPatrimonio.focus();
+
+        // Posicionar no primeiro campo: Patrimônio
+        // Inicializar dados - Novo ou Edição
+        // Quando Id >= 1, entra em modo de edição em modo edição, trazer os dados do BD
+        // 
+
+      return
+
+    }
+
   }
 
-  // 
-  // RENDER / INICIALIZAÇÃO DA TELA
-  // Chamada pelo sistema de navegação (SPA) logo depois de injetar o HTML
-  // do CadastroFornecedorForm no container da página — igual o padrão do
-  // renderContratosForm() do Contrato. Liga as máscaras e os eventos nos
-  // campos, já que aqui não existe um "DOMContentLoaded" novo (o HTML foi
-  // injetado dinamicamente, não carregado como página).
+  // Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante
+  // que a inicialização também rode no carregamento normal da página.
 
-  async render() {
-      // Render
+  const equipmentFormController = new EquipmentFormController()
 
-  }
+  /*
+  document.addEventListener('DOMContentLoaded', () => {
 
-}
-
-// Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante
-// que a inicialização também rode no carregamento normal da página.
-
-const equipmentFormController = new EquipmentFormController()
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('cnpj')) {
-    equipmentFormController.init();
-  }
-});
+  });
+  */
 
 </script>
