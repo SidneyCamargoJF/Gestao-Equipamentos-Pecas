@@ -361,7 +361,7 @@ function adicionarHistoricoChamado(chamadoId, texto) {
   const novoId = Number(idAtual) + 1;
 
   const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
-  const novaLinha = [novoId, chamadoId, texto, dataAtual];
+  const novaLinha = [novoId, chamadoId, texto, dataAtual, ''];
   abaHistorico.getRange(ultimaLinha + 1, 1, 1, numColumnsTicketHistorico).setValues([novaLinha]);
 }
 
@@ -371,6 +371,7 @@ function adicionarHistoricoChamado(chamadoId, texto) {
 // prefixo nunca aparece pro usuário (buscarHistoricoChamado remove antes
 // de devolver pro cliente).
 const HISTORICO_CHAMADO_PREFIXO_SISTEMA = '[SISTEMA] ';
+const HISTORICO_CHAMADO_PREFIXO_EXCLUIDA = '[EXCLUIDA] ';
 
 function adicionarHistoricoSistema(chamadoId, texto) {
   adicionarHistoricoChamado(chamadoId, HISTORICO_CHAMADO_PREFIXO_SISTEMA + texto);

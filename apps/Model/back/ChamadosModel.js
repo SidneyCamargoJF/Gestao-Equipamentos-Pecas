@@ -31,15 +31,16 @@ function ReadTickets() {
   )
 }
 
-// ===== tbl_chamado_historico (linha do tempo de estados do chamado) =====
+// ===== tbl_chamado_historico =====
 let ticketHistoricoTableName = 'tbl_chamado_historico'
 let firstLineTicketHistorico = 3
-let numColumnsTicketHistorico = 4
+let numColumnsTicketHistorico = 5
 
 let ticketHistoricoIdCol = 1
 let ticketHistoricoChamadoIdCol = 2
 let ticketHistoricoTextoCol = 3
 let ticketHistoricoDataCol = 4
+let ticketHistoricoDataAlteracaoCol = 5
 
 function ReadTicketHistorico() {
   const objRows = ReadSheet(ticketHistoricoTableName, firstLineTicketHistorico, numColumnsTicketHistorico)

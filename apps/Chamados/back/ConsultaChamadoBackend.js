@@ -242,6 +242,7 @@ function buscarHistoricoChamado(chamadoId) {
 
     return dados
         .filter(linha => Number(linha[1]) === idBuscado)
+        .filter(linha => String(linha[2] || '').indexOf(HISTORICO_CHAMADO_PREFIXO_EXCLUIDA) !== 0)
         .map(linha => {
             const textoOriginal = String(linha[2] || '');
             const ehSistema = textoOriginal.indexOf(HISTORICO_CHAMADO_PREFIXO_SISTEMA) === 0;
@@ -274,10 +275,42 @@ function adicionarAnotacaoChamado(chamadoId, texto) {
     return { sucesso: true, mensagem: 'Anotação adicionada.' };
 }
 
+function editarAnotacaoChamado(historicoId, novoTexto) {
+    try {
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        const abaHistorico = ss.getSheetByName(ticketHistoricoTableName);
+        const dataAlt = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+        const dados = ReadTicketHistorico();
+        if (!abaHistorico) {
+            return {sucesso: false, mensagem: "Aba 'tbl_chamado_historico' não encontrada na planilha." };
+        }
+
+        const textoLimpo = String (novoTexto || '').trim();
+        if (!textoLimpo) {
+            return { sucesso: false, mensagem: 'Escreva algo antes de salvar.' };
+        }
+        
+
+        for (let i = 0; i < dados.length; i++) {
+            if (Number(dados[i][0]) === Number(historicoId)) {
+                let textoOriginal = String(dados[i][2] || '');
+                if (textoOriginal.indexOf(HISTORICO_CHAMADO_PREFIXO_SISTEMA) === 0) {
+                    return { sucesso: false, mensagem: 'Não é possível editar um registro do sistema.' };
+                }
+                const linhaReal = i + firstLineTicketHistorico;
+                abaHistorico.getRange(linhaReal, 3).setValue(textoLimpo);
+                abaHistorico.getRange(linhaReal, 5).setValue(dataAlt);
+                return { sucesso: true, mensagem: 'Anotação editada.' };
+            }
+        }
+        return { sucesso: false, mensagem: 'Anotação não encontrada.' };
+    } catch (e) {
+        return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+    }
+}
+
 /**
- * Exclui uma anotação MANUAL do histórico (nunca uma entrada de sistema --
- * confere o prefixo antes de deixar excluir, mesmo que a tela já esconda o
- * botão pra essas).
+Exclusão apaga conteúdo visualmente para usuário mas continua na tabela.
  */
 function excluirAnotacaoChamado(historicoId) {
     try {
@@ -288,6 +321,9 @@ function excluirAnotacaoChamado(historicoId) {
         }
 
         const idBuscado = Number(historicoId);
+        if(!idBuscado) {
+            return {sucesso: false, mensagem: 'ID do chamado inválido.'};
+        }
         const dados = ReadTicketHistorico();
 
         for (let i = 0; i < dados.length; i++) {
@@ -298,7 +334,13 @@ function excluirAnotacaoChamado(historicoId) {
                 }
 
                 const linhaReal = i + firstLineTicketHistorico;
-                abaHistorico.deleteRow(linhaReal);
+                const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+                const textoExcluido = HISTORICO_CHAMADO_PREFIXO_EXCLUIDA + texto;
+
+                abaHistorico.getRange(linhaReal, ticketHistoricoDataAlteracaoCol).setValue(dataAtual);
+                abaHistorico.getRange(linhaReal, 1, 1, numColumnsTicketHistorico).setBackground("#F4CCCC");
+                abaHistorico.getRange(linhaReal, ticketHistoricoTextoCol).setValue(textoExcluido);
+
                 return { sucesso: true, mensagem: 'Anotação excluída.' };
             }
         }
