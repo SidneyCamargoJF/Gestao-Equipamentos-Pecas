@@ -1,10 +1,4 @@
 <style>
-
-/* Reaproveita .field, .fieldset-principal, .form-grid-3 etc. já definidos em
-   CadastroFornecedorFormCSS.html (carregado globalmente). Aqui só o que é
-   específico da tela de Chamado. */
-
-/* campo que ocupa a linha inteira do form-grid-3 (ex: Descrição do Chamado) */
 .field-full-3 {
   grid-column: span 1;
 }
@@ -61,38 +55,4 @@ textarea.field__input {
 .chamado-patrimonio-status.nao-encontrado {
   color: #92400e;
 }
-
-
-/* ===== ANEXOS (Relatório / Nota Fiscal) ===== */
-.chamado-anexo-linha {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.chamado-anexo-linha .field__input {
-  flex: 1;
-}
-
-.chamado-anexo-remover {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border: 0.0625rem solid var(--color-slate-200);
-  border-radius: 0.375rem;
-  background: #fff;
-  cursor: pointer;
-  color: #dc2626;
-  font-size: 0.875rem;
-  transition: all 0.15s ease;
-}
-
-.chamado-anexo-remover:hover {
-  background: #fef2f2;
-  border-color: #dc2626;
-}
-
 </style>

@@ -457,6 +457,53 @@ color: #991b1b;
 font-weight: 800;
 }
 
+/* ===== BADGE DE STATUS ===== */
+.status-badge {
+display: inline-flex;
+align-items: center;
+padding: 0.25rem 0.75rem;
+border-radius: 9999px;
+font-size: 0.75rem;
+font-weight: 700;
+white-space: nowrap;
+}
+
+.status-badge.aberto {
+background: #dbeafe;
+color: #1d4ed8;
+}
+
+.status-badge.em-andamento {
+background: #fef3c7;
+color: #92400e;
+}
+
+.status-badge.cancelado {
+background: #f1f5f9;
+color: #64748b;
+}
+
+/* "Concluído" vem destacado/vivo de propósito -- não pode parecer apagado
+   igual um cancelado, mesmo a linha toda tendo um estilo parecido (ver
+   tr.linha-chamado-concluido logo abaixo). */
+.status-badge.concluido {
+background: #16a34a;
+color: #fff;
+font-weight: 800;
+box-shadow: 0 0 0 0.125rem #bbf7d0;
+}
+
+/* ===== CHAMADOS CONCLUÍDOS -- parecido com desativado (linha-desativada,
+   em css/tableCSS.html, compartilhada com outras telas), mas sem o opaco
+   cinza -- um verde bem clarinho, mantendo o texto legível. A ordem das
+   classes no seletor não importa; o que importa é as DUAS estarem na
+   mesma <tr> (ver renderTabelaChamados). */
+tr.linha-desativada.linha-chamado-concluido {
+opacity: 1;
+background-color: #f0fdf4;
+color: inherit;
+}
+
 /* ===== MODAL ===== */
 .modal-overlay {
 position: fixed;

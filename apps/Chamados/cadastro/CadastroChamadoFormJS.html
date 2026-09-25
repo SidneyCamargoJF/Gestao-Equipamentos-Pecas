@@ -23,6 +23,11 @@
     const btnSalvarEl = document.getElementById('chamadoBtnSalvar');
     if (btnSalvarEl) btnSalvarEl.textContent = id ? 'Salvar Alterações' : 'Salvar Chamado';
 
+    // Anexos já enviados (de edições anteriores) são geridos na tela de
+    // Consulta (modal de detalhes) -- aqui só dá pra adicionar novos.
+    const avisoAnexosEl = document.getElementById('chamadoEditandoAnexosAviso');
+    if (avisoAnexosEl) avisoAnexosEl.style.display = id ? 'inline' : 'none';
+
     const motivoOutroEl = document.getElementById('chamadoMotivoOutro');
     if (motivoOutroEl) {
       motivoOutroEl.value = '';
@@ -42,8 +47,7 @@
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
-    mostrarAnexoExistenteChamado('chamadoRelatorioArquivo', '', 'Relatório');
-    mostrarAnexoExistenteChamado('chamadoNotaFiscalArquivo', '', 'Nota Fiscal');
+    limparAnexosCadastroSelecionados();
 
     const statusEl = document.getElementById('chamadoPatrimonioStatus');
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'chamado-patrimonio-status'; }
@@ -144,24 +148,10 @@
 
       const capacidadeEl = document.getElementById('chamadoEquipCapacidade');
       if (capacidadeEl) capacidadeEl.value = dados.capacidade || '';
-
-      mostrarAnexoExistenteChamado('chamadoRelatorioArquivo', dados.relatorioUrl, 'Relatório');
-      mostrarAnexoExistenteChamado('chamadoNotaFiscalArquivo', dados.notaFiscalUrl, 'Nota Fiscal');
     } catch (error) {
       console.error('Erro ao carregar chamado para edição:', error);
       alert('Erro ao carregar chamado para edição.');
     }
-  }
-
-  // Mostra (ou limpa) o avisinho de "já existe um anexo" abaixo do campo de
-  // arquivo -- não dá pra pré-selecionar um <input type="file"> por
-  // segurança do navegador, então isso só avisa e linka o que já existe.
-  function mostrarAnexoExistenteChamado(inputId, url, rotulo) {
-    const span = document.getElementById(inputId + 'Atual');
-    if (!span) return;
-    span.innerHTML = url
-      ? `${rotulo} atual: <a href="${url}" target="_blank" rel="noopener">abrir</a> (escolher um novo arquivo substitui este)`
-      : '';
   }
 
   // ===== TRAVA VISUAL ENQUANTO OS DROPDOWNS DE BUSCA CARREGAM (Localização /
@@ -404,10 +394,10 @@
     }
 
 
-    let relatorioArquivo, notaFiscalArquivo;
+    let relatorioArquivos = [], notaFiscalArquivos = [];
     try {
-      relatorioArquivo = await lerArquivoComoBase64(document.getElementById('chamadoRelatorioArquivo'));
-      notaFiscalArquivo = await lerArquivoComoBase64(document.getElementById('chamadoNotaFiscalArquivo'));
+      relatorioArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoRelatorioArquivo);
+      notaFiscalArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoNotaFiscalArquivo);
     } catch (erroArquivo) {
       alert(erroArquivo.message);
       return;
@@ -426,8 +416,8 @@
       marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
       modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
       capacidade: document.getElementById('chamadoEquipCapacidade')?.value.trim() || '',
-      relatorio: relatorioArquivo,
-      notaFiscal: notaFiscalArquivo
+      relatorios: relatorioArquivos,
+      notasFiscais: notaFiscalArquivos
     };
 
     if (typeof exibirModal === 'function') exibirModal('processando');
@@ -451,15 +441,7 @@
     }
   }
 
-  // ===== ANEXOS: lê um <input type="file"> e devolve {nome, tipo, base64}
-  // pronto pra mandar pro servidor (google.script.run não aceita objetos
-  // File/Blob do navegador direto -- só base64 como string mesmo). =====
-  const CHAMADO_ANEXO_TAMANHO_MAX = 3 * 1024 * 1024; // 3MB -- acima disso o google.script.run fica instável pra mandar o base64 de uma vez só
-
-  function removerAnexoChamado(inputId) {
-    const input = document.getElementById(inputId);
-    if (input) input.value = '';
-  }
+  const CHAMADO_ANEXO_TAMANHO_MAX = 3 * 1024 * 1024;
 
   function lerArquivoComoBase64(inputEl) {
     return new Promise((resolve, reject) => {
@@ -480,6 +462,92 @@
       leitor.onerror = () => reject(new Error('Erro ao ler o arquivo "' + arquivo.name + '".'));
       leitor.readAsDataURL(arquivo);
     });
+  }
+
+  // Agora recebe uma LISTA de File (não mais o <input> direto) -- porque os
+  // arquivos ficam guardados em chamadoAnexosSelecionados (ver mais abaixo),
+  // acumulados entre vários cliques no card "+", não presos ao que o
+  // <input> nativo tem selecionado no momento.
+  function lerArquivosComoBase64(arquivos) {
+    if (!arquivos || arquivos.length === 0) {
+      return Promise.resolve([]);
+    }
+    return Promise.all(arquivos.map(arquivo => new Promise((resolve, reject) => {
+      if (arquivo.size > CHAMADO_ANEXO_TAMANHO_MAX) {
+        reject(new Error('O arquivo "' + arquivo.name + '" passa de 3MB.'));
+        return;
+      }
+      const leitor = new FileReader();
+      leitor.onload = () => {
+        const base64 = String(leitor.result).split(',')[1] || '';
+        resolve({ nome: arquivo.name, tipo: arquivo.type || 'application/octet-stream', base64: base64 });
+      };
+      leitor.onerror = () => reject(new Error('Erro ao ler o arquivo "' + arquivo.name + '".'));
+      leitor.readAsDataURL(arquivo);
+    })));
+  }
+
+  // ===== ANEXOS: card "+" no lugar do <input type="file"> nativo (mesma
+  // ideia da Consulta) -- o input real fica escondido, disparado pelo
+  // clique no card. Como aqui os arquivos só são enviados no Salvar (não
+  // na hora da escolha, diferente da Consulta), preciso guardar os File
+  // escolhidos num estado à parte -- o <input> nativo troca todo o
+  // conteúdo a cada seleção, então sem isso, clicar "+" de novo perderia
+  // os arquivos escolhidos antes. =====
+  let chamadoAnexosSelecionados = {
+    chamadoRelatorioArquivo: [],
+    chamadoNotaFiscalArquivo: []
+  };
+  const CHAMADO_ANEXO_LISTA_ID = {
+    chamadoRelatorioArquivo: 'chamadoRelatorioLista',
+    chamadoNotaFiscalArquivo: 'chamadoNotaFiscalLista'
+  };
+
+  function onArquivosCadastroSelecionados(inputId) {
+    const inputEl = document.getElementById(inputId);
+    if (!inputEl || !inputEl.files) return;
+    chamadoAnexosSelecionados[inputId] = (chamadoAnexosSelecionados[inputId] || []).concat(Array.from(inputEl.files));
+    inputEl.value = ''; // libera o input pra poder escolher o mesmo arquivo de novo, se precisar
+    atualizarListaAnexosCadastro(inputId);
+  }
+
+  function removerAnexoCadastroSelecionado(inputId, indice) {
+    if (!chamadoAnexosSelecionados[inputId]) return;
+    chamadoAnexosSelecionados[inputId].splice(indice, 1);
+    atualizarListaAnexosCadastro(inputId);
+  }
+
+  function limparAnexosCadastroSelecionados() {
+    chamadoAnexosSelecionados = { chamadoRelatorioArquivo: [], chamadoNotaFiscalArquivo: [] };
+    atualizarListaAnexosCadastro('chamadoRelatorioArquivo');
+    atualizarListaAnexosCadastro('chamadoNotaFiscalArquivo');
+  }
+
+  function atualizarListaAnexosCadastro(inputId) {
+    const containerId = CHAMADO_ANEXO_LISTA_ID[inputId];
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const arquivos = chamadoAnexosSelecionados[inputId] || [];
+    const chips = arquivos.map((arquivo, indice) => `
+      <div class="anexo-card-wrapper">
+        <div class="anexo-card">
+          <div class="anexo-card-icone">📄</div>
+          <span class="anexo-card-nome">${escapeHtmlChamado(arquivo.name)}</span>
+        </div>
+        <button type="button" class="anexo-card-excluir" title="Remover" onclick="removerAnexoCadastroSelecionado('${inputId}', ${indice})">✕</button>
+      </div>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="anexo-lista">
+        ${chips}
+        <button type="button" class="anexo-card anexo-card-add" onclick="document.getElementById('${inputId}').click()" title="Adicionar arquivo">
+          <div class="anexo-card-icone">+</div>
+          <span class="anexo-card-nome">Adicionar</span>
+        </button>
+      </div>
+    `;
   }
 
   function escapeHtmlChamado(s) {

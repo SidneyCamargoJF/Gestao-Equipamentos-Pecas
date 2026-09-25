@@ -26,8 +26,9 @@ function filtrarChamados(criterios) {
         let colMotivo = String(dados[i][2] || '').trim().toLowerCase();
         let colTipo = String(dados[i][3] || '').trim().toLowerCase();
         let colPrioridade = String(dados[i][4] || '').trim().toLowerCase();
-        let colStatus = String(dados[i][13] || '').trim().toLowerCase();
+        let colStatus = String(dados[i][11] || '').trim().toLowerCase();
         let desativado = (colStatus === 'cancelado' || colStatus === 'concluido');
+        let concluido = (colStatus === 'concluido');
 
         let cEquipamento = (equipamentoBuscado === "" || colEquipamento.includes(equipamentoBuscado));
         let cMotivo = (motivoBuscado === "" || colMotivo.includes(motivoBuscado));
@@ -46,8 +47,9 @@ function filtrarChamados(criterios) {
                 abertoPor: dados[i][6],
                 atribuidoA: dados[i][7],
                 dataAbertura: dados[i][5],
-                status: dados[i][13],
-                desativado: desativado
+                status: dados[i][11],
+                desativado: desativado,
+                concluido: concluido
             })
         }
     }
@@ -90,10 +92,8 @@ function buscarChamadoDetalhado(idInput) {
             dataInicioAndamento: linha[8],
             dataFinalizacao: linha[9],
             observacao: linha[10],
-            relatorioUrl: linha[11],
-            notaFiscalUrl: linha[12],
-            status: linha[13],
-            dataAlteracao: linha[14]
+            status: linha[11],
+            dataAlteracao: linha[12]
         };
 
         return { sucesso: true, chamado: chamado };
@@ -258,6 +258,23 @@ function buscarHistoricoChamado(chamadoId) {
         .reverse();
 }
 
+function buscarAnexosChamado (chamadoId) {
+    const idBuscado = Number(chamadoId);
+    const dados = ReadTicketAnexos()
+
+    return dados
+        .filter(linha => Number(linha[1]) === idBuscado)
+        .filter(linha => !linha[6])
+        .map(linha => ({
+            id: linha[0],
+            tipo: linha[2],
+            nomeArquivo: linha[3],
+            url: linha[4],
+            dataUpload: linha[5]
+        }))
+        .reverse();
+}
+
 /**
  * Adiciona uma anotação manual ao histórico do chamado (aba Histórico --
  * campo de texto livre, tipo "Serviço acompanhado no período da manhã").
@@ -341,10 +358,45 @@ function excluirAnotacaoChamado(historicoId) {
                 abaHistorico.getRange(linhaReal, 1, 1, numColumnsTicketHistorico).setBackground("#F4CCCC");
                 abaHistorico.getRange(linhaReal, ticketHistoricoTextoCol).setValue(textoExcluido);
 
-                return { sucesso: true, mensagem: 'Anotação excluída.' };
+                return { sucesso: true, mensagem: 'Anotação excluída da interface, dado permanece no banco de dados.' };
             }
         }
         return { sucesso: false, mensagem: 'Anotação não encontrada.' };
+    } catch (e) {
+        return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+    }
+}
+
+function excluirAnexoChamado(anexoId) {
+    try {
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        const abaAnexos = ss.getSheetByName(ticketAnexosTableName);
+        if (!abaAnexos) {
+            return {sucesso: false,  mensagem: "Aba 'tbl_chamado_anexos' não encontrada na planilha."}
+        }
+
+        const idBuscado = Number(anexoId);
+        if (!idBuscado) {
+            return {sucesso: false, mensagem: 'ID do anexo inválido'};
+        }
+        const dados = ReadTicketAnexos();
+
+        for (let i = 0; i < dados.length; i++) {
+            if (Number(dados[i][0]) === idBuscado) {
+                const linhaReal = i + firstLineTicketAnexos;
+                const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+
+                abaAnexos.getRange(linhaReal, ticketAnexosDataExclusaoCol).setValue(dataAtual);
+                abaAnexos.getRange(linhaReal, 1, 1, numColumnsTicketAnexos).setBackground("#F4CCCC");
+
+                const chamadoIdDoAnexo = dados[i][1];
+                const nomeArquivo = dados[i][3];
+                adicionarHistoricoSistema(chamadoIdDoAnexo, 'Anexo excluído: "' + nomeArquivo + '" (' + tipo + ')');
+
+                return {sucesso: true, mensagem: 'Anexo exlcuído da interface, dado permanece no banco de dados.'}
+            }
+        }
+        return{sucesso: false, mensagem: 'Anexo não encontrado.'}
     } catch (e) {
         return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
     }

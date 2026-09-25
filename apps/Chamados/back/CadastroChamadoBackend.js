@@ -61,13 +61,15 @@ function salvarChamadoBackend(dados) {
       }
 
       const linhaReal = idx + firstLineTickets;
-      // cópia do conteúdo da linha atual 
+      // cópia do conteúdo da linha atual
       const linhaAtual = todasLinhas[idx];
 
-      // Só sobrescreve o anexo se um arquivo novo foi enviado; senão mantém o atual.
-      const relatorioUrl = dados.relatorio ? salvarArquivoAnexoChamado(dados.relatorio) : (linhaAtual[11] || '');
-      const notaFiscalUrl = dados.notaFiscal ? salvarArquivoAnexoChamado(dados.notaFiscal) : (linhaAtual[12] || '');
-
+      // RELATORIO/NOTA_FISCAL não existem mais como colunas em tbl_chamados
+      // (removidas na planilha) -- anexos agora vivem só em
+      // tbl_chamado_anexos (ver loop de adicionarAnexoChamado logo abaixo).
+      // Ordem atual: ID, ID_EQUIPAMENTO, DEFEITO, TIPO, PRIORIDADE,
+      // DATA_ABERTURA, ABERTO_POR, ATRIBUIDO_A, DATA_INICIO_ANDAMENTO,
+      // DATA_FINALIZACAO, OBSERVACAO, STATUS, DATA_ALTERACAO (13 colunas).
       const linhaAtualizada = [
         idEdicao,
         equipamentoId,
@@ -80,14 +82,15 @@ function salvarChamadoBackend(dados) {
         linhaAtual[8],
         linhaAtual[9],
         dados.descricao || '',
-        relatorioUrl,
-        notaFiscalUrl,
-        linhaAtual[13],
+        linhaAtual[11],
         dataAtual
       ];
 
       abaChamados.getRange(linhaReal, 1, 1, numColumnsTickets).setValues([linhaAtualizada]);
       adicionarHistoricoSistema(idEdicao, 'Chamado editado');
+
+      (dados.relatorios || []).forEach(arquivo => adicionarAnexoChamado(idEdicao, 'Relatório', arquivo));
+      (dados.notasFiscais || []).forEach(arquivo => adicionarAnexoChamado(idEdicao, 'Nota Fiscal', arquivo));
 
       return {
         sucesso: true,
@@ -110,12 +113,10 @@ function salvarChamadoBackend(dados) {
       novoId = Number(idAtual) + 1;
     }
 
-    const relatorioUrl = salvarArquivoAnexoChamado(dados.relatorio);
-    const notaFiscalUrl = salvarArquivoAnexoChamado(dados.notaFiscal);
-
     // Ordem: ID, ID_EQUIPAMENTO, DEFEITO, TIPO, PRIORIDADE, DATA_ABERTURA,
     // ABERTO_POR, ATRIBUIDO_A, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO,
-    // OBSERVACAO, RELATORIO, NOTA_FISCAL, STATUS, DATA_ALTERACAO
+    // OBSERVACAO, STATUS, DATA_ALTERACAO (13 colunas -- RELATORIO/NOTA_FISCAL
+    // não existem mais aqui, anexos vão pra tbl_chamado_anexos).
     const novaLinha = [
       novoId,
       equipamentoId,
@@ -128,8 +129,6 @@ function salvarChamadoBackend(dados) {
       '',
       '',
       dados.descricao || '',
-      relatorioUrl,
-      notaFiscalUrl,
       'Aberto',
       ''
     ];
@@ -137,6 +136,9 @@ function salvarChamadoBackend(dados) {
     abaChamados.getRange(ultimaLinha + 1, 1, 1, numColumnsTickets).setValues([novaLinha]);
 
     adicionarHistoricoSistema(novoId, 'Chamado aberto');
+
+    (dados.relatorios || []).forEach(arquivo => adicionarAnexoChamado(novoId, 'Relatório', arquivo));
+    (dados.notasFiscais || []).forEach(arquivo => adicionarAnexoChamado(novoId, 'Nota Fiscal', arquivo));
 
     return {
       sucesso: true,
@@ -190,9 +192,7 @@ function buscarChamadoParaEdicao(idInput) {
       localizacao: localizacao,
       marca: marca,
       modelo: modelo,
-      capacidade: capacidade,
-      relatorioUrl: linha[11],
-      notaFiscalUrl: linha[12]
+      capacidade: capacidade
     };
   } catch (e) {
     return null;
@@ -343,6 +343,42 @@ function salvarArquivoAnexoChamado(arquivo) {
 
   console.log('[anexo] concluído -- URL:', arquivoDrive.getUrl());
   return arquivoDrive.getUrl();
+}
+
+/**
+ * Adiciona uma entrada em tbl_chamado_anexos para um anexo.
+ */
+function adicionarAnexoChamado(chamadoId, tipo, arquivo) {
+  try {
+    if (arquivo == null) {
+      return { sucesso: false, mensagem: 'Escolha um arquivo antes de adicionar.' };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaAnexos = ss.getSheetByName(ticketAnexosTableName);
+    if (!abaAnexos) {
+      return { sucesso: false, mensagem: "Aba 'tbl_chamado_anexos' não encontrada na planilha." };
+    }
+
+    const url = salvarArquivoAnexoChamado(arquivo);
+
+    const ultimaLinhaPlanilha = abaAnexos.getLastRow();
+    const ultimaLinha = Math.max(ultimaLinhaPlanilha, firstLineTicketAnexos - 1);
+
+    let idAtual = (ultimaLinha >= firstLineTicketAnexos) ? abaAnexos.getRange(ultimaLinha, 1).getValue() : 0;
+    if (idAtual === '' || isNaN(Number(idAtual))) idAtual = 0;
+    const novoId = Number(idAtual) + 1;
+
+    const dataUpload = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
+    const novaLinha = [novoId, chamadoId, tipo, arquivo.nome, url, dataUpload, ''];
+    abaAnexos.getRange(ultimaLinha + 1, 1, 1, numColumnsTicketAnexos).setValues([novaLinha]);
+
+    adicionarHistoricoSistema(chamadoId, 'Anexo adicionado: "' + arquivo.nome + '" (' + tipo + ')');
+
+    return { sucesso: true, mensagem: 'Anexo adicionado com sucesso.' };
+  } catch (e) {
+    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+  }
 }
 
 /**

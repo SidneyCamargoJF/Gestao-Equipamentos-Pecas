@@ -155,24 +155,19 @@
         </div>
         <div class="form-grid-3">
           <div class="field">
-            <label class="field__label" for="chamadoRelatorioArquivo">Relatório</label>
-            <div class="chamado-anexo-linha">
-              <input class="field__input" type="file" id="chamadoRelatorioArquivo" accept="application/pdf,image/*">
-              <button type="button" class="chamado-anexo-remover" title="Remover arquivo selecionado" onclick="removerAnexoChamado('chamadoRelatorioArquivo')">✕</button>
-            </div>
-            <span id="chamadoRelatorioArquivoAtual" style="font-size:0.75rem; color:var(--color-slate-500,#64748b); display:block; margin-top:0.25rem;"></span>
+            <label class="field__label">Relatório(s)</label>
+            <div id="chamadoRelatorioLista"></div>
+            <input type="file" id="chamadoRelatorioArquivo" accept="application/pdf,image/*" multiple style="display:none;" onchange="onArquivosCadastroSelecionados('chamadoRelatorioArquivo')">
           </div>
           <div class="field">
-            <label class="field__label" for="chamadoNotaFiscalArquivo">Nota Fiscal</label>
-            <div class="chamado-anexo-linha">
-              <input class="field__input" type="file" id="chamadoNotaFiscalArquivo" accept="application/pdf,image/*">
-              <button type="button" class="chamado-anexo-remover" title="Remover arquivo selecionado" onclick="removerAnexoChamado('chamadoNotaFiscalArquivo')">✕</button>
-            </div>
-            <span id="chamadoNotaFiscalArquivoAtual" style="font-size:0.75rem; color:var(--color-slate-500,#64748b); display:block; margin-top:0.25rem;"></span>
+            <label class="field__label">Nota(s) Fiscal(is)</label>
+            <div id="chamadoNotaFiscalLista"></div>
+            <input type="file" id="chamadoNotaFiscalArquivo" accept="application/pdf,image/*" multiple style="display:none;" onchange="onArquivosCadastroSelecionados('chamadoNotaFiscalArquivo')">
           </div>
         </div>
         <p class="chamado-itens-ajuda">
-          Anexos opcionais. PDF ou foto, até 3MB cada. Se o arquivo for maior, comprimir antes de anexar.
+          Anexos opcionais, PDF ou foto, até 3MB cada. Se o arquivo for maior, comprimir antes de anexar.
+          <span id="chamadoEditandoAnexosAviso" style="display:none;">Pra excluir anexos já enviados, use a tela de Consulta (botão de detalhes do chamado).</span>
         </p>
       </fieldset>
       <!-- ============================================= -->

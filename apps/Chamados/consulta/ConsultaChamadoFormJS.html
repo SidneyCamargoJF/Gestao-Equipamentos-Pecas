@@ -181,6 +181,7 @@ function renderTabelaChamados(lista) {
     lista.forEach(f => {
         const tr = document.createElement('tr');
         if (f.desativado) tr.classList.add('linha-desativada');
+        if (f.concluido) tr.classList.add('linha-chamado-concluido');
 
         const btnEditar = f.desativado 
         ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
@@ -199,7 +200,7 @@ function renderTabelaChamados(lista) {
         <td>${escapeHtml(f.motivo)}</td>
         <td>${escapeHtml(f.tipo)}</td>
         <td>${montarBadgePrioridadeChamado(f.prioridade)}</td>
-        <td>${escapeHtml(f.status)}</td>
+        <td>${montarBadgeStatusChamado(f.status)}</td>
         <td>${escapeHtml(f.atribuidoA)}</td>
         <td>${escapeHtml(f.dataAbertura)}</td>
         <td class="acao-cell">
@@ -211,7 +212,6 @@ function renderTabelaChamados(lista) {
     });
 }
 
-// ===== BADGE COLORIDO DE PRIORIDADE (mesmo padrão do garantia-badge de Peças) =====
 function montarBadgePrioridadeChamado(prioridade) {
     const chave = String(prioridade || '').trim().toLowerCase();
     const rotulos = { baixa: 'Baixa', media: 'Média', alta: 'Alta', urgente: 'Urgente' };
@@ -220,10 +220,17 @@ function montarBadgePrioridadeChamado(prioridade) {
     return `<span class="prioridade-badge ${chave}">${escapeHtml(texto)}</span>`;
 }
 
-// ===== DETALHES DO CHAMADO (botão "olho" -- abre modal com abas
-// "Informações do Chamado" (todas as colunas de tbl_chamados, incluindo
-// Relatório/Nota Fiscal quando existirem) e "Histórico" (linha do tempo de
-// tbl_chamado_historico + adicionar anotação) =====
+// Status também virou badge (igual a prioridade) -- "concluido" vem
+// destacado/brilhante de propósito, pra não parecer "apagado" igual um
+// chamado cancelado (ver .status-badge.concluido em ConsultaChamadoFormCSS.html).
+function montarBadgeStatusChamado(status) {
+    const chave = String(status || '').trim().toLowerCase().replace(/\s+/g, '-');
+    const rotulos = { aberto: 'Aberto', 'em-andamento': 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
+    const texto = rotulos[chave] || (status || '--');
+    if (!chave) return '--';
+    return `<span class="status-badge ${chave}">${escapeHtml(texto)}</span>`;
+}
+
 let chamadoIdAtualModal = null;
 let anotacaoEditandoId = null;
 let historicoChamadoAtual = [];
@@ -257,6 +264,7 @@ async function abrirDetalhesChamado(chamadoId) {
             return;
         }
         if (conteudo) conteudo.innerHTML = montarDetalheChamadoHtml(resposta.chamado);
+        carregarAnexosChamadoUI(chamadoId);
 
         const botoesStatus = document.getElementById('detalheChamadoStatusBotoes');
         if (botoesStatus) botoesStatus.innerHTML = montarBotoesStatusChamado(resposta.chamado.status);
@@ -365,6 +373,10 @@ async function carregarHistoricoChamadoUI(chamadoId) {
     }
 }
 
+async function carregarAnexosChamadoUI(chamadoIdAtualModal) {
+    
+}
+
 // Cores por tipo -- inline de propósito (não em CSS externo), já que esse
 // projeto tem vários arquivos CSS duplicados/conflitantes que já causaram
 // bug de estilo não aplicar antes. 'anotacao' (manual) = azulado + botão de
@@ -409,22 +421,6 @@ function montarHistoricoChamadoHtml(lista) {
             </div>
         `;
     }).join('');
-}
-
-async function excluirAnotacaoChamadoUI(historicoId) {
-    if (!confirm('Excluir essa anotação?')) return;
-
-    try {
-        const resposta = await runServerFunction('excluirAnotacaoChamado', historicoId);
-        if (resposta && resposta.sucesso === false) {
-            alert(resposta.mensagem);
-            return;
-        }
-        carregarHistoricoChamadoUI(chamadoIdAtualModal);
-    } catch (error) {
-        console.error('Erro ao excluir anotação:', error);
-        alert('Erro ao excluir anotação.');
-    }
 }
 
 async function adicionarAnotacaoChamadoUI() {
@@ -526,27 +522,41 @@ function montarDetalheChamadoHtml(c) {
             <span class="detalhe-chamado-valor">${valor && String(valor).trim() ? escapeHtml(valor) : '--'}</span>
         </div>`;
 
-    const linhaLink = (rotulo, url, texto) => `
-        <div class="detalhe-chamado-linha">
-            <span class="detalhe-chamado-rotulo">${rotulo}</span>
-            <span class="detalhe-chamado-valor">${url ? `<a href="${url}" target="_blank" rel="noopener">${texto}</a>` : '--'}</span>
+    // Título de seção -- separa o modal em blocos, em vez da lista única
+    // corrida que tinha antes. Classes em css/modalCSS.html.
+    const secao = (titulo, conteudoHtml) => `
+        <div class="detalhe-chamado-secao">
+            <h4 class="detalhe-chamado-secao-titulo">${titulo}</h4>
+            ${conteudoHtml}
         </div>`;
 
-    return `
+    const infoChamado = `
         ${linha('Motivo', c.motivo)}
         ${linha('Tipo', c.tipo)}
         ${linha('Prioridade', c.prioridade)}
         ${linha('Status', c.status === 'Concluido' ? 'Concluído' : c.status)}
-        ${linha('Equipamento', c.equipamento)}
         ${linha('Aberto por', c.abertoPor)}
         ${linha('Atribuído a', c.atribuidoA)}
+    `;
+
+    const infoEquipamento = `
+        ${linha('Equipamento', c.equipamento)}
+        ${linha('Observação', c.observacao)}
+    `;
+
+    const infoDatasAnexos = `
         ${linha('Data de Abertura', c.dataAbertura)}
         ${linha('Data de Início do Atendimento', c.dataInicioAndamento)}
         ${linha('Data de Finalização', c.dataFinalizacao)}
-        ${linha('Observação', c.observacao)}
-        ${linhaLink('Relatório', c.relatorioUrl, 'Abrir relatório')}
-        ${linhaLink('Nota Fiscal', c.notaFiscalUrl, 'Abrir nota fiscal')}
         ${linha('Última Alteração', c.dataAlteracao)}
+        <div id="anexosChamadoLista"><p style="color:var(--color-slate-500,#64748b); font-size:0.875rem;">Carregando anexos...</p></div>
+        <input type="file" id="inputAnexoOculto" accept="application/pdf,image/*" style="display:none;" onchange="onArquivoAnexoSelecionado()">
+    `;
+
+    return `
+        ${secao('Informações do Chamado', infoChamado)}
+        ${secao('Equipamento e Observações', infoEquipamento)}
+        ${secao('Datas e Anexos', infoDatasAnexos)}
     `;
 }
 
@@ -566,24 +576,38 @@ const CHAMADO_STATUS_OPCOES = [
 // olho e reconhecer o status sem precisar ler o texto do botão.
 const CHAMADO_STATUS_CORES = {
     'Aberto': { bg: '#dbeafe', cor: '#1d4ed8', bgAtual: '#1d4ed8', borda: '#1d4ed8' },
-    'Em Andamento': { bg: '#fef3c7', cor: '#92400e', bgAtual: '#b45309', borda: '#b45309' },
+    'Em Andamento': { bg: '#fef3c7', cor: '#92400e', bgAtual: '#F7D602', borda: '#F0A531' },
     'Concluido': { bg: '#dcfce7', cor: '#166534', bgAtual: '#15803d', borda: '#15803d' }
 };
 
 function montarBotoesStatusChamado(statusAtual) {
     const statusNormalizado = String(statusAtual || '').trim().toLowerCase();
-    const estiloBase = 'width:auto; padding:0.625rem 1.25rem; border-radius:0.5rem; font-family:inherit; font-weight:600; font-size:0.875rem; cursor:pointer; border-width:0.0625rem; border-style:solid;';
+    const indiceAtual = CHAMADO_STATUS_OPCOES.findIndex(o => o.valor.toLowerCase() === statusNormalizado);
 
     return `
-        <div style="display:flex; gap:0.75rem; padding-top:1rem; margin-top:1rem; border-top:0.0625rem solid var(--color-slate-100, #f1f5f9);">
-            ${CHAMADO_STATUS_OPCOES.map(opcao => {
-                const ehAtual = opcao.valor.toLowerCase() === statusNormalizado;
+        <div class="chamado-status-stepper">
+            ${CHAMADO_STATUS_OPCOES.map((opcao, idx) => {
                 const cores = CHAMADO_STATUS_CORES[opcao.valor];
-                const estilo = ehAtual
-                    ? estiloBase + `background:${cores.bgAtual}; color:#fff; border-color:${cores.borda}; cursor:not-allowed; box-shadow: inset 0 0.1875rem 0.3rem rgba(0,0,0,0.4), inset 0 0.0625rem 0.125rem rgba(0,0,0,0.3); transform: translateY(0.0625rem);`
-                    : estiloBase + `background:${cores.bg}; color:${cores.cor}; border-color:${cores.bg};`;
-                return `<button type="button" style="${estilo}" ${ehAtual ? 'disabled' : ''}
-                    onclick="alterarStatusChamadoUI('${opcao.valor}')">${opcao.rotulo}</button>`;
+                let estado = 'futuro';
+                if (idx < indiceAtual) estado = 'concluido';
+                if (idx === indiceAtual) estado = 'atual';
+
+                const clicavel = estado !== 'atual';
+                const onclickAttr = clicavel ? ` onclick="alterarStatusChamadoUI('${opcao.valor}')"` : '';
+                const tituloAttr = clicavel ? ` title="Marcar como ${opcao.rotulo}"` : '';
+                const circuloConteudo = estado === 'concluido' ? '✓' : String(idx + 1);
+
+                const linhaAntes = idx > 0
+                    ? `<div class="chamado-status-linha${idx <= indiceAtual ? ' chamado-status-linha--preenchida' : ''}" style="${idx <= indiceAtual ? `background:${cores.borda};` : ''}"></div>`
+                    : '';
+
+                return `
+                    ${linhaAntes}
+                    <div class="chamado-status-step chamado-status-step--${estado}" style="--cor-status:${cores.bgAtual};"${onclickAttr}${tituloAttr}>
+                        <div class="chamado-status-step-circulo">${circuloConteudo}</div>
+                        <span class="chamado-status-step-rotulo">${opcao.rotulo}</span>
+                    </div>
+                `;
             }).join('')}
         </div>
     `;
@@ -606,8 +630,132 @@ async function alterarStatusChamadoUI(novoStatus) {
     }
 }
 
-// DESATIVAR / REATIVAR
+// DESATIVAR / REATIVAR ANOTAÇÕES E ANEXOS
 let idChamadoExclusao = null;
+
+async function excluirAnotacaoChamadoUI(historicoId) {
+    if (!confirm('Excluir essa anotação?')) return;
+
+    try {
+        const resposta = await runServerFunction('excluirAnotacaoChamado', historicoId);
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        carregarHistoricoChamadoUI(chamadoIdAtualModal);
+    } catch (error) {
+        console.error('Erro ao excluir anotação:', error);
+        alert('Erro ao excluir anotação.');
+    }
+}
+
+async function excluirAnexoChamadoUI(anexoId) {
+    if (!confirm('Excluir esse anexo?')) return;
+
+    try{
+        const resposta = await runServerFunction('excluirAnexoChamado', anexoId);
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        carregarAnexosChamadoUI(chamadoIdAtualModal);
+    } catch (e) {
+        console.error('Erro ao excluir anexo:', e);
+        alert('Erro ao excluir anexo.');
+    }
+}
+
+// Uma fileira por tipo de anexo (Relatórios / Notas Fiscais / Outros --
+// esse último só aparece se tiver algum). Cada fileira termina num card
+// "+" que dispara o input de arquivo escondido (ver inputAnexoOculto em
+// montarDetalheChamadoHtml) já marcado com o tipo daquela fileira.
+function montarAnexosChamadoHtml(lista) {
+    const grupos = { 'Relatório': [], 'Nota Fiscal': [], 'Outro': [] };
+    (Array.isArray(lista) ? lista : []).forEach(item => {
+        const chave = grupos[item.tipo] ? item.tipo : 'Outro';
+        grupos[chave].push(item);
+    });
+
+    const cardAnexo = (item) => `
+        <div class="anexo-card-wrapper">
+            <a href="${item.url}" target="_blank" rel="noopener" title="${escapeHtml(item.nomeArquivo)}" class="anexo-card">
+                <div class="anexo-card-icone">📄</div>
+                <span class="anexo-card-nome">${escapeHtml(item.nomeArquivo)}</span>
+            </a>
+            <button type="button" class="anexo-card-excluir" title="Excluir anexo" onclick="excluirAnexoChamadoUI(${item.id})">✕</button>
+        </div>`;
+
+    const cardAdicionar = (tipo, rotulo) => `
+        <button type="button" class="anexo-card anexo-card-add" onclick="iniciarUploadAnexo('${tipo}')" title="Adicionar ${rotulo}">
+            <div class="anexo-card-icone">+</div>
+            <span class="anexo-card-nome">Adicionar</span>
+        </button>`;
+
+    const fileira = (titulo, tipo, itens) => `
+        <div class="anexo-secao">
+            <span class="anexo-secao-titulo">${titulo}</span>
+            <div class="anexo-lista">
+                ${itens.map(cardAnexo).join('')}
+                ${cardAdicionar(tipo, titulo.toLowerCase())}
+            </div>
+        </div>`;
+
+    return fileira('Relatórios', 'Relatório', grupos['Relatório'])
+        + fileira('Notas Fiscais', 'Nota Fiscal', grupos['Nota Fiscal'])
+        + (grupos['Outro'].length ? fileira('Outros', 'Outro', grupos['Outro']) : '');
+}
+
+async function carregarAnexosChamadoUI(chamadoId) {
+    const lista = document.getElementById('anexosChamadoLista');
+    if (lista) lista.innerHTML = '<p>Carregando...</p>';
+
+    try {
+        const anexos = await runServerFunction('buscarAnexosChamado', chamadoId);
+        if (lista) lista.innerHTML = montarAnexosChamadoHtml(anexos);
+    } catch (error) {
+        console.error('Erro ao buscar anexos do chamado:', error);
+        if (lista) lista.innerHTML = '<p>Erro ao buscar anexos.</p>';
+    }
+}
+
+// Guarda qual fileira disparou o seletor de arquivo -- setado bem antes do
+// .click(), lido de volta no onchange do input (ver onArquivoAnexoSelecionado).
+let tipoAnexoNovo = '';
+
+function iniciarUploadAnexo(tipo) {
+    tipoAnexoNovo = tipo;
+    const inputEl = document.getElementById('inputAnexoOculto');
+    if (inputEl) inputEl.click();
+}
+
+async function onArquivoAnexoSelecionado() {
+    if (!chamadoIdAtualModal) return;
+    const inputEl = document.getElementById('inputAnexoOculto');
+
+    let arquivo;
+    try {
+        arquivo = await lerArquivoComoBase64(inputEl);
+    } catch (erroArquivo) {
+        alert(erroArquivo.message);
+        if (inputEl) inputEl.value = '';
+        return;
+    }
+    if (!arquivo) return;
+
+    try {
+        const resposta = await runServerFunction('adicionarAnexoChamado', chamadoIdAtualModal, tipoAnexoNovo, arquivo);
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        carregarAnexosChamadoUI(chamadoIdAtualModal);
+    } catch (error) {
+        console.error('Erro ao adicionar anexo:', error);
+        alert('Erro ao adicionar anexo.');
+    } finally {
+        if (inputEl) inputEl.value = '';
+    }
+}
 
 function confirmarExclusaoChamado(id) {
     idChamadoExclusao = id;
@@ -651,9 +799,4 @@ function editarChamado(id) {
         trocarPagina('chamado-form', id);
     }
 }
-
-
-
-
-
 </script>
