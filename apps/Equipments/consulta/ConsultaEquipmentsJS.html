@@ -65,7 +65,7 @@ console.log('listaFiltrada: ' + this.listaFiltrada)
 
     console.log('retorno - Lista Filtrada: ')
     console.log(this.listaFiltrada)
-
+    
     this.render(this.listaFiltrada);
   }
 
@@ -139,11 +139,8 @@ console.log('listaFiltrada: ' + this.listaFiltrada)
 
   // ===== MODAL DE CADASTRO =====
   abrirModalCadastro() {
-    console.log('equipmentViewController.abrirModalCadastro()')
-    const input = document.getElementById('equipmentSearch');
+    const input = document.getElementById('novoEquipmentNome');
     if (input) input.value = '';
-
-    trocarPagina('equipments-form', 0)
 
     const modal = document.getElementById('modalCadastroEquipment');
     if (modal) {
@@ -191,12 +188,27 @@ console.log('listaFiltrada: ' + this.listaFiltrada)
   edit(id) {
 console.log('edit')
 console.log('id: ' + id)
-    
-    document.getElementById('cadEquipId').value = String(id);
+    const novoNome = document.getElementById('editEquipmentNome').value;
 
-    trocarPagina('equipments-form', id)
+    if (!novoNome || !novoNome.trim()) {
+      alert("Por favor, digite o nome do equipamento.");
+      return;
+    }
 
-    return
+    google.script.run
+      .withSuccessHandler((resposta) => {
+        if (resposta && resposta.sucesso) {
+          if (typeof fecharModal === 'function') fecharModal('modalEdicaoEquipment');
+          this.consultar();
+        } else {
+          alert(resposta ? resposta.mensagem : "Erro ao atualizar.");
+        }
+      })
+      .withFailureHandler((err) => {
+        console.error('Erro ao edita: ', err);
+        alert('Erro de comunicação com o servidor.');
+      })
+      .editarEquipment(id, novoNome.trim());
   }
 
   reativar(id) {

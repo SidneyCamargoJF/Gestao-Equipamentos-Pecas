@@ -209,7 +209,8 @@
     try {
       const resultado = await runServerFunction('verificarPatrimonioChamado', patrimonio);
       if (resultado && resultado.existe) {
-        statusEl.textContent = 'Equipamento encontrado' + (resultado.marca ? ' (' + resultado.marca + (resultado.modelo ? ' - ' + resultado.modelo : '') + ')' : '');
+        const detalheEquipamento = (resultado.marca ? ' - ' + resultado.marca : '') + (resultado.modelo ? ' - ' + resultado.modelo : '');
+        statusEl.textContent = 'Equipamento encontrado' + (resultado.nome ? ' (' + resultado.nome + detalheEquipamento + ')' : '');
         statusEl.className = 'chamado-patrimonio-status encontrado';
         preencherCamposEquipamentoChamado(resultado);
       } else {
@@ -368,76 +369,86 @@
     });
   }
 
-  // ===== SALVAR =====
+  let salvandoChamado = false;
+
   async function salvarChamado() {
-    const selectMotivo = document.getElementById('chamadoMotivo')?.value || '';
-    const motivo = selectMotivo === 'outro'
-      ? document.getElementById('chamadoMotivoOutro')?.value.trim() || ''
-      : selectMotivo;
-    if (!motivo) {
-      alert('Preencha o motivo do chamado.');
-      return;
-    }
-
-    const tipo = document.getElementById('chamadoTipo')?.value || '';
-    if (!tipo) {
-      alert('Preencha o tipo do chamado.');
-      return;
-    }
-
-    const patrimonio = document.getElementById('chamadoEquipPatrimonio')?.value.trim() || '';
-    const localizacao = document.getElementById('chamadoEquipLocalizacao')?.value.trim() || '';
-
-    if (!patrimonio && !localizacao) {
-      alert('Informe pelo menos o Patrimônio ou a Localização do equipamento -- é o mínimo pra saber sobre qual equipamento é o chamado.');
-      return;
-    }
-
-
-    let relatorioArquivos = [], notaFiscalArquivos = [];
-    try {
-      relatorioArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoRelatorioArquivo);
-      notaFiscalArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoNotaFiscalArquivo);
-    } catch (erroArquivo) {
-      alert(erroArquivo.message);
-      return;
-    }
-
-    const dadosChamado = {
-      id: document.getElementById('chamadoId')?.value || '',
-      motivo: motivo,
-      tipo: document.getElementById('chamadoTipo')?.value || '',
-      classificacao: document.getElementById('chamadoClassificacao')?.value || '',
-      abertoPor: document.getElementById('chamadoAbertoPor')?.value.trim() || '',
-      atribuidoA: document.getElementById('chamadoAtribuidoA')?.value.trim() || '',
-      descricao: document.getElementById('chamadoDescricao')?.value.trim() || '',
-      patrimonio: patrimonio,
-      localizacao: localizacao,
-      marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
-      modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
-      capacidade: document.getElementById('chamadoEquipCapacidade')?.value.trim() || '',
-      relatorios: relatorioArquivos,
-      notasFiscais: notaFiscalArquivos
-    };
-
-    if (typeof exibirModal === 'function') exibirModal('processando');
+    if (salvandoChamado) return;
+    salvandoChamado = true;
+    const btnSalvarEl = document.getElementById('chamadoBtnSalvar');
+    if (btnSalvarEl) btnSalvarEl.disabled = true;
 
     try {
-      const resposta = await runServerFunction('salvarChamadoBackend', dadosChamado);
-
-      if (resposta && resposta.sucesso === false) {
-        alert(resposta.mensagem);
+      const selectMotivo = document.getElementById('chamadoMotivo')?.value || '';
+      const motivo = selectMotivo === 'outro'
+        ? document.getElementById('chamadoMotivoOutro')?.value.trim() || ''
+        : selectMotivo;
+      if (!motivo) {
+        alert('Preencha o motivo do chamado.');
         return;
       }
 
-      alert(resposta.mensagem);
-      if (typeof forcarConsultaAoAbrirChamados !== 'undefined') forcarConsultaAoAbrirChamados = true;
-      trocarPagina('chamado-view');
-    } catch (err) {
-      console.error('Erro ao salvar chamado:', err);
-      alert('Erro ao conectar com o servidor.');
+      const tipo = document.getElementById('chamadoTipo')?.value || '';
+      if (!tipo) {
+        alert('Preencha o tipo do chamado.');
+        return;
+      }
+
+      const patrimonio = document.getElementById('chamadoEquipPatrimonio')?.value.trim() || '';
+      const localizacao = document.getElementById('chamadoEquipLocalizacao')?.value.trim() || '';
+
+      if (!patrimonio && !localizacao) {
+        alert('Informe pelo menos o Patrimônio ou a Localização do equipamento -- é o mínimo pra saber sobre qual equipamento é o chamado.');
+        return;
+      }
+
+      let relatorioArquivos = [], notaFiscalArquivos = [];
+      try {
+        relatorioArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoRelatorioArquivo);
+        notaFiscalArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoNotaFiscalArquivo);
+      } catch (erroArquivo) {
+        alert(erroArquivo.message);
+        return;
+      }
+
+      const dadosChamado = {
+        id: document.getElementById('chamadoId')?.value || '',
+        motivo: motivo,
+        tipo: document.getElementById('chamadoTipo')?.value || '',
+        classificacao: document.getElementById('chamadoClassificacao')?.value || '',
+        abertoPor: document.getElementById('chamadoAbertoPor')?.value.trim() || '',
+        atribuidoA: document.getElementById('chamadoAtribuidoA')?.value.trim() || '',
+        descricao: document.getElementById('chamadoDescricao')?.value.trim() || '',
+        patrimonio: patrimonio,
+        localizacao: localizacao,
+        marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
+        modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
+        capacidade: document.getElementById('chamadoEquipCapacidade')?.value.trim() || '',
+        relatorios: relatorioArquivos,
+        notasFiscais: notaFiscalArquivos
+      };
+
+      if (typeof exibirModal === 'function') exibirModal('processando');
+
+      try {
+        const resposta = await runServerFunction('salvarChamadoBackend', dadosChamado);
+
+        if (resposta && resposta.sucesso === false) {
+          alert(resposta.mensagem);
+          return;
+        }
+
+        alert(resposta.mensagem);
+        if (typeof forcarConsultaAoAbrirChamados !== 'undefined') forcarConsultaAoAbrirChamados = true;
+        trocarPagina('chamado-view');
+      } catch (err) {
+        console.error('Erro ao salvar chamado:', err);
+        alert('Erro ao conectar com o servidor.');
+      } finally {
+        if (typeof fecharModal === 'function') fecharModal('processando');
+      }
     } finally {
-      if (typeof fecharModal === 'function') fecharModal('processando');
+      salvandoChamado = false;
+      if (btnSalvarEl) btnSalvarEl.disabled = false;
     }
   }
 
@@ -531,7 +542,7 @@
     const arquivos = chamadoAnexosSelecionados[inputId] || [];
     const chips = arquivos.map((arquivo, indice) => `
       <div class="anexo-card-wrapper">
-        <div class="anexo-card">
+        <div class="anexo-card" title="${escapeHtmlChamado(arquivo.name)}">
           <div class="anexo-card-icone">📄</div>
           <span class="anexo-card-nome">${escapeHtmlChamado(arquivo.name)}</span>
         </div>

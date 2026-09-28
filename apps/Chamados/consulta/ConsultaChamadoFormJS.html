@@ -665,10 +665,10 @@ async function excluirAnexoChamadoUI(anexoId) {
     }
 }
 
-// Uma fileira por tipo de anexo (Relatórios / Notas Fiscais / Outros --
-// esse último só aparece se tiver algum). Cada fileira termina num card
-// "+" que dispara o input de arquivo escondido (ver inputAnexoOculto em
-// montarDetalheChamadoHtml) já marcado com o tipo daquela fileira.
+function nomeArquivoSemData(nome) {
+    return String(nome || '').replace(/^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\s*_\s*/, '');
+}
+
 function montarAnexosChamadoHtml(lista) {
     const grupos = { 'Relatório': [], 'Nota Fiscal': [], 'Outro': [] };
     (Array.isArray(lista) ? lista : []).forEach(item => {
@@ -676,14 +676,17 @@ function montarAnexosChamadoHtml(lista) {
         grupos[chave].push(item);
     });
 
-    const cardAnexo = (item) => `
+    const cardAnexo = (item) => {
+        const nomeExibido = escapeHtml(nomeArquivoSemData(item.nomeArquivo));
+        return `
         <div class="anexo-card-wrapper">
-            <a href="${item.url}" target="_blank" rel="noopener" title="${escapeHtml(item.nomeArquivo)}" class="anexo-card">
+            <a href="${item.url}" target="_blank" rel="noopener" title="${nomeExibido}" class="anexo-card">
                 <div class="anexo-card-icone">📄</div>
-                <span class="anexo-card-nome">${escapeHtml(item.nomeArquivo)}</span>
+                <span class="anexo-card-nome">${nomeExibido}</span>
             </a>
             <button type="button" class="anexo-card-excluir" title="Excluir anexo" onclick="excluirAnexoChamadoUI(${item.id})">✕</button>
         </div>`;
+    };
 
     const cardAdicionar = (tipo, rotulo) => `
         <button type="button" class="anexo-card anexo-card-add" onclick="iniciarUploadAnexo('${tipo}')" title="Adicionar ${rotulo}">

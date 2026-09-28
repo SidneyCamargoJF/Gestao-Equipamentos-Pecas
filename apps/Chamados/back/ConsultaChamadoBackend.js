@@ -390,8 +390,9 @@ function excluirAnexoChamado(anexoId) {
                 abaAnexos.getRange(linhaReal, 1, 1, numColumnsTicketAnexos).setBackground("#F4CCCC");
 
                 const chamadoIdDoAnexo = dados[i][1];
+                const tipoArquivo = dados[i][2];
                 const nomeArquivo = dados[i][3];
-                adicionarHistoricoSistema(chamadoIdDoAnexo, 'Anexo excluído: "' + nomeArquivo + '" (' + tipo + ')');
+                adicionarHistoricoSistema(chamadoIdDoAnexo, 'Anexo excluído: "' + nomeArquivo + '" (' + tipoArquivo + ')');
 
                 return {sucesso: true, mensagem: 'Anexo exlcuído da interface, dado permanece no banco de dados.'}
             }

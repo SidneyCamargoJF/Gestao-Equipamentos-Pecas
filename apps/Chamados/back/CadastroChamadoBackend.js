@@ -213,7 +213,7 @@ function filtrarFuncionarios() {
  * Chamado ao sair do campo Patrimônio (evento blur), igual
  * verificarCnpjAoSair() do Cadastro de Fornecedor. Nunca bloqueia o
  * cadastro -- só informa.
- * Retorna { existe, localizacao?, capacidade?, marca?, modelo?, sequencia? }
+ * Retorna { existe, nome?, localizacao?, capacidade?, marca?, modelo?, sequencia? }
  */
 function verificarPatrimonioChamado(patrimonio) {
   const patrimonioBuscado = String(patrimonio || '').trim().toLowerCase();
@@ -225,6 +225,7 @@ function verificarPatrimonioChamado(patrimonio) {
     if (patrimonioLinha === patrimonioBuscado) {
       return {
         existe: true,
+        nome: dados[i][1] || '',
         localizacao: dados[i][7] || '',
         capacidade: dados[i][3] || '',
         marca: dados[i][2] || '',
@@ -329,11 +330,6 @@ function salvarArquivoAnexoChamado(arquivo) {
     console.log('[anexo] ERRO ao criar o arquivo no Drive:', e.message);
     throw e;
   }
-
-  // Compartilhamento é só um "extra" -- se a conta (ex: domínio educacional)
-  // bloquear o modo "qualquer pessoa com o link", isso NÃO pode impedir o
-  // chamado de ser salvo. Só loga o aviso e segue -- quem tiver acesso à
-  // pasta (você) já consegue abrir o arquivo pela URL de qualquer jeito.
   try {
     arquivoDrive.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     console.log('[anexo] compartilhamento configurado.');
@@ -353,6 +349,10 @@ function adicionarAnexoChamado(chamadoId, tipo, arquivo) {
     if (arquivo == null) {
       return { sucesso: false, mensagem: 'Escolha um arquivo antes de adicionar.' };
     }
+
+    const dataAtual =  Utilities.formatDate(new Date(), 'GMT-3', "yyyy-MM-dd_HH-mm-ss");
+    const nomeDoArquivo = dataAtual + '_'  + arquivo.nome;
+    arquivo.nome = nomeDoArquivo;
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaAnexos = ss.getSheetByName(ticketAnexosTableName);
