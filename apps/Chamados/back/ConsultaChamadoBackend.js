@@ -16,6 +16,14 @@ function filtrarChamados(criterios) {
     let prioridadeBuscada = (criterios && criterios.prioridade) ? String(criterios.prioridade).trim().toLowerCase() : "";
     let statusBuscado = (criterios && criterios.status) ? String(criterios.status).trim().toLowerCase() : "";
 
+    // o set nesse caso é tipo um array mas sem repetição o map() ia gerar o mesmo ID 3 vezes 
+    // e ainda verifica se o valor esta ali dentro com o .has(valor)
+    let idsComAnexo = new Set(
+        ReadTicketAnexos()
+            .filter(linha => !linha[7])
+            .map(linha => Number(linha[1]))
+    );
+
     for (let i = 0; i < dados.length; i++) {
         // ID_EQUIPAMENTO (dados[i][1]) é só o ID -- traduz pra "Patrimônio - Nome/Modelo"
         // pra mostrar na tabela e pra poder filtrar pelo patrimônio digitado de verdade.
@@ -49,7 +57,8 @@ function filtrarChamados(criterios) {
                 dataAbertura: dados[i][5],
                 status: dados[i][11],
                 desativado: desativado,
-                concluido: concluido
+                concluido: concluido,
+                temAnexo: idsComAnexo.has(Number(dados[i][0]))
             })
         }
     }
@@ -264,13 +273,13 @@ function buscarAnexosChamado (chamadoId) {
 
     return dados
         .filter(linha => Number(linha[1]) === idBuscado)
-        .filter(linha => !linha[6])
+        .filter(linha => !linha[7])
         .map(linha => ({
             id: linha[0],
             tipo: linha[2],
             nomeArquivo: linha[3],
             url: linha[4],
-            dataUpload: linha[5]
+            dataUpload: linha[6]
         }))
         .reverse();
 }

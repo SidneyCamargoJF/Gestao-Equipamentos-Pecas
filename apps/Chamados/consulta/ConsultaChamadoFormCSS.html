@@ -493,11 +493,6 @@ font-weight: 800;
 box-shadow: 0 0 0 0.125rem #bbf7d0;
 }
 
-/* ===== CHAMADOS CONCLUÍDOS -- parecido com desativado (linha-desativada,
-   em css/tableCSS.html, compartilhada com outras telas), mas sem o opaco
-   cinza -- um verde bem clarinho, mantendo o texto legível. A ordem das
-   classes no seletor não importa; o que importa é as DUAS estarem na
-   mesma <tr> (ver renderTabelaChamados). */
 tr.linha-desativada.linha-chamado-concluido {
 opacity: 1;
 background-color: #f0fdf4;
@@ -633,5 +628,23 @@ flex-shrink: 0;
 .btn-success {
     width: auto;
 }
+}
+
+.chamado-ver-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.chamado-anexo-selo {
+    position: absolute;
+    top: -0.3rem;
+    right: -0.3rem;
+    font-size: 0.65rem;
+    line-height: 1;
+    background: #e7e7e7;
+    border-radius: 45%;
+    box-shadow: 0 0.0625rem 0.25rem rgba(0, 0, 0, 0.25);
+    padding: 0.125rem;
+    pointer-events: none;
 }
 </style>

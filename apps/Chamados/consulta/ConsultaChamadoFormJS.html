@@ -191,7 +191,11 @@ function renderTabelaChamados(lista) {
         ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarChamadoUI('${f.id}')">♻️</button>`
         : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="confirmarExclusaoChamado('${f.id}')">🗑️</button>`;
         
-        const btnVer = `<button class="btn-acao btn-ver-linha" title="Ver detalhes" onclick="abrirDetalhesChamado('${f.id}')">👁️</button>`;
+        const btnVer = `
+            <span class="chamado-ver-wrapper">
+                <button class="btn-acao btn-ver-linha" title="Ver detalhes" onclick="abrirDetalhesChamado('${f.id}')">👁️</button>
+                ${f.temAnexo ? '<span class="chamado-anexo-selo" title="Tem anexo">📁</span>' : ''}
+            </span>`;
 
         tr.innerHTML = `
         <td class="acao-cell">${btnVer}</td>
@@ -377,11 +381,6 @@ async function carregarAnexosChamadoUI(chamadoIdAtualModal) {
     
 }
 
-// Cores por tipo -- inline de propósito (não em CSS externo), já que esse
-// projeto tem vários arquivos CSS duplicados/conflitantes que já causaram
-// bug de estilo não aplicar antes. 'anotacao' (manual) = azulado + botão de
-// excluir; 'sistema' (automático, imutável) = neutro; 'alerta' (chamado
-// desativado) = vermelho.
 function montarHistoricoChamadoHtml(lista) {
     if (!Array.isArray(lista) || lista.length === 0) {
         return '<p>Nenhuma movimentação registrada ainda.</p>';
@@ -522,8 +521,6 @@ function montarDetalheChamadoHtml(c) {
             <span class="detalhe-chamado-valor">${valor && String(valor).trim() ? escapeHtml(valor) : '--'}</span>
         </div>`;
 
-    // Título de seção -- separa o modal em blocos, em vez da lista única
-    // corrida que tinha antes. Classes em css/modalCSS.html.
     const secao = (titulo, conteudoHtml) => `
         <div class="detalhe-chamado-secao">
             <h4 class="detalhe-chamado-secao-titulo">${titulo}</h4>
@@ -560,20 +557,13 @@ function montarDetalheChamadoHtml(c) {
     `;
 }
 
-// ===== STATUS DO CHAMADO (Aberto / Em Andamento / Concluído) =====
-// "valor" é o que fica salvo na planilha e usado nas comparações (sem
-// acento em "Concluido" de propósito, pra bater com o value="concluido" do
-// filtro de Status e com o "=== 'concluido'" de filtrarChamados). "rotulo"
-// é só o texto bonito mostrado pro usuário.
+// ===== STATUS DO CHAMADO =====
 const CHAMADO_STATUS_OPCOES = [
     { valor: 'Aberto', rotulo: 'Aberto' },
     { valor: 'Em Andamento', rotulo: 'Em Andamento' },
     { valor: 'Concluido', rotulo: 'Concluído' }
 ];
 
-// Cada status tem sua própria cor (mesma ideia dos badges de prioridade),
-// em vez de todos ficarem cinza/roxo genérico -- fica mais fácil bater o
-// olho e reconhecer o status sem precisar ler o texto do botão.
 const CHAMADO_STATUS_CORES = {
     'Aberto': { bg: '#dbeafe', cor: '#1d4ed8', bgAtual: '#1d4ed8', borda: '#1d4ed8' },
     'Em Andamento': { bg: '#fef3c7', cor: '#92400e', bgAtual: '#F7D602', borda: '#F0A531' },
@@ -630,7 +620,7 @@ async function alterarStatusChamadoUI(novoStatus) {
     }
 }
 
-// DESATIVAR / REATIVAR ANOTAÇÕES E ANEXOS
+// DESATIVAR / REATIVAR ANOTAÇÕES E ANEXOS (ADICIONAR TMB)
 let idChamadoExclusao = null;
 
 async function excluirAnotacaoChamadoUI(historicoId) {
@@ -646,22 +636,6 @@ async function excluirAnotacaoChamadoUI(historicoId) {
     } catch (error) {
         console.error('Erro ao excluir anotação:', error);
         alert('Erro ao excluir anotação.');
-    }
-}
-
-async function excluirAnexoChamadoUI(anexoId) {
-    if (!confirm('Excluir esse anexo?')) return;
-
-    try{
-        const resposta = await runServerFunction('excluirAnexoChamado', anexoId);
-        if (resposta && resposta.sucesso === false) {
-            alert(resposta.mensagem);
-            return;
-        }
-        carregarAnexosChamadoUI(chamadoIdAtualModal);
-    } catch (e) {
-        console.error('Erro ao excluir anexo:', e);
-        alert('Erro ao excluir anexo.');
     }
 }
 
@@ -684,7 +658,7 @@ function montarAnexosChamadoHtml(lista) {
                 <div class="anexo-card-icone">📄</div>
                 <span class="anexo-card-nome">${nomeExibido}</span>
             </a>
-            <button type="button" class="anexo-card-excluir" title="Excluir anexo" onclick="excluirAnexoChamadoUI(${item.id})">✕</button>
+            <button type="button" class="anexo-card-excluir" title="Excluir anexo" onclick="confirmarExclusaoAnexo(${item.id})">✕</button>
         </div>`;
     };
 
@@ -721,8 +695,12 @@ async function carregarAnexosChamadoUI(chamadoId) {
     }
 }
 
-// Guarda qual fileira disparou o seletor de arquivo -- setado bem antes do
-// .click(), lido de volta no onchange do input (ver onArquivoAnexoSelecionado).
+function exibirAvisoAnexoDuplicado(mensagem) {
+    const msgEl = document.getElementById('modalAnexoDuplicadoMensagem');
+    if (msgEl) msgEl.textContent = mensagem;
+    if (typeof exibirModal === 'function') exibirModal('modalAnexoDuplicado');
+}
+
 let tipoAnexoNovo = '';
 
 function iniciarUploadAnexo(tipo) {
@@ -747,9 +725,13 @@ async function onArquivoAnexoSelecionado() {
 
     try {
         const resposta = await runServerFunction('adicionarAnexoChamado', chamadoIdAtualModal, tipoAnexoNovo, arquivo);
+        console.log('[anexo-duplicado] resposta do servidor (ver detalhes):', resposta);
         if (resposta && resposta.sucesso === false) {
-            alert(resposta.mensagem);
+            alert(resposta.mensagem);[anexo-duplicado]
             return;
+        }
+        if(resposta && resposta.duplicado) {
+            exibirAvisoAnexoDuplicado('Já existe um anexo com esse mesmo conteúdo neste chamado.');
         }
         carregarAnexosChamadoUI(chamadoIdAtualModal);
     } catch (error) {
@@ -760,8 +742,33 @@ async function onArquivoAnexoSelecionado() {
     }
 }
 
+let idAnexoExclusao = null;
+
+function confirmarExclusaoAnexo(idAnexo) {
+    idAnexoExclusao = idAnexo;
+    if (typeof exibirModal === 'function') exibirModal('modalExclusaoAnexo');
+}
+
+async function executarExclusaoAnexo() {
+    if (!idAnexoExclusao) return;
+    try {
+        const resposta = await runServerFunction('excluirAnexoChamado', idAnexoExclusao);
+        if (typeof fecharModal === 'function') fecharModal('modalExclusaoAnexo');
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        carregarAnexosChamadoUI(chamadoIdAtualModal);
+    } catch (e) {
+        console.error('Erro ao excluir anexo: ', e);
+        alert('Erro ao excluir anexo.');
+    }
+}
+
+// EXCLUIR, REATIVAR, EDITAR CHAMADOS
 function confirmarExclusaoChamado(id) {
     idChamadoExclusao = id;
+    //sistema faz uma checagem de segurança, verificando se a variável chamada é uma função
     if (typeof exibirModal === 'function') exibirModal('modalExclusaoChamado');
 }
 

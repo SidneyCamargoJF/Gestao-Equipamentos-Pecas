@@ -10,16 +10,11 @@
  * Equipamento é guardado só por ID (nunca duplica dado de
  * tbl_equipamentos):
  * - Equipamento: localizado em tbl_equipamentos pelo Patrimônio digitado;
- *   se não achar por Patrimônio, tenta pela Localização (só resolve se
- *   bater com exatamente 1 equipamento). Se não resolver nenhum dos dois,
- *   o chamado é salvo mesmo assim, sem vínculo (e o cliente é avisado).
+ *   se não achar por Patrimônio, tenta pela Localização.
+ *   
  * - No modo edição, campos que não fazem parte do formulário (ID_PECA,
  *   DATA_ABERTURA, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO, STATUS) são
- *   preservados como estavam -- só mudam pelos fluxos próprios (botões de
- *   status na Consulta). Anexos só são substituídos se um arquivo novo for
- *   enviado; senão, mantém a URL que já existia.
- *
- * Retorna { sucesso: boolean, mensagem: string, id?: number, equipamentoEncontrado?: boolean }
+ *   preservados como estavam
  */
 function salvarChamadoBackend(dados) {
   try {
@@ -64,12 +59,6 @@ function salvarChamadoBackend(dados) {
       // cópia do conteúdo da linha atual
       const linhaAtual = todasLinhas[idx];
 
-      // RELATORIO/NOTA_FISCAL não existem mais como colunas em tbl_chamados
-      // (removidas na planilha) -- anexos agora vivem só em
-      // tbl_chamado_anexos (ver loop de adicionarAnexoChamado logo abaixo).
-      // Ordem atual: ID, ID_EQUIPAMENTO, DEFEITO, TIPO, PRIORIDADE,
-      // DATA_ABERTURA, ABERTO_POR, ATRIBUIDO_A, DATA_INICIO_ANDAMENTO,
-      // DATA_FINALIZACAO, OBSERVACAO, STATUS, DATA_ALTERACAO (13 colunas).
       const linhaAtualizada = [
         idEdicao,
         equipamentoId,
@@ -89,14 +78,21 @@ function salvarChamadoBackend(dados) {
       abaChamados.getRange(linhaReal, 1, 1, numColumnsTickets).setValues([linhaAtualizada]);
       adicionarHistoricoSistema(idEdicao, 'Chamado editado');
 
-      (dados.relatorios || []).forEach(arquivo => adicionarAnexoChamado(idEdicao, 'Relatório', arquivo));
-      (dados.notasFiscais || []).forEach(arquivo => adicionarAnexoChamado(idEdicao, 'Nota Fiscal', arquivo));
+      //dados.relatorios é uma lista dos arquivos que vieram do front em forma de objeto {nome, tipo, base64
+      // o || [] se estiver vazio troca para um alista vazia para nao quebrar o map
+      //.map passa por cada item dessa lista, e a cada volta o item fica guardado no 'arquivo', map constrói uma lista nova
+      //chama a função de salvar anexo, passando o id, o texto do tipo e o arquivo 
+      // e a variavel do começo guarda a lista nova com o resultado do upload específico
+      const respostasRelatorios = (dados.relatorios || []).map(arquivo => adicionarAnexoChamado(idEdicao, 'Relatório', arquivo));
+      const respostasNotasFiscais = (dados.notasFiscais || []).map(arquivo => adicionarAnexoChamado(idEdicao, 'Nota Fiscal', arquivo));
+      const existeAnexoDuplicado = respostasRelatorios.concat(respostasNotasFiscais).some(r => r && r.duplicado);
 
       return {
         sucesso: true,
         mensagem: 'Chamado atualizado com sucesso!',
         id: idEdicao,
-        equipamentoEncontrado: equipamentoEncontrado
+        equipamentoEncontrado: equipamentoEncontrado,
+        duplicado: existeAnexoDuplicado
       };
     }
 
@@ -116,7 +112,6 @@ function salvarChamadoBackend(dados) {
     // Ordem: ID, ID_EQUIPAMENTO, DEFEITO, TIPO, PRIORIDADE, DATA_ABERTURA,
     // ABERTO_POR, ATRIBUIDO_A, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO,
     // OBSERVACAO, STATUS, DATA_ALTERACAO (13 colunas -- RELATORIO/NOTA_FISCAL
-    // não existem mais aqui, anexos vão pra tbl_chamado_anexos).
     const novaLinha = [
       novoId,
       equipamentoId,
@@ -137,16 +132,20 @@ function salvarChamadoBackend(dados) {
 
     adicionarHistoricoSistema(novoId, 'Chamado aberto');
 
-    (dados.relatorios || []).forEach(arquivo => adicionarAnexoChamado(novoId, 'Relatório', arquivo));
-    (dados.notasFiscais || []).forEach(arquivo => adicionarAnexoChamado(novoId, 'Nota Fiscal', arquivo));
+    //map guarda o retorno de cada chamada numa lista nova
+    const respostasRelatorios = (dados.relatorios || []).map(arquivo => adicionarAnexoChamado(novoId, 'Relatório', arquivo));
+    const respostasNotasFiscais = (dados.notasFiscais || []).map(arquivo => adicionarAnexoChamado(novoId, 'Nota Fiscal', arquivo));
+    const existeAnexoDuplicado = respostasRelatorios.concat(respostasNotasFiscais).some(r => r && r.duplicado);
+
 
     return {
       sucesso: true,
       mensagem: equipamentoEncontrado
         ? 'Chamado aberto com sucesso!'
-        : 'Chamado aberto com sucesso! (Não foi possível vincular a um equipamento cadastrado -- confira o Patrimônio/Localização e edite o chamado posteriormente.)',
+        : 'Chamado aberto com sucesso! (Não foi possível vincular a um equipamento. Confira o Patrimônio/Localização e edite o chamado posteriormente.)',
       id: novoId,
-      equipamentoEncontrado: equipamentoEncontrado
+      equipamentoEncontrado: equipamentoEncontrado,
+      duplicado: existeAnexoDuplicado
     };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
@@ -155,10 +154,8 @@ function salvarChamadoBackend(dados) {
 
 /**
  * Busca um chamado pelo ID pra pré-preencher o formulário de Cadastro no
- * modo edição (diferente de buscarChamadoDetalhado, que é só leitura pro
- * modal de detalhes -- esta aqui devolve os campos "crus" que o formulário
- * precisa, incluindo os dados do equipamento vinculado). Retorna null se
- * não encontrar.
+ * modo edição. 
+ * Retorna null se não encontrar.
  */
 function buscarChamadoParaEdicao(idInput) {
   try {
@@ -199,22 +196,11 @@ function buscarChamadoParaEdicao(idInput) {
   }
 }
 
-/**
- * Lista os funcionários de tbl_funcionarios pro campo "Aberto por" do
- * Cadastro de Chamado (mesmo padrão de filtrarFornecedores).
- */
 function filtrarFuncionarios() {
   const dados = ReadEmployees();
   return dados.map(linha => ({ id: linha[0], nome: linha[1] }));
 }
 
-/**
- * Verifica se existe um equipamento com esse Patrimônio em tbl_equipamentos.
- * Chamado ao sair do campo Patrimônio (evento blur), igual
- * verificarCnpjAoSair() do Cadastro de Fornecedor. Nunca bloqueia o
- * cadastro -- só informa.
- * Retorna { existe, nome?, localizacao?, capacidade?, marca?, modelo?, sequencia? }
- */
 function verificarPatrimonioChamado(patrimonio) {
   const patrimonioBuscado = String(patrimonio || '').trim().toLowerCase();
   if (!patrimonioBuscado) return { existe: false };
@@ -237,12 +223,6 @@ function verificarPatrimonioChamado(patrimonio) {
   return { existe: false };
 }
 
-
-
-/**
- * Busca o ID de um equipamento em tbl_equipamentos pelo Patrimônio.
- * Retorna o ID ou '' se não encontrar.
- */
 function buscarEquipamentoIdPorPatrimonio(patrimonio) {
   const patrimonioBuscado = String(patrimonio || '').trim().toLowerCase();
   if (!patrimonioBuscado) return '';
@@ -279,14 +259,11 @@ function buscarEquipamentoIdPorLocalizacao(localizacao) {
 const PASTA_ANEXOS_CHAMADOS_ID = '1Ef7rs5vSw4GQR18W96tzpSsBL1dwcwg8';
 
 /**
- * Salva um anexo (Relatório ou Nota Fiscal) no Google Drive, dentro da
+ * Salva um anexo no Google Drive, dentro da
  * pasta fixa PASTA_ANEXOS_CHAMADOS_ID. "arquivo" vem do cliente como
  * { nome, tipo, base64 } (ver lerArquivoComoBase64 em
  * CadastroChamadoFormJS.html) ou null se o campo ficou vazio. Retorna a
  * URL do arquivo no Drive, ou '' se não veio nada.
- *
- * OBS: na primeira vez que isso rodar, o Google vai pedir uma nova
- * autorização (permissão de acesso ao Drive) -- é esperado, só aceitar.
  */
 function salvarArquivoAnexoChamado(arquivo) {
   console.log('[anexo] início -- arquivo recebido:', arquivo ? {
@@ -307,6 +284,17 @@ function salvarArquivoAnexoChamado(arquivo) {
   let bytes;
   try {
     bytes = Utilities.base64Decode(arquivo.base64);
+    const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, bytes);
+    let hashArquivo = '';
+    for (let i = 0; i < digest.length; i++) {
+      let byte = digest[i];
+      if (byte < 0) byte += 256;
+      let hex = byte.toString(16);
+      if (hex.length === 1) hex = '0' + hex;
+      hashArquivo += hex;
+    }
+    arquivo.hash = hashArquivo;
+
     console.log('[anexo] base64 decodificado -- bytes:', bytes.length);
   } catch (e) {
     console.log('[anexo] ERRO ao decodificar base64:', e.message);
@@ -361,6 +349,16 @@ function adicionarAnexoChamado(chamadoId, tipo, arquivo) {
     }
 
     const url = salvarArquivoAnexoChamado(arquivo);
+    console.log('[anexo-duplicado] hash do arquivo que está sendo salvo agora:', arquivo.hash);
+
+    const anexosAtivosDoChamado = ReadTicketAnexos().filter(linha =>
+      Number(linha[1]) === Number(chamadoId) && !linha[7]
+    );
+    console.log('[anexo-duplicado] chamadoId:', chamadoId, '-- hashes já salvos pra esse chamado:',
+      anexosAtivosDoChamado.map(linha => linha[5]));
+
+    const jaExiste = anexosAtivosDoChamado.some(linha => linha[5] === arquivo.hash);
+    console.log('[anexo-duplicado] resultado final (jaExiste/duplicado):', jaExiste);
 
     const ultimaLinhaPlanilha = abaAnexos.getLastRow();
     const ultimaLinha = Math.max(ultimaLinhaPlanilha, firstLineTicketAnexos - 1);
@@ -370,12 +368,12 @@ function adicionarAnexoChamado(chamadoId, tipo, arquivo) {
     const novoId = Number(idAtual) + 1;
 
     const dataUpload = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
-    const novaLinha = [novoId, chamadoId, tipo, arquivo.nome, url, dataUpload, ''];
+    const novaLinha = [novoId, chamadoId, tipo, arquivo.nome, url, arquivo.hash, dataUpload, ''];
     abaAnexos.getRange(ultimaLinha + 1, 1, 1, numColumnsTicketAnexos).setValues([novaLinha]);
 
     adicionarHistoricoSistema(chamadoId, 'Anexo adicionado: "' + arquivo.nome + '" (' + tipo + ')');
 
-    return { sucesso: true, mensagem: 'Anexo adicionado com sucesso.' };
+    return { sucesso: true, mensagem: 'Anexo adicionado com sucesso.', duplicado: jaExiste };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
   }

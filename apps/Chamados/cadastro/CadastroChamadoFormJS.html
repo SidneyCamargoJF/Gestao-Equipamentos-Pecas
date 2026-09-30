@@ -431,6 +431,7 @@
 
       try {
         const resposta = await runServerFunction('salvarChamadoBackend', dadosChamado);
+        console.log('[anexo-duplicado] resposta do servidor (cadastro):', resposta);
 
         if (resposta && resposta.sucesso === false) {
           alert(resposta.mensagem);
@@ -438,6 +439,11 @@
         }
 
         alert(resposta.mensagem);
+
+        if (resposta && resposta.duplicado) {
+          exibirAvisoAnexoDuplicado('Você anexou dois ou mais documentos idênticos.');
+        }
+
         if (typeof forcarConsultaAoAbrirChamados !== 'undefined') forcarConsultaAoAbrirChamados = true;
         trocarPagina('chamado-view');
       } catch (err) {
@@ -517,15 +523,45 @@
   function onArquivosCadastroSelecionados(inputId) {
     const inputEl = document.getElementById(inputId);
     if (!inputEl || !inputEl.files) return;
-    chamadoAnexosSelecionados[inputId] = (chamadoAnexosSelecionados[inputId] || []).concat(Array.from(inputEl.files));
+
+    const novosArquivos = Array.from(inputEl.files);
+    const jaSelecionados = chamadoAnexosSelecionados[inputId] || [];
+
+    // Anexo ainda não foi salvo nem tem chamado pra comparar no servidor
+    // (o chamado só existe depois do Salvar) -- então aqui a checagem é só
+    // local, contra o que já está nessa mesma lista. Nome + tamanho é
+    // suficiente pra esse caso (não precisa de hash como no backend).
+    const algumDuplicado = novosArquivos.some(novo =>
+      jaSelecionados.some(existente => existente.name === novo.name && existente.size === novo.size)
+    );
+    if (algumDuplicado) {
+      exibirAvisoAnexoDuplicado('Você já selecionou um arquivo com esse mesmo nome e tamanho nessa lista.');
+    }
+
+    chamadoAnexosSelecionados[inputId] = jaSelecionados.concat(novosArquivos);
     inputEl.value = ''; // libera o input pra poder escolher o mesmo arquivo de novo, se precisar
     atualizarListaAnexosCadastro(inputId);
   }
 
-  function removerAnexoCadastroSelecionado(inputId, indice) {
-    if (!chamadoAnexosSelecionados[inputId]) return;
-    chamadoAnexosSelecionados[inputId].splice(indice, 1);
-    atualizarListaAnexosCadastro(inputId);
+  // Confirmar/executar separados (igual o padrão de excluir anexo/chamado
+  // na Consulta) -- só que aqui não chama o servidor nenhum, é só tirar o
+  // arquivo da lista em memória (ele nunca chegou a ser salvo).
+  let anexoCadastroRemocaoPendente = null;
+
+  function confirmarRemocaoAnexoCadastro(inputId, indice) {
+    anexoCadastroRemocaoPendente = { inputId: inputId, indice: indice };
+    if (typeof exibirModal === 'function') exibirModal('modalRemoverAnexoCadastro');
+  }
+
+  function executarRemocaoAnexoCadastro() {
+    if (!anexoCadastroRemocaoPendente) return;
+    const { inputId, indice } = anexoCadastroRemocaoPendente;
+    if (chamadoAnexosSelecionados[inputId]) {
+      chamadoAnexosSelecionados[inputId].splice(indice, 1);
+      atualizarListaAnexosCadastro(inputId);
+    }
+    anexoCadastroRemocaoPendente = null;
+    if (typeof fecharModal === 'function') fecharModal('modalRemoverAnexoCadastro');
   }
 
   function limparAnexosCadastroSelecionados() {
@@ -546,7 +582,7 @@
           <div class="anexo-card-icone">📄</div>
           <span class="anexo-card-nome">${escapeHtmlChamado(arquivo.name)}</span>
         </div>
-        <button type="button" class="anexo-card-excluir" title="Remover" onclick="removerAnexoCadastroSelecionado('${inputId}', ${indice})">✕</button>
+        <button type="button" class="anexo-card-excluir" title="Remover" onclick="confirmarRemocaoAnexoCadastro('${inputId}', ${indice})">✕</button>
       </div>
     `).join('');
 
