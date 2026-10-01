@@ -270,7 +270,7 @@ function buscarFornecedorPorCnpjBackend(cnpj) {
 /**
  * Monta o objeto completo de um fornecedor a partir de uma linha crua da
  * planilha (mesma ordem de colunas usada em salvarFornecedorBackend).
- * Usado tanto por buscarFornecedorPorIdBackend quanto por FiltrarFornecedores.
+ * Usado por buscarFornecedorPorIdBackend.
  */
 function mapLinhaParaFornecedorCompleto(linha) {
   const dataCadastroValor = linha[19];
@@ -301,12 +301,6 @@ function mapLinhaParaFornecedorCompleto(linha) {
   };
 }
 
-/**
- * Busca os dados completos de um fornecedor pelo ID (coluna A), pra usar no
- * fluxo de edição vindo da tela de Consulta (editarFornecedor(id) →
- * trocarPagina('fornecedor-form', id)). Retorna o mesmo formato de
- * buscarFornecedorPorCnpjBackend, ou null se não encontrar.
- */
 function buscarFornecedorPorIdBackend(id) {
   if (id === null || id === undefined || id === '') return null;
 
@@ -323,65 +317,4 @@ function buscarFornecedorPorIdBackend(id) {
     }
   }
   return null;
-}
-
-/**
- * Consulta fornecedores na aba "tbl_fornecedor" a partir dos filtros vindos
- * da tela ConsultaFornecedorForm (chamada pelo cliente em consultarFornecedores()).
- *
- * criterios = { nome, cnpj, cidade, estado }
- * ("nome" busca tanto em Razão Social quanto em Nome Fantasia; nome/CNPJ/
- * cidade usam comparação "contém", já que na tela HTML são campos de busca
- * livre; Estado usa igualdade exata, por ser um select)
- *
- * Retorna um array de objetos { id, razaoSocial, nomeFantasia, cnpj,
- * telefone, email, cidade, estado } prontos pro renderTabelaFornecedores(),
- * ou a string "NoData" se nada for encontrado.
- */
-function FiltrarFornecedores(criterios) {
-  criterios = criterios || {};
-
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const abaTabelaFornecedor = ss.getSheetByName('tbl_fornecedor');
-
-  const sNome = String(criterios.nome || '').trim().toLowerCase();
-  const sCnpj = String(criterios.cnpj || '').replace(/\D/g, '');
-  const sCidade = String(criterios.cidade || '').trim().toLowerCase();
-  const sEstado = String(criterios.estado || '').trim().toLowerCase();
-
-  const dadosTabela = abaTabelaFornecedor.getDataRange().getValues();
-  const resultado = [];
-
-  for (let i = PRIMEIRA_LINHA_DADOS_FORNECEDOR - 1; i < dadosTabela.length; i++) {
-    const linha = dadosTabela[i];
-
-    const tRazaoSocial = String(linha[1] || '').trim().toLowerCase();
-    const tNomeFantasia = String(linha[2] || '').trim().toLowerCase();
-    const tCnpj = String(linha[3] || '').replace(/\D/g, '');
-    const tCidade = String(linha[14] || '').trim().toLowerCase();
-    const tEstado = String(linha[15] || '').trim().toLowerCase();
-
-    const condicaoNome = (sNome === '' || tRazaoSocial.includes(sNome) || tNomeFantasia.includes(sNome));
-    const condicaoCnpj = (sCnpj === '' || tCnpj.includes(sCnpj));
-    const condicaoCidade = (sCidade === '' || tCidade.includes(sCidade));
-    const condicaoEstado = (sEstado === '' || tEstado === sEstado);
-
-    if (condicaoNome && condicaoCnpj && condicaoCidade && condicaoEstado) {
-      // Telefone exibido na listagem: prioriza celular, cai pro fixo se não tiver
-      const telefone = linha[8] || linha[7] || '';
-
-      resultado.push({
-        id: linha[0],
-        razaoSocial: linha[1],
-        nomeFantasia: linha[2],
-        cnpj: linha[3],
-        telefone: telefone,
-        email: linha[6],
-        cidade: linha[14],
-        estado: linha[15]
-      });
-    }
-  }
-
-  return resultado.length > 0 ? resultado : "NoData";
 }

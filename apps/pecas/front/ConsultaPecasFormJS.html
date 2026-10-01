@@ -37,7 +37,7 @@
         try {
           const res = await runServerFunction("ReadSuppliers");
           if (!Array.isArray(res)) return [];
-          return res.map(line => line[1]).filter(Boolean);
+          return res.map(line => line[3]).filter(Boolean);
         } catch (error) {
           return [];
         }

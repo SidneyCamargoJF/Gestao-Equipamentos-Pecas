@@ -70,7 +70,7 @@ function mostrarCarregandoChamados(carregando) {
     if (carregando) {
         const tbody = document.getElementById('chamadosTableBody');
         if (tbody) {
-            tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span>Buscando chamados...</td></tr>';
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="11"><span class="spinner"></span>Buscando chamados...</td></tr>';
         }
     }
 }
@@ -125,7 +125,7 @@ function atualizarIndicadoresChamado() {
         if (span) span.textContent = '';
     });
 
-    const indices = { equipamento: 1, localizacao: 2, motivo: 3, tipo: 4, prioridade: 5, status: 6, atribuidoA: 7, dataAbertura: 8 };
+    const indices = { equipamento: 2, localizacao: 3, motivo: 4, tipo: 5, prioridade: 6, status: 7, atribuidoA: 8, dataAbertura: 9 };
     const idx = indices[sortStateChamado.coluna];
     if (idx !== undefined && ths[idx]) {
         ths[idx].classList.add('sorted');
@@ -174,7 +174,7 @@ function renderTabelaChamados(lista) {
     tbody.innerHTML = '';
 
     if(!lista || lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Nenhum chamado encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">Nenhum chamado encontrado.</td></tr>';
         return;
     }
 
@@ -199,6 +199,7 @@ function renderTabelaChamados(lista) {
 
         tr.innerHTML = `
         <td class="acao-cell">${btnVer}</td>
+        <td>#${f.id}</td>
         <td>${f.equipamento ? escapeHtml(f.equipamento) : '--'}</td>
         <td>${f.localizacao ? escapeHtml(f.localizacao) : '--'}</td>
         <td>${escapeHtml(f.motivo)}</td>
@@ -322,6 +323,10 @@ function trocarAbaModalChamado(aba) {
         listaHistorico.style.minHeight = '0';
         listaHistorico.style.overflowY = 'auto';
     }
+
+    if (!mostrarInfo && chamadoIdAtualModal) {
+        carregarHistoricoChamadoUI(chamadoIdAtualModal);
+    }
 }
 
 // Um painel de aba (Informações ou Histórico) é, ele mesmo, um flex-item
@@ -375,10 +380,6 @@ async function carregarHistoricoChamadoUI(chamadoId) {
         console.error('Erro ao buscar histórico do chamado:', error);
         if (lista) lista.innerHTML = '<p>Erro ao buscar histórico.</p>';
     }
-}
-
-async function carregarAnexosChamadoUI(chamadoIdAtualModal) {
-    
 }
 
 function montarHistoricoChamadoHtml(lista) {
@@ -727,7 +728,7 @@ async function onArquivoAnexoSelecionado() {
         const resposta = await runServerFunction('adicionarAnexoChamado', chamadoIdAtualModal, tipoAnexoNovo, arquivo);
         console.log('[anexo-duplicado] resposta do servidor (ver detalhes):', resposta);
         if (resposta && resposta.sucesso === false) {
-            alert(resposta.mensagem);[anexo-duplicado]
+            alert(resposta.mensagem);
             return;
         }
         if(resposta && resposta.duplicado) {

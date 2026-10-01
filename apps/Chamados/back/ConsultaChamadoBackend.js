@@ -62,7 +62,15 @@ function filtrarChamados(criterios) {
             })
         }
     }
-    res.sort((a, b) => (a.desativado ? 1 : 0) - (b.desativado ? 1 : 0));
+    // Ativos antes de desativados (critério principal, como já era); dentro
+    // de cada grupo, ID maior primeiro -- ID é sequencial, então o maior é
+    // sempre o mais recente (mais simples e confiável que tentar ordenar
+    // pela string de DATA_ABERTURA, que não ordena certo cronologicamente).
+    res.sort((a, b) => {
+        const porDesativado = (a.desativado ? 1 : 0) - (b.desativado ? 1 : 0);
+        if (porDesativado !== 0) return porDesativado;
+        return Number(b.id) - Number(a.id);
+    });
     return res;
 }
 
