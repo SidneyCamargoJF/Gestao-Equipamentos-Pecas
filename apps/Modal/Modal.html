@@ -1,4 +1,36 @@
 
+    <!-- PEÇAS / ESTOQUE-->
+
+    <!-- MODAL DE EXCLUSÃO -->
+    <div class="modal-overlay" id="modalExclusao">
+      <div class="modal">
+        <h3>Confirmar Exclusão</h3>
+        <p>Tem certeza que deseja fazer a exclusão? Esta ação não pode ser desfeita.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="fecharModal('modalExclusao')" style="width:auto;">Cancelar</button>
+          <button id="btn-delete" class="btn-danger" onclick="executarExclusaoPeca()">Sim, Excluir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE CADASTRO DE LOCALIZAÇÃO -->
+    <div class="modal-overlay" id="modalCadastroLocalizacao">
+      <div class="modal">
+        <h3>Nova Localização</h3>
+        <div class="form-group">
+          <label for="novaLocalizacaoNome" class="field__label">Nome da Localização *</label>
+          <input type="text" id="novaLocalizacaoNome" class="search-input" placeholder="Digite o nome da localização..."/>
+          <span class="field__error-msg">Informe o nome da localização.</span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModalCadastroLocalizacao()">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="salvarNovaLocalizacao()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORNECEDOR -->
+
     <!-- MODAL DE CADASTRO RÁPIDO DE FORNECEDOR -->
     <div class="modal-overlay" id="modalCadastroFornecedor">
       <div class="modal">
@@ -40,34 +72,6 @@
       </div>
     </div>
 
-    <!-- MODAL DE CADASTRO DE LOCALIZAÇÃO -->
-    <div class="modal-overlay" id="modalCadastroLocalizacao">
-      <div class="modal">
-        <h3>Nova Localização</h3>
-        <div class="form-group">
-          <label for="novaLocalizacaoNome" class="field__label">Nome da Localização *</label>
-          <input type="text" id="novaLocalizacaoNome" class="search-input" placeholder="Digite o nome da localização..."/>
-          <span class="field__error-msg">Informe o nome da localização.</span>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModalCadastroLocalizacao()">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="salvarNovaLocalizacao()">Salvar</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL DE EXCLUSÃO -->
-    <div class="modal-overlay" id="modalExclusao">
-      <div class="modal">
-        <h3>Confirmar Exclusão</h3>
-        <p>Tem certeza que deseja fazer a exclusão? Esta ação não pode ser desfeita.</p>
-        <div class="modal-actions">
-          <button class="btn-secondary" onclick="fecharModal('modalExclusao')" style="width:auto;">Cancelar</button>
-          <button id="btn-delete" class="btn-danger" onclick="executarExclusaoPeca()">Sim, Excluir</button>
-        </div>
-      </div>
-    </div>
-
     <!-- MODAL DE EXCLUSÃO DE FORNECEDOR -->
     <div class="modal-overlay" id="modalExclusaoFornecedor">
       <div class="modal">
@@ -79,6 +83,8 @@
         </div>
       </div>
     </div>
+
+    <!-- CHAMADOS -->
 
     <!-- MODAL DE DETALHES DO CHAMADO -->
     <div class="modal-overlay" id="modalDetalheChamado">
@@ -153,7 +159,7 @@
     <div class="modal-overlay" id="modalRemoverAnexoCadastro">
       <div class="modal">
         <h3>Remover arquivo?</h3>
-        <p>Esse arquivo ainda não foi salvo -- ele só vai sair da lista de anexos que você preparou pra esse chamado.</p>
+        <p>Esse arquivo ainda não foi salvo - ele só vai sair da lista de anexos que você preparou pra esse chamado.</p>
         <div class="modal-actions">
           <button class="btn-secondary" onclick="fecharModal('modalRemoverAnexoCadastro')" style="width:auto;">Cancelar</button>
           <button class="btn-danger" onclick="executarRemocaoAnexoCadastro()">Sim, Remover</button>
@@ -161,13 +167,41 @@
       </div>
     </div>
 
+    <!-- CONTRATO -->
+
+    <!-- MODAL DE DETALHES DO CONTRATO -->
+    <div class="modal-overlay" id="modalDetalhesContrato">
+      <div class="modal modal-detalhes-contrato">
+        <div class="modal-detalhes-header">
+          <h3>Detalhes do Contrato</h3>
+          <button class="btn-modal-fechar" onclick="fecharModal('modalDetalhesContrato')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div id="detalhesConteudo"></div>
+      </div>
+    </div>
+
+    <!-- MODAL DE EXCLUSÃO DE CONTRATO -->
+    <div class="modal-overlay" id="modalExclusaoContrato">
+      <div class="modal">
+        <h3>Confirmar Exclusão</h3>
+        <p>Tem certeza que deseja desativar este contrato? Esta ação não pode ser desfeita.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="fecharModal('modalExclusaoContrato')" style="width:auto;">Cancelar</button>
+          <button class="btn-danger" onclick="executarExclusaoContrato()">Sim, Excluir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GENÉRICO / SISTEMA -->
+
     <!-- MODAL DE PROCESSAMENTO -->
     <div class="modal-overlay" id="processando">
       <div class="modal">
         <h3>⏳ Processando...</h3>
-        <p>Aguarde a confirmação antes de sair desta tela ou clicar em salvar de novo -- interromper pode duplicar o que está sendo salvo.</p>
+        <p>Aguarde a confirmação antes de sair ou clicar fora da tela.</p>
       </div>
     </div>
-
-
-

@@ -1,3 +1,213 @@
 <script>
-  console.log('Consulta Contrato Form JS')
+
+function renderConsultaContratos() {
+    consultarContratos();
+}
+
+let contratos = [];
+let sortStateContrato = { coluna: null, direcao: 'asc' };
+
+function consultarContratos() {
+    const numero = document.getElementById('filtro-contrato-numero').value.trim();
+    const contrato = document.getElementById('filtro-contrato-nome').value.trim();
+    const sei = document.getElementById('filtro-contrato-sei').value.trim();
+    const empresa = document.getElementById('empresaContratoSearch').value.trim();
+    const situacao = document.getElementById('filtro-contrato-situacao').value.trim();
+
+    const criterios = { numero, contrato, sei, empresa, situacao };
+
+    mostrarCarregandoContratos(true);
+
+    google.script.run
+        .withSuccessHandler((objContratos) => {
+            mostrarCarregandoContratos(false);
+            ReturnContratos(objContratos);
+        })
+        .withFailureHandler((error) => {
+            mostrarCarregandoContratos(false);
+            console.error('Erro ao consultar contratos:', error);
+            alert('Erro ao consultar contratos: ' + (error.message || error));
+        })
+        .filtrarContratos(criterios);
+}
+
+function mostrarCarregandoContratos(carregando) {
+    const btn = document.getElementById('btnConsultarContratos');
+    if (btn) btn.disabled = carregando;
+
+    if (carregando) {
+        const tbody = document.getElementById('contratosTableBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="9"><span class="spinner"></span>Buscando contratos...</td></tr>';
+        }
+    }
+}
+
+function ReturnContratos(objContratos) {
+    contratos = Array.isArray(objContratos) ? objContratos : [];
+    renderTabelaContrato(aplicarOrdenacaoContrato(contratos));
+    atualizarResumoContratos(contratos);
+}
+
+function atualizarResumoContratos(lista) {
+    const resumo = document.getElementById('resumoContratos');
+    if (!resumo) return;
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+        resumo.textContent = 'Nenhum contrato encontrado.';
+        return;
+    }
+
+    let vencidos = 0, vencendo = 0;
+    lista.forEach(c => {
+        if (c.situacao === 'vencido') vencidos++;
+        else if (c.situacao === 'vencendo') vencendo++;
+    });
+
+    resumo.textContent = `${lista.length} contrato${lista.length === 1 ? '' : 's'} encontrado${lista.length === 1 ? '' : 's'} — ${vencendo} vencendo, ${vencidos} vencido${vencidos === 1 ? '' : 's'}`;
+}
+
+function ordenarContrato(coluna) {
+    if (sortStateContrato.coluna === coluna) {
+        sortStateContrato.direcao = sortStateContrato.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortStateContrato.coluna = coluna;
+        sortStateContrato.direcao = 'asc';
+    }
+    atualizarIndicadoresContrato();
+    renderTabelaContrato(aplicarOrdenacaoContrato(contratos));
+}
+
+function atualizarIndicadoresContrato() {
+    const ths = document.querySelectorAll('#page-contratos-view .data-table th');
+    ths.forEach(th => {
+        th.classList.remove('sorted');
+        const span = th.querySelector('.sort-arrow');
+        if (span) span.textContent = '';
+    });
+
+    const indices = { numero: 0, contrato: 1, sei: 2, empresa: 3, valor: 4, dataInicial: 5, dataFinal: 6, situacao: 7 };
+    const idx = indices[sortStateContrato.coluna];
+    if (idx !== undefined && ths[idx]) {
+        ths[idx].classList.add('sorted');
+        const span = ths[idx].querySelector('.sort-arrow');
+        if (span) span.textContent = sortStateContrato.direcao === 'asc' ? '▲' : '▼';
+    }
+}
+
+const CONTRATO_SITUACAO_RANK = { vencido: 1, vencendo: 2, ativo: 3, encerrado: 4 };
+
+function aplicarOrdenacaoContrato(lista) {
+    if (!sortStateContrato.coluna || !Array.isArray(lista)) return lista;
+    const col = sortStateContrato.coluna;
+    const dir = sortStateContrato.direcao === 'asc' ? 1 : -1;
+    const arr = lista.slice();
+    arr.sort((a, b) => {
+        let va, vb;
+        if (col === 'situacao') {
+            va = CONTRATO_SITUACAO_RANK[a.situacao] || 99;
+            vb = CONTRATO_SITUACAO_RANK[b.situacao] || 99;
+        } else if (col === 'valor') {
+            va = Number(a.valor) || 0;
+            vb = Number(b.valor) || 0;
+            return (va - vb) * dir;
+        } else if (col === 'dataInicial' || col === 'dataFinal') {
+            va = a[col] ? new Date(a[col]).getTime() : 0;
+            vb = b[col] ? new Date(b[col]).getTime() : 0;
+            return (va - vb) * dir;
+        } else {
+            va = String(a[col] || '').toLowerCase();
+            vb = String(b[col] || '').toLowerCase();
+        }
+        return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;
+    });
+    return arr;
+}
+
+function limparFiltrosContrato() {
+    document.getElementById('filtro-contrato-numero').value = '';
+    document.getElementById('filtro-contrato-nome').value = '';
+    document.getElementById('filtro-contrato-sei').value = '';
+    document.getElementById('empresaContratoSearch').value = '';
+    document.getElementById('filtro-contrato-situacao').value = '';
+    sortStateContrato = { coluna: null, direcao: 'asc' };
+    consultarContratos();
+}
+
+function formatarValorContrato(v) {
+    const n = Number(v) || 0;
+    return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatarDataContrato(d) {
+    if (!d) return '--';
+    const data = new Date(d);
+    if (isNaN(data.getTime())) return String(d);
+    return data.toLocaleDateString('pt-BR');
+}
+
+function formatarSituacaoContrato(s) {
+    const map = { ativo: 'Ativo', vencendo: 'Vencendo', vencido: 'Vencido', renovado: 'Renovado', encerrado: 'Encerrado' };
+    return map[s] || s || '--';
+}
+
+function renderTabelaContrato(lista) {
+    const tbody = document.getElementById('contratosTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    if (!lista || lista.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Nenhum contrato encontrado.</td></tr>';
+        return;
+    }
+
+    lista.forEach(c => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+        <td>${escapeHtml(c.numero)}</td>
+        <td>${c.contrato ? escapeHtml(c.contrato) : '--'}</td>
+        <td>${c.sei ? escapeHtml(c.sei) : '--'}</td>
+        <td>${c.empresa ? escapeHtml(c.empresa) : '--'}</td>
+        <td>${formatarValorContrato(c.valor)}</td>
+        <td>${formatarDataContrato(c.dataInicial)}</td>
+        <td>${formatarDataContrato(c.dataFinal)}</td>
+        <td><span class="situacao-badge ${c.situacao}">${formatarSituacaoContrato(c.situacao)}</span></td>
+        <td class="acao-cell">
+            <button class="btn-acao btn-editar-linha" title="Editar" onclick="editarContrato('${c.id}')">✏️</button>
+            <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusaoContrato('${c.id}')">🗑️</button>
+        </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function editarContrato(id) {
+    trocarPagina('contratos-form', id);
+}
+
+let idContratoExclusao = null;
+
+function confirmarExclusaoContrato(id) {
+    idContratoExclusao = id;
+    if (typeof exibirModal === 'function') exibirModal('modalExclusaoContrato');
+}
+
+async function executarExclusaoContrato() {
+    if (!idContratoExclusao) return;
+    try {
+        const resposta = await runServerFunction('desativarContrato', idContratoExclusao);
+        if (typeof fecharModal === 'function') fecharModal('modalExclusaoContrato');
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        consultarContratos();
+    } catch (error) {
+        console.error('Erro ao excluir contrato:', error);
+        alert('Erro ao excluir contrato.');
+    }
+}
+
 </script>

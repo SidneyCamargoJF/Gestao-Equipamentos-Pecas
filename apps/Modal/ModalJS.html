@@ -1,22 +1,6 @@
 <script>
 
-  // Modal de exclusão genérico -- hoje usado só pela tela de Peças (Marca tem seu
-  // próprio modal/fluxo de exclusão dedicado, ver ConsultaMarcaFormJS.html).
-  function abrirModalExclusao(id) {
-    idExclusao = id;
-    exibirModal('modalExclusao');
-  }
-
-  function fecharModalCadastroFornecedor() {
-    const modal = document.getElementById('modalCadastroFornecedor');
-    if (modal) modal.classList.remove('aberto');
-  }
-
-  function fecharModalCadastroLocalizacao() {
-    const modal = document.getElementById('modalCadastroLocalizacao');
-    if (modal) modal.classList.remove('aberto');
-  }
-
+  // ===== GENÉRICO / SISTEMA =====
   function exibirModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.classList.add('aberto');
@@ -24,6 +8,23 @@
 
   function fecharModal(id) {
     const modal = document.getElementById(id);
+    if (modal) modal.classList.remove('aberto');
+  }
+
+  // ===== PEÇAS / ESTOQUE =====
+  function abrirModalExclusao(id) {
+    idExclusao = id;
+    exibirModal('modalExclusao');
+  }
+
+  function fecharModalCadastroLocalizacao() {
+    const modal = document.getElementById('modalCadastroLocalizacao');
+    if (modal) modal.classList.remove('aberto');
+  }
+
+  // ===== FORNECEDOR =====
+  function fecharModalCadastroFornecedor() {
+    const modal = document.getElementById('modalCadastroFornecedor');
     if (modal) modal.classList.remove('aberto');
   }
 

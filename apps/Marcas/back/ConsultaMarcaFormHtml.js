@@ -1,11 +1,3 @@
-function showMarca() {
-  const form = HtmlService.createTemplateFromFile("ConsultaMarcaForm");
-  const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);
-  showForm.setTitle("Consulta de Marcas").setHeight(900).setWidth(800);
-  SpreadsheetApp.getUi().showModalDialog(showForm, "Consulta de Marcas");
-}
-
-
 function filtrarMarcas(criterios) {
   let dados = ReadBrands();
   let res = [];

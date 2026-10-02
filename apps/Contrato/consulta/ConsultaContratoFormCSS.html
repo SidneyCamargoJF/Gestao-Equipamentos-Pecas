@@ -1,28 +1,6 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(135deg, var(--color-slate-100) 0%, var(--color-slate-200) 100%);
-  min-height: 100vh;
-  overflow-y: auto;
-  color: var(--color-slate-700);
-  -webkit-font-smoothing: antialiased;
-}
-
-.main-container {
-  display: block;
-  padding: 1.25rem 1rem 2rem;
-}
-
-.card {
-  max-width: 100rem;
-  margin: 0 auto;
-  background: #fff;
-  border-radius: 1rem;
-  padding: 1.25rem;
-  box-shadow: 0 0.25rem 1.5rem rgba(15, 23, 42, 0.08);
-}
 
 /* FILTROS */
 .filters-primary {
@@ -41,8 +19,8 @@ body {
 
 .field__label {
   align-self: flex-start;
-  background: var(--color-indigo);
-  color: #fff;
+  background: #fff;
+  color: var(--color-indigo);
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0.375rem 0.625rem;
@@ -245,74 +223,6 @@ body {
   flex-shrink: 0;
 }
 
-/* TABELA */
-.table-wrapper {
-  overflow-x: auto;
-  border-radius: 0.5rem;
-  border: 0.0625rem solid var(--color-slate-200);
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8125rem;
-}
-
-.data-table thead {
-  background: var(--color-slate-50);
-}
-
-.data-table th {
-  text-align: left;
-  padding: 0.65rem 0.75rem;
-  font-weight: 700;
-  color: var(--color-slate-500);
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
-  border-bottom: 0.125rem solid var(--color-slate-200);
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  transition: color 0.15s ease;
-  position: relative;
-}
-
-.data-table th:hover {
-  color: var(--color-indigo);
-}
-
-.data-table th.sorted {
-  color: var(--color-indigo);
-}
-
-.sort-arrow {
-  font-size: 0.6rem;
-  margin-left: 0.25rem;
-  display: inline-block;
-}
-
-.data-table td {
-  padding: 0.6rem 0.75rem;
-  border-bottom: 0.0625rem solid var(--color-slate-100);
-  color: var(--color-slate-700);
-  white-space: nowrap;
-}
-
-.data-table tbody tr:hover {
-  background: var(--color-indigo-50);
-}
-
-.data-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.empty-row td {
-  text-align: center;
-  color: var(--color-slate-400);
-  padding: 2rem;
-  font-style: italic;
-}
 
 /* BADGES SITUAÇÃO */
 .situacao-badge {

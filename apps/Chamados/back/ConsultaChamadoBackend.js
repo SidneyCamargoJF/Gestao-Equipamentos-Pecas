@@ -1,3 +1,16 @@
+// O módulo de Equipamentos passou a usar a classe EquipmentsModel (OOP) e não
+// tem mais a função ReadEquipments() antiga -- mas esse arquivo (e o
+// CadastroChamadoBackend.js) ainda fazem acesso cru por índice (equip[0],
+// equip[5], etc.) em várias chamadas. Em vez de reescrever tudo isso pra
+// acesso por propriedade, esse adaptador local recria o formato de array
+// cru de antes a partir da classe nova -- não mexe em nada do módulo de
+// Equipamentos, só traduz o que ele devolve.
+function ReadEquipments() {
+  return new EquipmentsModel().read().map(e => [
+    e.id, e.nome, e.marca, e.capacidade, e.modelo, e.patrimonio, e.sequencia, e.localizacao, e.active
+  ]);
+}
+
 function showChamado() {
     const form = HtmlService.createTemplateFromFile("ConsultaChamado");
     const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);

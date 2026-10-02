@@ -72,7 +72,6 @@ function onEdit(e) {
 
   // Validação Consultar Material
   validacaoConsultarParaEditarMaterial(aba, celula, valor);
-  validacaoConsultarParaEditarFornecedor(aba, celula, valor);
 
   // Validação no Cadastrar Material
   if (isNaN(valorAtual) && ((linha === 3 || linha === 13) && (coluna === 3 || coluna === 4) && aba.getName() === abaCadastrarMaterial)) {
@@ -206,20 +205,19 @@ function executarAoEditar(e) {
 
 
 function loginEnter() {
-  showPage('menu');
+  showSheetTab('menu');
 }
 
 function showLogin() {
-  showPage('login');
+  showSheetTab('login');
 }
 
 function showMateriais() {
 
-  showPage('consulta material');
+  showSheetTab('consulta material');
 }
 
-
-function showPage(parShowPage) {
+function showSheetTab(parShowPage) {
   const ss = SpreadsheetApp.getActiveSpreadsheet()
   const page = ss.getSheetByName(parShowPage)
 
