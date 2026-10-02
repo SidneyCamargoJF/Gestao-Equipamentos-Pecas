@@ -126,11 +126,46 @@
       </div>
     </div>
 
+    <!-- MODAL DE ANEXO DUPLICADO -->
+    <div class="modal-overlay" id="modalAnexoDuplicado">
+      <div class="modal">
+        <h3>⚠️AVISO: Anexo duplicado</h3>
+        <p id="modalAnexoDuplicadoMensagem">Você anexou dois ou mais arquivos idênticos.</p>
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="fecharModal('modalAnexoDuplicado')" style="width:auto;">Entendi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE EXCLUSÃO DE ANEXO-->
+    <div class="modal-overlay" id="modalExclusaoAnexo">
+      <div class="modal">
+        <h3>⚠️AVISO: Excluir anexo?</h3>
+          <p id="modalAnexoMensagem">Essa ação não poderá ser desfeita. O documento terá que ser anexado novamente.
+          <div class="modal-actions">
+          <button class="btn-secondary" onclick="fecharModal('modalExclusaoAnexo')" style="width:auto;">Cancelar</button>
+          <button class="btn-danger" onclick="executarExclusaoAnexo()">Sim, Excluir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE REMOÇÃO DE ANEXO -->
+    <div class="modal-overlay" id="modalRemoverAnexoCadastro">
+      <div class="modal">
+        <h3>Remover arquivo?</h3>
+        <p>Esse arquivo ainda não foi salvo -- ele só vai sair da lista de anexos que você preparou pra esse chamado.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="fecharModal('modalRemoverAnexoCadastro')" style="width:auto;">Cancelar</button>
+          <button class="btn-danger" onclick="executarRemocaoAnexoCadastro()">Sim, Remover</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL DE PROCESSAMENTO -->
     <div class="modal-overlay" id="processando">
       <div class="modal">
-        <h3>Processando</h3>
-        <p>Aguarde, processamento</p>
+        <h3>⏳ Processando...</h3>
+        <p>Aguarde a confirmação antes de sair desta tela ou clicar em salvar de novo -- interromper pode duplicar o que está sendo salvo.</p>
       </div>
     </div>
 

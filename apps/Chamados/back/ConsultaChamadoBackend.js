@@ -16,6 +16,14 @@ function filtrarChamados(criterios) {
     let prioridadeBuscada = (criterios && criterios.prioridade) ? String(criterios.prioridade).trim().toLowerCase() : "";
     let statusBuscado = (criterios && criterios.status) ? String(criterios.status).trim().toLowerCase() : "";
 
+    // o set nesse caso é tipo um array mas sem repetição o map() ia gerar o mesmo ID 3 vezes 
+    // e ainda verifica se o valor esta ali dentro com o .has(valor)
+    let idsComAnexo = new Set(
+        ReadTicketAnexos()
+            .filter(linha => !linha[7])
+            .map(linha => Number(linha[1]))
+    );
+
     for (let i = 0; i < dados.length; i++) {
         // ID_EQUIPAMENTO (dados[i][1]) é só o ID -- traduz pra "Patrimônio - Nome/Modelo"
         // pra mostrar na tabela e pra poder filtrar pelo patrimônio digitado de verdade.
@@ -49,11 +57,20 @@ function filtrarChamados(criterios) {
                 dataAbertura: dados[i][5],
                 status: dados[i][11],
                 desativado: desativado,
-                concluido: concluido
+                concluido: concluido,
+                temAnexo: idsComAnexo.has(Number(dados[i][0]))
             })
         }
     }
-    res.sort((a, b) => (a.desativado ? 1 : 0) - (b.desativado ? 1 : 0));
+    // Ativos antes de desativados (critério principal, como já era); dentro
+    // de cada grupo, ID maior primeiro -- ID é sequencial, então o maior é
+    // sempre o mais recente (mais simples e confiável que tentar ordenar
+    // pela string de DATA_ABERTURA, que não ordena certo cronologicamente).
+    res.sort((a, b) => {
+        const porDesativado = (a.desativado ? 1 : 0) - (b.desativado ? 1 : 0);
+        if (porDesativado !== 0) return porDesativado;
+        return Number(b.id) - Number(a.id);
+    });
     return res;
 }
 
@@ -264,13 +281,13 @@ function buscarAnexosChamado (chamadoId) {
 
     return dados
         .filter(linha => Number(linha[1]) === idBuscado)
-        .filter(linha => !linha[6])
+        .filter(linha => !linha[7])
         .map(linha => ({
             id: linha[0],
             tipo: linha[2],
             nomeArquivo: linha[3],
             url: linha[4],
-            dataUpload: linha[5]
+            dataUpload: linha[6]
         }))
         .reverse();
 }
@@ -390,8 +407,9 @@ function excluirAnexoChamado(anexoId) {
                 abaAnexos.getRange(linhaReal, 1, 1, numColumnsTicketAnexos).setBackground("#F4CCCC");
 
                 const chamadoIdDoAnexo = dados[i][1];
+                const tipoArquivo = dados[i][2];
                 const nomeArquivo = dados[i][3];
-                adicionarHistoricoSistema(chamadoIdDoAnexo, 'Anexo excluído: "' + nomeArquivo + '" (' + tipo + ')');
+                adicionarHistoricoSistema(chamadoIdDoAnexo, 'Anexo excluído: "' + nomeArquivo + '" (' + tipoArquivo + ')');
 
                 return {sucesso: true, mensagem: 'Anexo exlcuído da interface, dado permanece no banco de dados.'}
             }

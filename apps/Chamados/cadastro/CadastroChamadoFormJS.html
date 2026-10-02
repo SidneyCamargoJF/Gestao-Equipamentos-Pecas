@@ -209,7 +209,8 @@
     try {
       const resultado = await runServerFunction('verificarPatrimonioChamado', patrimonio);
       if (resultado && resultado.existe) {
-        statusEl.textContent = 'Equipamento encontrado' + (resultado.marca ? ' (' + resultado.marca + (resultado.modelo ? ' - ' + resultado.modelo : '') + ')' : '');
+        const detalheEquipamento = (resultado.marca ? ' - ' + resultado.marca : '') + (resultado.modelo ? ' - ' + resultado.modelo : '');
+        statusEl.textContent = 'Equipamento encontrado' + (resultado.nome ? ' (' + resultado.nome + detalheEquipamento + ')' : '');
         statusEl.className = 'chamado-patrimonio-status encontrado';
         preencherCamposEquipamentoChamado(resultado);
       } else {
@@ -368,76 +369,92 @@
     });
   }
 
-  // ===== SALVAR =====
+  let salvandoChamado = false;
+
   async function salvarChamado() {
-    const selectMotivo = document.getElementById('chamadoMotivo')?.value || '';
-    const motivo = selectMotivo === 'outro'
-      ? document.getElementById('chamadoMotivoOutro')?.value.trim() || ''
-      : selectMotivo;
-    if (!motivo) {
-      alert('Preencha o motivo do chamado.');
-      return;
-    }
-
-    const tipo = document.getElementById('chamadoTipo')?.value || '';
-    if (!tipo) {
-      alert('Preencha o tipo do chamado.');
-      return;
-    }
-
-    const patrimonio = document.getElementById('chamadoEquipPatrimonio')?.value.trim() || '';
-    const localizacao = document.getElementById('chamadoEquipLocalizacao')?.value.trim() || '';
-
-    if (!patrimonio && !localizacao) {
-      alert('Informe pelo menos o Patrimônio ou a Localização do equipamento -- é o mínimo pra saber sobre qual equipamento é o chamado.');
-      return;
-    }
-
-
-    let relatorioArquivos = [], notaFiscalArquivos = [];
-    try {
-      relatorioArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoRelatorioArquivo);
-      notaFiscalArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoNotaFiscalArquivo);
-    } catch (erroArquivo) {
-      alert(erroArquivo.message);
-      return;
-    }
-
-    const dadosChamado = {
-      id: document.getElementById('chamadoId')?.value || '',
-      motivo: motivo,
-      tipo: document.getElementById('chamadoTipo')?.value || '',
-      classificacao: document.getElementById('chamadoClassificacao')?.value || '',
-      abertoPor: document.getElementById('chamadoAbertoPor')?.value.trim() || '',
-      atribuidoA: document.getElementById('chamadoAtribuidoA')?.value.trim() || '',
-      descricao: document.getElementById('chamadoDescricao')?.value.trim() || '',
-      patrimonio: patrimonio,
-      localizacao: localizacao,
-      marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
-      modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
-      capacidade: document.getElementById('chamadoEquipCapacidade')?.value.trim() || '',
-      relatorios: relatorioArquivos,
-      notasFiscais: notaFiscalArquivos
-    };
-
-    if (typeof exibirModal === 'function') exibirModal('processando');
+    if (salvandoChamado) return;
+    salvandoChamado = true;
+    const btnSalvarEl = document.getElementById('chamadoBtnSalvar');
+    if (btnSalvarEl) btnSalvarEl.disabled = true;
 
     try {
-      const resposta = await runServerFunction('salvarChamadoBackend', dadosChamado);
-
-      if (resposta && resposta.sucesso === false) {
-        alert(resposta.mensagem);
+      const selectMotivo = document.getElementById('chamadoMotivo')?.value || '';
+      const motivo = selectMotivo === 'outro'
+        ? document.getElementById('chamadoMotivoOutro')?.value.trim() || ''
+        : selectMotivo;
+      if (!motivo) {
+        alert('Preencha o motivo do chamado.');
         return;
       }
 
-      alert(resposta.mensagem);
-      if (typeof forcarConsultaAoAbrirChamados !== 'undefined') forcarConsultaAoAbrirChamados = true;
-      trocarPagina('chamado-view');
-    } catch (err) {
-      console.error('Erro ao salvar chamado:', err);
-      alert('Erro ao conectar com o servidor.');
+      const tipo = document.getElementById('chamadoTipo')?.value || '';
+      if (!tipo) {
+        alert('Preencha o tipo do chamado.');
+        return;
+      }
+
+      const patrimonio = document.getElementById('chamadoEquipPatrimonio')?.value.trim() || '';
+      const localizacao = document.getElementById('chamadoEquipLocalizacao')?.value.trim() || '';
+
+      if (!patrimonio && !localizacao) {
+        alert('Informe pelo menos o Patrimônio ou a Localização do equipamento -- é o mínimo pra saber sobre qual equipamento é o chamado.');
+        return;
+      }
+
+      let relatorioArquivos = [], notaFiscalArquivos = [];
+      try {
+        relatorioArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoRelatorioArquivo);
+        notaFiscalArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoNotaFiscalArquivo);
+      } catch (erroArquivo) {
+        alert(erroArquivo.message);
+        return;
+      }
+
+      const dadosChamado = {
+        id: document.getElementById('chamadoId')?.value || '',
+        motivo: motivo,
+        tipo: document.getElementById('chamadoTipo')?.value || '',
+        classificacao: document.getElementById('chamadoClassificacao')?.value || '',
+        abertoPor: document.getElementById('chamadoAbertoPor')?.value.trim() || '',
+        atribuidoA: document.getElementById('chamadoAtribuidoA')?.value.trim() || '',
+        descricao: document.getElementById('chamadoDescricao')?.value.trim() || '',
+        patrimonio: patrimonio,
+        localizacao: localizacao,
+        marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
+        modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
+        capacidade: document.getElementById('chamadoEquipCapacidade')?.value.trim() || '',
+        relatorios: relatorioArquivos,
+        notasFiscais: notaFiscalArquivos
+      };
+
+      if (typeof exibirModal === 'function') exibirModal('processando');
+
+      try {
+        const resposta = await runServerFunction('salvarChamadoBackend', dadosChamado);
+        console.log('[anexo-duplicado] resposta do servidor (cadastro):', resposta);
+
+        if (resposta && resposta.sucesso === false) {
+          alert(resposta.mensagem);
+          return;
+        }
+
+        alert(resposta.mensagem);
+
+        if (resposta && resposta.duplicado) {
+          exibirAvisoAnexoDuplicado('Você anexou dois ou mais documentos idênticos.');
+        }
+
+        if (typeof forcarConsultaAoAbrirChamados !== 'undefined') forcarConsultaAoAbrirChamados = true;
+        trocarPagina('chamado-view');
+      } catch (err) {
+        console.error('Erro ao salvar chamado:', err);
+        alert('Erro ao conectar com o servidor.');
+      } finally {
+        if (typeof fecharModal === 'function') fecharModal('processando');
+      }
     } finally {
-      if (typeof fecharModal === 'function') fecharModal('processando');
+      salvandoChamado = false;
+      if (btnSalvarEl) btnSalvarEl.disabled = false;
     }
   }
 
@@ -506,15 +523,45 @@
   function onArquivosCadastroSelecionados(inputId) {
     const inputEl = document.getElementById(inputId);
     if (!inputEl || !inputEl.files) return;
-    chamadoAnexosSelecionados[inputId] = (chamadoAnexosSelecionados[inputId] || []).concat(Array.from(inputEl.files));
+
+    const novosArquivos = Array.from(inputEl.files);
+    const jaSelecionados = chamadoAnexosSelecionados[inputId] || [];
+
+    // Anexo ainda não foi salvo nem tem chamado pra comparar no servidor
+    // (o chamado só existe depois do Salvar) -- então aqui a checagem é só
+    // local, contra o que já está nessa mesma lista. Nome + tamanho é
+    // suficiente pra esse caso (não precisa de hash como no backend).
+    const algumDuplicado = novosArquivos.some(novo =>
+      jaSelecionados.some(existente => existente.name === novo.name && existente.size === novo.size)
+    );
+    if (algumDuplicado) {
+      exibirAvisoAnexoDuplicado('Você já selecionou um arquivo com esse mesmo nome e tamanho nessa lista.');
+    }
+
+    chamadoAnexosSelecionados[inputId] = jaSelecionados.concat(novosArquivos);
     inputEl.value = ''; // libera o input pra poder escolher o mesmo arquivo de novo, se precisar
     atualizarListaAnexosCadastro(inputId);
   }
 
-  function removerAnexoCadastroSelecionado(inputId, indice) {
-    if (!chamadoAnexosSelecionados[inputId]) return;
-    chamadoAnexosSelecionados[inputId].splice(indice, 1);
-    atualizarListaAnexosCadastro(inputId);
+  // Confirmar/executar separados (igual o padrão de excluir anexo/chamado
+  // na Consulta) -- só que aqui não chama o servidor nenhum, é só tirar o
+  // arquivo da lista em memória (ele nunca chegou a ser salvo).
+  let anexoCadastroRemocaoPendente = null;
+
+  function confirmarRemocaoAnexoCadastro(inputId, indice) {
+    anexoCadastroRemocaoPendente = { inputId: inputId, indice: indice };
+    if (typeof exibirModal === 'function') exibirModal('modalRemoverAnexoCadastro');
+  }
+
+  function executarRemocaoAnexoCadastro() {
+    if (!anexoCadastroRemocaoPendente) return;
+    const { inputId, indice } = anexoCadastroRemocaoPendente;
+    if (chamadoAnexosSelecionados[inputId]) {
+      chamadoAnexosSelecionados[inputId].splice(indice, 1);
+      atualizarListaAnexosCadastro(inputId);
+    }
+    anexoCadastroRemocaoPendente = null;
+    if (typeof fecharModal === 'function') fecharModal('modalRemoverAnexoCadastro');
   }
 
   function limparAnexosCadastroSelecionados() {
@@ -531,11 +578,11 @@
     const arquivos = chamadoAnexosSelecionados[inputId] || [];
     const chips = arquivos.map((arquivo, indice) => `
       <div class="anexo-card-wrapper">
-        <div class="anexo-card">
+        <div class="anexo-card" title="${escapeHtmlChamado(arquivo.name)}">
           <div class="anexo-card-icone">📄</div>
           <span class="anexo-card-nome">${escapeHtmlChamado(arquivo.name)}</span>
         </div>
-        <button type="button" class="anexo-card-excluir" title="Remover" onclick="removerAnexoCadastroSelecionado('${inputId}', ${indice})">✕</button>
+        <button type="button" class="anexo-card-excluir" title="Remover" onclick="confirmarRemocaoAnexoCadastro('${inputId}', ${indice})">✕</button>
       </div>
     `).join('');
 

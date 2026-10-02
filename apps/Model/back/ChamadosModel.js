@@ -2,15 +2,6 @@ let ticketsTableName = 'tbl_chamados'
 let firstLineTickets = 3
 let numColumnsTickets = 13
 
-// Colunas base-1 (mesmo padrão de FornecedorModel.js/PecasModel.js -- usadas
-// direto em getRange(linha, coluna), que no Apps Script começa em 1).
-// Por chamado: no máximo 1 equipamento, guardado por ID (chave estrangeira
-// pra tbl_equipamentos -- nunca duplica o dado aqui). ID_PECA foi removido
-// (peça virou texto livre dentro da Descrição, nunca chegou a ser usado).
-// RELATORIO e NOTA_FISCAL foram removidas da planilha -- anexos agora vivem
-// em tbl_chamado_anexos (referenciando o chamado pelo CHAMADO_ID de lá,
-// igual tbl_chamado_historico já fazia -- por isso não tem coluna aqui
-// apontando pra eles).
 let ticketsIdCol = 1
 let ticketsEquipamentoIdCol = 2
 let ticketsReasonCol = 3
@@ -62,15 +53,16 @@ function ReadTicketHistorico() {
 // ===== tbl_chamado_anexos =====
 let ticketAnexosTableName = 'tbl_chamado_anexos'
 let firstLineTicketAnexos = 3
-let numColumnsTicketAnexos = 7
+let numColumnsTicketAnexos = 8
 
 let ticketAnexosIdCol = 1
 let ticketAnexosIdChamadoCol = 2
 let ticketAnexosTipoCol = 3
 let ticketAnexosNomeArquivoCol = 4
 let ticketAnexosUrlCol = 5
-let ticketAnexosDataUploadCol = 6
-let ticketAnexosDataExclusaoCol = 7
+let ticketAnexosHashCol = 6
+let ticketAnexosDataUploadCol = 7
+let ticketAnexosDataExclusaoCol = 8
 
 function ReadTicketAnexos() {
   const objRows = ReadSheet(ticketAnexosTableName, firstLineTicketAnexos, numColumnsTicketAnexos)

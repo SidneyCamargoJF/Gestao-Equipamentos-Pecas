@@ -146,7 +146,7 @@
       .withSuccessHandler(async (resposta) => {
         if (resposta && resposta.sucesso) {
           fecharModalCadastroFornecedor();
-          const opcoesFornecedor = await loadSuppliers();
+          const opcoesFornecedor = (await loadSuppliers()).map(linha => linha[3]).filter(Boolean);
           preencherSelect('fornecedorSelect', opcoesFornecedor, 'Selecione o Fornecedor');
           const select = document.getElementById('fornecedorSelect');
           if (select) select.value = dados.razaoSocial;
@@ -242,7 +242,7 @@
 
       preencherSelect('marcaSelect', opcoesMarca, 'Selecione a Marca');
       preencherSelect('localSelect', opcoesLocal, 'Selecione a Localização');
-      preencherSelect('fornecedorSelect', opcoesFornecedor, 'Selecione o Fornecedor');
+      preencherSelect('fornecedorSelect', opcoesFornecedor.map(linha => linha[3]).filter(Boolean), 'Selecione o Fornecedor');
 
     } catch (err) {
       console.error("❌ [renderCadastroPecas] Erro fatal durante a renderização:", err);

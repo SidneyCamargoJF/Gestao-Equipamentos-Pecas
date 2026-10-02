@@ -1,43 +1,5 @@
 // ===== FUNÇÕES DO SERVIDOR (Backend .gs) =====
 
-function loadBrands() {
-  try {
-    // Substitua 'tbl_marcas' pelo nome real da sua aba de marcas
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("tbl_marcas");
-    if (!sheet) return [];
-    const data = sheet.getDataRange().getValues();
-    // Pula o cabeçalho (linha 1) e pega a coluna B (índice 1) ou A (índice 0) onde fica o nome
-    return data.slice(1).map(r => r[1]).filter(Boolean);
-  } catch (e) {
-    Logger.log("Erro ao carregar marcas: " + e.message);
-    return [];
-  }
-}
-
-function loadLocations() {
-  try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("tbl_localizacoes");
-    if (!sheet) return [];
-    const data = sheet.getDataRange().getValues();
-    return data.slice(1).map(r => r[1]).filter(Boolean);
-  } catch (e) {
-    Logger.log("Erro ao carregar localizações: " + e.message);
-    return [];
-  }
-}
-
-function loadSuppliers() {
-  try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("tbl_fornecedores");
-    if (!sheet) return [];
-    const data = sheet.getDataRange().getValues();
-    return data.slice(1).map(r => r[1]).filter(Boolean);
-  } catch (e) {
-    Logger.log("Erro ao carregar fornecedores: " + e.message);
-    return [];
-  }
-}
-
 function salvarPeca(dadosPeca) {
   try {
     const planilha = SpreadsheetApp.getActiveSpreadsheet();
