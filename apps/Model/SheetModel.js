@@ -164,6 +164,10 @@ class SheetModel {
     });
   }
 
+  readContext( criterios ) {
+
+  }
+
   excluir(id) {
     Logger.log('SheetModel.js - metodo excluir')
 
@@ -247,4 +251,20 @@ class SheetModel {
 
     }
   }
+}
+
+function readContext ( table, criterios ) {
+
+  switch (table) {
+    case 'tbl_equipamentos':
+      model = new EquipmentsModel()
+      break
+    default:
+      return null
+  }
+
+  res = model.readContext( criterios )
+
+  return res
+  
 }

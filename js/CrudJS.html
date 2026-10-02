@@ -42,20 +42,13 @@
     constructor(table) {
       this.table = table
     }
-    readContext(field, operator, value) {
+    readContext(criterios) {
       console.log('SearchOOPJS.readContext')
-
-      let criterios = [{
-        table: this.table,
-        field: field,
-        oparator: operator,
-        value: value
-      }]
 
       google.script.run
         .withSuccessHandler(objData => this.returnRead(objData))
         .withFailureHandler(err => console.error('Erro ao consultar: ', err))
-        .readContext(criterios);
+        .readContext(table, criterios);
 
       return false
     }
