@@ -80,3 +80,14 @@ function ExcluirRegistro( table, id) {
   }
 
 }
+
+function readContext ( parametros ) {
+  let table = parametros.table
+  let criterios = parametros.criterios
+
+  criterios.array.forEach(element => {
+    if isArray(element) {
+      
+    }
+  });
+}
