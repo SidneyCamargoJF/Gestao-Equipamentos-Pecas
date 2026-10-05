@@ -343,8 +343,23 @@
         }
       }
 
-      // abrirModalExclusao/fecharModal (genéricos) vivem em apps/Modal/ModalJS.html.
+      function abrirModalExclusao(id) {
+        console.log('abrirModalExclusao(' + id + ')')
+        idExclusao = id;
+        exibirModal('modalExclusao');
+
+      const btnDelete = document.getElementById('btn-delete');
+        console.log(btnDelete)
+
+        btnDelete.onclick = () => executarExclusaoPeca();
+
+      }
+
       async function executarExclusaoPeca() {
+        console.log('executarExclusaoPeca()')
+
+        return false;
+
         if (idExclusao === null) return;
 
         if (typeof exibirModal === 'function') exibirModal('processando');
