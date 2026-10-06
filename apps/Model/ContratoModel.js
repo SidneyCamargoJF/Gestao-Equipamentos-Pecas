@@ -1,25 +1,27 @@
 let contractTableName = 'tbl_contrato'
 let firstLineContracts = 3
-let numColumnsContracts = 17
+let numColumnsContracts = 19
 
 let contractIdCol = 0
 let contractNumberCol = 1
 let contratctNameCol = 2
-let contractSEICol = 3
-let contractDateCol = 4
-let contractEmpresaCol = 5
-let contractObjetoCol = 6
-let contractObservacoesCol = 7
-let contractValorCol = 8
-let contractDataInicialCol = 9
-let contractDataFinalCol = 10
-let contractContatoEmpresaCol = 11
-let contractTelefoneCol = 12
-let contractEmailCol = 13
-let contractGestorCol = 14
-let contractActiveCol = 15
-let contractDataAletracaoCol = 16
-let contractDataExclusaoCol = 17
+let contractDataRenovacao = 3
+let contractSEICol = 4
+let contractDataFechamentoCol = 5
+let contractEmpresaCol = 6
+let contractObjetoCol = 7
+let contractObservacoesCol = 8
+let contractValorCol = 9
+let contractDataInicialCol = 10
+let contractDataFinalCol = 11
+let contractDataFinalPrevistaCol = 12
+let contractContatoEmpresaCol = 13
+let contractTelefoneCol = 14
+let contractEmailCol = 15
+let contractGestorCol = 16
+let contractActiveCol = 17
+let contractDataAletracaoCol = 18
+let contractDataExclusaoCol = 19
 
 
 function ReadContracts() {
