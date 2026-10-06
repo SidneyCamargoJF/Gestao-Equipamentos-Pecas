@@ -1,6 +1,6 @@
 <!-- JAVASCRIPT ORIENTADO A OBJETOS -->
 <script>
-class EquipmentViewController extends SearchOOP {
+class EquipmentsViewController extends SearchOOP {
 
   // ===== INICIALIZAÇÃO =====
 
@@ -115,11 +115,11 @@ console.log('listaFiltrada: ' + this.listaFiltrada)
 
       const btnEditar = it.desativada
         ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
-        : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="equipmentViewController.edit('${it.id}')">✏️</button>`;
+        : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="equipmentsViewController.edit('${it.id}')">✏️</button>`;
 
       const btnExcluir = it.desativada
-        ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="equipmentViewController.reativar('${it.id}')">♻️</button>`
-        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="equipmentViewController.confirmaExclusao('${it.id}')">🗑️</button>`;
+        ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="equipmentsViewController.reativar('${it.id}')">♻️</button>`
+        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="equipmentsViewController.confirmaExclusao('${it.id}')">🗑️</button>`;
 
       tr.innerHTML = `
         <td>${escapeHtml(it.patrimonio)} ${it.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
@@ -137,116 +137,59 @@ console.log('listaFiltrada: ' + this.listaFiltrada)
     });
   }
 
-  // ===== MODAL DE CADASTRO =====
-  abrirModalCadastro() {
-    const input = document.getElementById('novoEquipmentNome');
-    if (input) input.value = '';
 
-    const modal = document.getElementById('modalCadastroEquipment');
-    if (modal) {
-      modal.classList.add('aberto');
-      setTimeout(() => input && input.focus(), 100);
-    }
+  cadastro() {
+    console.log('EquipmentsViewController.cadastro')
+
+    return true
   }
 
-  salvarNovoEquipment() {
-    const input = document.getElementById('novoEquipmentNome');
-    const nomeEquipment = input ? input.value.trim() : '';
+  edit( id ) {
+    console.log('EquipmentsViewController.edit(' + id + ')')    
 
-    if (!nomeEquipment) {
-      alert('Por favor, digite o nome do Equipamento.');
-      return;
-    }
-
-    google.script.run
-      .withSuccessHandler((resposta) => {
-        if (resposta && resposta.sucesso) {
-          this.consultar();
-          if (typeof fecharModal === 'function') fecharModal('modalCadastroEquipment');
-        } else {
-          alert(resposta ? resposta.mensagem : 'Erro ao cadastrar.');
-        }
-      })
-      .withFailureHandler((err) => {
-        console.error('Erro ao cadastrar:', err);
-        alert('Ocorreu um erro no script: ' + (err.message || err));
-      })
-      .saveEquipment(nomeEquipment);
+    return true
   }
 
-  // ===== MODAL DE EDIÇÃO =====
-  abrirModalEdicao(id) {
-    const equipmentEncontrada = this.list.find(it => String(it.id) === String(id));
+  setStatus( id ) {
+    console.log('EquipmentsViewController.setStatus(' + id + ')')
 
-    document.getElementById('editEquipmentId').value = id;
-    document.getElementById('editEquipmentNome').value = equipmentEncontrada ? equipmentEncontrada.equipment : '';
-
-    const modal = document.getElementById('modalEdicaoEquipment');
-    if (modal) modal.classList.add('aberto');
-  }
-
-  edit(id) {
-console.log('edit')
-console.log('id: ' + id)
-    const novoNome = document.getElementById('editEquipmentNome').value;
-
-    if (!novoNome || !novoNome.trim()) {
-      alert("Por favor, digite o nome do equipamento.");
-      return;
-    }
-
-    google.script.run
-      .withSuccessHandler((resposta) => {
-        if (resposta && resposta.sucesso) {
-          if (typeof fecharModal === 'function') fecharModal('modalEdicaoEquipment');
-          this.consultar();
-        } else {
-          alert(resposta ? resposta.mensagem : "Erro ao atualizar.");
-        }
-      })
-      .withFailureHandler((err) => {
-        console.error('Erro ao edita: ', err);
-        alert('Erro de comunicação com o servidor.');
-      })
-      .editarEquipment(id, novoNome.trim());
-  }
-
-  reativar(id) {
-    return;
+    return true;
   }
 
   // ===== MODAL DE EXCLUSÃO =====
   confirmaExclusao(id) {
-    const btnDelete = document.getElementById('btn-delete');
+  console.log('EquipmentsViewController.confirmaExclusao(' + id + ')')
+  console.log(id)
 
-    if (!id) {
+  if (!id) {
       alert("Erro: Nenhum registro selecionado.");
       return;
     }
-console.log('confirmaExclusao')
-console.log(btnDelete)
-console.log(id)
-    btnDelete.onclick = () => this.excluir(id);
 
     exibirModal('modalExclusao');
+
+    const btnDelete = document.getElementById('btn-delete');
+    console.log(btnDelete)
+
+    btnDelete.onclick = () => this.excluir(id);
   }
 
 
   async excluir(id) {
-    console.log('excluir(id) de equipmentViewController')
+    console.log('equipmentsViewController.excluir(' + id + ')')
     if (typeof executarExclusao === 'function') {
       executarExclusao('tbl_equipment', id);
     }
     this.consultar();
-    if (typeof fecharModal === 'function') fecharModal('modalExclusaoEquipment');
+    if (typeof fecharModal === 'function') fecharModal('modalExclusao');
   }
 }
 
 // Instanciação da Controller
-const equipmentViewController = new EquipmentViewController();
+const equipmentsViewController = new EquipmentsViewController();
 
 document.addEventListener('DOMContentLoaded', () => {
-  equipmentViewController.init();
+  equipmentsViewController.init();
 });
 
 </script>

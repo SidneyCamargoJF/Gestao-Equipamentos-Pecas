@@ -1,9 +1,9 @@
 <script>
 
-  class EquipmentFormController {
+  class EquipmentsFormController {
 
     constructor() {
-      console.log('EquipmentFormController.constructor()')
+      console.log('EquipmentsFormController.constructor()')
         this.equipPatrimonio = document.getElementById('cadEquipPatrimonio')
         this.equipNome = document.getElementById('cadEquipNome')
         this.equipMarca = document.getElementById('cadEquipMarca')
@@ -13,7 +13,7 @@
         this.equipLocalizacao = document.getElementById('cadEquipLocalizacao')
         this.btnEquipSave = document.getElementById('cadEquipSave')
 
-        this.tblEquipment = new CrudJs();
+        this.tblEquipment = new CrudJs('tbl_equipamentos');
         console.log(this.tblEquipment)
         this.tblEquipment.readContext('a', '=', 'b')
     }
@@ -151,7 +151,7 @@
     // injetado dinamicamente, não carregado como página).
 
     async render(id) {
-      console.log('EquipmentFormController.render(' + id + ')')
+      console.log('EquipmentsFormController.render(' + id + ')')
 
       this.equipPatrimonio.focus();
 
@@ -169,7 +169,7 @@
   // Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante
   // que a inicialização também rode no carregamento normal da página.
 
-  const equipmentFormController = new EquipmentFormController()
+  const equipmentsFormController = new EquipmentsFormController()
 
   /*
   document.addEventListener('DOMContentLoaded', () => {

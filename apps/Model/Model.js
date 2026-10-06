@@ -81,13 +81,10 @@ function ExcluirRegistro( table, id) {
 
 }
 
-function readContext ( parametros ) {
-  let table = parametros.table
-  let criterios = parametros.criterios
+function readContext ( table, criterios ) {
 
-  criterios.array.forEach(element => {
-    if isArray(element) {
-      
-    }
-  });
+  if (table === 'tbl_equipment') {
+    console.log('Model - ReadContext - tbl_equipment')
+    return 
+  }
 }
