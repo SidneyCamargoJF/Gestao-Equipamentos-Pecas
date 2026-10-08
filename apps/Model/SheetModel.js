@@ -71,6 +71,7 @@ class SheetModel {
   }
 
   arrayToOfObjects(range) {
+    console.log('arrayToOfObjects(' + range +')')
 
     let headers = range[this.firstLine -2]
     let nameColumn = "";
@@ -168,34 +169,33 @@ class SheetModel {
 
   }
 
-  excluir(id) {
-    Logger.log('SheetModel.js - metodo excluir')
+  excluir(par_id) {
+    console.log('SheetModel.excluir(' + par_id + ')' )
+    const id = Number(par_id)
+    if (!id) return { sucesso: false, mensagem: 'ID inválido.'};
 
     try {
-      if (typeof id !== 'number') {
-        return { sucesso: false, mensagem: "ID inválido." };
-      }
-
       const tab = this.ss;
 
-      const dados = findId(id)
+      const dados = this.findId(id)
 
       if (!dados) {
         Logger.log("Registro não encontrado para o ID: " + id);
         return false
       }
-      let linhaLocalizada = read(id);
+      let linhaLocalizada = dados.line;
+      console.log( dados )
 
       const dataExclusao = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
 
       tab.getRange(linhaLocalizada, this.colDtExclusao).setValue(dataExclusao);
       tab.getRange(linhaLocalizada, 1, 1, this.numColumns).setBackground("#F4CCCC");
 
-      Logger.log("Registro " + id + " Excluido " + linhaLocalizada);   
+      console.log("Registro " + id + " Excluido " + linhaLocalizada);   
       return true
 
     } catch (e) {
-      Logger.log("Erro no servidor ao excluir o registro: " + e.message + " da tabela " + this.tableName);
+      console.log("Erro no servidor ao excluir o registro: " + e.message + " da tabela " + this.tableName);
       return false
       
     }

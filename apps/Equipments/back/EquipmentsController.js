@@ -126,6 +126,11 @@ class EquipmentsController {
     }
   }
 
+  delete(id) {
+    console.log('equipmentsController.delete('+ id +')')
+    return this.model.excluir(id)
+  }
+
   desativar(idInput) {
     return this.model.status(idInput, 'I');
   }
@@ -173,4 +178,8 @@ function editarEquipment(id, equipment) {
 
 function desativarEquipment(id) {
   return new EquipmentsController().desativar(id);
+}
+
+function deleteEquipment(id) {
+  return new EquipmentsController().delete(id)
 }

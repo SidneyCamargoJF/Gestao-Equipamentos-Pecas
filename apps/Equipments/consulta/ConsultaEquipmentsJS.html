@@ -159,7 +159,6 @@ console.log('listaFiltrada: ' + this.listaFiltrada)
   // ===== MODAL DE EXCLUSÃO =====
   confirmaExclusao(id) {
   console.log('EquipmentsViewController.confirmaExclusao(' + id + ')')
-  console.log(id)
 
   if (!id) {
       alert("Erro: Nenhum registro selecionado.");
@@ -173,7 +172,6 @@ console.log('listaFiltrada: ' + this.listaFiltrada)
 
     btnDelete.onclick = () => this.excluir(id);
   }
-
 
   async excluir(id) {
     console.log('equipmentsViewController.excluir(' + id + ')')
