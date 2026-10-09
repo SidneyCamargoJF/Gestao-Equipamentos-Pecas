@@ -47,7 +47,9 @@
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
-    limparAnexosCadastroSelecionados();
+    registrarCampoAnexoCadastro('chamadoRelatorioArquivo', 'chamadoRelatorioLista');
+    registrarCampoAnexoCadastro('chamadoNotaFiscalArquivo', 'chamadoNotaFiscalLista');
+    limparAnexosCadastroSelecionados(['chamadoRelatorioArquivo', 'chamadoNotaFiscalArquivo']);
 
     const statusEl = document.getElementById('chamadoPatrimonioStatus');
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'chamado-patrimonio-status'; }
@@ -207,7 +209,7 @@
     statusEl.className = 'chamado-patrimonio-status';
 
     try {
-      const resultado = await runServerFunction('verificarPatrimonioChamado', patrimonio);
+      const resultado = await runServerFunction('verificarPatrimonioEquipamento', patrimonio);
       if (resultado && resultado.existe) {
         const detalheEquipamento = (resultado.marca ? ' - ' + resultado.marca : '') + (resultado.modelo ? ' - ' + resultado.modelo : '');
         statusEl.textContent = 'Equipamento encontrado' + (resultado.nome ? ' (' + resultado.nome + detalheEquipamento + ')' : '');
@@ -403,8 +405,8 @@
 
       let relatorioArquivos = [], notaFiscalArquivos = [];
       try {
-        relatorioArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoRelatorioArquivo);
-        notaFiscalArquivos = await lerArquivosComoBase64(chamadoAnexosSelecionados.chamadoNotaFiscalArquivo);
+        relatorioArquivos = await lerArquivosComoBase64(anexosCadastroSelecionados.chamadoRelatorioArquivo);
+        notaFiscalArquivos = await lerArquivosComoBase64(anexosCadastroSelecionados.chamadoNotaFiscalArquivo);
       } catch (erroArquivo) {
         alert(erroArquivo.message);
         return;
@@ -458,8 +460,6 @@
     }
   }
 
-  const CHAMADO_ANEXO_TAMANHO_MAX = 3 * 1024 * 1024;
-
   function lerArquivoComoBase64(inputEl) {
     return new Promise((resolve, reject) => {
       if (!inputEl || !inputEl.files || inputEl.files.length === 0) {
@@ -467,7 +467,7 @@
         return;
       }
       const arquivo = inputEl.files[0];
-      if (arquivo.size > CHAMADO_ANEXO_TAMANHO_MAX) {
+      if (arquivo.size > ANEXO_CADASTRO_TAMANHO_MAX) {
         reject(new Error('O arquivo "' + arquivo.name + '" passa de 3MB.'));
         return;
       }
@@ -481,124 +481,4 @@
     });
   }
 
-  // Agora recebe uma LISTA de File (não mais o <input> direto) -- porque os
-  // arquivos ficam guardados em chamadoAnexosSelecionados (ver mais abaixo),
-  // acumulados entre vários cliques no card "+", não presos ao que o
-  // <input> nativo tem selecionado no momento.
-  function lerArquivosComoBase64(arquivos) {
-    if (!arquivos || arquivos.length === 0) {
-      return Promise.resolve([]);
-    }
-    return Promise.all(arquivos.map(arquivo => new Promise((resolve, reject) => {
-      if (arquivo.size > CHAMADO_ANEXO_TAMANHO_MAX) {
-        reject(new Error('O arquivo "' + arquivo.name + '" passa de 3MB.'));
-        return;
-      }
-      const leitor = new FileReader();
-      leitor.onload = () => {
-        const base64 = String(leitor.result).split(',')[1] || '';
-        resolve({ nome: arquivo.name, tipo: arquivo.type || 'application/octet-stream', base64: base64 });
-      };
-      leitor.onerror = () => reject(new Error('Erro ao ler o arquivo "' + arquivo.name + '".'));
-      leitor.readAsDataURL(arquivo);
-    })));
-  }
-
-  // ===== ANEXOS: card "+" no lugar do <input type="file"> nativo (mesma
-  // ideia da Consulta) -- o input real fica escondido, disparado pelo
-  // clique no card. Como aqui os arquivos só são enviados no Salvar (não
-  // na hora da escolha, diferente da Consulta), preciso guardar os File
-  // escolhidos num estado à parte -- o <input> nativo troca todo o
-  // conteúdo a cada seleção, então sem isso, clicar "+" de novo perderia
-  // os arquivos escolhidos antes. =====
-  let chamadoAnexosSelecionados = {
-    chamadoRelatorioArquivo: [],
-    chamadoNotaFiscalArquivo: []
-  };
-  const CHAMADO_ANEXO_LISTA_ID = {
-    chamadoRelatorioArquivo: 'chamadoRelatorioLista',
-    chamadoNotaFiscalArquivo: 'chamadoNotaFiscalLista'
-  };
-
-  function onArquivosCadastroSelecionados(inputId) {
-    const inputEl = document.getElementById(inputId);
-    if (!inputEl || !inputEl.files) return;
-
-    const novosArquivos = Array.from(inputEl.files);
-    const jaSelecionados = chamadoAnexosSelecionados[inputId] || [];
-
-    // Anexo ainda não foi salvo nem tem chamado pra comparar no servidor
-    // (o chamado só existe depois do Salvar) -- então aqui a checagem é só
-    // local, contra o que já está nessa mesma lista. Nome + tamanho é
-    // suficiente pra esse caso (não precisa de hash como no backend).
-    const algumDuplicado = novosArquivos.some(novo =>
-      jaSelecionados.some(existente => existente.name === novo.name && existente.size === novo.size)
-    );
-    if (algumDuplicado) {
-      exibirAvisoAnexoDuplicado('Você já selecionou um arquivo com esse mesmo nome e tamanho nessa lista.');
-    }
-
-    chamadoAnexosSelecionados[inputId] = jaSelecionados.concat(novosArquivos);
-    inputEl.value = ''; // libera o input pra poder escolher o mesmo arquivo de novo, se precisar
-    atualizarListaAnexosCadastro(inputId);
-  }
-
-  // Confirmar/executar separados (igual o padrão de excluir anexo/chamado
-  // na Consulta) -- só que aqui não chama o servidor nenhum, é só tirar o
-  // arquivo da lista em memória (ele nunca chegou a ser salvo).
-  let anexoCadastroRemocaoPendente = null;
-
-  function confirmarRemocaoAnexoCadastro(inputId, indice) {
-    anexoCadastroRemocaoPendente = { inputId: inputId, indice: indice };
-    if (typeof exibirModal === 'function') exibirModal('modalRemoverAnexoCadastro');
-  }
-
-  function executarRemocaoAnexoCadastro() {
-    if (!anexoCadastroRemocaoPendente) return;
-    const { inputId, indice } = anexoCadastroRemocaoPendente;
-    if (chamadoAnexosSelecionados[inputId]) {
-      chamadoAnexosSelecionados[inputId].splice(indice, 1);
-      atualizarListaAnexosCadastro(inputId);
-    }
-    anexoCadastroRemocaoPendente = null;
-    if (typeof fecharModal === 'function') fecharModal('modalRemoverAnexoCadastro');
-  }
-
-  function limparAnexosCadastroSelecionados() {
-    chamadoAnexosSelecionados = { chamadoRelatorioArquivo: [], chamadoNotaFiscalArquivo: [] };
-    atualizarListaAnexosCadastro('chamadoRelatorioArquivo');
-    atualizarListaAnexosCadastro('chamadoNotaFiscalArquivo');
-  }
-
-  function atualizarListaAnexosCadastro(inputId) {
-    const containerId = CHAMADO_ANEXO_LISTA_ID[inputId];
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const arquivos = chamadoAnexosSelecionados[inputId] || [];
-    const chips = arquivos.map((arquivo, indice) => `
-      <div class="anexo-card-wrapper">
-        <div class="anexo-card" title="${escapeHtmlChamado(arquivo.name)}">
-          <div class="anexo-card-icone">📄</div>
-          <span class="anexo-card-nome">${escapeHtmlChamado(arquivo.name)}</span>
-        </div>
-        <button type="button" class="anexo-card-excluir" title="Remover" onclick="confirmarRemocaoAnexoCadastro('${inputId}', ${indice})">✕</button>
-      </div>
-    `).join('');
-
-    container.innerHTML = `
-      <div class="anexo-lista">
-        ${chips}
-        <button type="button" class="anexo-card anexo-card-add" onclick="document.getElementById('${inputId}').click()" title="Adicionar arquivo">
-          <div class="anexo-card-icone">+</div>
-          <span class="anexo-card-nome">Adicionar</span>
-        </button>
-      </div>
-    `;
-  }
-
-  function escapeHtmlChamado(s) {
-    if (s == null) return '';
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
 </script>

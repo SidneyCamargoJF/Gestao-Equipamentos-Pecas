@@ -1,0 +1,132 @@
+<script>
+// =====================================================
+// ANEXOS NO CADASTRO -- card "+" compartilhado entre Chamados e Contrato
+// (e qualquer outra tela de cadastro que precise anexar arquivo). Os
+// arquivos só são enviados pro servidor no Salvar, não na hora da escolha
+// -- por isso ficam guardados aqui em memória até lá. Movido de
+// CadastroChamadoFormJS.html; não duplicar em outro lugar.
+//
+// Uso: cada campo de anexo de uma tela precisa ser registrado uma vez
+// (geralmente na função que monta a tela) com:
+//   registrarCampoAnexoCadastro('meuInputId', 'meuContainerId');
+// O HTML precisa ter o <input type="file" id="meuInputId" style="display:none"
+// onchange="onArquivosCadastroSelecionados('meuInputId')"> e um
+// <div id="meuContainerId"></div> vazio pra receber os cards.
+// =====================================================
+
+const ANEXO_CADASTRO_TAMANHO_MAX = 3 * 1024 * 1024;
+
+// chave = inputId, valor = array de File ainda não enviados
+let anexosCadastroSelecionados = {};
+// chave = inputId, valor = containerId onde desenhar os cards desse campo
+let anexoCadastroContainerPorInput = {};
+
+function registrarCampoAnexoCadastro(inputId, containerId) {
+  anexosCadastroSelecionados[inputId] = anexosCadastroSelecionados[inputId] || [];
+  anexoCadastroContainerPorInput[inputId] = containerId;
+  atualizarListaAnexosCadastro(inputId);
+}
+
+function lerArquivosComoBase64(arquivos) {
+  if (!arquivos || arquivos.length === 0) {
+    return Promise.resolve([]);
+  }
+  return Promise.all(arquivos.map(arquivo => new Promise((resolve, reject) => {
+    if (arquivo.size > ANEXO_CADASTRO_TAMANHO_MAX) {
+      reject(new Error('O arquivo "' + arquivo.name + '" passa de 3MB.'));
+      return;
+    }
+    const leitor = new FileReader();
+    leitor.onload = () => {
+      const base64 = String(leitor.result).split(',')[1] || '';
+      resolve({ nome: arquivo.name, tipo: arquivo.type || 'application/octet-stream', base64: base64 });
+    };
+    leitor.onerror = () => reject(new Error('Erro ao ler o arquivo "' + arquivo.name + '".'));
+    leitor.readAsDataURL(arquivo);
+  })));
+}
+
+function onArquivosCadastroSelecionados(inputId) {
+  const inputEl = document.getElementById(inputId);
+  if (!inputEl || !inputEl.files) return;
+
+  const novosArquivos = Array.from(inputEl.files);
+  const jaSelecionados = anexosCadastroSelecionados[inputId] || [];
+
+  // Anexo ainda não foi salvo nem tem registro pra comparar no servidor
+  // (o registro só existe depois do Salvar) -- então aqui a checagem é só
+  // local, contra o que já está nessa mesma lista. Nome + tamanho é
+  // suficiente pra esse caso (não precisa de hash como no backend).
+  const algumDuplicado = novosArquivos.some(novo =>
+    jaSelecionados.some(existente => existente.name === novo.name && existente.size === novo.size)
+  );
+  if (algumDuplicado) {
+    exibirAvisoAnexoDuplicado('Você já selecionou um arquivo com esse mesmo nome e tamanho nessa lista.');
+  }
+
+  anexosCadastroSelecionados[inputId] = jaSelecionados.concat(novosArquivos);
+  inputEl.value = ''; // libera o input pra poder escolher o mesmo arquivo de novo, se precisar
+  atualizarListaAnexosCadastro(inputId);
+}
+
+// Confirmar/executar separados (igual o padrão de excluir anexo/registro na
+// Consulta) -- só que aqui não chama o servidor nenhum, é só tirar o
+// arquivo da lista em memória (ele nunca chegou a ser salvo).
+let anexoCadastroRemocaoPendente = null;
+
+function confirmarRemocaoAnexoCadastro(inputId, indice) {
+  anexoCadastroRemocaoPendente = { inputId: inputId, indice: indice };
+  if (typeof exibirModal === 'function') exibirModal('modalRemoverAnexoCadastro');
+}
+
+function executarRemocaoAnexoCadastro() {
+  if (!anexoCadastroRemocaoPendente) return;
+  const inputId = anexoCadastroRemocaoPendente.inputId;
+  const indice = anexoCadastroRemocaoPendente.indice;
+  if (anexosCadastroSelecionados[inputId]) {
+    anexosCadastroSelecionados[inputId].splice(indice, 1);
+    atualizarListaAnexosCadastro(inputId);
+  }
+  anexoCadastroRemocaoPendente = null;
+  if (typeof fecharModal === 'function') fecharModal('modalRemoverAnexoCadastro');
+}
+
+function limparAnexosCadastroSelecionados(inputIds) {
+  (inputIds || []).forEach(inputId => {
+    anexosCadastroSelecionados[inputId] = [];
+    atualizarListaAnexosCadastro(inputId);
+  });
+}
+
+function atualizarListaAnexosCadastro(inputId) {
+  const containerId = anexoCadastroContainerPorInput[inputId];
+  const container = containerId ? document.getElementById(containerId) : null;
+  if (!container) return;
+
+  const arquivos = anexosCadastroSelecionados[inputId] || [];
+  const chips = arquivos.map((arquivo, indice) => `
+    <div class="anexo-card-wrapper">
+      <div class="anexo-card" title="${escapeHtmlAnexo(arquivo.name)}">
+        <div class="anexo-card-icone">📄</div>
+        <span class="anexo-card-nome">${escapeHtmlAnexo(arquivo.name)}</span>
+      </div>
+      <button type="button" class="anexo-card-excluir" title="Remover" onclick="confirmarRemocaoAnexoCadastro('${inputId}', ${indice})">✕</button>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="anexo-lista">
+      ${chips}
+      <button type="button" class="anexo-card anexo-card-add" onclick="document.getElementById('${inputId}').click()" title="Adicionar arquivo">
+        <div class="anexo-card-icone">+</div>
+        <span class="anexo-card-nome">Adicionar</span>
+      </button>
+    </div>
+  `;
+}
+
+function escapeHtmlAnexo(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+</script>

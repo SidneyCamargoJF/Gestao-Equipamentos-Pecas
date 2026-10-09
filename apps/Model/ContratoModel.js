@@ -5,7 +5,7 @@ let numColumnsContracts = 19
 let contractIdCol = 0
 let contractNumberCol = 1
 let contratctNameCol = 2
-let contractDataRenovacao = 3
+let contractDataEncerramento = 3
 let contractSEICol = 4
 let contractDataFechamentoCol = 5
 let contractEmpresaCol = 6
@@ -14,14 +14,13 @@ let contractObservacoesCol = 8
 let contractValorCol = 9
 let contractDataInicialCol = 10
 let contractDataFinalCol = 11
-let contractDataFinalPrevistaCol = 12
-let contractContatoEmpresaCol = 13
-let contractTelefoneCol = 14
-let contractEmailCol = 15
-let contractGestorCol = 16
-let contractActiveCol = 17
-let contractDataAletracaoCol = 18
-let contractDataExclusaoCol = 19
+let contractContatoEmpresaCol = 12
+let contractTelefoneCol = 13
+let contractEmailCol = 14
+let contractGestorCol = 15
+let contractActiveCol = 16
+let contractDataAletracaoCol = 17
+let contractDataExclusaoCol = 18
 
 
 function ReadContracts() {

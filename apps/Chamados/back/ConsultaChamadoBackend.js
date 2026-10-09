@@ -289,20 +289,7 @@ function buscarHistoricoChamado(chamadoId) {
 }
 
 function buscarAnexosChamado (chamadoId) {
-    const idBuscado = Number(chamadoId);
-    const dados = ReadTicketAnexos()
-
-    return dados
-        .filter(linha => Number(linha[1]) === idBuscado)
-        .filter(linha => !linha[7])
-        .map(linha => ({
-            id: linha[0],
-            tipo: linha[2],
-            nomeArquivo: linha[3],
-            url: linha[4],
-            dataUpload: linha[6]
-        }))
-        .reverse();
+    return buscarAnexosGenerico(ticketAnexosTableName, chamadoId, firstLineTicketAnexos, numColumnsTicketAnexos);
 }
 
 /**
@@ -398,37 +385,11 @@ function excluirAnotacaoChamado(historicoId) {
 }
 
 function excluirAnexoChamado(anexoId) {
-    try {
-        const ss = SpreadsheetApp.getActiveSpreadsheet();
-        const abaAnexos = ss.getSheetByName(ticketAnexosTableName);
-        if (!abaAnexos) {
-            return {sucesso: false,  mensagem: "Aba 'tbl_chamado_anexos' não encontrada na planilha."}
-        }
+    const resultado = excluirAnexoGenerico(ticketAnexosTableName, anexoId, firstLineTicketAnexos, numColumnsTicketAnexos);
 
-        const idBuscado = Number(anexoId);
-        if (!idBuscado) {
-            return {sucesso: false, mensagem: 'ID do anexo inválido'};
-        }
-        const dados = ReadTicketAnexos();
-
-        for (let i = 0; i < dados.length; i++) {
-            if (Number(dados[i][0]) === idBuscado) {
-                const linhaReal = i + firstLineTicketAnexos;
-                const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
-
-                abaAnexos.getRange(linhaReal, ticketAnexosDataExclusaoCol).setValue(dataAtual);
-                abaAnexos.getRange(linhaReal, 1, 1, numColumnsTicketAnexos).setBackground("#F4CCCC");
-
-                const chamadoIdDoAnexo = dados[i][1];
-                const tipoArquivo = dados[i][2];
-                const nomeArquivo = dados[i][3];
-                adicionarHistoricoSistema(chamadoIdDoAnexo, 'Anexo excluído: "' + nomeArquivo + '" (' + tipoArquivo + ')');
-
-                return {sucesso: true, mensagem: 'Anexo exlcuído da interface, dado permanece no banco de dados.'}
-            }
-        }
-        return{sucesso: false, mensagem: 'Anexo não encontrado.'}
-    } catch (e) {
-        return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+    if (resultado.sucesso) {
+        adicionarHistoricoSistema(resultado.idRegistro, 'Anexo excluído: "' + resultado.nomeArquivo + '" (' + resultado.tipo + ')');
     }
+
+    return resultado;
 }

@@ -65,7 +65,6 @@
           <div class="field">
             <label class="field__label" for="situacao">Situação *</label>
             <select class="field__select" id="situacao">
-              <option value="rascunho">Rascunho</option>
               <option value="ativo">Ativo</option>
               <option value="vencendo">Vencendo</option>
               <option value="vencido">Vencido</option>
@@ -115,9 +114,9 @@
 
             <div class="form-grid-3">
 
-              <div class="field">
-                <label class="field__label" for="valor">Valor (R$)</label>
-                <input class="field__input" type="text" id="valor" placeholder="0,00">
+              <div class="field field-opcional-encerramento">
+                <label class="field__label" for="dataEncerramento">Data Encerramento <em>(em caso de encerramento)</em></label>
+                <input class="field__input" type="date" id="dataEncerramento">
               </div>
 
               <div class="field">
@@ -126,7 +125,7 @@
               </div>
 
               <div class="field">
-                <label class="field__label" for="dataFinal">Data Final *</label>
+                <label class="field__label" for="dataFinal">Data Final Prevista*</label>
                 <input class="field__input" type="date" id="dataFinal">
               </div>
 
@@ -154,10 +153,22 @@
             <div class="form-grid-3">
 
               <div class="field">
+                <label class="field__label" for="valor">Valor (R$)</label>
+                <input class="field__input" type="text" id="valor" placeholder="0,00">
+              </div>
+
+              <div class="field">
                 <label class="field__label" for="gestor">Gestor do Contrato *</label>
                 <input class="field__input" type="text" id="gestor" placeholder="Nome do gestor">
               </div>
 
+            </div>
+
+            <div class="contrato-anexos-secao">
+              <label class="field__label">Documentos Anexados</label>
+              <div id="contratoAnexoLista"></div>
+              <input type="file" id="contratoAnexoArquivo" accept="application/pdf,image/*" multiple
+                style="display:none;" onchange="onArquivosCadastroSelecionados('contratoAnexoArquivo')">
             </div>
           </div>
 
@@ -206,6 +217,11 @@
                   </button>
                 </div>
               </div>
+              <!-- Lista de resultados da busca por Nome -->
+              <div id="eqResultadoLista" style="display:none;">
+                <div id="eqResultadoListaItens"></div>
+              </div>
+
               <div id="eqVazio" class="equip-result" style="display:none;">
                 <p class="equip-result-empty">Nenhum equipamento encontrado com esses critérios.</p>
               </div>

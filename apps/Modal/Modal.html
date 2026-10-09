@@ -196,6 +196,18 @@
       </div>
     </div>
 
+    <!-- MODAL DE REMOÇÃO DE ITEM DO CONTRATO (equipamento/serviço/produto/checklist) -->
+    <div class="modal-overlay" id="modalRemoverItemContrato">
+      <div class="modal">
+        <h3>Remover item?</h3>
+        <p>Esse item ainda não foi salvo - vai sair da lista que você preparou pra esse contrato.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="fecharModal('modalRemoverItemContrato')" style="width:auto;">Cancelar</button>
+          <button class="btn-danger" onclick="executarRemocaoItemContrato()">Sim, Remover</button>
+        </div>
+      </div>
+    </div>
+
     <!-- GENÉRICO / SISTEMA -->
 
     <!-- MODAL DE PROCESSAMENTO -->

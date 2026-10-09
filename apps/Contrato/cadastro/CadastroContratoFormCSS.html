@@ -1,5 +1,22 @@
 <style>
 
+
+.field-opcional-encerramento {
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.field-opcional-encerramento.campo-ativo {
+  opacity: 1;
+}
+
+.field-opcional-encerramento .field__label em {
+  font-style: italic;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+
 /*
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 */
@@ -145,6 +162,33 @@
 .servico-campos-edicao .field__select {
   padding-right: 2rem;
 }
+
+/* Seção de anexos do Cadastro de Contrato -- separada do resto do
+   formulário por uma linha, com espaço próprio garantido (não depende do
+   espaçamento automático entre .form-grid-2/.form-grid-3, que só cobre
+   algumas combinações de vizinhos e deixava isso colado no campo de cima). */
+.contrato-anexos-secao {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 0.0625rem solid var(--color-slate-200);
+}
+
+/* Resultados da busca por Nome (pode bater com vários) -- espaço entre os
+   cards, senão ficam grudados um no outro. */
+#eqResultadoLista {
+  margin-top: 1rem;
+}
+
+/* O JS só troca display:none/block no #eqResultadoLista (mostrar/esconder o
+   bloco inteiro) -- o flex+gap fica aqui dentro, num filho que o JS nunca
+   toca o display, senão o style inline (display:block) sempre ganharia
+   desse display:flex e o gap nunca apareceria. */
+#eqResultadoListaItens {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
 
 /* ===== RESPONSIVO ===== */
 @media (min-width: 36rem) {
