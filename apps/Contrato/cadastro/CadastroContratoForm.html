@@ -4,7 +4,16 @@
   <div class="page-header">
     <div class="actions-bar">
       <h1>✒️ Contratos</h1>
-    </div> 
+    </div>
+    
+    <!-- ============================================= -->
+      <!-- BOTÕES DE AÇÃO                                -->
+      <!-- ============================================= -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="trocarPagina('contratos-view')">Cancelar</button>
+        <button type="button" class="btn btn-danger"  onclick="limparContrato()">Limpar</button>
+        <button type="button" class="btn-success" onclick="salvarContrato()">Salvar</button>
+      </div>
   </div>
 
   <div class="panel">
@@ -256,65 +265,38 @@
           <!-- ======================== -->
           <div class="tab-panel" id="tab-servicos">
 
-            <!-- PARTE SUPERIOR: Busca de Serviços na Base -->
+            <!-- PARTE SUPERIOR: Serviços (checkbox fixo + customizados) -->
             <div class="equip-busca-section">
-              <h4 class="sub-section-title">Buscar Serviço na Base</h4>
-              <div class="equip-busca-inline">
-                <div class="field equip-field-servico">
-                  <label class="field__label">Serviço</label>
-                  <div class="search-wrapper" id="servicoBuscaNomeWrapper">
-                    <span class="search-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                      </svg>
-                    </span>
-                    <input class="search-input" type="text" id="servicoBuscaNome" placeholder="Digite o nome do serviço..." autocomplete="off">
-                    <div class="search-dropdown" id="servicoBuscaNomeDropdown"></div>
-                  </div>
-                </div>
-                <div class="field equip-field-btn">
-                  <button class="btn-primary btn-buscar-equip" onclick="buscarServicoBase()">Buscar</button>
-                </div>
+              <h4 class="sub-section-title">Serviços</h4>
+
+              <div class="checkbox-group" id="servicoCheckboxesFixos">
+                <label class="checkbox-item">
+                  <input type="checkbox" data-servico="Preventiva" onchange="onToggleServicoFixo('Preventiva', this.checked)">
+                  Preventiva
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" data-servico="Corretiva" onchange="onToggleServicoFixo('Corretiva', this.checked)">
+                  Corretiva
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" data-servico="Instalação" onchange="onToggleServicoFixo('Instalação', this.checked)">
+                  Instalação
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" data-servico="Limpeza" onchange="onToggleServicoFixo('Limpeza', this.checked)">
+                  Limpeza
+                </label>
               </div>
 
-              <!-- Resultado da busca com campos editáveis -->
-              <div id="servicoResultado" class="equip-result" style="display:none;">
-                <div class="equip-result-card">
-                  <div class="equip-result-info">
-                    <span class="equip-result-nome" id="servicoResultNome"></span>
-                    <span class="equip-result-det" id="servicoResultDet"></span>
-                  </div>
-                  <div class="servico-campos-edicao">
-                    <div class="field servico-field-periodo">
-                      <label class="field__label" for="servicoPeriodicidade">Periodicidade</label>
-                      <select class="field__select" id="servicoPeriodicidade">
-                        <option value="unica">Única</option>
-                        <option value="diaria">Diária</option>
-                        <option value="semanal">Semanal</option>
-                        <option value="quinzenal">Quinzenal</option>
-                        <option value="mensal">Mensal</option>
-                        <option value="bimestral">Bimestral</option>
-                        <option value="trimestral">Trimestral</option>
-                        <option value="semestral">Semestral</option>
-                        <option value="anual">Anual</option>
-                        <option value="sob-demanda">Sob Demanda</option>
-                      </select>
-                    </div>
-                    <div class="field servico-field-valor">
-                      <label class="field__label" for="servicoValor">Valor (R$)</label>
-                      <input class="field__input" type="text" id="servicoValor" placeholder="0,00">
-                    </div>
-                  </div>
-                  <button class="btn-success btn-equip-add" onclick="addServicoContrato()">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Adicionar ao Contrato
-                  </button>
+              <!-- Checkboxes criados via "Outro" entram aqui, um por vez -->
+              <div class="checkbox-group" id="servicoCheckboxesCustom"></div>
+
+              <div class="servico-outro-linha">
+                <div class="field">
+                  <label class="field__label" for="servicoOutroTexto">Outro</label>
+                  <input class="field__input" type="text" id="servicoOutroTexto" placeholder="Digite o serviço e clique em Adicionar...">
                 </div>
-              </div>
-              <div id="servicoVazio" class="equip-result" style="display:none;">
-                <p class="equip-result-empty">Nenhum serviço encontrado com esse nome.</p>
+                <button type="button" class="btn-primary btn-servico-outro-add" onclick="criarServicoCustom()">Adicionar</button>
               </div>
             </div>
 

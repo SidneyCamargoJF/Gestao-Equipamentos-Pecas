@@ -3,7 +3,6 @@
   function renderContratosForm() {
     initTabs();
     initSearch('empresaSearch', 'empresaDropdown', 'empresaWrapper', opcoesEmpresa);
-    initBuscaServicoNome();
     initBuscaProdutoNome();
     initBuscaChecklist();
     registrarCampoAnexoCadastro('contratoAnexoArquivo', 'contratoAnexoLista');
@@ -25,16 +24,25 @@
       });
     }
 
+    limparCheckboxesServico();
+
     renderizarEquipamentos();
     renderizarServicos();
     renderizarProdutos();
     renderizarChecklist();
   }
 
-  // Campo "Data Encerramento" fica opaco/esmaecido por padrão (classe
-  // field-opcional-encerramento no CSS). Fica normal (classe campo-ativo)
-  // enquanto a pessoa está com foco nele OU já preencheu uma data -- some
-  // de novo só quando perde o foco COM o campo vazio.
+  // Desmarca os 4 fixos e apaga qualquer checkbox customizado (criado via
+  // "Outro") que tenha sobrado de uma edição anterior.
+  function limparCheckboxesServico() {
+    const fixos = document.querySelectorAll('#servicoCheckboxesFixos input[type="checkbox"]');
+    fixos.forEach(function (cb) { cb.checked = false; });
+
+    const custom = document.getElementById('servicoCheckboxesCustom');
+    if (custom) custom.innerHTML = '';
+  }
+
+  // Campo "Data Encerramento" fica opaco por padrão
   function atualizarOpacidadeDataEncerramento() {
     const input = document.getElementById('dataEncerramento');
     const campo = input ? input.closest('.field-opcional-encerramento') : null;
@@ -248,11 +256,6 @@ function montarListaResultadosBuscaNome(lista) {
   }).join('');
 }
 
-// Diferente do addEquipContrato (busca por Patrimônio) -- essa NÃO limpa a
-// busca depois de adicionar, porque a pessoa pode querer clicar em vários
-// da mesma lista (ex: todos os "ar condicionado" encontrados). O item some
-// da lista sozinho porque montarListaResultadosBuscaNome filtra pelos que
-// já estão em "equipamentos".
 function adicionarEquipamentoDaListaBusca(indice) {
   const eq = equipamentosEncontradosPorNome[indice];
   if (!eq) return;
@@ -338,14 +341,23 @@ function executarRemocaoItemContrato() {
   if (tipo === 'equipamento') {
     equipamentos.splice(idx, 1);
     renderizarEquipamentos();
-    // Se esse equipamento tinha vindo da busca por Nome, volta a aparecer
-    // na lista de resultados agora que não está mais vinculado.
+
     montarListaResultadosBuscaNome(equipamentosEncontradosPorNome);
   } else if (tipo === 'servico') {
+    const nomeRemovido = servicos[idx] ? servicos[idx].servico : null;
     servicos.splice(idx, 1);
     if (servicoEditIdx === idx) servicoEditIdx = -1;
     else if (servicoEditIdx > idx) servicoEditIdx--;
     renderizarServicos();
+
+    if (nomeRemovido) {
+      const checkboxEl = encontrarCheckboxServico(nomeRemovido);
+      if (checkboxEl) {
+        checkboxEl.checked = false;
+        const wrapperCustom = checkboxEl.closest('.checkbox-item-custom');
+        if (wrapperCustom) wrapperCustom.remove();
+      }
+    }
   } else if (tipo === 'produto') {
     produtos.splice(idx, 1);
     renderizarProdutos();
@@ -383,120 +395,86 @@ function renderizarEquipamentos() {
   '</tr>').join('');
 }
 
-// 
-// BUSCA E VINCULAÇÃO DE SERVIÇOS (BASE → CONTRATO)
-// 
-
-function initBuscaServicoNome() {
-  const input = document.getElementById('servicoBuscaNome');
-  const dropdown = document.getElementById('servicoBuscaNomeDropdown');
-  const wrapper = document.getElementById('servicoBuscaNomeWrapper');
-
-  function renderLista(filtro) {
-    const f = (filtro || '').toLowerCase();
-    dropdown.innerHTML = '';
-    if (f.length < 2) {
-      dropdown.innerHTML = '<div class="search-no-result">Digite pelo menos 2 caracteres...</div>';
-      return;
-    }
-    const itens = baseServicos.filter(s => s.nome.toLowerCase().includes(f)).slice(0, 10);
-    if (itens.length === 0) {
-      dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
-    } else {
-      itens.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'search-option';
-        div.textContent = item.nome;
-        div.addEventListener('click', () => {
-          input.value = item.nome;
-          dropdown.classList.remove('visible');
-          servicoSelecionado = item;
-          mostrarResultadoBuscaServico(item);
-        });
-        dropdown.appendChild(div);
-      });
-    }
-  }
-
-  input.addEventListener('focus', () => {
-    if (input.value.trim().length >= 2) {
-      renderLista(input.value);
-      dropdown.classList.add('visible');
-    }
-  });
-
-  input.addEventListener('input', () => {
-    if (input.value.trim().length >= 2) {
-      renderLista(input.value);
-      if (!dropdown.classList.contains('visible')) dropdown.classList.add('visible');
-    } else {
-      dropdown.classList.remove('visible');
-    }
-  });
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); dropdown.classList.remove('visible'); buscarServicoBase(); }
-    if (e.key === 'Escape') dropdown.classList.remove('visible');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
-  });
-}
-
-function buscarServicoBase() {
-  const nome = document.getElementById('servicoBuscaNome').value.trim();
-  if (!nome) { alert('Informe o nome do serviço para buscar.'); return; }
-  if (nome.length < 2) { alert('Digite pelo menos 2 caracteres para buscar.'); return; }
-
-  let encontrado = baseServicos.find(s => s.nome.toLowerCase() === nome.toLowerCase());
-  if (!encontrado) encontrado = baseServicos.find(s => s.nome.toLowerCase().includes(nome.toLowerCase()));
-
-  if (encontrado) {
-    servicoSelecionado = encontrado;
-    mostrarResultadoBuscaServico(encontrado);
+// SERVIÇOS
+function onToggleServicoFixo(nome, marcado) {
+  if (marcado) {
+    if (servicos.some(function (s) { return s.servico === nome; })) return;
+    servicos.push({ servico: nome, periodicidade: 'anual', valor: 0 });
   } else {
-    servicoSelecionado = null;
-    document.getElementById('servicoResultado').style.display = 'none';
-    document.getElementById('servicoVazio').style.display = 'block';
+    const idx = servicos.findIndex(function (s) { return s.servico === nome; });
+    if (idx !== -1) servicos.splice(idx, 1);
   }
-}
-
-function mostrarResultadoBuscaServico(sv) {
-  document.getElementById('servicoResultNome').textContent = sv.nome;
-  document.getElementById('servicoResultDet').textContent = sv.nome;
-  document.getElementById('servicoPeriodicidade').value = 'mensal';
-  document.getElementById('servicoValor').value = '';
-  document.getElementById('servicoResultado').style.display = 'block';
-  document.getElementById('servicoVazio').style.display = 'none';
-  document.getElementById('servicoPeriodicidade').focus();
-}
-
-function addServicoContrato() {
-  if (!servicoSelecionado) { alert('Nenhum serviço selecionado.'); return; }
-
-  const sv = servicoSelecionado;
-  const periodicidade = document.getElementById('servicoPeriodicidade').value;
-  const valorStr = document.getElementById('servicoValor').value.trim();
-  const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.')) || 0;
-
-  if (!periodicidade) { alert('Selecione a periodicidade.'); return; }
-  if (valor < 0) { alert('Informe um valor válido.'); return; }
-
-  if (servicos.some(s => s.nome === sv.nome)) { alert('Este serviço já está vinculado ao contrato.'); return; }
-
-  servicos.push({ servico: sv.nome, periodicidade: periodicidade, valor: valor });
   renderizarServicos();
-  limparBuscaServico();
-  alert('Serviço vinculado ao contrato com sucesso!');
 }
 
-function limparBuscaServico() {
-  document.getElementById('servicoBuscaNome').value = '';
-  document.getElementById('servicoResultado').style.display = 'none';
-  document.getElementById('servicoVazio').style.display = 'none';
-  servicoSelecionado = null;
-  document.getElementById('servicoBuscaNome').focus();
+let servicosCustomContador = 0;
+
+function criarServicoCustom() {
+  const input = document.getElementById('servicoOutroTexto');
+  const nome = input.value.trim();
+  if (!nome) { alert('Escreva o nome do serviço antes de adicionar.'); return; }
+  if (servicos.some(function (s) { return s.servico.toLowerCase() === nome.toLowerCase(); })) {
+    alert('Esse serviço já está na lista.');
+    return;
+  }
+
+  servicosCustomContador++;
+  const idCheckbox = 'servicoCustom' + servicosCustomContador;
+
+  const wrapper = document.createElement('label');
+  wrapper.className = 'checkbox-item checkbox-item-custom';
+  wrapper.id = idCheckbox + '-wrapper';
+
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.id = idCheckbox;
+  checkbox.checked = true;
+  checkbox.setAttribute('data-servico', nome);
+  checkbox.addEventListener('change', function () {
+    onToggleServicoFixo(nome, checkbox.checked);
+  });
+
+  const btnRemover = document.createElement('button');
+  btnRemover.type = 'button';
+  btnRemover.className = 'btn-remover-checkbox-custom';
+  btnRemover.title = 'Remover esse serviço';
+  btnRemover.textContent = '✕';
+  btnRemover.addEventListener('click', function () {
+    removerServicoCustom(idCheckbox, nome);
+  });
+
+  wrapper.appendChild(checkbox);
+  wrapper.appendChild(document.createTextNode(' ' + nome + ' '));
+  wrapper.appendChild(btnRemover);
+
+  document.getElementById('servicoCheckboxesCustom').appendChild(wrapper);
+
+  servicos.push({ servico: nome });
+  renderizarServicos();
+
+  input.value = '';
+  input.focus();
+}
+
+
+function removerServicoCustom(idCheckbox, nome) {
+  const idx = servicos.findIndex(function (s) { return s.servico === nome; });
+  if (idx !== -1) {
+    servicos.splice(idx, 1);
+    renderizarServicos();
+  }
+  const wrapper = document.getElementById(idCheckbox + '-wrapper');
+  if (wrapper) wrapper.remove();
+}
+
+
+function encontrarCheckboxServico(nome) {
+  const todos = document.querySelectorAll('#servicoCheckboxesFixos input[type="checkbox"], #servicoCheckboxesCustom input[type="checkbox"]');
+  let encontrado = null;
+  todos.forEach(function (cb) {
+    if (cb.getAttribute('data-servico') === nome) encontrado = cb;
+  });
+  return encontrado;
 }
 
 
@@ -508,7 +486,7 @@ function renderizarServicos() {
     return;
   }
   tbody.innerHTML = servicos.map((s, i) => {
-    const valorStr = s.valor ? s.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
+    const valorStr = (s.valor != null) ? s.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
 
     if (servicoEditIdx === i) {
       return '<tr class="editing-row">' +
@@ -527,7 +505,7 @@ function renderizarServicos() {
             '<option value="sob-demanda"' + (s.periodicidade === 'sob-demanda' ? ' selected' : '') + '>Sob Demanda</option>' +
           '</select>' +
         '</td>' +
-        '<td><input class="field__input inline-edit-input" type="text" id="inlineEditServValor" value="' + s.valor.toFixed(2).replace('.', ',') + '"></td>' +
+        '<td><input class="field__input inline-edit-input" type="text" id="inlineEditServValor" value="' + (s.valor || 0).toFixed(2).replace('.', ',') + '"></td>' +
         '<td class="acao-cell">' +
           '<button class="btn-acao" title="Salvar" style="color:#10b981" onclick="salvarEdicaoServicoInline(' + i + ')">' +
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
@@ -587,7 +565,7 @@ function formatarPeriodicidade(p) {
     mensal:'Mensal', bimestral:'Bimestral', trimestral:'Trimestral',
     semestral:'Semestral', anual:'Anual', 'sob-demanda':'Sob Demanda'
   };
-  return map[p] || p;
+  return map[p] || p || '—';
 }
 
 // 

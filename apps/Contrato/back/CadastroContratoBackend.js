@@ -1,7 +1,7 @@
 // Tabela de anexos do Contrato -- mesmo layout de 8 colunas de
 // tbl_chamado_anexos (ID, ID_CONTRATO, TIPO, NOME_ARQUIVO, URL, HASH,
 // DATA_UPLOAD, DATA_EXCLUSAO). Precisa existir na planilha antes de testar.
-const contratoAnexosTableName = 'tbl_contrato_anexos';
+const contratoAnexosTableName = 'tbl_contratos_anexos';
 const firstLineContratoAnexos = 3;
 const numColumnsContratoAnexos = 8;
 
