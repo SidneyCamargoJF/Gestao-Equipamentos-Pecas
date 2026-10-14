@@ -12,7 +12,7 @@
       <div class="form-actions">
         <button type="button" class="btn-secondary" onclick="trocarPagina('contratos-view')">Cancelar</button>
         <button type="button" class="btn btn-danger"  onclick="limparContrato()">Limpar</button>
-        <button type="button" class="btn-success" onclick="salvarContrato()">Salvar</button>
+        <button type="button" class="btn-success" id="contratoBtnSalvarTopo" onclick="salvarContrato()">Salvar</button>
       </div>
   </div>
 
@@ -26,6 +26,8 @@
     </div>
 
     <form autocomplete="off" onsubmit="return false;">
+
+      <input type="hidden" id="contratoId" value="">
 
       <!-- ============================================= -->
       <!-- PARTE 1: INFORMAÇÕES PRINCIPAIS               -->
@@ -265,7 +267,7 @@
           <!-- ======================== -->
           <div class="tab-panel" id="tab-servicos">
 
-            <!-- PARTE SUPERIOR: Serviços (checkbox fixo + customizados) -->
+            <!-- PARTE SUPERIOR: Serviços -->
             <div class="equip-busca-section">
               <h4 class="sub-section-title">Serviços</h4>
 
@@ -309,12 +311,11 @@
                     <tr>
                       <th>SERVIÇO</th>
                       <th>PERIODICIDADE</th>
-                      <th>VALOR (R$)</th>
                       <th>AÇÕES</th>
                     </tr>
                   </thead>
                   <tbody id="bodyServicos">
-                    <tr class="empty-row"><td colspan="4">Nenhum serviço vinculado ao contrato.</td></tr>
+                    <tr class="empty-row"><td colspan="3">Nenhum serviço vinculado ao contrato.</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -326,44 +327,16 @@
           <!-- ======================== -->
           <div class="tab-panel" id="tab-produtos">
 
-            <!-- PARTE SUPERIOR: Busca de Produtos na Base -->
+            <!-- PARTE SUPERIOR: Adicionar produto (texto livre) -->
             <div class="equip-busca-section">
-              <h4 class="sub-section-title">Buscar Produto na Base</h4>
-              <div class="equip-busca-inline">
-                <div class="field equip-field-servico">
-                  <label class="field__label">Produto</label>
-                  <div class="search-wrapper" id="produtoBuscaNomeWrapper">
-                    <span class="search-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                      </svg>
-                    </span>
-                    <input class="search-input" type="text" id="produtoBuscaNome" placeholder="Digite o nome do produto..." autocomplete="off">
-                    <div class="search-dropdown" id="produtoBuscaNomeDropdown"></div>
-                  </div>
-                </div>
-                <div class="field equip-field-btn">
-                  <button class="btn-primary btn-buscar-equip" onclick="buscarProdutoBase()">Buscar</button>
-                </div>
-              </div>
+              <h4 class="sub-section-title">Produtos</h4>
 
-              <!-- Resultado da busca -->
-              <div id="produtoResultado" class="equip-result" style="display:none;">
-                <div class="equip-result-card">
-                  <div class="equip-result-info">
-                    <span class="equip-result-nome" id="produtoResultNome"></span>
-                    <span class="equip-result-det" id="produtoResultDet"></span>
-                  </div>
-                  <button class="btn-success btn-equip-add" onclick="addProdutoContrato()">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Adicionar ao Contrato
-                  </button>
+              <div class="servico-outro-linha">
+                <div class="field">
+                  <label class="field__label" for="produtoTexto">Produto</label>
+                  <input class="field__input" type="text" id="produtoTexto" placeholder="Digite o nome do produto e clique em Adicionar...">
                 </div>
-              </div>
-              <div id="produtoVazio" class="equip-result" style="display:none;">
-                <p class="equip-result-empty">Nenhum produto encontrado com esse nome.</p>
+                <button type="button" class="btn-primary btn-servico-outro-add" onclick="adicionarProdutoContrato()">Adicionar</button>
               </div>
             </div>
 
@@ -392,72 +365,305 @@
           <div class="tab-panel" id="tab-checklist-preventiva">
 
             <!-- PARTE SUPERIOR: Busca de Itens na Base -->
-            <div class="equip-busca-section">
-              <h4 class="sub-section-title">Buscar Item na Base</h4>
-              <div class="equip-busca-inline">
-                <div class="field equip-field-servico">
-                  <label class="field__label">Descrição do Item</label>
-                  <div class="search-wrapper" id="checklistBuscaWrapper">
-                    <span class="search-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                      </svg>
-                    </span>
-                    <input class="search-input" type="text" id="checklistBusca" placeholder="Digite a descrição do item..." autocomplete="off">
-                    <div class="search-dropdown" id="checklistBuscaDropdown"></div>
-                  </div>
-                </div>
-                <div class="field equip-field-btn">
-                  <button class="btn-primary btn-buscar-equip" onclick="buscarItemChecklist()">Buscar</button>
-                </div>
-              </div>
+            <div id="checklistGrupos">
+              <div class="equip-busca-section">
+                <h4 class="sub-section-title">Checklist</h4>
 
-              <!-- Resultado da busca com periodicidade editável -->
-              <div id="checklistResultado" class="equip-result" style="display:none;">
-                <div class="equip-result-card">
-                  <div class="equip-result-info">
-                    <span class="equip-result-nome" id="checklistResultNome"></span>
-                    <span class="equip-result-det" id="checklistResultDet"></span>
-                  </div>
-                  <div class="checklist-campos-edicao">
-                    <div class="field checklist-field-per">
-                      <label class="field__label" for="checklistItemPeriodicidade">Periodicidade</label>
-                      <select class="field__select" id="checklistItemPeriodicidade">
-                        <option value="mensal">Mensal</option>
-                        <option value="bimestral">Bimestral</option>
-                        <option value="trimestral">Trimestral</option>
-                        <option value="semestral">Semestral</option>
-                        <option value="anual">Anual</option>
-                      </select>
-                    </div>
-                  </div>
-                  <button class="btn-success btn-equip-add" onclick="addItemChecklistContrato()">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Adicionar ao Contrato
-                  </button>
+                <!-- Escolha de quais listas de checklist mostrar -- independente
+                     do que foi marcado na aba Serviços. -->
+                <div class="checkbox-group" id="checklistTiposSelecao">
+                  <label class="checkbox-item">
+                    <input type="checkbox" data-tipo-checklist="Preventiva" onchange="mostrarOuEsconderGrupoChecklist('Preventiva', this.checked)">
+                    Preventiva
+                  </label>
+                  <label class="checkbox-item">
+                    <input type="checkbox" data-tipo-checklist="Corretiva" onchange="mostrarOuEsconderGrupoChecklist('Corretiva', this.checked)">
+                    Corretiva
+                  </label>
+                  <label class="checkbox-item">
+                    <input type="checkbox" data-tipo-checklist="Instalação" onchange="mostrarOuEsconderGrupoChecklist('Instalação', this.checked)">
+                    Instalação
+                  </label>
+                  <label class="checkbox-item">
+                    <input type="checkbox" data-tipo-checklist="Limpeza" onchange="mostrarOuEsconderGrupoChecklist('Limpeza', this.checked)">
+                    Limpeza
+                  </label>
                 </div>
-              </div>
-              <div id="checklistVazio" class="equip-result" style="display:none;">
-                <p class="equip-result-empty">Nenhum item encontrado com essa descrição.</p>
+
+                <!-- Campo "Outro" único -- cria uma etapa avulsa, sem grupo -->
+                <div class="servico-outro-linha">
+                  <div class="field">
+                    <label class="field__label" for="checklistOutro">Outro</label>
+                    <input class="field__input" type="text" id="checklistOutro" placeholder="Digite a etapa e clique em Adicionar...">
+                  </div>
+                  <button type="button" class="btn-primary btn-servico-outro-add" onclick="criarChecklistCustom()">Adicionar</button>
+                </div>
+
+                <div id="checklistAvulsos" class="checklist-lista"></div>
+
+                <div class="checklist-grupo-oculto checklist-lista" id="Checklist-Preventiva">
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Verificar funcionamento geral antes de iniciar">
+                      Verificar funcionamento geral antes de iniciar
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Desligar/isolar energia ou fonte antes da manutenção">
+                      Desligar/isolar energia ou fonte antes da manutenção
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Inspecionar cabos, conexões e fiação">
+                      Inspecionar cabos, conexões e fiação
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Limpar componentes internos (poeira, resíduos)">
+                      Limpar componentes internos (poeira, resíduos)
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Trocar filtros/peças de desgaste programado">
+                      Trocar filtros/peças de desgaste programado
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Testar o equipamento após a manutenção">
+                      Testar o equipamento após a manutenção
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Registrar leituras/parâmetros (temperatura, pressão, etc.)">
+                      Registrar leituras/parâmetros (temperatura, pressão, etc.)
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Anotar data prevista da próxima preventiva">
+                      Anotar data prevista da próxima preventiva
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+
+                </div>
+
+                <div class="checklist-grupo-oculto checklist-lista" id="Checklist-Corretiva">
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Registrar o problema relatado">
+                      Registrar o problema relatado
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Garantir segurança antes do reparo (desligar/isolar)">
+                      Garantir segurança antes do reparo (desligar/isolar)
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Diagnosticar a causa da falha">
+                      Diagnosticar a causa da falha
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Substituir/reparar peça ou componente defeituoso">
+                      Substituir/reparar peça ou componente defeituoso
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Testar o equipamento após o reparo">
+                      Testar o equipamento após o reparo
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Confirmar que o problema foi solucionado">
+                      Confirmar que o problema foi solucionado
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Registrar peças trocadas e motivo da falha">
+                      Registrar peças trocadas e motivo da falha
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+
+                </div>
+
+                <div class="checklist-grupo-oculto checklist-lista" id="Checklist-Instalacao">
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Conferir se o local está preparado (espaço, energia, estrutura)">
+                      Conferir se o local está preparado (espaço, energia, estrutura)
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Verificar se todos os itens/acessórios chegaram completos">
+                      Verificar se todos os itens/acessórios chegaram completos
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Posicionar e fixar o equipamento">
+                      Posicionar e fixar o equipamento
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Fazer as conexões necessárias (elétrica, hidráulica, rede, etc.)">
+                      Fazer as conexões necessárias (elétrica, hidráulica, rede, etc.)
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Testar funcionamento inicial">
+                      Testar funcionamento inicial
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Configurar parâmetros iniciais, se aplicável">
+                      Configurar parâmetros iniciais, se aplicável
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Registrar patrimônio/número de série do equipamento instalado">
+                      Registrar patrimônio/número de série do equipamento instalado
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+
+                </div>
+
+                <div class="checklist-grupo-oculto checklist-lista" id="Checklist-Limpeza">
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Desligar o equipamento antes da limpeza (se aplicável)">
+                      Desligar o equipamento antes da limpeza (se aplicável)
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Remover poeira e resíduos externos">
+                      Remover poeira e resíduos externos
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Limpar filtros/grades de ventilação">
+                      Limpar filtros/grades de ventilação
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Limpar componentes internos acessíveis">
+                      Limpar componentes internos acessíveis
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Verificar ausência de vazamento ou umidade">
+                      Verificar ausência de vazamento ou umidade
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+                  <div class="checklist-item" draggable="true">
+                    <span class="checklist-item-alca">⠿</span>
+                    <label class="checklist-item-label">
+                      <input type="checkbox" data-item="Religar e testar após a limpeza">
+                      Religar e testar após a limpeza
+                    </label>
+                    <button type="button" class="btn-remover-checkbox-custom" title="Remover essa etapa" onclick="removerItemChecklist(this)">✕</button>
+                  </div>
+
+                </div>
               </div>
             </div>
 
             <!-- PARTE INFERIOR: Tabela de Itens do Checklist -->
             <div class="equip-list-section">
-              <h4 class="sub-section-title">Itens do Checklist Vinculados ao Contrato</h4>
+              <div class="checklist-lista-header">
+                <h4 class="sub-section-title">Itens do Checklist Vinculados ao Contrato</h4>
+                <button type="button" class="btn-imprimir-checklist" onclick="imprimirChecklist()" title="Imprimir checklist">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+                  </svg>
+                  Imprimir
+                </button>
+              </div>
               <div class="crud-table-wrapper">
                 <table class="crud-table" id="tabelaChecklist">
                   <thead>
                     <tr>
                       <th>DESCRIÇÃO</th>
-                      <th>PERIODICIDADE</th>
                       <th>AÇÕES</th>
                     </tr>
                   </thead>
                   <tbody id="bodyChecklist">
-                    <tr class="empty-row"><td colspan="3">Nenhum item vinculado ao contrato.</td></tr>
+                    <tr class="empty-row"><td colspan="2">Nenhum item vinculado ao contrato.</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -473,7 +679,7 @@
       <div class="form-actions">
         <button type="button" class="btn-secondary" onclick="trocarPagina('contratos-view')">Cancelar</button>
         <button type="button" class="btn btn-danger"  onclick="limparContrato()">Limpar</button>
-        <button type="button" class="btn-success" onclick="salvarContrato()">Salvar</button>
+        <button type="button" class="btn-success" id="contratoBtnSalvarRodape" onclick="salvarContrato()">Salvar</button>
 
       </div>
 

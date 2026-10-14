@@ -85,6 +85,8 @@
   display: flex;
   align-items: flex-end;
   gap: 0.75rem;
+  width: 75%;
+  margin-bottom: 5px;
 }
 
 .servico-outro-linha .field {
@@ -209,33 +211,6 @@
   margin-top: 0.5rem;
 }
 
-/* ===== CAMPOS EDITÁVEIS NO CARD DE SERVIÇO ===== */
-.servico-campos-edicao {
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-}
-
-.servico-field-periodo {
-  min-width: 9rem;
-}
-
-.servico-field-valor {
-  min-width: 7rem;
-}
-
-.servico-campos-edicao .field__select,
-.servico-campos-edicao .field__input {
-  font-size: 0.8125rem;
-  padding: 0.4rem 0.5rem;
-}
-
-.servico-campos-edicao .field__select {
-  padding-right: 2rem;
-}
-
 /* Seção de anexos do Cadastro de Contrato -- separada do resto do
    formulário por uma linha, com espaço próprio garantido (não depende do
    espaçamento automático entre .form-grid-2/.form-grid-3, que só cobre
@@ -260,6 +235,128 @@
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
+}
+
+/* ===== CHECKLIST (lista vertical arrastável) =====
+   Cada grupo (Preventiva/Corretiva/Instalação/Limpeza) nasce com
+   checklist-grupo-oculto -- o JS mostra o grupo certo removendo essa
+   classe (não precisa de uma classe "ativa" à parte: tirando o oculto,
+   o display:flex de .checklist-lista já assume). */
+.checklist-grupo-oculto {
+  display: none !important;
+}
+
+.checklist-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 0.0625rem solid var(--color-slate-200);
+  border-radius: 0.5rem;
+  cursor: grab;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.checklist-item:active {
+  cursor: grabbing;
+}
+
+/* Classes que o JS vai ligar/desligar durante o arrasto (passo seguinte) */
+.checklist-item-arrastando {
+  opacity: 0.4;
+}
+
+.checklist-item-sobre {
+  border-top: 0.1875rem solid var(--color-indigo);
+}
+
+.checklist-item-alca {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  color: var(--color-slate-400);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+}
+
+.checklist-item-label {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-slate-700);
+  cursor: pointer;
+  user-select: none;
+}
+
+.checklist-item-label input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+  accent-color: var(--color-indigo);
+}
+
+.checklist-item-custom {
+  background: var(--color-indigo-50);
+  border-color: var(--color-indigo);
+}
+
+.checklist-lista-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.checklist-lista-header .sub-section-title {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.btn-imprimir-checklist {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #fff;
+  border: 0.0625rem solid var(--color-slate-200);
+  border-radius: 0.5rem;
+  color: var(--color-slate-700);
+  cursor: pointer;
+}
+
+.btn-imprimir-checklist:hover {
+  background: var(--color-slate-50);
+  border-color: var(--color-indigo);
+  color: var(--color-indigo);
+}
+
+.btn-imprimir-checklist svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 

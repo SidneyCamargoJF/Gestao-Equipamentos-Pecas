@@ -1,6 +1,6 @@
 let contractTableName = 'tbl_contratos'
 let firstLineContracts = 3
-let numColumnsContracts = 19
+let numColumnsContracts = 20
 
 let contractIdCol = 0
 let contractNumberCol = 1
@@ -19,8 +19,9 @@ let contractTelefoneCol = 13
 let contractEmailCol = 14
 let contractGestorCol = 15
 let contractActiveCol = 16
-let contractDataAletracaoCol = 17
-let contractDataExclusaoCol = 18
+let contractSituacaoCol = 17
+let contractDataAletracaoCol = 18
+let contractDataExclusaoCol = 19
 
 
 function ReadContracts() {
@@ -78,14 +79,15 @@ function ReadContractsEquipaments() {
 // ===== tbl_contratos_servicos =====
 let contractsServicosTableName = 'tbl_contratos_servicos'
 let firstLineContractsServicos = 3
-let numColumnsContractsServicos = 6
+let numColumnsContractsServicos = 7
 
 let contractsServicosIdCol = 0
 let contractsServicosIdContratoCol = 1
 let contractsServicosNomeCol = 2
-let contractServicosDataCadastroCol = 3
-let contractsServicosDataExclusaoCol = 4
-let contractsServicosDataAlteracaoCol = 5
+let contractsServicosPeriodicidadeCol = 3
+let contractServicosDataCadastroCol = 4
+let contractsServicosDataExclusaoCol = 5
+let contractsServicosDataAlteracaoCol = 6
 
 function ReadContractsServicos() {
   const objRows = ReadSheet(contractsServicosTableName, firstLineContractsServicos, numColumnsContractsServicos)
@@ -114,20 +116,20 @@ function ReadContractsProdutos() {
   )
 }
 
-// ===== tbl_contratos_checkList =====
-let contractsCheckListTableName = 'tbl_contratos_checkList'
-let firstLineContractsCheckList = 3
-let numColumnsContractsCheckList = 6
+// ===== tbl_contratos_Checklist =====
+let contractsChecklistTableName = 'tbl_contratos_Checklist'
+let firstLineContractsChecklist = 3
+let numColumnsContractsChecklist = 6
 
-let contractsCheckListIdCol = 0
-let contractsCheckListIdContratoCol = 1
-let contractsCheckListNomeCol = 2
-let contractCheckListDataCadastroCol = 3
-let contractsCheckListDataExclusaoCol = 4
-let contractsCheckListDataAlteracaoCol = 5
+let contractsChecklistIdCol = 0
+let contractsChecklistIdContratoCol = 1
+let contractsChecklistNomeCol = 2
+let contractChecklistDataCadastroCol = 3
+let contractsChecklistDataExclusaoCol = 4
+let contractsChecklistDataAlteracaoCol = 5
 
-function ReadContractsCheckList() {
-  const objRows = ReadSheet(contractsCheckListTableName, firstLineContractsCheckList, numColumnsContractsCheckList)
+function ReadContractsChecklist() {
+  const objRows = ReadSheet(contractsChecklistTableName, firstLineContractsChecklist, numColumnsContractsChecklist)
 
   return objRows.map(linha =>
     linha.map(valor => (valor instanceof Date) ? dateToString(valor) : valor)

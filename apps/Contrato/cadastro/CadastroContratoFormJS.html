@@ -1,12 +1,11 @@
 <script> // CadastroContratosFormJS.html
 
-  function renderContratosForm() {
+  async function renderContratosForm(id) {
     initTabs();
     initSearch('empresaSearch', 'empresaDropdown', 'empresaWrapper', opcoesEmpresa);
-    initBuscaProdutoNome();
-    initBuscaChecklist();
     registrarCampoAnexoCadastro('contratoAnexoArquivo', 'contratoAnexoLista');
     initDataEncerramentoOpacidade();
+    registrarEventosChecklist();
 
     const telField = document.getElementById('telefone');
     if (telField) mascaraTelefone(telField);
@@ -24,12 +23,200 @@
       });
     }
 
+    // Limpa tudo primeiro -- tanto pra "Novo Contrato" quanto antes de
+    // recarregar os dados de um contrato existente, senão sobra estado de
+    // uma edição/sessão anterior (formulário é o mesmo DOM reaproveitado
+    // pela SPA, nunca é recriado do zero).
+    document.getElementById('contratoId').value = '';
+    document.getElementById('formTitulo').textContent = id ? 'Editar Contrato' : 'Novo Contrato';
+    document.getElementById('formStatus').textContent = id ? 'Edição' : 'Rascunho';
+
+    ['numero', 'contrato', 'sei', 'dataFechamento', 'empresaSearch', 'situacao', 'objeto',
+      'observacoes', 'dataEncerramento', 'dataInicial', 'dataFinal', 'contatoEmpresa',
+      'telefone', 'email', 'valor', 'gestor'].forEach(function (campoId) {
+      const el = document.getElementById(campoId);
+      if (el) el.value = '';
+    });
+    atualizarOpacidadeDataEncerramento();
+
+    equipamentos = [];
+    servicos = [];
+    produtos = [];
+    checklist = [];
+
     limparCheckboxesServico();
+    limparCheckboxesChecklist();
 
     renderizarEquipamentos();
     renderizarServicos();
     renderizarProdutos();
     renderizarChecklist();
+
+    if (id) {
+      if (typeof exibirModal === 'function') exibirModal('processando');
+      try {
+        await preencherFormularioContratoParaEdicao(id);
+      } finally {
+        if (typeof fecharModal === 'function') fecharModal('processando');
+      }
+    }
+  }
+
+  function limparContrato() {
+    renderContratosForm();
+  }
+
+  // ===== CARREGAR CONTRATO EXISTENTE PARA EDIÇÃO =====
+  async function preencherFormularioContratoParaEdicao(id) {
+    try {
+      const dados = await runServerFunction('buscarContratoParaEdicao', id);
+      if (!dados) {
+        alert('Não foi possível carregar esse contrato para edição.');
+        return;
+      }
+
+      document.getElementById('contratoId').value = dados.id || '';
+
+      ['numero', 'contrato', 'sei', 'dataFechamento', 'situacao', 'objeto', 'observacoes',
+        'dataEncerramento', 'dataInicial', 'dataFinal', 'contatoEmpresa', 'telefone',
+        'email', 'valor', 'gestor'].forEach(function (campoId) {
+        const el = document.getElementById(campoId);
+        if (el) el.value = dados[campoId] || '';
+      });
+      document.getElementById('empresaSearch').value = dados.empresa || '';
+      atualizarOpacidadeDataEncerramento();
+
+      equipamentos = dados.equipamentos || [];
+      produtos = dados.produtos || [];
+      renderizarEquipamentos();
+      renderizarProdutos();
+
+      servicos = dados.servicos || [];
+      renderizarServicos();
+      marcarCheckboxesServicosCarregados(servicos);
+
+      checklist = dados.checklist || [];
+      renderizarChecklist();
+      marcarCheckboxesChecklistCarregados(checklist);
+    } catch (error) {
+      console.error('Erro ao carregar contrato para edição:', error);
+      alert('Erro ao carregar contrato para edição.');
+    }
+  }
+
+  // Religa os checkboxes de Serviços com o que já estava salvo -- se o nome
+  // bater com um dos 4 fixos, só marca; senão, recria o checkbox
+  // customizado (igual criarServicoCustom cria, mas sem mexer no array
+  // nem no campo "Outro", que já foi populado por fora).
+  function marcarCheckboxesServicosCarregados(lista) {
+    (lista || []).forEach(function (item) {
+      const checkboxEl = encontrarCheckboxServico(item.servico);
+      if (checkboxEl) {
+        checkboxEl.checked = true;
+      } else {
+        recriarCheckboxServicoCustomVisual(item.servico);
+      }
+    });
+  }
+
+  function recriarCheckboxServicoCustomVisual(nome) {
+    servicosCustomContador++;
+    const idCheckbox = 'servicoCustom' + servicosCustomContador;
+
+    const wrapper = document.createElement('label');
+    wrapper.className = 'checkbox-item checkbox-item-custom';
+    wrapper.id = idCheckbox + '-wrapper';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = idCheckbox;
+    checkbox.checked = true;
+    checkbox.setAttribute('data-servico', nome);
+    checkbox.addEventListener('change', function () {
+      onToggleServicoFixo(nome, checkbox.checked);
+    });
+
+    const btnRemover = document.createElement('button');
+    btnRemover.type = 'button';
+    btnRemover.className = 'btn-remover-checkbox-custom';
+    btnRemover.title = 'Remover esse serviço';
+    btnRemover.textContent = '✕';
+    btnRemover.addEventListener('click', function () {
+      removerServicoCustom(idCheckbox, nome);
+    });
+
+    wrapper.appendChild(checkbox);
+    wrapper.appendChild(document.createTextNode(' ' + nome + ' '));
+    wrapper.appendChild(btnRemover);
+
+    document.getElementById('servicoCheckboxesCustom').appendChild(wrapper);
+  }
+
+  // Mesma ideia pro Checklist: se a descrição bater com um item fixo de
+  // algum dos 4 grupos, marca o checkbox e mostra o grupo (e liga o
+  // seletor de tipo correspondente); senão, recria como etapa avulsa.
+  function marcarCheckboxesChecklistCarregados(lista) {
+    (lista || []).forEach(function (item) {
+      const checkboxEl = encontrarCheckboxChecklist(item.descricao);
+      if (checkboxEl) {
+        checkboxEl.checked = true;
+        const grupoEl = checkboxEl.closest('[id^="Checklist-"]');
+        if (grupoEl) {
+          const sufixo = grupoEl.id.replace('Checklist-', '');
+          const tipo = Object.keys(CHECKLIST_GRUPO_SUFIXO).find(function (t) {
+            return CHECKLIST_GRUPO_SUFIXO[t] === sufixo;
+          });
+          if (tipo) {
+            mostrarOuEsconderGrupoChecklist(tipo, true);
+            const seletorEl = document.querySelector('#checklistTiposSelecao input[data-tipo-checklist="' + tipo + '"]');
+            if (seletorEl) seletorEl.checked = true;
+          }
+        }
+      } else {
+        recriarChecklistItemAvulsoVisual(item.descricao);
+      }
+    });
+  }
+
+  function recriarChecklistItemAvulsoVisual(texto) {
+    checklistCustomContador++;
+    const idCheckbox = 'checklistCustom' + checklistCustomContador;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'checklist-item checklist-item-custom';
+    wrapper.id = idCheckbox + '-wrapper';
+    wrapper.draggable = true;
+
+    const alca = document.createElement('span');
+    alca.className = 'checklist-item-alca';
+    alca.textContent = '⠿';
+
+    const label = document.createElement('label');
+    label.className = 'checklist-item-label';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = idCheckbox;
+    checkbox.checked = true;
+    checkbox.setAttribute('data-item', texto);
+
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(' ' + texto));
+
+    const btnRemover = document.createElement('button');
+    btnRemover.type = 'button';
+    btnRemover.className = 'btn-remover-checkbox-custom';
+    btnRemover.title = 'Remover essa etapa';
+    btnRemover.textContent = '✕';
+    btnRemover.addEventListener('click', function () {
+      removerItemChecklist(btnRemover);
+    });
+
+    wrapper.appendChild(alca);
+    wrapper.appendChild(label);
+    wrapper.appendChild(btnRemover);
+
+    document.getElementById('checklistAvulsos').appendChild(wrapper);
   }
 
   // Desmarca os 4 fixos e apaga qualquer checkbox customizado (criado via
@@ -40,6 +227,20 @@
 
     const custom = document.getElementById('servicoCheckboxesCustom');
     if (custom) custom.innerHTML = '';
+  }
+
+  // Desmarca os 4 seletores de tipo de checklist, esconde os 4 grupos de
+  // novo e apaga qualquer etapa avulsa que tenha sobrado de uma edição
+  // anterior.
+  function limparCheckboxesChecklist() {
+    const tipos = document.querySelectorAll('#checklistTiposSelecao input[type="checkbox"]');
+    tipos.forEach(function (cb) {
+      cb.checked = false;
+      mostrarOuEsconderGrupoChecklist(cb.getAttribute('data-tipo-checklist'), false);
+    });
+
+    const avulsos = document.getElementById('checklistAvulsos');
+    if (avulsos) avulsos.innerHTML = '';
   }
 
   // Campo "Data Encerramento" fica opaco por padrão
@@ -71,13 +272,11 @@ let checklist = [];
 
 // Edit indexes
 let servicoEditIdx = -1;
+let produtoEditIdx = -1;
 let checklistEditIdx = -1;
 
 // Variáveis globais para busca
 let equipamentoSelecionado = null;
-let servicoSelecionado = null;
-let produtoSelecionado = null;
-let checklistItemSelecionado = null;
 
 
 // 
@@ -360,12 +559,24 @@ function executarRemocaoItemContrato() {
     }
   } else if (tipo === 'produto') {
     produtos.splice(idx, 1);
+    if (produtoEditIdx === idx) produtoEditIdx = -1;
+    else if (produtoEditIdx > idx) produtoEditIdx--;
     renderizarProdutos();
   } else if (tipo === 'checklist') {
+    const descricaoRemovida = checklist[idx] ? checklist[idx].descricao : null;
     checklist.splice(idx, 1);
     if (checklistEditIdx === idx) checklistEditIdx = -1;
     else if (checklistEditIdx > idx) checklistEditIdx--;
     renderizarChecklist();
+
+    if (descricaoRemovida) {
+      const checkboxEl = encontrarCheckboxChecklist(descricaoRemovida);
+      if (checkboxEl) {
+        checkboxEl.checked = false;
+        const wrapperCustom = checkboxEl.closest('.checklist-item-custom');
+        if (wrapperCustom) wrapperCustom.remove();
+      }
+    }
   }
 
   remocaoItemContratoPendente = null;
@@ -399,7 +610,7 @@ function renderizarEquipamentos() {
 function onToggleServicoFixo(nome, marcado) {
   if (marcado) {
     if (servicos.some(function (s) { return s.servico === nome; })) return;
-    servicos.push({ servico: nome, periodicidade: 'anual', valor: 0 });
+    servicos.push({ servico: nome, periodicidade: 'anual' });
   } else {
     const idx = servicos.findIndex(function (s) { return s.servico === nome; });
     if (idx !== -1) servicos.splice(idx, 1);
@@ -449,7 +660,7 @@ function criarServicoCustom() {
 
   document.getElementById('servicoCheckboxesCustom').appendChild(wrapper);
 
-  servicos.push({ servico: nome });
+  servicos.push({ servico: nome, periodicidade: 'anual' });
   renderizarServicos();
 
   input.value = '';
@@ -482,12 +693,10 @@ function renderizarServicos() {
   const tbody = document.getElementById('bodyServicos');
   if (servicos.length === 0) {
     servicoEditIdx = -1;
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Nenhum serviço vinculado ao contrato.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Nenhum serviço vinculado ao contrato.</td></tr>';
     return;
   }
   tbody.innerHTML = servicos.map((s, i) => {
-    const valorStr = (s.valor != null) ? s.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
-
     if (servicoEditIdx === i) {
       return '<tr class="editing-row">' +
         '<td>' + escapeHtml(s.servico) + '</td>' +
@@ -505,7 +714,6 @@ function renderizarServicos() {
             '<option value="sob-demanda"' + (s.periodicidade === 'sob-demanda' ? ' selected' : '') + '>Sob Demanda</option>' +
           '</select>' +
         '</td>' +
-        '<td><input class="field__input inline-edit-input" type="text" id="inlineEditServValor" value="' + (s.valor || 0).toFixed(2).replace('.', ',') + '"></td>' +
         '<td class="acao-cell">' +
           '<button class="btn-acao" title="Salvar" style="color:#10b981" onclick="salvarEdicaoServicoInline(' + i + ')">' +
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
@@ -520,7 +728,6 @@ function renderizarServicos() {
     return '<tr>' +
       '<td>' + escapeHtml(s.servico) + '</td>' +
       '<td>' + formatarPeriodicidade(s.periodicidade) + '</td>' +
-      '<td>' + valorStr + '</td>' +
       '<td class="acao-cell">' +
         '<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarServicoContrato(' + i + ')">' +
           '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
@@ -547,14 +754,9 @@ function cancelarEdicaoServico() {
 
 function salvarEdicaoServicoInline(idx) {
   const periodicidade = document.getElementById('inlineEditServPer').value;
-  const valorStr = document.getElementById('inlineEditServValor').value.trim();
-  const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
-
   if (!periodicidade) { alert('Selecione a periodicidade.'); return; }
-  if (isNaN(valor) || valor < 0) { alert('Informe um valor válido.'); return; }
 
   servicos[idx].periodicidade = periodicidade;
-  servicos[idx].valor = valor;
   servicoEditIdx = -1;
   renderizarServicos();
 }
@@ -568,241 +770,281 @@ function formatarPeriodicidade(p) {
   return map[p] || p || '—';
 }
 
-// 
-// BUSCA E VINCULAÇÃO DE PRODUTOS (BASE → CONTRATO)
-// 
+//
+// PRODUTOS -- texto livre, sem busca em base nenhuma. Adiciona, edita e
+// remove só o texto digitado.
+//
 
-function initBuscaProdutoNome() {
-  const input = document.getElementById('produtoBuscaNome');
-  const dropdown = document.getElementById('produtoBuscaNomeDropdown');
-  const wrapper = document.getElementById('produtoBuscaNomeWrapper');
-
-  function renderLista(filtro) {
-    const f = (filtro || '').toLowerCase();
-    dropdown.innerHTML = '';
-    if (f.length < 2) {
-      dropdown.innerHTML = '<div class="search-no-result">Digite pelo menos 2 caracteres...</div>';
-      return;
-    }
-    const itens = baseProdutos.filter(p => p.nome.toLowerCase().includes(f)).slice(0, 10);
-    if (itens.length === 0) {
-      dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
-    } else {
-      itens.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'search-option';
-        div.textContent = item.nome;
-        div.addEventListener('click', () => {
-          input.value = item.nome;
-          dropdown.classList.remove('visible');
-          produtoSelecionado = item;
-          mostrarResultadoBuscaProduto(item);
-        });
-        dropdown.appendChild(div);
-      });
-    }
+function adicionarProdutoContrato() {
+  const input = document.getElementById('produtoTexto');
+  const nome = input.value.trim();
+  if (!nome) { alert('Escreva o nome do produto antes de adicionar.'); return; }
+  if (produtos.some(function (p) { return p.nome.toLowerCase() === nome.toLowerCase(); })) {
+    alert('Esse produto já está na lista.');
+    return;
   }
-
-  input.addEventListener('focus', () => {
-    if (input.value.trim().length >= 2) {
-      renderLista(input.value);
-      dropdown.classList.add('visible');
-    }
-  });
-
-  input.addEventListener('input', () => {
-    if (input.value.trim().length >= 2) {
-      renderLista(input.value);
-      if (!dropdown.classList.contains('visible')) dropdown.classList.add('visible');
-    } else {
-      dropdown.classList.remove('visible');
-    }
-  });
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); dropdown.classList.remove('visible'); buscarProdutoBase(); }
-    if (e.key === 'Escape') dropdown.classList.remove('visible');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
-  });
-}
-
-function buscarProdutoBase() {
-  const nome = document.getElementById('produtoBuscaNome').value.trim();
-  if (!nome) { alert('Informe o nome do produto para buscar.'); return; }
-  if (nome.length < 2) { alert('Digite pelo menos 2 caracteres para buscar.'); return; }
-
-  let encontrado = baseProdutos.find(p => p.nome.toLowerCase() === nome.toLowerCase());
-  if (!encontrado) encontrado = baseProdutos.find(p => p.nome.toLowerCase().includes(nome.toLowerCase()));
-
-  if (encontrado) {
-    produtoSelecionado = encontrado;
-    mostrarResultadoBuscaProduto(encontrado);
-  } else {
-    produtoSelecionado = null;
-    document.getElementById('produtoResultado').style.display = 'none';
-    document.getElementById('produtoVazio').style.display = 'block';
-  }
-}
-
-function mostrarResultadoBuscaProduto(pd) {
-  document.getElementById('produtoResultNome').textContent = pd.nome;
-  document.getElementById('produtoResultDet').textContent = pd.nome;
-  document.getElementById('produtoResultado').style.display = 'block';
-  document.getElementById('produtoVazio').style.display = 'none';
-}
-
-function addProdutoContrato() {
-  if (!produtoSelecionado) { alert('Nenhum produto selecionado.'); return; }
-  const pd = produtoSelecionado;
-  if (produtos.some(p => p.nome === pd.nome)) { alert('Este produto já está vinculado ao contrato.'); return; }
-  produtos.push({ nome: pd.nome });
+  produtos.push({ nome: nome });
   renderizarProdutos();
-  limparBuscaProduto();
-  alert('Produto vinculado ao contrato com sucesso!');
+
+  input.value = '';
+  input.focus();
 }
 
-function limparBuscaProduto() {
-  document.getElementById('produtoBuscaNome').value = '';
-  document.getElementById('produtoResultado').style.display = 'none';
-  document.getElementById('produtoVazio').style.display = 'none';
-  produtoSelecionado = null;
-  document.getElementById('produtoBuscaNome').focus();
+function editarProdutoContrato(idx) {
+  produtoEditIdx = idx;
+  renderizarProdutos();
 }
 
+function cancelarEdicaoProduto() {
+  produtoEditIdx = -1;
+  renderizarProdutos();
+}
+
+function salvarEdicaoProdutoInline(idx) {
+  const nome = document.getElementById('inlineEditProduto').value.trim();
+  if (!nome) { alert('Informe o nome do produto.'); return; }
+  produtos[idx] = { nome: nome };
+  produtoEditIdx = -1;
+  renderizarProdutos();
+}
 
 function renderizarProdutos() {
   const tbody = document.getElementById('bodyProdutos');
   if (produtos.length === 0) {
+    produtoEditIdx = -1;
     tbody.innerHTML = '<tr class="empty-row"><td colspan="2">Nenhum produto vinculado ao contrato.</td></tr>';
     return;
   }
-  tbody.innerHTML = produtos.map((p, i) => '<tr>' +
-    '<td>' + escapeHtml(p.nome) + '</td>' +
-    '<td class="acao-cell">' +
-      '<button class="btn-acao btn-excluir-linha" title="Remover do contrato" onclick="confirmarRemocaoProdutoContrato(' + i + ')">' +
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-          '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
-        '</svg>' +
-      '</button>' +
-    '</td>' +
-  '</tr>').join('');
+  tbody.innerHTML = produtos.map((p, i) => {
+    if (produtoEditIdx === i) {
+      return '<tr class="editing-row">' +
+        '<td><input class="field__input inline-edit-input" type="text" id="inlineEditProduto" value="' + escapeHtml(p.nome) + '"></td>' +
+        '<td class="acao-cell">' +
+          '<button class="btn-acao" title="Salvar" style="color:#10b981" onclick="salvarEdicaoProdutoInline(' + i + ')">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '</button>' +
+          '<button class="btn-acao btn-excluir-linha" title="Cancelar" onclick="cancelarEdicaoProduto()">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button>' +
+        '</td>' +
+      '</tr>';
+    }
+    return '<tr>' +
+      '<td>' + escapeHtml(p.nome) + '</td>' +
+      '<td class="acao-cell">' +
+        '<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarProdutoContrato(' + i + ')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+        '</button>' +
+        '<button class="btn-acao btn-excluir-linha" title="Remover do contrato" onclick="confirmarRemocaoProdutoContrato(' + i + ')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
+          '</svg>' +
+        '</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
 }
 
-// 
-// BUSCA E VINCULAÇÃO DE ITENS DE CHECKLIST (BASE → CONTRATO)
-// 
+//
+// CHECKLIST -- 4 listas fixas (uma por tipo de serviço, mostradas só quando
+// a pessoa marca o seletor correspondente, independente da aba Serviços) +
+// uma lista de etapas avulsas criadas pelo campo "Outro" único.
+//
 
-function initBuscaChecklist() {
-  const input = document.getElementById('checklistBusca');
-  const dropdown = document.getElementById('checklistBuscaDropdown');
-  const wrapper = document.getElementById('checklistBuscaWrapper');
+// Nome do tipo (igual aparece em data-tipo-checklist) -> sufixo usado nos
+// ids dos elementos do grupo. Só "Instalação" muda, porque o id no HTML não
+// tem acento (Checklist-Instalacao) enquanto o nome tem acento -- os outros
+// três são iguais nos dois lados.
+const CHECKLIST_GRUPO_SUFIXO = {
+  'Preventiva': 'Preventiva',
+  'Corretiva': 'Corretiva',
+  'Instalação': 'Instalacao',
+  'Limpeza': 'Limpeza'
+};
 
-  function renderLista(filtro) {
-    const f = (filtro || '').toLowerCase();
-    dropdown.innerHTML = '';
-    if (f.length < 2) {
-      dropdown.innerHTML = '<div class="search-no-result">Digite pelo menos 2 caracteres...</div>';
-      return;
-    }
-    const itens = baseChecklist.filter(i => i.descricao.toLowerCase().includes(f)).slice(0, 10);
-    if (itens.length === 0) {
-      dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
-    } else {
-      itens.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'search-option';
-        div.textContent = item.descricao;
-        div.addEventListener('click', () => {
-          input.value = item.descricao;
-          dropdown.classList.remove('visible');
-          checklistItemSelecionado = item;
-          mostrarResultadoBuscaChecklist(item);
-        });
-        dropdown.appendChild(div);
-      });
-    }
-  }
+function mostrarOuEsconderGrupoChecklist(nomeTipo, mostrar) {
+  const sufixo = CHECKLIST_GRUPO_SUFIXO[nomeTipo] || nomeTipo;
+  const grupo = document.getElementById('Checklist-' + sufixo);
+  if (!grupo) return;
+  grupo.classList.toggle('checklist-grupo-oculto', !mostrar);
+}
 
-  input.addEventListener('focus', () => {
-    if (input.value.trim().length >= 2) {
-      renderLista(input.value);
-      dropdown.classList.add('visible');
-    }
+// Um listener por lista (delegação) -- escuta o "change" de qualquer
+// checkbox lá dentro, fixo ou avulso, sem precisar de onchange em cada
+// input individualmente. Os quatro listeners de arrasto (dragstart/
+// dragover/drop/dragend) seguem o mesmo princípio: um só por lista, em vez
+// de um por item. A mesma função serve tanto pros 4 grupos fixos quanto
+// pra lista de avulsos (#checklistAvulsos).
+let checklistItemArrastado = null;
+
+function registrarEventosContainerChecklist(container) {
+  if (!container) return;
+
+  container.addEventListener('change', function (event) {
+    if (!event.target.matches('input[type="checkbox"]')) return;
+    onToggleChecklistItem(event.target);
   });
 
-  input.addEventListener('input', () => {
-    if (input.value.trim().length >= 2) {
-      renderLista(input.value);
-      if (!dropdown.classList.contains('visible')) dropdown.classList.add('visible');
-    } else {
-      dropdown.classList.remove('visible');
-    }
+  // Começou a arrastar: guarda qual item é, e deixa ele meio transparente
+  container.addEventListener('dragstart', function (event) {
+    const item = event.target.closest('.checklist-item');
+    if (!item) return;
+    checklistItemArrastado = item;
+    item.classList.add('checklist-item-arrastando');
   });
 
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); dropdown.classList.remove('visible'); buscarItemChecklist(); }
-    if (e.key === 'Escape') dropdown.classList.remove('visible');
+  // Passando por cima de outro item: mostra uma linha indicando onde vai
+  // cair. precisa do preventDefault, senão o navegador nem deixa soltar.
+  container.addEventListener('dragover', function (event) {
+    if (!checklistItemArrastado || !container.contains(checklistItemArrastado)) return;
+    const alvo = event.target.closest('.checklist-item');
+    if (!alvo || alvo === checklistItemArrastado) return;
+    event.preventDefault();
+
+    container.querySelectorAll('.checklist-item-sobre').forEach(function (el) {
+      el.classList.remove('checklist-item-sobre');
+    });
+    alvo.classList.add('checklist-item-sobre');
   });
 
-  document.addEventListener('click', (e) => {
-    if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+  // Soltou: move de verdade o item arrastado pra antes ou depois do alvo,
+  // dependendo de em qual metade do alvo o mouse estava.
+  container.addEventListener('drop', function (event) {
+    if (!checklistItemArrastado || !container.contains(checklistItemArrastado)) return;
+    const alvo = event.target.closest('.checklist-item');
+    if (!alvo || alvo === checklistItemArrastado) return;
+    event.preventDefault();
+
+    const rect = alvo.getBoundingClientRect();
+    const depoisDoAlvo = (event.clientY - rect.top) > (rect.height / 2);
+    const pai = alvo.parentNode;
+    pai.insertBefore(checklistItemArrastado, depoisDoAlvo ? alvo.nextSibling : alvo);
+
+    alvo.classList.remove('checklist-item-sobre');
+  });
+
+  // Terminou o arrasto (soltou ou cancelou) -- limpa os visuais
+  container.addEventListener('dragend', function () {
+    if (checklistItemArrastado) checklistItemArrastado.classList.remove('checklist-item-arrastando');
+    container.querySelectorAll('.checklist-item-sobre').forEach(function (el) {
+      el.classList.remove('checklist-item-sobre');
+    });
+    checklistItemArrastado = null;
   });
 }
 
-function buscarItemChecklist() {
-  const descricao = document.getElementById('checklistBusca').value.trim();
-  if (!descricao) { alert('Informe a descrição do item para buscar.'); return; }
-  if (descricao.length < 2) { alert('Digite pelo menos 2 caracteres para buscar.'); return; }
+function registrarEventosChecklist() {
+  Object.keys(CHECKLIST_GRUPO_SUFIXO).forEach(function (nomeTipo) {
+    const sufixo = CHECKLIST_GRUPO_SUFIXO[nomeTipo];
+    registrarEventosContainerChecklist(document.getElementById('Checklist-' + sufixo));
+  });
+  registrarEventosContainerChecklist(document.getElementById('checklistAvulsos'));
+}
 
-  let encontrado = baseChecklist.find(i => i.descricao.toLowerCase() === descricao.toLowerCase());
-  if (!encontrado) encontrado = baseChecklist.find(i => i.descricao.toLowerCase().includes(descricao.toLowerCase()));
+function onToggleChecklistItem(checkboxEl) {
+  const texto = checkboxEl.getAttribute('data-item');
+  if (!texto) return;
 
-  if (encontrado) {
-    checklistItemSelecionado = encontrado;
-    mostrarResultadoBuscaChecklist(encontrado);
+  if (checkboxEl.checked) {
+    if (checklist.some(function (c) { return c.descricao === texto; })) return;
+    checklist.push({ descricao: texto });
   } else {
-    checklistItemSelecionado = null;
-    document.getElementById('checklistResultado').style.display = 'none';
-    document.getElementById('checklistVazio').style.display = 'block';
+    const idx = checklist.findIndex(function (c) { return c.descricao === texto; });
+    if (idx !== -1) checklist.splice(idx, 1);
   }
+  renderizarChecklist();
 }
 
-function mostrarResultadoBuscaChecklist(item) {
-  document.getElementById('checklistResultNome').textContent = item.descricao;
-  document.getElementById('checklistResultDet').textContent = item.descricao;
-  document.getElementById('checklistItemPeriodicidade').value = 'mensal';
-  document.getElementById('checklistResultado').style.display = 'block';
-  document.getElementById('checklistVazio').style.display = 'none';
+function encontrarCheckboxChecklist(descricao) {
+  const todos = document.querySelectorAll('#checklistGrupos input[type="checkbox"]');
+  let encontrado = null;
+  todos.forEach(function (cb) {
+    if (cb.getAttribute('data-item') === descricao) encontrado = cb;
+  });
+  return encontrado;
 }
 
-function addItemChecklistContrato() {
-  if (!checklistItemSelecionado) { alert('Nenhum item selecionado.'); return; }
+// Remove a etapa da lista por completo (não é mais "fixa" vs "customizada"
+// -- qualquer item pode ser apagado). Se estava marcada, tira do array
+// checklist e atualiza a tabela também.
+function removerItemChecklist(botaoEl) {
+  const item = botaoEl.closest('.checklist-item');
+  if (!item) return;
 
-  const item = checklistItemSelecionado;
-  const periodicidade = document.getElementById('checklistItemPeriodicidade').value;
+  const checkbox = item.querySelector('input[type="checkbox"]');
+  const texto = checkbox ? checkbox.getAttribute('data-item') : null;
 
-  if (checklist.some(i => i.descricao === item.descricao)) {
-    alert('Este item já está vinculado ao contrato.');
+  if (texto) {
+    const idx = checklist.findIndex(function (c) { return c.descricao === texto; });
+    if (idx !== -1) {
+      checklist.splice(idx, 1);
+      if (checklistEditIdx === idx) checklistEditIdx = -1;
+      else if (checklistEditIdx > idx) checklistEditIdx--;
+      renderizarChecklist();
+    }
+  }
+
+  item.remove();
+}
+
+let checklistCustomContador = 0;
+
+// Etapa avulsa, sem grupo -- entra direto em #checklistAvulsos, fora dos 4
+// tipos fixos.
+function criarChecklistCustom() {
+  const input = document.getElementById('checklistOutro');
+  const texto = input.value.trim();
+  if (!texto) { alert('Escreva a etapa antes de adicionar.'); return; }
+  if (checklist.some(function (c) { return c.descricao.toLowerCase() === texto.toLowerCase(); })) {
+    alert('Essa etapa já está na lista.');
     return;
   }
 
-  checklist.push({ descricao: item.descricao, periodicidade: periodicidade });
+  checklistCustomContador++;
+  const idCheckbox = 'checklistCustom' + checklistCustomContador;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'checklist-item checklist-item-custom';
+  wrapper.id = idCheckbox + '-wrapper';
+  wrapper.draggable = true;
+
+  const alca = document.createElement('span');
+  alca.className = 'checklist-item-alca';
+  alca.textContent = '⠿';
+
+  const label = document.createElement('label');
+  label.className = 'checklist-item-label';
+
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.id = idCheckbox;
+  checkbox.checked = true;
+  checkbox.setAttribute('data-item', texto);
+
+  label.appendChild(checkbox);
+  label.appendChild(document.createTextNode(' ' + texto));
+
+  const btnRemover = document.createElement('button');
+  btnRemover.type = 'button';
+  btnRemover.className = 'btn-remover-checkbox-custom';
+  btnRemover.title = 'Remover essa etapa';
+  btnRemover.textContent = '✕';
+  btnRemover.addEventListener('click', function () {
+    removerItemChecklist(btnRemover);
+  });
+
+  wrapper.appendChild(alca);
+  wrapper.appendChild(label);
+  wrapper.appendChild(btnRemover);
+
+  document.getElementById('checklistAvulsos').appendChild(wrapper);
+
+  checklist.push({ descricao: texto });
   renderizarChecklist();
-  limparBuscaChecklist();
-  alert('Item vinculado ao contrato com sucesso!');
-}
 
-function limparBuscaChecklist() {
-  document.getElementById('checklistBusca').value = '';
-  document.getElementById('checklistResultado').style.display = 'none';
-  document.getElementById('checklistVazio').style.display = 'none';
-  checklistItemSelecionado = null;
-  document.getElementById('checklistBusca').focus();
+  input.value = '';
+  input.focus();
 }
-
 
 function editarItemChecklist(idx) {
   checklistEditIdx = idx;
@@ -816,9 +1058,8 @@ function cancelarEdicaoChecklist() {
 
 function salvarEdicaoInline(idx) {
   const desc = document.getElementById('inlineEditDesc').value.trim();
-  const per = document.getElementById('inlineEditPer').value;
   if (!desc) { alert('Informe a descrição.'); return; }
-  checklist[idx] = { descricao: desc, periodicidade: per };
+  checklist[idx] = { descricao: desc };
   checklistEditIdx = -1;
   renderizarChecklist();
 }
@@ -826,22 +1067,13 @@ function salvarEdicaoInline(idx) {
 function renderizarChecklist() {
   const tbody = document.getElementById('bodyChecklist');
   if (checklist.length === 0) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Nenhum item vinculado ao contrato.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="2">Nenhum item vinculado ao contrato.</td></tr>';
     return;
   }
   tbody.innerHTML = checklist.map((item, i) => {
     if (checklistEditIdx === i) {
       return '<tr class="editing-row">' +
         '<td><input class="field__input inline-edit-input" type="text" id="inlineEditDesc" value="' + escapeHtml(item.descricao) + '"></td>' +
-        '<td>' +
-          '<select class="field__select inline-edit-select" id="inlineEditPer">' +
-            '<option value="mensal"' + (item.periodicidade === 'mensal' ? ' selected' : '') + '>Mensal</option>' +
-            '<option value="bimestral"' + (item.periodicidade === 'bimestral' ? ' selected' : '') + '>Bimestral</option>' +
-            '<option value="trimestral"' + (item.periodicidade === 'trimestral' ? ' selected' : '') + '>Trimestral</option>' +
-            '<option value="semestral"' + (item.periodicidade === 'semestral' ? ' selected' : '') + '>Semestral</option>' +
-            '<option value="anual"' + (item.periodicidade === 'anual' ? ' selected' : '') + '>Anual</option>' +
-          '</select>' +
-        '</td>' +
         '<td class="acao-cell">' +
           '<button class="btn-acao" title="Salvar" style="color:#10b981" onclick="salvarEdicaoInline(' + i + ')">' +
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
@@ -854,7 +1086,6 @@ function renderizarChecklist() {
     }
     return '<tr>' +
       '<td>' + escapeHtml(item.descricao) + '</td>' +
-      '<td>' + formatarPeriodicidade(item.periodicidade) + '</td>' +
       '<td class="acao-cell">' +
         '<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarItemChecklist(' + i + ')">' +
           '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
@@ -867,21 +1098,129 @@ function renderizarChecklist() {
   }).join('');
 }
 
-// 
+// Abre uma aba nova só com a lista do checklist formatada pra impressão
+// (caixinha vazia pra marcar na mão) e já chama o print do navegador.
+function imprimirChecklist() {
+  if (checklist.length === 0) {
+    alert('Nenhum item de checklist vinculado ao contrato ainda.');
+    return;
+  }
+
+  const campoContrato = document.getElementById('contrato');
+  const campoNumero = document.getElementById('numero');
+  const nomeContrato = campoContrato ? campoContrato.value.trim() : '';
+  const numeroContrato = campoNumero ? campoNumero.value.trim() : '';
+
+  const linhasHtml = checklist.map(function (item) {
+    return '<li><span class="caixa"></span><span class="texto">' + escapeHtml(item.descricao) + '</span></li>';
+  }).join('');
+
+  const html =
+    '<!doctype html><html><head><meta charset="utf-8"><title>Checklist</title><style>' +
+    'body{font-family:Arial,Helvetica,sans-serif;padding:2rem;color:#1e293b;}' +
+    'h1{font-size:1.25rem;margin:0 0 0.25rem;}' +
+    'p.sub{color:#64748b;margin:0 0 1.5rem;}' +
+    'ul{list-style:none;padding:0;margin:0;}' +
+    'li{display:flex;align-items:center;gap:0.75rem;padding:0.625rem 0;border-bottom:1px solid #e2e8f0;}' +
+    '.caixa{flex-shrink:0;width:1rem;height:1rem;border:0.125rem solid #1e293b;border-radius:0.25rem;}' +
+    '.texto{flex:1;}' +
+    '@media print{body{padding:0;}}' +
+    '</style></head><body>' +
+    '<h1>Checklist' + (nomeContrato ? ' – ' + escapeHtml(nomeContrato) : '') + '</h1>' +
+    (numeroContrato ? '<p class="sub">Contrato nº ' + escapeHtml(numeroContrato) + '</p>' : '') +
+    '<ul>' + linhasHtml + '</ul>' +
+    '</body></html>';
+
+  const janela = window.open('', '_blank');
+  if (!janela) {
+    alert('O navegador bloqueou a janela de impressão. Permita pop-ups para esse site e tente de novo.');
+    return;
+  }
+  janela.document.write(html);
+  janela.document.close();
+  janela.focus();
+  janela.print();
+}
+
 // UTILITÁRIOS
-// 
 function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function salvarRascunho() { alert('Contrato salvo como rascunho!'); }
 
-function salvarContrato() {
-  alert('Contrato salvo com sucesso!\n\n' +
-    'Equipamentos: ' + equipamentos.length + '\n' +
-    'Serviços: ' + servicos.length + '\n' +
-    'Produtos: ' + produtos.length + '\n' +
-    'Checklist: ' + checklist.length + ' itens');
+let salvandoContrato = false;
+
+async function salvarContrato() {
+  if (salvandoContrato) return;
+  salvandoContrato = true;
+  const btnTopo = document.getElementById('contratoBtnSalvarTopo');
+  const btnRodape = document.getElementById('contratoBtnSalvarRodape');
+  if (btnTopo) btnTopo.disabled = true;
+  if (btnRodape) btnRodape.disabled = true;
+
+  try {
+    let anexos = [];
+    try {
+      anexos = await lerArquivosComoBase64(anexosCadastroSelecionados.contratoAnexoArquivo);
+    } catch (erroArquivo) {
+      alert(erroArquivo.message);
+      return;
+    }
+
+    const dados = {
+      id: document.getElementById('contratoId')?.value || '',
+      numero: document.getElementById('numero').value.trim(),
+      contrato: document.getElementById('contrato').value.trim(),
+      sei: document.getElementById('sei').value.trim(),
+      dataFechamento: document.getElementById('dataFechamento').value,
+      empresa: document.getElementById('empresaSearch').value.trim(),
+      situacao: document.getElementById('situacao').value,
+      objeto: document.getElementById('objeto').value.trim(),
+      observacoes: document.getElementById('observacoes').value.trim(),
+      dataEncerramento: document.getElementById('dataEncerramento').value,
+      dataInicial: document.getElementById('dataInicial').value,
+      dataFinal: document.getElementById('dataFinal').value,
+      contatoEmpresa: document.getElementById('contatoEmpresa').value.trim(),
+      telefone: document.getElementById('telefone').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      valor: document.getElementById('valor').value.trim(),
+      gestor: document.getElementById('gestor').value.trim(),
+      anexos: anexos,
+      equipamentos: equipamentos,
+      servicos: servicos,
+      produtos: produtos,
+      checklist: checklist
+    };
+
+    if (typeof exibirModal === 'function') exibirModal('processando');
+
+    try {
+      const resposta = await runServerFunction('salvarContratoBackend', dados);
+
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return;
+      }
+
+      alert(resposta.mensagem);
+
+      if (resposta && resposta.duplicado) {
+        exibirAvisoAnexoDuplicado('Você anexou dois ou mais documentos idênticos.');
+      }
+
+      trocarPagina('contratos-view');
+    } catch (err) {
+      console.error('Erro ao salvar contrato:', err);
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      if (typeof fecharModal === 'function') fecharModal('processando');
+    }
+  } finally {
+    salvandoContrato = false;
+    if (btnTopo) btnTopo.disabled = false;
+    if (btnRodape) btnRodape.disabled = false;
+  }
 }
 
 </script>
