@@ -1,14 +1,7 @@
-// Tabela de anexos do Contrato -- mesmo layout de 8 colunas de
-// tbl_chamado_anexos (ID, ID_CONTRATO, TIPO, NOME_ARQUIVO, URL, HASH,
-// DATA_UPLOAD, DATA_EXCLUSAO). Precisa existir na planilha antes de testar.
 const contratoAnexosTableName = 'tbl_contratos_anexos';
 const firstLineContratoAnexos = 3;
 const numColumnsContratoAnexos = 8;
 
-/**
- * Wrapper fininho sobre adicionarAnexoGenerico (apps/Helper/back/AnexosBackend.js)
- * -- mesma lógica de upload/duplicidade que o Chamados usa, só muda a tabela.
- */
 function adicionarAnexoContrato(contratoId, tipo, arquivo) {
   return adicionarAnexoGenerico({
     tabelaAnexos: contratoAnexosTableName,
@@ -28,8 +21,7 @@ function excluirAnexoContrato(anexoId) {
   return excluirAnexoGenerico(contratoAnexosTableName, anexoId, firstLineContratoAnexos, numColumnsContratoAnexos);
 }
 
-// Busca um contrato completo (campos principais + as 4 listas vinculadas)
-// pra preencher o formulário de edição.
+// Busca um contrato completo
 function buscarContratoParaEdicao(idInput) {
   try {
     const idBuscado = Number(idInput);
@@ -80,10 +72,6 @@ function buscarContratoParaEdicao(idInput) {
       id: linha[contractIdCol],
       numero: linha[contractNumberCol],
       contrato: linha[contratctNameCol],
-      // Datas convertidas pra "yyyy-MM-dd" (converterParaInputDate, de
-      // apps/Pecas/back/CadastroPeca.js) -- <input type="date"> exige esse
-      // formato, e se a célula vier como objeto Date cru, o google.script.run
-      // falha silenciosamente (sem erro nenhum) ao tentar devolver o valor.
       dataEncerramento: converterParaInputDate(linha[contractDataEncerramento]),
       sei: linha[contractSEICol],
       dataFechamento: converterParaInputDate(linha[contractDataFechamentoCol]),
@@ -97,7 +85,6 @@ function buscarContratoParaEdicao(idInput) {
       telefone: linha[contractTelefoneCol],
       email: linha[contractEmailCol],
       gestor: linha[contractGestorCol],
-      situacao: linha[contractSituacaoCol],
       equipamentos: equipamentos,
       servicos: servicos,
       produtos: produtos,
@@ -109,9 +96,6 @@ function buscarContratoParaEdicao(idInput) {
   }
 }
 
-// Próximo ID + próxima linha livre de uma tabela relacional do contrato
-// (mesmo cálculo que salvarContratoBackend já faz pra tbl_contratos, só
-// que genérico pra reaproveitar nas 4 tabelas de vínculo abaixo).
 function proximoIdTabela(aba, firstLine) {
   const ultimaLinha = Math.max(aba.getLastRow(), firstLine - 1);
   let idAtual = (ultimaLinha >= firstLine) ? aba.getRange(ultimaLinha, 1).getValue() : 0;
@@ -119,9 +103,6 @@ function proximoIdTabela(aba, firstLine) {
   return { novoId: Number(idAtual) + 1, proximaLinha: ultimaLinha + 1 };
 }
 
-// Equipamentos vêm do formulário só com o patrimônio -- resolve o ID real
-// do equipamento (buscarEquipamentoIdPorPatrimonio, de
-// apps/Helper/back/EquipamentoBuscaBackend.js) antes de gravar o vínculo.
 function salvarEquipamentosContrato(contratoId, lista) {
   const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(contractsEquipamentsTableName);
   if (!aba) return;
@@ -184,7 +165,7 @@ function salvarContratoBackend (dados) {
     const camposObrigatorios = [
       { campo: 'numero', rotulo: 'Número' }, { campo: 'contrato', rotulo: 'Nome do Contrato' },
       { campo: 'empresa', rotulo: 'Empresa' }, { campo: 'sei', rotulo:'Documento SEI'},
-      { campo: 'dataFechamento', rotulo:'Data do fechamento do contrato'}, { campo: 'situacao', rotulo:'Situação'},
+      { campo: 'dataFechamento', rotulo:'Data do fechamento do contrato'},
       { campo: 'objeto', rotulo: 'Objeto do Contrato'}, { campo: 'dataInicial', rotulo: 'Data Inicial'},
       { campo: 'dataFinal', rotulo: 'Data Final'}, { campo: 'telefone', rotulo: 'Telefone'},
       { campo: 'email', rotulo:'E-mail'}, { campo: 'gestor', rotulo:'Gestor do Contrato'}
@@ -215,9 +196,7 @@ function salvarContratoBackend (dados) {
       }
 
       const linhaReal = idx + firstLineContracts;
-      // cópia do conteúdo da linha atual -- active e dataExclusao são
-      // preservados como estavam (editar um contrato não deve reativar um
-      // que foi desativado, nem o contrário)
+      // cópia do conteúdo da linha atual
       const linhaAtual = todasLinhas[idx];
 
       const linhaAtualizada = [
@@ -238,7 +217,7 @@ function salvarContratoBackend (dados) {
         dados.email,
         dados.gestor || '',
         linhaAtual[contractActiveCol],
-        dados.situacao,
+        '', // Situação não é mais escolhida na tela -- é calculada na Consulta (data final/encerramento)
         dataAtual,
         linhaAtual[contractDataExclusaoCol]
       ];
@@ -295,7 +274,7 @@ function salvarContratoBackend (dados) {
       dados.email,
       dados.gestor || '',
       'Y',
-      dados.situacao,
+      '', // Situação não é mais escolhida na tela -- é calculada na Consulta (data final/encerramento)
       '',
       ''
     ];

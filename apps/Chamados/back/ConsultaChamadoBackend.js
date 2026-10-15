@@ -1,21 +1,7 @@
-// O módulo de Equipamentos passou a usar a classe EquipmentsModel (OOP) e não
-// tem mais a função ReadEquipments() antiga -- mas esse arquivo (e o
-// CadastroChamadoBackend.js) ainda fazem acesso cru por índice (equip[0],
-// equip[5], etc.) em várias chamadas. Em vez de reescrever tudo isso pra
-// acesso por propriedade, esse adaptador local recria o formato de array
-// cru de antes a partir da classe nova -- não mexe em nada do módulo de
-// Equipamentos, só traduz o que ele devolve.
 function ReadEquipments() {
-  return new EquipmentsModel().read().map(e => [
-    e.id, e.nome, e.marca, e.capacidade, e.modelo, e.patrimonio, e.sequencia, e.localizacao, e.active
-  ]);
-}
-
-function showChamado() {
-    const form = HtmlService.createTemplateFromFile("ConsultaChamado");
-    const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);
-    showForm.setTitle("Consulta de Chamado").setHeight(100).setWidth(1600);
-    SpreadsheetApp.getUi().showModalDialog(showForm, "Consulta de Chamado");
+    return new EquipmentsModel().read().map(e => [
+        e.id, e.nome, e.marca, e.capacidade, e.modelo, e.patrimonio, e.sequencia, e.localizacao, e.active
+    ]);
 }
 
 function filtrarChamados(criterios) {
@@ -29,8 +15,6 @@ function filtrarChamados(criterios) {
     let prioridadeBuscada = (criterios && criterios.prioridade) ? String(criterios.prioridade).trim().toLowerCase() : "";
     let statusBuscado = (criterios && criterios.status) ? String(criterios.status).trim().toLowerCase() : "";
 
-    // o set nesse caso é tipo um array mas sem repetição o map() ia gerar o mesmo ID 3 vezes 
-    // e ainda verifica se o valor esta ali dentro com o .has(valor)
     let idsComAnexo = new Set(
         ReadTicketAnexos()
             .filter(linha => !linha[7])
@@ -75,10 +59,7 @@ function filtrarChamados(criterios) {
             })
         }
     }
-    // Ativos antes de desativados (critério principal, como já era); dentro
-    // de cada grupo, ID maior primeiro -- ID é sequencial, então o maior é
-    // sempre o mais recente (mais simples e confiável que tentar ordenar
-    // pela string de DATA_ABERTURA, que não ordena certo cronologicamente).
+
     res.sort((a, b) => {
         const porDesativado = (a.desativado ? 1 : 0) - (b.desativado ? 1 : 0);
         if (porDesativado !== 0) return porDesativado;
@@ -87,11 +68,6 @@ function filtrarChamados(criterios) {
     return res;
 }
 
-/**
- * Busca um chamado pelo ID com TODAS as colunas de tbl_chamados, já
- * pra alimentar o modal de detalhes (botão "olho" da consulta).
- * Retorna { sucesso, chamado } ou { sucesso: false, mensagem }.
- */
 function buscarChamadoDetalhado(idInput) {
     try {
         const idBuscado = Number(idInput);

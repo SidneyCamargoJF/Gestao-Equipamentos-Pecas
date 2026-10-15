@@ -23,15 +23,11 @@
       });
     }
 
-    // Limpa tudo primeiro -- tanto pra "Novo Contrato" quanto antes de
-    // recarregar os dados de um contrato existente, senão sobra estado de
-    // uma edição/sessão anterior (formulário é o mesmo DOM reaproveitado
-    // pela SPA, nunca é recriado do zero).
     document.getElementById('contratoId').value = '';
     document.getElementById('formTitulo').textContent = id ? 'Editar Contrato' : 'Novo Contrato';
     document.getElementById('formStatus').textContent = id ? 'Edição' : 'Rascunho';
 
-    ['numero', 'contrato', 'sei', 'dataFechamento', 'empresaSearch', 'situacao', 'objeto',
+    ['numero', 'contrato', 'sei', 'dataFechamento', 'empresaSearch', 'objeto',
       'observacoes', 'dataEncerramento', 'dataInicial', 'dataFinal', 'contatoEmpresa',
       'telefone', 'email', 'valor', 'gestor'].forEach(function (campoId) {
       const el = document.getElementById(campoId);
@@ -77,7 +73,7 @@
 
       document.getElementById('contratoId').value = dados.id || '';
 
-      ['numero', 'contrato', 'sei', 'dataFechamento', 'situacao', 'objeto', 'observacoes',
+      ['numero', 'contrato', 'sei', 'dataFechamento', 'objeto', 'observacoes',
         'dataEncerramento', 'dataInicial', 'dataFinal', 'contatoEmpresa', 'telefone',
         'email', 'valor', 'gestor'].forEach(function (campoId) {
         const el = document.getElementById(campoId);
@@ -964,9 +960,7 @@ function encontrarCheckboxChecklist(descricao) {
   return encontrado;
 }
 
-// Remove a etapa da lista por completo (não é mais "fixa" vs "customizada"
-// -- qualquer item pode ser apagado). Se estava marcada, tira do array
-// checklist e atualiza a tabela também.
+
 function removerItemChecklist(botaoEl) {
   const item = botaoEl.closest('.checklist-item');
   if (!item) return;
@@ -989,8 +983,6 @@ function removerItemChecklist(botaoEl) {
 
 let checklistCustomContador = 0;
 
-// Etapa avulsa, sem grupo -- entra direto em #checklistAvulsos, fora dos 4
-// tipos fixos.
 function criarChecklistCustom() {
   const input = document.getElementById('checklistOutro');
   const texto = input.value.trim();
@@ -1175,7 +1167,6 @@ async function salvarContrato() {
       sei: document.getElementById('sei').value.trim(),
       dataFechamento: document.getElementById('dataFechamento').value,
       empresa: document.getElementById('empresaSearch').value.trim(),
-      situacao: document.getElementById('situacao').value,
       objeto: document.getElementById('objeto').value.trim(),
       observacoes: document.getElementById('observacoes').value.trim(),
       dataEncerramento: document.getElementById('dataEncerramento').value,

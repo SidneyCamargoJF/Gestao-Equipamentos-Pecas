@@ -15,20 +15,21 @@ function filtrarContratos(criterios) {
     if (!linha[contractIdCol]) continue;
 
     let colNumero = String(linha[contractNumberCol] || '').trim().toLowerCase();
+    let colNome = String(linha[contratctNameCol] || '').trim().toLowerCase();
     let colSei = String(linha[contractSEICol] || '').trim().toLowerCase();
     let colEmpresa = String(linha[contractEmpresaCol] || '').trim().toLowerCase();
-
-    let dtFinal = linha[contractDtEndCol] ? new Date(linha[contractDtEndCol]) : null;
-    let diasParaVencer = dtFinal ? Math.floor((dtFinal - hoje) / (1000 * 60 * 60 * 24)) : null;
     let situacao = 'ativo';
-    if (dtFinal) {
-      if (diasParaVencer < 0) situacao = 'vencido';
-      else if (diasParaVencer <= 30) situacao = 'vencendo';
-    }
 
-    // "Nome do Contrato" (objeto/descrição) ainda não tem coluna própria em
-    // tbl_contrato -- fica em aberto até o Módulo 2 (expansão do backend).
-    let colNome = '';
+    if (linha[contractDataEncerramento]) {
+      situacao = 'encerrado';
+    } else {
+      const dtFinal = linha[contractDataFinalCol] ? new Date(linha[contractDataFinalCol]) : null;
+      const diasParaVencer = dtFinal ? Math.floor((dtFinal - hoje) / (1000 * 60 * 60 * 24)) : null;
+      if (dtFinal) {
+        if (diasParaVencer < 0) situacao = 'vencido';
+        else if (diasParaVencer <= 30) situacao = 'vencendo';
+      }
+    }
 
     let cNumero = (numeroBuscado === "" || colNumero.includes(numeroBuscado));
     let cNome = (nomeBuscado === "" || colNome.includes(nomeBuscado));
@@ -40,15 +41,12 @@ function filtrarContratos(criterios) {
       res.push({
         id: linha[contractIdCol],
         numero: linha[contractNumberCol],
-        contrato: colNome,
+        contrato: linha[contratctNameCol],
         sei: linha[contractSEICol],
         empresa: linha[contractEmpresaCol],
-        telefone: linha[contractTelefoneCol],
-        email: linha[contractEMailCol],
-        valor: linha[contractValueCol],
-        dataInicial: linha[contractDtInitCol],
-        dataFinal: linha[contractDtEndCol],
-        renovadoAte: linha[contractRenewed],
+        valor: linha[contractValorCol],
+        dataInicial: linha[contractDataInicialCol],
+        dataFinal: linha[contractDataFinalCol],
         situacao: situacao
       });
     }
@@ -57,13 +55,33 @@ function filtrarContratos(criterios) {
   return res;
 }
 
-function desativarContrato(id) {
-  // ContratoModel.js diz numColumnsContracts = 14, mas só as colunas 0-10
-  // têm nome (id/numero/sei/data/empresa/telefone/email/valor/dtInicial/
-  // dtFinal/renovado). As colunas 11, 12 e 13 existem na planilha mas
-  // ninguém documentou o que são -- pode já ter um "desativado" ali, ou
-  // pode ser outra coisa. Em vez de chutar e arriscar escrever em cima do
-  // dado errado (igual já aconteceu antes), deixei isso parado até você
-  // confirmar o que tem nessas 3 colunas.
-  return { sucesso: false, mensagem: 'Exclusão de contrato ainda não implementada -- falta confirmar a coluna de status/desativado em tbl_contrato.' };
+function desativarContrato(idInput) {
+  try{
+    const idBuscado = Number(idInput);
+    if(!idBuscado) {
+      return { sucesso: false, mensagem: "ID do contrato inválido." };
+    }
+
+    const planilha = SpreadsheetApp.getActiveSpreadsheet();
+    const abaContratos = planilha.getSheetByName("tbl_contratos");
+    if(!abaContratos) {
+      return { sucesso: false, mensagem:"Aba 'tbl_contratos' não foi encontrada na planilha."}
+    }
+
+    const dados = ReadContracts();
+
+    for(let i = 0; i < dados.length; i++) {
+      if (Number(dados[i][0]) === idBuscado) {
+        const linhaReal = i + firstLineContracts;
+        const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+        abaContratos.getRange(linhaReal, contractDataAletracaoCol + 1).setValue(dataAtual);
+        abaContratos.getRange(linhaReal, contractActiveCol + 1).setValue("N");
+        abaContratos.getRange(linhaReal, 1, 1, numColumnsContracts).setBackground("#F4CCCC");
+        return { sucesso: true, mensagem: "Contrato desativado com sucesso." };
+      }
+    }
+    return { sucesso: false, mensagem: "Contrato não encontrado (ID " + idBuscado + ")." };
+  } catch (e) {
+    return {sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
 }

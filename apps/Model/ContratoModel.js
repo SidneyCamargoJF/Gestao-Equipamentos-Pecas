@@ -4,7 +4,7 @@ let numColumnsContracts = 20
 
 let contractIdCol = 0
 let contractNumberCol = 1
-let contratctNameCol = 2
+let contractNameCol = 2
 let contractDataEncerramento = 3
 let contractSEICol = 4
 let contractDataFechamentoCol = 5
@@ -25,8 +25,13 @@ let contractDataExclusaoCol = 19
 
 
 function ReadContracts() {
-  return ReadSheet(contractTableName, firstLineContracts, numColumnsContracts)
+  const objRows = ReadSheet(contractTableName, firstLineContracts, numColumnsContracts)
+
+  return objRows.map(linha =>
+    linha.map(valor => (valor instanceof Date) ? dateToString(valor) : valor)
+  )
 }
+
 
 function findContractId(id) {
   return FindContext(contractTableName, id, firstLineContracts, numColumnsContracts)
