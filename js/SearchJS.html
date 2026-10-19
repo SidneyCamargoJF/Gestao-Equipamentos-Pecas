@@ -1,6 +1,6 @@
 <script>  // SearchJS.html
   // ===== SEARCH DROPDOWN =====
-  function initSearch(inputId, dropdownId, wrapperId, opcoes) {
+  function initSearch(inputId, dropdownId, wrapperId, opcoes, onSelect) {
     const input = document.getElementById(inputId);
     const dropdown = document.getElementById(dropdownId);
     const wrapper = document.getElementById(wrapperId);
@@ -23,6 +23,7 @@
             input.value = o;
             dropdown.classList.remove('visible');
             filtrar();
+            if (typeof onSelect === 'function') onSelect(o);
           });
           dropdown.appendChild(div);
         });

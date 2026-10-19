@@ -2,7 +2,7 @@
 
   async function renderContratosForm(id) {
     initTabs();
-    initSearch('empresaSearch', 'empresaDropdown', 'empresaWrapper', opcoesEmpresa);
+    carregarFornecedoresParaEmpresa();
     registrarCampoAnexoCadastro('contratoAnexoArquivo', 'contratoAnexoLista');
     initDataEncerramentoOpacidade();
     registrarEventosChecklist();
@@ -60,6 +60,47 @@
 
   function limparContrato() {
     renderContratosForm();
+  }
+
+  // ===== EMPRESA (busca em Fornecedor, preenche telefone/email ao escolher) =====
+  // nome -> { telefone, email }, usado por preencherContatoEmpresa quando a
+  // pessoa clica numa opção do dropdown.
+  let fornecedoresPorNome = {};
+
+  async function carregarFornecedoresParaEmpresa() {
+    try {
+      const fornecedores = await runServerFunction('buscarFornecedoresParaEmpresa');
+      fornecedoresPorNome = {};
+      const nomes = (fornecedores || []).map(function (f) {
+        fornecedoresPorNome[f.nome] = { telefone: f.telefone, email: f.email };
+        return f.nome;
+      });
+      initSearch('empresaSearch', 'empresaDropdown', 'empresaWrapper', nomes, preencherContatoEmpresa);
+    } catch (error) {
+      console.error('Erro ao carregar fornecedores para Empresa:', error);
+      initSearch('empresaSearch', 'empresaDropdown', 'empresaWrapper', []);
+    }
+  }
+
+  // Só preenche se o campo estiver vazio -- não sobrescreve um telefone/email
+  // que a pessoa já tinha digitado na mão pra esse contrato específico.
+  function preencherContatoEmpresa(nomeEmpresa) {
+    const dados = fornecedoresPorNome[nomeEmpresa];
+    if (!dados) return;
+
+    const telField = document.getElementById('telefone');
+    if (telField && !telField.value.trim() && dados.telefone) {
+      telField.value = dados.telefone;
+      // mascaraTelefone (já registrada no load do form) só reformata em
+      // resposta a um evento "input" de verdade -- setar .value direto não
+      // dispara isso sozinho, por isso o dispatch manual aqui.
+      telField.dispatchEvent(new Event('input'));
+    }
+
+    const emailField = document.getElementById('email');
+    if (emailField && !emailField.value.trim() && dados.email) {
+      emailField.value = dados.email;
+    }
   }
 
   // ===== CARREGAR CONTRATO EXISTENTE PARA EDIÇÃO =====

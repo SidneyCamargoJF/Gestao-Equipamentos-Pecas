@@ -15,7 +15,7 @@ function filtrarContratos(criterios) {
     if (!linha[contractIdCol]) continue;
 
     let colNumero = String(linha[contractNumberCol] || '').trim().toLowerCase();
-    let colNome = String(linha[contratctNameCol] || '').trim().toLowerCase();
+    let colNome = String(linha[contractNameCol] || '').trim().toLowerCase();
     let colSei = String(linha[contractSEICol] || '').trim().toLowerCase();
     let colEmpresa = String(linha[contractEmpresaCol] || '').trim().toLowerCase();
     let situacao = 'ativo';
@@ -41,13 +41,14 @@ function filtrarContratos(criterios) {
       res.push({
         id: linha[contractIdCol],
         numero: linha[contractNumberCol],
-        contrato: linha[contratctNameCol],
+        contrato: linha[contractNameCol],
         sei: linha[contractSEICol],
         empresa: linha[contractEmpresaCol],
         valor: linha[contractValorCol],
         dataInicial: linha[contractDataInicialCol],
         dataFinal: linha[contractDataFinalCol],
-        situacao: situacao
+        situacao: situacao,
+        desativado: String(linha[contractActiveCol] || '').trim().toUpperCase() !== 'Y'
       });
     }
   }
@@ -83,5 +84,36 @@ function desativarContrato(idInput) {
     return { sucesso: false, mensagem: "Contrato não encontrado (ID " + idBuscado + ")." };
   } catch (e) {
     return {sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
+}
+
+function reativarContrato(idInput) {
+  try {
+    const idBuscado = Number(idInput);
+    if (!idBuscado) {
+      return { sucesso: false, mensagem: "ID do contrato inválido." };
+    }
+
+    const planilha = SpreadsheetApp.getActiveSpreadsheet();
+    const abaContratos = planilha.getSheetByName("tbl_contratos");
+    if (!abaContratos) {
+      return { sucesso: false, mensagem: "Aba 'tbl_contratos' não foi encontrada na planilha." };
+    }
+
+    const dados = ReadContracts();
+
+    for (let i = 0; i < dados.length; i++) {
+      if (Number(dados[i][0]) === idBuscado) {
+        const linhaReal = i + firstLineContracts;
+        const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+        abaContratos.getRange(linhaReal, contractDataAletracaoCol + 1).setValue(dataAtual);
+        abaContratos.getRange(linhaReal, contractActiveCol + 1).setValue("Y");
+        abaContratos.getRange(linhaReal, 1, 1, numColumnsContracts).setBackground(null);
+        return { sucesso: true, mensagem: "Contrato reativado com sucesso." };
+      }
+    }
+    return { sucesso: false, mensagem: "Contrato não encontrado (ID " + idBuscado + ")." };
+  } catch (e) {
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
   }
 }

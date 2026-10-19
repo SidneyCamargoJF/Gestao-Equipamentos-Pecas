@@ -21,6 +21,21 @@ function excluirAnexoContrato(anexoId) {
   return excluirAnexoGenerico(contratoAnexosTableName, anexoId, firstLineContratoAnexos, numColumnsContratoAnexos);
 }
 
+function buscarFornecedoresParaEmpresa() {
+  return ReadSuppliers()
+    .filter(function (l) {
+      return l[0] && String(l[21] || '').trim().toLowerCase() !== 'inativo';
+    })
+    .map(function (l) {
+      return {
+        nome: l[3] || l[4] || '',
+        telefone: l[9] || l[10] || '',
+        email: l[8] || ''
+      };
+    })
+    .filter(function (f) { return f.nome; });
+}
+
 // Busca um contrato completo
 function buscarContratoParaEdicao(idInput) {
   try {
@@ -71,7 +86,7 @@ function buscarContratoParaEdicao(idInput) {
     return {
       id: linha[contractIdCol],
       numero: linha[contractNumberCol],
-      contrato: linha[contratctNameCol],
+      contrato: linha[contractNameCol],
       dataEncerramento: converterParaInputDate(linha[contractDataEncerramento]),
       sei: linha[contractSEICol],
       dataFechamento: converterParaInputDate(linha[contractDataFechamentoCol]),

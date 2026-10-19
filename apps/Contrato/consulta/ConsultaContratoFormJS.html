@@ -38,7 +38,7 @@ function mostrarCarregandoContratos(carregando) {
     if (carregando) {
         const tbody = document.getElementById('contratosTableBody');
         if (tbody) {
-            tbody.innerHTML = '<tr class="loading-row"><td colspan="9"><span class="spinner"></span>Buscando contratos...</td></tr>';
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span>Buscando contratos...</td></tr>';
         }
     }
 }
@@ -86,7 +86,7 @@ function atualizarIndicadoresContrato() {
         if (span) span.textContent = '';
     });
 
-    const indices = { numero: 0, contrato: 1, sei: 2, empresa: 3, valor: 4, dataInicial: 5, dataFinal: 6, situacao: 7 };
+    const indices = { numero: 1, contrato: 2, sei: 3, empresa: 4, valor: 5, dataInicial: 6, dataFinal: 7, situacao: 8 };
     const idx = indices[sortStateContrato.coluna];
     if (idx !== undefined && ths[idx]) {
         ths[idx].classList.add('sorted');
@@ -158,14 +158,25 @@ function renderTabelaContrato(lista) {
     tbody.innerHTML = '';
 
     if (!lista || lista.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Nenhum contrato encontrado.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Nenhum contrato encontrado.</td></tr>';
         return;
     }
 
     lista.forEach(c => {
         const tr = document.createElement('tr');
+        if (c.desativado) tr.classList.add('linha-desativada');
+        if (c.situacao === 'encerrado') tr.classList.add('linha-contrato-encerrado');
+
+        const btnEditar = c.desativado
+            ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
+            : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarContrato('${c.id}')">✏️</button>`;
+
+        const btnExcluir = c.desativado
+            ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarContratoUI('${c.id}')">♻️</button>`
+            : `<button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusaoContrato('${c.id}')">🗑️</button>`;
 
         tr.innerHTML = `
+        <td class="acao-cell"><button class="btn-acao btn-ver-linha" title="Ver detalhes" onclick="abrirDetalhesContrato('${c.id}')">👁️</button></td>
         <td>${escapeHtml(c.numero)}</td>
         <td>${c.contrato ? escapeHtml(c.contrato) : '--'}</td>
         <td>${c.sei ? escapeHtml(c.sei) : '--'}</td>
@@ -175,8 +186,8 @@ function renderTabelaContrato(lista) {
         <td>${formatarDataContrato(c.dataFinal)}</td>
         <td><span class="situacao-badge ${c.situacao}">${formatarSituacaoContrato(c.situacao)}</span></td>
         <td class="acao-cell">
-            <button class="btn-acao btn-editar-linha" title="Editar" onclick="editarContrato('${c.id}')">✏️</button>
-            <button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusaoContrato('${c.id}')">🗑️</button>
+            ${btnEditar}
+            ${btnExcluir}
         </td>
         `;
         tbody.appendChild(tr);
@@ -185,6 +196,27 @@ function renderTabelaContrato(lista) {
 
 function editarContrato(id) {
     trocarPagina('contratos-form', id);
+}
+
+async function reativarContratoUI(id) {
+    try {
+        const resposta = await runServerFunction('reativarContrato', id);
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        consultarContratos();
+    } catch (error) {
+        console.error('Erro ao reativar contrato:', error);
+        alert('Erro ao reativar contrato.');
+    }
+}
+
+function abrirDetalhesContrato(contratoId) {
+    contratoIdAtualModal = contratoId;
+
+    const conteudo = document.getElementById('modalDetalhesContrato');
+    if (conteudo) conteudo.innerHTML = '<p>Carregando...</p>';
 }
 
 let idContratoExclusao = null;
