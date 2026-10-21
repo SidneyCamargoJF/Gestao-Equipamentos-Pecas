@@ -15,7 +15,7 @@
 
         this.tblEquipment = new CrudJs('tbl_equipamentos');
         console.log(this.tblEquipment)
-        this.tblEquipment.readContext('a', '=', 'b')
+        readContext('a', '=', 'b')
     }
 
     // =====================================================
@@ -155,7 +155,14 @@
 
       this.equipPatrimonio.focus();
 
-        // Posicionar no primeiro campo: Patrimônio
+      if (id == 0) {
+        this.clearFields();
+        return
+      }
+
+      this.tblEquipment.readId(id)
+
+
         // Inicializar dados - Novo ou Edição
         // Quando Id >= 1, entra em modo de edição em modo edição, trazer os dados do BD
         // 
@@ -164,12 +171,19 @@
 
     }
 
+    clearFields() {
+      console.log('EquipmentsFormController.clearFields()')
+
+      return
+    }
+
   }
 
   // Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante
   // que a inicialização também rode no carregamento normal da página.
 
   const equipmentsFormController = new EquipmentsFormController()
+  
 
   /*
   document.addEventListener('DOMContentLoaded', () => {

@@ -113,6 +113,10 @@ class SheetModel {
   }
 
   findId(id) {
+    return this.readById(id)
+  }
+
+  readById(id) {
     dados = this.readAll();
 
     if (!dados) return false;
@@ -254,6 +258,7 @@ class SheetModel {
 }
 
 function readContext ( table, criterios ) {
+  console.log('SheetModel - readContext(table: '+ table + ', id: ' + id + ')')
 
   switch (table) {
     case 'tbl_equipamentos':
@@ -263,8 +268,20 @@ function readContext ( table, criterios ) {
       return null
   }
 
-  res = model.readContext( criterios )
+  return model.readContext( criterios )
 
-  return res
-  
+}
+
+function readById(table, id) {
+  console.log('SheetModel - readById(' + id + ')')
+
+  switch (table) {
+    case 'tbl_equipamentos':
+      model = new EquipmentsModel()
+      break
+    default:
+      return null
+  }
+
+  return model.readById(id);
 }
