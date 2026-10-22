@@ -170,7 +170,7 @@ class SheetModel {
   }
 
   readContext( criterios ) {
-
+    console.log('SheetModel.readContext(' + criterios + ')' )
   }
 
   excluir(par_id) {
