@@ -1,0 +1,437 @@
+<section id="page-contratos-form" class="spa-page">
+
+
+  <div class="page-header">
+    <div class="actions-bar">
+      <h1>✒️ Contratos</h1>
+    </div>
+    
+    <!-- ============================================= -->
+      <!-- BOTÕES DE AÇÃO                                -->
+      <!-- ============================================= -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="trocarPagina('contratos-view')">Cancelar</button>
+        <button type="button" class="btn btn-danger"  onclick="limparContrato()">Limpar</button>
+        <button type="button" class="btn-success" id="contratoBtnSalvarTopo" onclick="salvarContrato()">Salvar</button>
+      </div>
+  </div>
+
+  <div class="panel">
+    <!-- <section class="card"> -->
+
+    <!-- HEADER -->
+    <div class="form-header">
+      <h2 class="form-titulo" id="formTitulo">Novo Contrato</h2>
+      <span class="form-status" id="formStatus">Rascunho</span>
+    </div>
+
+    <form autocomplete="off" onsubmit="return false;">
+
+      <input type="hidden" id="contratoId" value="">
+
+      <!-- ============================================= -->
+      <!-- PARTE 1: INFORMAÇÕES PRINCIPAIS               -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal">
+        <legend class="fieldset-legend">Informações Principais</legend>
+        <div class="form-grid-3">
+
+          <div class="field">
+            <label class="field__label" for="numero">Número *</label>
+            <input class="field__input" type="text" id="numero" placeholder="CT-XXX/2026">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="contrato">Nome do Contrato *</label>
+            <input class="field__input" type="text" id="contrato" placeholder="Ex: Prestação de Serviços">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="sei">Documento SEI *</label>
+            <input class="field__input" type="text" id="sei" placeholder="SEI 00000.000000/2026-00">
+          </div>
+
+        </div>
+
+        <div class="form-grid-3">
+
+          <div class="field">
+            <label class="field__label" for="data">Data do fechamento do contrato *</label>
+            <input class="field__input" type="date" id="dataFechamento">
+          </div>
+
+          <div class="field">
+            <label class="field__label">Empresa *</label>
+            <div class="search-wrapper" id="empresaWrapper">
+              <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
+              <input class="search-input" type="text" id="empresaSearch" placeholder="Selecione a empresa..." autocomplete="off">
+              <div class="search-dropdown" id="empresaDropdown"></div>
+            </div>
+          </div>
+
+        </div>
+      </fieldset>
+
+      <!-- ============================================= -->
+      <!-- PARTE 2: ABAS                                 -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-abas">
+        <legend class="fieldset-legend">Detalhamento</legend>
+
+        <!-- NAVEGAÇÃO DAS ABAS -->
+        <div class="tabs-nav" id="tabsNav">
+          <button class="tab-btn active" data-tab="complementares">📋 Complementares</button>
+          <button class="tab-btn" data-tab="servicos">🛠️ Serviços</button>
+          <button class="tab-btn" data-tab="equipamentos">🔧 Equipamentos</button>
+          <button class="tab-btn" data-tab="produtos">📦 Produtos</button>
+          <button class="tab-btn" data-tab="checklist-preventiva">✅ Checklist</button>
+        </div>
+
+        <!-- CONTEÚDO DAS ABAS -->
+        <div class="tabs-content">
+
+          <!-- ======================== -->
+          <!-- ABA 1: COMPLEMENTARES    -->
+          <!-- ======================== -->
+          <div class="tab-panel active" id="tab-complementares">
+            <div class="form-grid-2">
+
+              <div class="field field-full">
+                <label class="field__label" for="objeto">Objeto do Contrato *</label>
+                <textarea class="field__textarea" id="objeto" rows="3" placeholder="Descreva o objeto do contrato..."></textarea>
+              </div>
+
+              <div class="field field-full">
+                <label class="field__label" for="observacoes">Observações</label>
+                <textarea class="field__textarea" id="observacoes" rows="3" placeholder="Observações relevantes..."></textarea>
+              </div>
+
+            </div>
+
+            <div class="form-grid-3">
+
+              <div class="field field-opcional-encerramento">
+                <label class="field__label" for="dataEncerramento">Data Encerramento <em>(em caso de encerramento)</em></label>
+                <input class="field__input" type="date" id="dataEncerramento">
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="dataInicial">Data Inicial *</label>
+                <input class="field__input" type="date" id="dataInicial">
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="dataFinal">Data Final Prevista*</label>
+                <input class="field__input" type="date" id="dataFinal">
+              </div>
+
+            </div>
+
+            <div class="form-grid-3">
+
+              <div class="field">
+                <label class="field__label" for="contatoEmpresa">Contato da Empresa</label>
+                <input class="field__input" type="text" id="contatoEmpresa" placeholder="Nome do contato na empresa">
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="telefone">Telefone *</label>
+                <input class="field__input" type="text" id="telefone" placeholder="(51) 99999-9999">
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="email">E-mail *</label>
+                <input class="field__input" type="email" id="email" placeholder="contato@empresa.com.br">
+              </div>
+
+            </div>
+
+            <div class="form-grid-3">
+
+              <div class="field">
+                <label class="field__label" for="valor">Valor (R$)</label>
+                <input class="field__input" type="text" id="valor" placeholder="0,00">
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="gestor">Gestor do Contrato *</label>
+                <input class="field__input" type="text" id="gestor" placeholder="Nome do gestor">
+              </div>
+
+            </div>
+
+            <div class="contrato-anexos-secao">
+              <label class="field__label">Documentos Anexados</label>
+              <div id="contratoAnexoLista"></div>
+              <input type="file" id="contratoAnexoArquivo" accept="application/pdf,image/*" multiple
+                style="display:none;" onchange="onArquivosCadastroSelecionados('contratoAnexoArquivo')">
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- ABA 2: SERVIÇOS          -->
+          <!-- ======================== -->
+          <!-- Um serviço só por contrato: especifica tipo de manutenção +
+               categoria/tipo/capacidade do equipamento, e é essa
+               especificação que puxa os equipamentos automaticamente pra
+               aba Equipamentos (por isso Serviços vem antes). -->
+          <div class="tab-panel" id="tab-servicos">
+
+            <div class="equip-busca-section">
+              <h4 class="sub-section-title">Especificação do Serviço</h4>
+              <p class="servico-spec-ajuda">Especifique o serviço deste contrato. Os equipamentos que baterem com essa especificação são adicionados automaticamente na aba Equipamentos.</p>
+
+              <div class="form-grid-2">
+                <div class="field">
+                  <label class="field__label" for="servicoTipoManutencao">Tipo de Manutenção</label>
+                  <select class="field__select" id="servicoTipoManutencao">
+                    <option value="Preventiva">Preventiva</option>
+                    <option value="Corretiva">Corretiva</option>
+                    <option value="Instalação">Instalação</option>
+                    <option value="Limpeza">Limpeza</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="servicoPeriodicidade">Periodicidade</label>
+                  <select class="field__select" id="servicoPeriodicidade">
+                    <option value="unica">Única</option>
+                    <option value="quinzenal">Quinzenal</option>
+                    <option value="mensal">Mensal</option>
+                    <option value="trimestral">Trimestral</option>
+                    <option value="semestral">Semestral</option>
+                    <option value="anual" selected>Anual</option>
+                    <option value="sob-demanda">Sob Demanda</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="field">
+                  <label class="field__label" for="servicoCategoriaEquip">Categoria do Equipamento</label>
+                  <select class="field__select" id="servicoCategoriaEquip" onchange="atualizarSelectTipoServico()">
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="servicoTipoEquip">Tipo</label>
+                  <select class="field__select" id="servicoTipoEquip" onchange="atualizarSelectCapacidadeServico()" disabled>
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="servicoCapacidadeEquip">Capacidade</label>
+                  <select class="field__select" id="servicoCapacidadeEquip" disabled>
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="button" class="btn-primary btn-confirmar-servico" onclick="confirmarServicoContrato()">Confirmar Serviço</button>
+            </div>
+
+            <!-- Card com o serviço confirmado (só existe 1) -->
+            <div class="equip-list-section">
+              <h4 class="sub-section-title">Serviço do Contrato</h4>
+              <div id="servicoConfirmadoCard"></div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- ABA 3: EQUIPAMENTOS      -->
+          <!-- ======================== -->
+          <div class="tab-panel" id="tab-equipamentos">
+
+            <!-- PARTE SUPERIOR: Busca de Equipamentos na Base -->
+            <div class="equip-busca-section">
+              <h4 class="sub-section-title">Buscar Equipamento na Base</h4>
+              <p class="servico-spec-ajuda">Os equipamentos que batem com o serviço especificado já entram aqui sozinhos. Use esta busca só pra ajustar a lista manualmente.</p>
+              <div class="equip-busca-inline">
+                <div class="field equip-field-pat">
+                  <label class="field__label" for="eqBuscaPat">Patrimônio</label>
+                  <input class="field__input" type="text" id="eqBuscaPat" placeholder="Ex: PAT-001">
+                </div>
+                <div class="field equip-field-name">
+                  <label class="field__label">Nome</label>
+                  <div class="search-wrapper" id="eqBuscaNomeWrapper">
+                    <span class="search-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                      </svg>
+                    </span>
+                    <input class="search-input" type="text" id="eqBuscaNome" placeholder="Digite o nome..." autocomplete="off">
+                    <div class="search-dropdown" id="eqBuscaNomeDropdown"></div>
+                  </div>
+                </div>
+                <div class="field equip-field-btn">
+                  <button class="btn-primary btn-buscar-equip" onclick="buscarEquipamentoBase()">Buscar</button>
+                </div>
+              </div>
+
+              <!-- Resultado da busca -->
+              <div id="eqResultado" class="equip-result" style="display:none;">
+                <div class="equip-result-card">
+                  <div class="equip-result-info">
+                    <span class="equip-result-nome" id="eqResultNome"></span>
+                    <span class="equip-result-det" id="eqResultDet"></span>
+                  </div>
+                  <button class="btn-success btn-equip-add" onclick="addEquipContrato()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Adicionar ao Contrato
+                  </button>
+                </div>
+              </div>
+              <!-- Lista de resultados da busca por Nome -->
+              <div id="eqResultadoLista" style="display:none;">
+                <div id="eqResultadoListaItens"></div>
+              </div>
+
+              <div id="eqVazio" class="equip-result" style="display:none;">
+                <p class="equip-result-empty">Nenhum equipamento encontrado com esses critérios.</p>
+              </div>
+            </div>
+
+            <!-- PARTE INFERIOR: Tabela de Equipamentos do Contrato -->
+            <div class="equip-list-section">
+              <h4 class="sub-section-title">Equipamentos Vinculados ao Contrato</h4>
+              <div class="crud-table-wrapper">
+                <table class="crud-table" id="tabelaEquipamentos">
+                  <thead>
+                    <tr>
+                      <th>EQUIPAMENTO</th>
+                      <th>CAPACIDADE</th>
+                      <th>MARCA</th>
+                      <th>MODELO</th>
+                      <th>PATRIMÔNIO</th>
+                      <th>LOCALIZAÇÃO</th>
+                      <th>AÇÕES</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bodyEquipamentos">
+                    <tr class="empty-row"><td colspan="7">Nenhum equipamento vinculado ao contrato.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- ABA 4: PRODUTOS          -->
+          <!-- ======================== -->
+          <div class="tab-panel" id="tab-produtos">
+
+            <!-- PARTE SUPERIOR: Adicionar produto (texto livre) -->
+            <div class="equip-busca-section">
+              <h4 class="sub-section-title">Produtos</h4>
+
+              <div class="servico-outro-linha">
+                <div class="field">
+                  <label class="field__label" for="produtoTexto">Produto</label>
+                  <input class="field__input" type="text" id="produtoTexto" placeholder="Digite o nome do produto e clique em Adicionar...">
+                </div>
+                <button type="button" class="btn-primary btn-servico-outro-add" onclick="adicionarProdutoContrato()">Adicionar</button>
+              </div>
+            </div>
+
+            <!-- PARTE INFERIOR: Tabela de Produtos do Contrato -->
+            <div class="equip-list-section">
+              <h4 class="sub-section-title">Produtos Vinculados ao Contrato</h4>
+              <div class="crud-table-wrapper">
+                <table class="crud-table" id="tabelaProdutos">
+                  <thead>
+                    <tr>
+                      <th>PRODUTO</th>
+                      <th>AÇÕES</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bodyProdutos">
+                    <tr class="empty-row"><td colspan="2">Nenhum produto vinculado ao contrato.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- ABA 5: CHECKLIST         -->
+          <!-- ======================== -->
+          <div class="tab-panel" id="tab-checklist-preventiva">
+
+            <!-- Checklist fica ligado ao serviço especificado na aba
+                 Serviços (não existe mais seleção de tipo aqui -- só tem
+                 1 serviço por contrato). Enquanto não tiver serviço
+                 confirmado, mostra só o aviso. -->
+            <div class="equip-busca-section">
+              <h4 class="sub-section-title">Checklist</h4>
+              <p class="servico-spec-ajuda" id="checklistSemServicoAviso">Especifique um serviço na aba Serviços para habilitar o checklist.</p>
+
+              <div id="checklistConteudo" class="checklist-grupo-oculto">
+                <h5 class="checklist-servico-titulo" id="checklistServicoTitulo"></h5>
+
+                <div class="checklist-periodo-bloco">
+                  <h4 class="sub-section-title">Checklist Mensal</h4>
+                  <div id="checklistMensal" class="checklist-lista"></div>
+                  <div class="servico-outro-linha">
+                    <div class="field">
+                      <label class="field__label" for="checklistOutroMensal">Outro</label>
+                      <input class="field__input" type="text" id="checklistOutroMensal" placeholder="Digite a etapa e clique em Adicionar...">
+                    </div>
+                    <button type="button" class="btn-primary btn-servico-outro-add" onclick="criarChecklistCustom('mensal')">Adicionar</button>
+                  </div>
+                </div>
+
+                <div class="checklist-periodo-bloco">
+                  <h4 class="sub-section-title">Checklist Anual</h4>
+                  <div id="checklistAnual" class="checklist-lista"></div>
+                  <div class="servico-outro-linha">
+                    <div class="field">
+                      <label class="field__label" for="checklistOutroAnual">Outro</label>
+                      <input class="field__input" type="text" id="checklistOutroAnual" placeholder="Digite a etapa e clique em Adicionar...">
+                    </div>
+                    <button type="button" class="btn-primary btn-servico-outro-add" onclick="criarChecklistCustom('anual')">Adicionar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PARTE INFERIOR: Tabela de Itens do Checklist -->
+            <div class="equip-list-section">
+              <h4 class="sub-section-title">Itens do Checklist Vinculados ao Contrato</h4>
+              <div class="crud-table-wrapper">
+                <table class="crud-table" id="tabelaChecklist">
+                  <thead>
+                    <tr>
+                      <th>DESCRIÇÃO</th>
+                      <th>PERÍODO</th>
+                      <th>AÇÕES</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bodyChecklist">
+                    <tr class="empty-row"><td colspan="3">Nenhum item vinculado ao contrato.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /tabs-content -->
+      </fieldset>
+
+      <!-- ============================================= -->
+      <!-- BOTÕES DE AÇÃO                                -->
+      <!-- ============================================= -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="trocarPagina('contratos-view')">Cancelar</button>
+        <button type="button" class="btn btn-danger"  onclick="limparContrato()">Limpar</button>
+        <button type="button" class="btn-success" id="contratoBtnSalvarRodape" onclick="salvarContrato()">Salvar</button>
+
+      </div>
+
+    </form>
+  </div>
+</section>
