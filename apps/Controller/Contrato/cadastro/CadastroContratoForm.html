@@ -373,27 +373,29 @@
               <div id="checklistConteudo" class="checklist-grupo-oculto">
                 <h5 class="checklist-servico-titulo" id="checklistServicoTitulo"></h5>
 
-                <div class="checklist-periodo-bloco">
-                  <h4 class="sub-section-title">Checklist Mensal</h4>
-                  <div id="checklistMensal" class="checklist-lista"></div>
-                  <div class="servico-outro-linha">
-                    <div class="field">
-                      <label class="field__label" for="checklistOutroMensal">Outro</label>
-                      <input class="field__input" type="text" id="checklistOutroMensal" placeholder="Digite a etapa e clique em Adicionar...">
+                <div class="checklist-periodos-grid">
+                  <div class="checklist-periodo-bloco">
+                    <h4 class="sub-section-title">Checklist Mensal</h4>
+                    <div id="checklistMensal" class="checklist-lista"></div>
+                    <div class="servico-outro-linha">
+                      <div class="field">
+                        <label class="field__label" for="checklistOutroMensal">Outro (Mensal)</label>
+                        <input class="field__input" type="text" id="checklistOutroMensal" placeholder="Digite a etapa e clique em Adicionar...">
+                      </div>
+                      <button type="button" class="btn-primary btn-servico-outro-add" onclick="criarChecklistCustom('mensal')">Adicionar</button>
                     </div>
-                    <button type="button" class="btn-primary btn-servico-outro-add" onclick="criarChecklistCustom('mensal')">Adicionar</button>
                   </div>
-                </div>
 
-                <div class="checklist-periodo-bloco">
-                  <h4 class="sub-section-title">Checklist Anual</h4>
-                  <div id="checklistAnual" class="checklist-lista"></div>
-                  <div class="servico-outro-linha">
-                    <div class="field">
-                      <label class="field__label" for="checklistOutroAnual">Outro</label>
-                      <input class="field__input" type="text" id="checklistOutroAnual" placeholder="Digite a etapa e clique em Adicionar...">
+                  <div class="checklist-periodo-bloco">
+                    <h4 class="sub-section-title">Checklist Anual</h4>
+                    <div id="checklistAnual" class="checklist-lista"></div>
+                    <div class="servico-outro-linha">
+                      <div class="field">
+                        <label class="field__label" for="checklistOutroAnual">Outro (Anual)</label>
+                        <input class="field__input" type="text" id="checklistOutroAnual" placeholder="Digite a etapa e clique em Adicionar...">
+                      </div>
+                      <button type="button" class="btn-primary btn-servico-outro-add" onclick="criarChecklistCustom('anual')">Adicionar</button>
                     </div>
-                    <button type="button" class="btn-primary btn-servico-outro-add" onclick="criarChecklistCustom('anual')">Adicionar</button>
                   </div>
                 </div>
               </div>

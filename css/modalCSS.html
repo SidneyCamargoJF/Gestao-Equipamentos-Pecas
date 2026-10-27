@@ -313,6 +313,152 @@
   margin-top: 1rem;
 }
 
+/* ===== DETALHES DO CONTRATO  */
+.modal.modal-detalhes-contrato {
+  width: 90%;
+  max-width: 40rem;
+  height: 80%;
+  max-height: 100rem;
+}
+
+.modal-detalhes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.modal-detalhes-header h3 {
+  margin-bottom: 0;
+}
+
+.detalhe-contrato-secao-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.625rem;
+}
+
+.detalhe-contrato-secao-cabecalho .detalhe-contrato-secao-titulo {
+  margin-bottom: 0;
+}
+
+.detalhe-contrato-linha {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: 1rem;
+  padding: 0.625rem 0;
+  border-bottom: 0.0625rem solid var(--color-slate-100, #f1f5f9);
+  font-size: 0.9rem;
+}
+
+.detalhe-contrato-linha:last-child {
+  border-bottom: none;
+}
+
+.detalhe-contrato-rotulo {
+  font-weight: 600;
+  color: var(--color-slate-500, #64748b);
+}
+
+.detalhe-contrato-valor {
+  text-align: left;
+  color: var(--color-slate-700, #334155);
+  word-break: break-word;
+}
+
+.detalhe-contrato-secao {
+  margin-bottom: 1.25rem;
+}
+
+.detalhe-contrato-secao-titulo {
+  display: inline-block;
+  margin: 0 0 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #4f46e5;
+  border-bottom: 0.125rem solid #4f46e5;
+  padding-bottom: 0.375rem;
+}
+
+.detalhe-contrato-subtitulo {
+  margin: 0.875rem 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-slate-600, #475569);
+}
+
+.detalhe-contrato-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detalhe-contrato-lista li {
+  padding: 0.625rem 0.875rem;
+  background: var(--color-slate-50, #f8fafc);
+  border: 0.0625rem solid var(--color-slate-200, #e2e8f0);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-slate-700, #334155);
+}
+
+.detalhe-contrato-vazio {
+  color: var(--color-slate-400, #94a3b8);
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+/* Dock de navegação entre as 5 seções do detalhe -- cada botão troca qual
+   #detalheSecao-* fica visível (trocarSecaoDetalheContrato). */
+.dock-detalhe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 0.0625rem solid var(--color-slate-100, #f1f5f9);
+}
+
+.dock-detalhe-btn {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.5rem 0.875rem;
+  border: 0.0625rem solid var(--color-slate-200, #e2e8f0);
+  border-radius: 9999px;
+  background: #fff;
+  color: var(--color-slate-500, #64748b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dock-detalhe-btn:hover {
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
+.dock-detalhe-btn-ativo {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+}
+
+/* Precisa ganhar do .dock-detalhe-btn:hover (mesma especificidade) --
+   senão passar o mouse no botão já selecionado deixava o texto roxo
+   igual ao fundo roxo, sumindo a palavra. */
+.dock-detalhe-btn.dock-detalhe-btn-ativo:hover {
+  background: var(--color-indigo-hover, #4338ca);
+  border-color: var(--color-indigo-hover, #4338ca);
+  color: #fff;
+}
+
 /* ===== ABA HISTÓRICO DO CHAMADO ===== */
 .chamado-historico-nova {
   display: flex;

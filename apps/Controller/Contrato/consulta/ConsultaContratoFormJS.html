@@ -97,12 +97,22 @@ function atualizarIndicadoresContrato() {
 
 const CONTRATO_SITUACAO_RANK = { vencido: 1, vencendo: 2, ativo: 3, encerrado: 4 };
 
+function grupoOrdenacaoContrato(c) {
+    return (c.desativado || c.situacao === 'encerrado') ? 1 : 0;
+}
+
 function aplicarOrdenacaoContrato(lista) {
-    if (!sortStateContrato.coluna || !Array.isArray(lista)) return lista;
+    if (!Array.isArray(lista)) return lista;
     const col = sortStateContrato.coluna;
     const dir = sortStateContrato.direcao === 'asc' ? 1 : -1;
     const arr = lista.slice();
     arr.sort((a, b) => {
+        const grupoA = grupoOrdenacaoContrato(a);
+        const grupoB = grupoOrdenacaoContrato(b);
+        if (grupoA !== grupoB) return grupoA - grupoB;
+
+        if (!col) return 0; 
+
         let va, vb;
         if (col === 'situacao') {
             va = CONTRATO_SITUACAO_RANK[a.situacao] || 99;
@@ -167,6 +177,8 @@ function renderTabelaContrato(lista) {
         if (c.desativado) tr.classList.add('linha-desativada');
         if (c.situacao === 'encerrado') tr.classList.add('linha-contrato-encerrado');
 
+        console.log('[DEBUG] renderTabelaContrato -- c.id:', c.id, '| typeof:', typeof c.id, '| contrato:', c.contrato);
+
         const btnEditar = c.desativado
             ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
             : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarContrato('${c.id}')">✏️</button>`;
@@ -195,6 +207,7 @@ function renderTabelaContrato(lista) {
 }
 
 function editarContrato(id) {
+    console.log('[DEBUG] editarContrato recebeu id:', id, '| typeof:', typeof id);
     trocarPagina('contratos-form', id);
 }
 
@@ -225,6 +238,7 @@ async function abrirDetalhesContrato(contratoId, situacao) {
     try {
         const dados = await runServerFunction('buscarContratoParaEdicao', contratoId);
         conteudo.innerHTML = montarDetalheContratoHtml(dados, situacao);
+        trocarSecaoDetalheContrato('complementares');
     } catch (error) {
         console.error('Erro em buscarContratoParaEdicao: ' + error.message);
         if (conteudo) conteudo.innerHTML = '<p>Erro ao carregar os detalhes do contrato.</p>';
@@ -244,28 +258,97 @@ function montarDetalheContratoHtml(c, situacao) {
             ${conteudoHtml}
         </div>`;
 
+    // Lista de <li> ou, se vazia, um texto "nenhum item" -- usado pelos
+    // blocos de Serviço/Equipamentos/Produtos/Checklist, que são sempre
+    // arrays (às vezes vazios) vindos de buscarContratoParaEdicao.
+    const lista = (itens, textoVazio, montarItem) =>
+        (itens && itens.length)
+            ? '<ul class="detalhe-contrato-lista">' + itens.map(montarItem).join('') + '</ul>'
+            : `<p class="detalhe-contrato-vazio">${textoVazio}</p>`;
+
     const infoContrato = `
         ${linha('Número', c.numero)}
         ${linha('Empresa', c.empresa)}
         ${linha('Objeto', c.objeto)}
-        ${linha('Observações', c.observacoes)}
-        ${linha('SEI', c.sei)}
-        ${linha('Gestor', c.gestor)}
-        ${linha('Telefone', c.telefone)}
-        ${linha('Email', c.email)}
-        ${linha('Data Inicial', c.dataInicial)}
-        ${linha('Data Final', c.dataFinal)}
-        ${linha('Valor', c.valor)}
-        <span class="situacao-badge ${situacao}">${formatarSituacaoContrato(situacao)}</span>
+        <div class="detalhe-contrato-linha">
+            <span class="detalhe-contrato-rotulo">Situação</span>
+            <span class="detalhe-contrato-valor"><span class="situacao-badge ${situacao}">${formatarSituacaoContrato(situacao)}</span></span>
+        </div>
     `;
 
-    return `
-        <button type="button" class="btn-acao btn-editar-linha" title="Editar" onclick="fecharModal('modalDetalhesContrato'); editarContrato('${c.id}')">✏️ Editar</button>
-        ${secao('Informações Principais do Contrato', infoContrato)}
-        <div class="container-dock">
-            <button>
-            </div>
+    const complementaresHtml = `
+        ${linha('SEI', c.sei)}
+        ${linha('Gestor do Contrato', c.gestor)}
+        ${linha('Contato na Empresa', c.contatoEmpresa)}
+        ${linha('Telefone', c.telefone)}
+        ${linha('E-mail', c.email)}
+        ${linha('Data Inicial', formatarDataContrato(c.dataInicial))}
+        ${linha('Data Final Prevista', formatarDataContrato(c.dataFinal))}
+        ${linha('Data de Encerramento', formatarDataContrato(c.dataEncerramento))}
+        ${linha('Valor', formatarValorContrato(c.valor))}
+        ${linha('Observações', c.observacoes)}
     `;
+
+    const servicosHtml = lista(c.servicos, 'Nenhum serviço cadastrado.', s => `
+        <li><strong>${escapeHtml(s.servico)}</strong><br>Periodicidade: ${escapeHtml(s.periodicidade)}</li>`);
+
+    const equipamentosHtml = lista(c.equipamentos, 'Nenhum equipamento vinculado.', e => `
+        <li>
+            <strong>${escapeHtml(e.equipamento)}</strong> — ${escapeHtml(e.marca)} ${escapeHtml(e.modelo)} (${escapeHtml(e.capacidade)})<br>
+            Patrimônio: ${escapeHtml(e.patrimonio)} · Local: ${escapeHtml(e.localizacao)}
+        </li>`);
+
+    const produtosHtml = lista(c.produtos, 'Nenhum produto vinculado.', p => `<li>${escapeHtml(p.nome)}</li>`);
+
+    const checklistMensal = (c.checklist || []).filter(i => i.periodo === 'mensal');
+    const checklistAnual = (c.checklist || []).filter(i => i.periodo === 'anual');
+    const itemChecklist = i => `<li>${escapeHtml(i.descricao)}</li>`;
+    const checklistHtml = `
+        <h5 class="detalhe-contrato-subtitulo">Mensal</h5>
+        ${lista(checklistMensal, 'Nenhum item mensal.', itemChecklist)}
+        <h5 class="detalhe-contrato-subtitulo">Anual</h5>
+        ${lista(checklistAnual, 'Nenhum item anual.', itemChecklist)}
+    `;
+
+    console.log('[DEBUG] montarDetalheContratoHtml -- c.id:', c.id, '| typeof:', typeof c.id);
+
+    const infoComEditar = `
+        <div class="detalhe-contrato-secao">
+            <div class="detalhe-contrato-secao-cabecalho">
+                <h4 class="detalhe-contrato-secao-titulo">Informações Principais do Contrato</h4>
+                <button type="button" class="btn-acao btn-editar-linha" title="Editar" onclick="fecharModal('modalDetalhesContrato'); editarContrato('${c.id}')">✏️</button>
+            </div>
+            ${infoContrato}
+        </div>`;
+
+    return (
+        infoComEditar +
+        '<div class="dock-detalhe">' +
+            '<button type="button" class="dock-detalhe-btn" data-secao="complementares" onclick="trocarSecaoDetalheContrato(\'complementares\')">Complementares</button>' +
+            '<button type="button" class="dock-detalhe-btn" data-secao="servicos" onclick="trocarSecaoDetalheContrato(\'servicos\')">Serviços</button>' +
+            '<button type="button" class="dock-detalhe-btn" data-secao="equipamentos" onclick="trocarSecaoDetalheContrato(\'equipamentos\')">Equipamentos</button>' +
+            '<button type="button" class="dock-detalhe-btn" data-secao="produtos" onclick="trocarSecaoDetalheContrato(\'produtos\')">Produtos</button>' +
+            '<button type="button" class="dock-detalhe-btn" data-secao="checklist" onclick="trocarSecaoDetalheContrato(\'checklist\')">Checklist</button>' +
+        '</div>' +
+        `<div id="detalheSecao-complementares">${secao('Complementares', complementaresHtml)}</div>` +
+        `<div id="detalheSecao-servicos">${secao('Serviço do Contrato', servicosHtml)}</div>` +
+        `<div id="detalheSecao-equipamentos">${secao('Equipamentos Vinculados', equipamentosHtml)}</div>` +
+        `<div id="detalheSecao-produtos">${secao('Produtos Vinculados', produtosHtml)}</div>` +
+        `<div id="detalheSecao-checklist">${secao('Checklist', checklistHtml)}</div>`
+    );
+}
+
+const SECOES_DETALHE_CONTRATO = ['complementares', 'servicos', 'equipamentos', 'produtos', 'checklist'];
+
+function trocarSecaoDetalheContrato(nome) {
+    SECOES_DETALHE_CONTRATO.forEach(s => {
+        const div = document.getElementById('detalheSecao-' + s);
+        if (div) div.classList.toggle('detalhe-secao-oculta', s !== nome);
+    });
+
+    document.querySelectorAll('.dock-detalhe-btn').forEach(btn => {
+        btn.classList.toggle('dock-detalhe-btn-ativo', btn.dataset.secao === nome);
+    });
 }
 
 let idContratoExclusao = null;

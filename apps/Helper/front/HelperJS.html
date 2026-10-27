@@ -84,6 +84,28 @@
     });
   }
 
+  //
+  // MÁSCARA DE SEI
+  //
+  function mascaraSEI(input) {
+    input.addEventListener('input', function() {
+      let valor = this.value.replace(/\D/g, '');
+      if (valor.length > 17) valor = valor.slice(0, 17);
+
+      let formatado = valor;
+      if (valor.length > 5) {
+        formatado = valor.slice(0, 5) + '.' + valor.slice(5);
+      }
+      if (valor.length > 11) {
+        formatado = valor.slice(0, 5) + '.' + valor.slice(5, 11) + '/' + valor.slice(11);
+      }
+      if (valor.length > 15) {
+        formatado = valor.slice(0, 5) + '.' + valor.slice(5, 11) + '/' + valor.slice(11, 15) + '-' + valor.slice(15);
+      }
+      this.value = formatado;
+    });
+  }
+
 
 
 

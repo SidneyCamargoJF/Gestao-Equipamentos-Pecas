@@ -1,6 +1,7 @@
 <script> // CadastroContratosFormJS.html
 
   async function renderContratosForm(id) {
+    console.log('[DEBUG] renderContratosForm recebeu id:', id, '| typeof:', typeof id);
     initTabs();
     carregarFornecedoresParaEmpresa();
     carregarOpcoesEspecificacaoServico();
@@ -10,6 +11,9 @@
 
     const telField = document.getElementById('telefone');
     if (telField) mascaraTelefone(telField);
+
+    const seiField = document.getElementById('sei');
+    if (seiField) mascaraSEI(seiField);
 
     const patField = document.getElementById('eqBuscaPat');
     if (patField) {

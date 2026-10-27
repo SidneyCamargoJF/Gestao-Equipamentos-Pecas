@@ -295,12 +295,42 @@
   margin: 0 0 1rem;
 }
 
+.checklist-periodos-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
 .checklist-periodo-bloco {
   margin-bottom: 1.5rem;
 }
 
 .checklist-periodo-bloco:last-child {
   margin-bottom: 0;
+}
+
+/* A partir daqui (mesmo ponto em que .form-grid-2 vira 2 colunas) Mensal e
+   Anual ficam lado a lado, com uma linha vertical separando os dois --
+   sem isso os dois blocos "Outro" ficavam um embaixo do outro, iguaizinhos,
+   e parecia que o campo tinha se repetido por engano. */
+@media (min-width: 36rem) {
+  .checklist-periodos-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .checklist-periodos-grid .checklist-periodo-bloco {
+    margin-bottom: 0;
+  }
+
+  .checklist-periodos-grid .checklist-periodo-bloco:first-child {
+    padding-right: 1.5rem;
+    border-right: 0.0625rem solid var(--color-slate-200);
+  }
+
+  .checklist-periodos-grid .checklist-periodo-bloco:last-child {
+    padding-left: 1.5rem;
+  }
 }
 
 .btn-confirmar-servico {
