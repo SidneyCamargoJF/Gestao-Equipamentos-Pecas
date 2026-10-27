@@ -77,11 +77,20 @@ function buscarContratoParaEdicao(idInput) {
       })
       .map(function (l) { return { nome: l[contractsProdutosNomeCol] }; });
 
+    // Período (mensal/anual) vai dentro do próprio texto salvo na coluna
+    // Nome, como prefixo "[Mensal] "/"[Anual] " -- não existe coluna própria
+    // pra isso em tbl_contratos_Checklist ainda. Desfaz o prefixo aqui.
     const checklist = ReadContractsChecklist()
       .filter(function (l) {
         return Number(l[contractsChecklistIdContratoCol]) === idBuscado && !l[contractsChecklistDataExclusaoCol];
       })
-      .map(function (l) { return { descricao: l[contractsChecklistNomeCol] }; });
+      .map(function (l) {
+        const bruto = String(l[contractsChecklistNomeCol] || '');
+        const match = bruto.match(/^\[(Mensal|Anual)\]\s*(.*)$/);
+        return match
+          ? { descricao: match[2], periodo: match[1].toLowerCase() }
+          : { descricao: bruto, periodo: 'mensal' };
+      });
 
     return {
       id: linha[contractIdCol],
@@ -165,8 +174,11 @@ function salvarChecklistContrato(contratoId, lista) {
 
   (lista || []).forEach(function (item) {
     const pos = proximoIdTabela(aba, firstLineContractsChecklist);
+    // Período (mensal/anual) vira prefixo no texto -- não tem coluna
+    // própria pra isso em tbl_contratos_Checklist ainda.
+    const prefixo = item.periodo === 'anual' ? '[Anual] ' : '[Mensal] ';
     // ordem das colunas: Id, IdContrato, Nome, DataCadastro, DataExclusao, DataAlteracao
-    const linha = [pos.novoId, contratoId, item.descricao, dataAtual, '', ''];
+    const linha = [pos.novoId, contratoId, prefixo + item.descricao, dataAtual, '', ''];
     aba.getRange(pos.proximaLinha, 1, 1, numColumnsContractsChecklist).setValues([linha]);
   });
 }

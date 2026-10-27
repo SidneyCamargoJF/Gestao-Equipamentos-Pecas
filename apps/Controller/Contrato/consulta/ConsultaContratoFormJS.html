@@ -176,7 +176,7 @@ function renderTabelaContrato(lista) {
             : `<button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusaoContrato('${c.id}')">🗑️</button>`;
 
         tr.innerHTML = `
-        <td class="acao-cell"><button class="btn-acao btn-ver-linha" title="Ver detalhes" onclick="abrirDetalhesContrato('${c.id}')">👁️</button></td>
+        <td class="acao-cell"><button class="btn-acao btn-ver-linha" title="Ver detalhes" onclick="abrirDetalhesContrato('${c.id}', '${c.situacao}')">👁️</button></td>
         <td>${escapeHtml(c.numero)}</td>
         <td>${c.contrato ? escapeHtml(c.contrato) : '--'}</td>
         <td>${c.sei ? escapeHtml(c.sei) : '--'}</td>
@@ -212,11 +212,60 @@ async function reativarContratoUI(id) {
     }
 }
 
-function abrirDetalhesContrato(contratoId) {
+let contratoIdAtualModal = null;
+
+async function abrirDetalhesContrato(contratoId, situacao) {
     contratoIdAtualModal = contratoId;
 
-    const conteudo = document.getElementById('modalDetalhesContrato');
+    const conteudo = document.getElementById('detalhesConteudo');
     if (conteudo) conteudo.innerHTML = '<p>Carregando...</p>';
+
+    exibirModal('modalDetalhesContrato');
+
+    try {
+        const dados = await runServerFunction('buscarContratoParaEdicao', contratoId);
+        conteudo.innerHTML = montarDetalheContratoHtml(dados, situacao);
+    } catch (error) {
+        console.error('Erro em buscarContratoParaEdicao: ' + error.message);
+        if (conteudo) conteudo.innerHTML = '<p>Erro ao carregar os detalhes do contrato.</p>';
+    }
+}
+
+function montarDetalheContratoHtml(c, situacao) {
+    const linha = (rotulo, valor) => `
+        <div class="detalhe-contrato-linha">
+            <span class="detalhe-contrato-rotulo">${rotulo}</span>
+            <span class="detalhe-contrato-valor">${valor && String(valor).trim() ? escapeHtml(valor) : '--'}</span>
+        </div>`;
+
+    const secao = (titulo, conteudoHtml) => `
+        <div class="detalhe-contrato-secao">
+            <h4 class="detalhe-contrato-secao-titulo">${titulo}</h4>
+            ${conteudoHtml}
+        </div>`;
+
+    const infoContrato = `
+        ${linha('Número', c.numero)}
+        ${linha('Empresa', c.empresa)}
+        ${linha('Objeto', c.objeto)}
+        ${linha('Observações', c.observacoes)}
+        ${linha('SEI', c.sei)}
+        ${linha('Gestor', c.gestor)}
+        ${linha('Telefone', c.telefone)}
+        ${linha('Email', c.email)}
+        ${linha('Data Inicial', c.dataInicial)}
+        ${linha('Data Final', c.dataFinal)}
+        ${linha('Valor', c.valor)}
+        <span class="situacao-badge ${situacao}">${formatarSituacaoContrato(situacao)}</span>
+    `;
+
+    return `
+        <button type="button" class="btn-acao btn-editar-linha" title="Editar" onclick="fecharModal('modalDetalhesContrato'); editarContrato('${c.id}')">✏️ Editar</button>
+        ${secao('Informações Principais do Contrato', infoContrato)}
+        <div class="container-dock">
+            <button>
+            </div>
+    `;
 }
 
 let idContratoExclusao = null;

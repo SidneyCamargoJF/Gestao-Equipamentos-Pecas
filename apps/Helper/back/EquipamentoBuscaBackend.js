@@ -52,6 +52,66 @@ function buscarEquipamentosPorNome(nome) {
     }));
 }
 
+function buscarEquipamentosPorEspecificacao(categoria, tipo, capacidade) {
+  const categoriaBuscada = String(categoria || '').trim().toLowerCase();
+  const tipoBuscado = String(tipo || '').trim().toLowerCase();
+  const capacidadeBuscada = String(capacidade || '').trim().toLowerCase();
+  if (!categoriaBuscada || !tipoBuscado || !capacidadeBuscada) return [];
+
+  const dados = ReadEquipments();
+  return dados
+    .filter(e =>
+      String(e[1] || '').trim().toLowerCase() === categoriaBuscada &&
+      String(e[4] || '').trim().toLowerCase() === tipoBuscado &&
+      String(e[3] || '').trim().toLowerCase() === capacidadeBuscada
+    )
+    .map(encontrado => ({
+      id: encontrado[0] || '',
+      nome: encontrado[1] || '',
+      marca: encontrado[2] || '',
+      capacidade: encontrado[3] || '',
+      modelo: encontrado[4] || '',
+      patrimonio: encontrado[5] || '',
+      sequencia: encontrado[6] || '',
+      localizacao: encontrado[7] || ''
+    }));
+}
+
+/**
+ * Combinações reais de Nome/Modelo/Capacidade já cadastradas em
+ * tbl_equipamentos (uma linha por combinação distinta) -- usado pra
+ * preencher os 3 selects em cascata de especificação do serviço no
+ * Cadastro de Contrato: escolhendo a categoria, só aparecem os tipos que
+ * existem pra ela; escolhendo o tipo, só aparecem as capacidades que
+ * existem pra esse par categoria+tipo. Evita combinação impossível tipo
+ * "Elevador 18.000 BTUs".
+ */
+function buscarOpcoesEspecificacaoEquipamento() {
+  const dados = ReadEquipments();
+  const vistos = new Set();
+  const combinacoes = [];
+
+  dados.forEach(function (e) {
+    const categoria = String(e[1] || '').trim();
+    const tipo = String(e[4] || '').trim();
+    const capacidade = String(e[3] || '').trim();
+    if (!categoria || !tipo || !capacidade) return;
+
+    const chave = categoria + '||' + tipo + '||' + capacidade;
+    if (vistos.has(chave)) return;
+    vistos.add(chave);
+    combinacoes.push({ categoria: categoria, tipo: tipo, capacidade: capacidade });
+  });
+
+  combinacoes.sort(function (a, b) {
+    return a.categoria.localeCompare(b.categoria) ||
+      a.tipo.localeCompare(b.tipo) ||
+      a.capacidade.localeCompare(b.capacidade);
+  });
+
+  return { combinacoes: combinacoes };
+}
+
 function buscarEquipamentoIdPorPatrimonio(patrimonio) {
   const patrimonioBuscado = String(patrimonio || '').trim().toLowerCase();
   if (!patrimonioBuscado) return '';
