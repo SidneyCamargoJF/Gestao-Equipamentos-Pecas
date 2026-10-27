@@ -1,59 +1,58 @@
 <style>
-.field-full-3 {
-  grid-column: span 1;
-}
 
-@media (min-width: 48rem) {
-  .field-full-3 { grid-column: span 3; }
-}
+  #page-chamado-form .page-header {
+    max-width: 80rem;
+  }
 
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-slate-700);
-}
+  .field-full-3 {
+    grid-column: span 1;
+  }
 
-#page-chamado-form .page-header {
-  max-width: 80rem;
-  margin-left: auto;
-  margin-right: auto;
-}
+  @media (min-width: 48rem) {
+    .field-full-3 { grid-column: span 3; }
+  }
 
-textarea.field__input {
-  resize: vertical;
-  font-family: inherit;
-  min-height: 4.5rem;
-}
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-slate-700);
+  }
 
-.chamado-contador-caracteres {
-  align-self: flex-end;
-  font-size: 0.75rem;
-  color: var(--color-slate-400);
-  margin-top: 0.25rem;
-}
+  textarea.field__input {
+    resize: vertical;
+    font-family: inherit;
+    min-height: 4.5rem;
+  }
 
-.chamado-itens-ajuda {
-  font-size: 0.8125rem;
-  color: var(--color-slate-500);
-  margin-bottom: 1rem;
-  margin-top: 0.5rem;
-  line-height: 1.5;
-}
+  .chamado-contador-caracteres {
+    align-self: flex-end;
+    font-size: 0.75rem;
+    color: var(--color-slate-400);
+    margin-top: 0.25rem;
+  }
 
-/* ===== STATUS DA BUSCA DE PATRIMÔNIO ===== */
-.chamado-patrimonio-status {
-  font-size: 0.8125rem;
-  margin-top: 0.25rem;
-  min-height: 1.125rem;
-  display: block;
-  color: var(--color-slate-400);
-}
+  .chamado-itens-ajuda {
+    font-size: 0.8125rem;
+    color: var(--color-slate-500);
+    margin-bottom: 1rem;
+    margin-top: 0.5rem;
+    line-height: 1.5;
+  }
 
-.chamado-patrimonio-status.encontrado {
-  color: #166534;
-}
+  /* ===== STATUS DA BUSCA DE PATRIMÔNIO ===== */
+  .chamado-patrimonio-status {
+    font-size: 0.8125rem;
+    margin-top: 0.25rem;
+    min-height: 1.125rem;
+    display: block;
+    color: var(--color-slate-400);
+  }
 
-.chamado-patrimonio-status.nao-encontrado {
-  color: #92400e;
+  .chamado-patrimonio-status.encontrado {
+    color: #166534;
+  }
+
+  .chamado-patrimonio-status.nao-encontrado {
+    color: #92400e;
 }
 </style>

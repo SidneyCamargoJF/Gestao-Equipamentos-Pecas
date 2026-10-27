@@ -124,6 +124,7 @@ console.log('listaFiltrada: ' + this.listaFiltrada)
       tr.innerHTML = `
         <td>${escapeHtml(it.patrimonio)} ${it.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
         <td>${escapeHtml(it.nome)}</td>
+        <td>${escapeHtml(it.capacidade)}</td>
         <td>${escapeHtml(it.marca)}</td>
         <td>${escapeHtml(it.modelo)}</td>
         <td>${escapeHtml(it.localizacao)}</td>
@@ -141,7 +142,7 @@ console.log('listaFiltrada: ' + this.listaFiltrada)
   cadastro() {
     console.log('EquipmentsViewController.cadastro')
 
-    trocarPagina('page-equipments-form', 0);
+    trocarPagina('equipments-form', 0);
 
     return true
   }
