@@ -1,7 +1,6 @@
 <script> // CadastroContratosFormJS.html
 
   async function renderContratosForm(id) {
-    console.log('[DEBUG] renderContratosForm recebeu id:', id, '| typeof:', typeof id);
     initTabs();
     carregarFornecedoresParaEmpresa();
     carregarOpcoesEspecificacaoServico();
@@ -133,21 +132,43 @@
       renderizarEquipamentos();
       renderizarProdutos();
 
-      // Só dá pra reconstruir o nome completo + periodicidade (o jeito que
-      // foi salvo hoje, numa coluna de texto só) -- os 4 campos separados
-      // da especificação (tipo de manutenção/categoria/tipo/capacidade) não
-      // dá pra "desmontar" de volta com segurança, então ficam em branco no
-      // formulário. Se precisar editar a especificação de um contrato
-      // existente, é preciso preencher os campos de novo.
+      // Categoria/Tipo/Capacidade agora têm coluna própria em
+      // tbl_contratos_servicos, então dá pra "desmontar" de volta certinho
+      // e já deixar os 3 selects em cascata com o valor salvo -- só o Tipo
+      // de Manutenção ainda não tem coluna própria, então esse campo some
+      // na edição (fica no padrão "Preventiva").
       const servicoSalvo = (dados.servicos || [])[0];
-      servicoAtual = servicoSalvo ? {
-        tipoManutencao: '',
-        categoriaEquip: '',
-        tipoEquip: '',
-        capacidadeEquip: '',
-        periodicidade: servicoSalvo.periodicidade || 'anual',
-        nomeCompleto: servicoSalvo.servico
-      } : null;
+      if (servicoSalvo) {
+        await carregarOpcoesEspecificacaoServico();
+
+        servicoAtual = {
+          tipoManutencao: '',
+          categoriaEquip: servicoSalvo.categoria || '',
+          tipoEquip: servicoSalvo.tipo || '',
+          capacidadeEquip: servicoSalvo.capacidade || '',
+          periodicidade: servicoSalvo.periodicidade || 'anual',
+          nomeCompleto: [servicoSalvo.categoria, servicoSalvo.tipo, formatarCapacidadeComPonto(servicoSalvo.capacidade)]
+            .filter(Boolean).join(' ')
+        };
+
+        const catSelect = document.getElementById('servicoCategoriaEquip');
+        const tipoSelect = document.getElementById('servicoTipoEquip');
+        const capSelect = document.getElementById('servicoCapacidadeEquip');
+        const periodicidadeSelect = document.getElementById('servicoPeriodicidade');
+
+        if (catSelect) {
+          catSelect.value = servicoAtual.categoriaEquip;
+          atualizarSelectTipoServico();
+        }
+        if (tipoSelect) {
+          tipoSelect.value = servicoAtual.tipoEquip;
+          atualizarSelectCapacidadeServico();
+        }
+        if (capSelect) capSelect.value = servicoAtual.capacidadeEquip;
+        if (periodicidadeSelect) periodicidadeSelect.value = servicoAtual.periodicidade;
+      } else {
+        servicoAtual = null;
+      }
       renderizarServicoCard();
       atualizarChecklistParaServico();
 
@@ -1083,7 +1104,12 @@ async function salvarContrato() {
       gestor: document.getElementById('gestor').value.trim(),
       anexos: anexos,
       equipamentos: equipamentos,
-      servicos: servicoAtual ? [{ servico: servicoAtual.nomeCompleto, periodicidade: servicoAtual.periodicidade }] : [],
+      servicos: servicoAtual ? [{
+        categoria: servicoAtual.categoriaEquip,
+        tipo: servicoAtual.tipoEquip,
+        capacidade: servicoAtual.capacidadeEquip,
+        periodicidade: servicoAtual.periodicidade
+      }] : [],
       produtos: produtos,
       checklist: checklist
     };

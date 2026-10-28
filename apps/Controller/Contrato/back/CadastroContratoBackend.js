@@ -68,7 +68,12 @@ function buscarContratoParaEdicao(idInput) {
         return Number(l[contractsServicosIdContratoCol]) === idBuscado && !l[contractsServicosDataExclusaoCol];
       })
       .map(function (l) {
-        return { servico: l[contractsServicosNomeCol], periodicidade: l[contractsServicosPeriodicidadeCol] };
+        return {
+          categoria: l[contractsServicosCategoriaCol] || '',
+          tipo: l[contractsServicosTipoCol] || '',
+          capacidade: l[contractsServicosCapacidadeCol] || '',
+          periodicidade: l[contractsServicosPeriodicidadeCol] || ''
+        };
       });
 
     const produtos = ReadContractsProdutos()
@@ -127,10 +132,27 @@ function proximoIdTabela(aba, firstLine) {
   return { novoId: Number(idAtual) + 1, proximaLinha: ultimaLinha + 1 };
 }
 
+// Marca como excluídas (DataExclusao = hoje) todas as linhas ativas desse
+// contrato numa tabela filha -- chamado antes de reinserir a lista inteira
+// em cada salvar*Contrato. Sem isso, toda vez que um contrato existente é
+// editado e salvo de novo, a lista completa (equipamentos/serviços/
+// produtos/checklist) era inserida por cima da anterior sem nunca excluir
+// a de antes, duplicando tudo a cada edição salva.
+function excluirAnterioresContrato(aba, leitura, firstLine, idContratoCol, dataExclusaoCol, contratoId, dataAtual) {
+  leitura.forEach(function (linha, idx) {
+    if (Number(linha[idContratoCol]) === Number(contratoId) && !linha[dataExclusaoCol]) {
+      aba.getRange(idx + firstLine, dataExclusaoCol + 1).setValue(dataAtual);
+    }
+  });
+}
+
 function salvarEquipamentosContrato(contratoId, lista) {
   const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(contractsEquipamentsTableName);
   if (!aba) return;
   const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+
+  excluirAnterioresContrato(aba, ReadContractsEquipaments(), firstLineContractsEquipaments,
+    contractsEquipamentsIdContratoCol, contractsEquipamentsDataExclusaoCol, contratoId, dataAtual);
 
   (lista || []).forEach(function (item) {
     const idEquipamento = buscarEquipamentoIdPorPatrimonio(item.patrimonio);
@@ -147,10 +169,13 @@ function salvarServicosContrato(contratoId, lista) {
   if (!aba) return;
   const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
 
+  excluirAnterioresContrato(aba, ReadContractsServicos(), firstLineContractsServicos,
+    contractsServicosIdContratoCol, contractsServicosDataExclusaoCol, contratoId, dataAtual);
+
   (lista || []).forEach(function (item) {
     const pos = proximoIdTabela(aba, firstLineContractsServicos);
-    // ordem das colunas: Id, IdContrato, Nome, Periodicidade, DataCadastro, DataExclusao, DataAlteracao
-    const linha = [pos.novoId, contratoId, item.servico, item.periodicidade || '', dataAtual, '', ''];
+    // ordem das colunas: Id, IdContrato, Categoria, Tipo, Capacidade, Periodicidade, DataCadastro, DataExclusao, DataAlteracao
+    const linha = [pos.novoId, contratoId, item.categoria || '', item.tipo || '', item.capacidade || '', item.periodicidade || '', dataAtual, '', ''];
     aba.getRange(pos.proximaLinha, 1, 1, numColumnsContractsServicos).setValues([linha]);
   });
 }
@@ -159,6 +184,9 @@ function salvarProdutosContrato(contratoId, lista) {
   const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(contractsProdutosTableName);
   if (!aba) return;
   const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+
+  excluirAnterioresContrato(aba, ReadContractsProdutos(), firstLineContractsProdutos,
+    contractsProdutosIdContratoCol, contractsProdutosDataExclusaoCol, contratoId, dataAtual);
 
   (lista || []).forEach(function (item) {
     const pos = proximoIdTabela(aba, firstLineContractsProdutos);
@@ -171,6 +199,9 @@ function salvarChecklistContrato(contratoId, lista) {
   const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(contractsChecklistTableName);
   if (!aba) return;
   const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+
+  excluirAnterioresContrato(aba, ReadContractsChecklist(), firstLineContractsChecklist,
+    contractsChecklistIdContratoCol, contractsChecklistDataExclusaoCol, contratoId, dataAtual);
 
   (lista || []).forEach(function (item) {
     const pos = proximoIdTabela(aba, firstLineContractsChecklist);

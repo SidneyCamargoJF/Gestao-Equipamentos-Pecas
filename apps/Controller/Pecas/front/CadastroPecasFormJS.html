@@ -251,6 +251,15 @@
     if (id) {
       await preencherFormularioParaEdicao(id);
     } else {
+      // Sem id = Nova Peça -- limpa os campos de texto, senão ficava com
+      // os valores da última edição (os 3 selects já resetam sozinhos
+      // porque preencherSelect reconstrói as options do zero).
+      ['nomePeca', 'modelo', 'capacidade', 'numeroSerie', 'notaFiscal', 'dataNota',
+        'garantia', 'dtGarantia', 'modalidade', 'valor', 'seiNum'].forEach(elId => {
+        const el = document.getElementById(elId);
+        if (el) el.value = '';
+      });
+
       const nomeInput = document.getElementById('nomePeca');
       if (nomeInput) nomeInput.focus();
     }

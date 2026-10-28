@@ -60,11 +60,15 @@ class MarcaController {
 
   retorno(objmarcas) {
     this.marcas = Array.isArray(objmarcas) ? objmarcas : [];
-    this.listaFiltrada = typeof aplicarOrdenacao === 'function' ? aplicarOrdenacao(this.marcas) : this.marcas;
+    this.listaFiltrada = this.aplicarOrdenacao(this.marcas);
 
     const opcoesMarca = [...new Set(this.marcas.map(m => m.marca).filter(Boolean))];
     if (typeof initSearch === 'function') {
-      initSearch('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca);
+      // initSearch chama um filtrar() global sozinho ao escolher uma opção
+      // do dropdown -- esse global hoje é o da tela de Peças (carrega
+      // depois no bundle e "ganha" o nome), não faz nada pela Marca. O
+      // onSelect aqui garante que a tabela de Marcas realmente refiltra.
+      initSearch('marcaSearch', 'marcaDropdown', 'marcaWrapper', opcoesMarca, () => this.filtrar());
     }
 
     this.renderTabela(this.listaFiltrada);
@@ -95,9 +99,7 @@ class MarcaController {
       return true;
     });
 
-    if (typeof aplicarOrdenacao === 'function') {
-      this.listaFiltrada = aplicarOrdenacao(this.listaFiltrada);
-    }
+    this.listaFiltrada = this.aplicarOrdenacao(this.listaFiltrada);
     this.renderTabela(this.listaFiltrada);
     this.atualizarResumo(this.listaFiltrada);
   }
@@ -107,10 +109,55 @@ class MarcaController {
     if (inputMarca) inputMarca.value = '';
 
     this.sortState = { coluna: null, direcao: 'asc' };
-    if (typeof atualizarIndicadores === 'function') atualizarIndicadores();
+    this.atualizarIndicadores();
     this.consultar();
 
     if (inputMarca) inputMarca.focus();
+  }
+
+  // ===== ORDENAÇÃO (própria da Marca -- as funções globais ordenar()/
+  // atualizarIndicadores()/aplicarOrdenacao() de SearchJS.html acabam sendo
+  // sobrescritas pela versão da tela de Peças, que carrega depois no bundle
+  // e usa índices de coluna diferentes -- por isso cada tela de consulta
+  // mais nova tem a própria versão em vez de depender da global.) =====
+  ordenar(coluna) {
+    if (this.sortState.coluna === coluna) {
+      this.sortState.direcao = this.sortState.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortState.coluna = coluna;
+      this.sortState.direcao = 'asc';
+    }
+    this.atualizarIndicadores();
+    this.filtrar();
+  }
+
+  atualizarIndicadores() {
+    const ths = document.querySelectorAll('#tabelaMarcas th');
+    ths.forEach(th => {
+      th.classList.remove('sorted');
+      const span = th.querySelector('.sort-arrow');
+      if (span) span.textContent = '';
+    });
+    const indices = { marca: 0 };
+    const idx = indices[this.sortState.coluna];
+    if (idx !== undefined && ths[idx]) {
+      ths[idx].classList.add('sorted');
+      const span = ths[idx].querySelector('.sort-arrow');
+      if (span) span.textContent = this.sortState.direcao === 'asc' ? '▲' : '▼';
+    }
+  }
+
+  aplicarOrdenacao(lista) {
+    if (!this.sortState.coluna || !Array.isArray(lista)) return lista;
+    const col = this.sortState.coluna;
+    const dir = this.sortState.direcao === 'asc' ? 1 : -1;
+    const arr = lista.slice();
+    arr.sort((a, b) => {
+      const va = String(a[col] || '').toLowerCase();
+      const vb = String(b[col] || '').toLowerCase();
+      return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;
+    });
+    return arr;
   }
 
   // ===== RENDERIZAÇÃO DE TABELA =====

@@ -1,22 +1,8 @@
 <script>
-// Ligada pelo Cadastro (salvarChamado) logo antes de voltar pra essa tela
-// depois de criar/editar um chamado -- assim, só nesse caso específico, a
-// consulta roda sozinha de novo (pra já mostrar o resultado atualizado),
-// sem voltar a carregar sozinha sempre que alguém só navega pra essa tela.
-let forcarConsultaAoAbrirChamados = false;
-
 async function renderConsultaChamados() {
     const motivos = await carregarMotivosChamado();
     initSearchChamado('motivoChamadoSearch', 'motivoChamadoDropdown', 'motivoChamadoWrapper', motivos);
-
-    if (forcarConsultaAoAbrirChamados) {
-        forcarConsultaAoAbrirChamados = false;
-        consultarChamados();
-        return;
-    }
-
-    const resumo = document.getElementById('resumoChamados');
-    if (resumo) resumo.textContent = '';
+    consultarChamados();
 }
 
 async function carregarMotivosChamado() {

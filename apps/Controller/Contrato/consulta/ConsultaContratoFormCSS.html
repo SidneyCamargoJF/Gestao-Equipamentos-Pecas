@@ -265,6 +265,26 @@ tr.linha-desativada.linha-contrato-encerrado {
   color: inherit;
 }
 
+/* Selo de "tem anexo" encima do botão de Ver Detalhes -- mesmo padrão do
+   Chamados (.chamado-ver-wrapper/.chamado-anexo-selo). */
+.contrato-ver-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.contrato-anexo-selo {
+  position: absolute;
+  top: -0.3rem;
+  right: -0.3rem;
+  font-size: 0.65rem;
+  line-height: 1;
+  background: #e7e7e7;
+  border-radius: 45%;
+  box-shadow: 0 0.0625rem 0.25rem rgba(0, 0, 0, 0.25);
+  padding: 0.125rem;
+  pointer-events: none;
+}
+
 /* AÇÕES */
 .acao-cell {
   display: flex;

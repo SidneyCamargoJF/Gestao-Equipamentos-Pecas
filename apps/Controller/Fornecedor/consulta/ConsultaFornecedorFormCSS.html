@@ -378,6 +378,31 @@
     font-style: italic;
   }
 
+  /* Razão Social/Nome Fantasia são nomes de empresa, às vezes bem longos --
+     sem largura própria, o .data-table (compartilhado, table-layout:auto)
+     deixava essas colunas espremidas entre CNPJ/Telefone/E-mail (que têm
+     formato fixo e curto), e o texto quebrava no meio da palavra. Fixando
+     a largura de cada coluna (table-layout:fixed) e permitindo quebra só
+     em espaço (word-break:normal) resolve os dois problemas. */
+  #tabelaFornecedores {
+    table-layout: fixed;
+  }
+
+  #tabelaFornecedores th,
+  #tabelaFornecedores td {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  #tabelaFornecedores th:nth-child(1), #tabelaFornecedores td:nth-child(1) { width: 20%; }
+  #tabelaFornecedores th:nth-child(2), #tabelaFornecedores td:nth-child(2) { width: 17%; }
+  #tabelaFornecedores th:nth-child(3), #tabelaFornecedores td:nth-child(3) { width: 11%; }
+  #tabelaFornecedores th:nth-child(4), #tabelaFornecedores td:nth-child(4) { width: 10%; }
+  #tabelaFornecedores th:nth-child(5), #tabelaFornecedores td:nth-child(5) { width: 15%; }
+  #tabelaFornecedores th:nth-child(6), #tabelaFornecedores td:nth-child(6) { width: 9%; }
+  #tabelaFornecedores th:nth-child(7), #tabelaFornecedores td:nth-child(7) { width: 12%; }
+  #tabelaFornecedores th:nth-child(8), #tabelaFornecedores td:nth-child(8) { width: 6%; }
+
   /* ===== AÇÕES ===== */
   .acao-cell {
     display: flex;

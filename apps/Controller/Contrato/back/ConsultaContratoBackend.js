@@ -10,6 +10,12 @@ function filtrarContratos(criterios) {
 
   let hoje = new Date();
 
+  let idsComAnexo = new Set(
+    ReadContractsAnexos()
+      .filter(linha => !linha[contractsAnexosDataExclusaoCol])
+      .map(linha => Number(linha[contractsAnexosIdContratoCol]))
+  );
+
   for (let i = 0; i < dados.length; i++) {
     let linha = dados[i];
     if (!linha[contractIdCol]) continue;
@@ -48,7 +54,8 @@ function filtrarContratos(criterios) {
         dataInicial: linha[contractDataInicialCol],
         dataFinal: linha[contractDataFinalCol],
         situacao: situacao,
-        desativado: String(linha[contractActiveCol] || '').trim().toUpperCase() !== 'Y'
+        desativado: String(linha[contractActiveCol] || '').trim().toUpperCase() !== 'Y',
+        temAnexo: idsComAnexo.has(Number(linha[contractIdCol]))
       });
     }
   }

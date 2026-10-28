@@ -2,7 +2,6 @@
 
   // SPA View Switcher
   function trocarPagina(paginaId, param) {
-    if (paginaId === 'contratos-form') console.log('[DEBUG] trocarPagina recebeu param:', param, '| typeof:', typeof param);
     // Hide all SPA pages
     document.querySelectorAll('.spa-page').forEach(page => page.classList.remove('active'));
 

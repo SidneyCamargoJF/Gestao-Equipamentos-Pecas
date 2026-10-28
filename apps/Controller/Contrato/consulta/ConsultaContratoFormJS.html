@@ -1,7 +1,8 @@
 <script>
 
 function renderConsultaContratos() {
-    consultarContratos();
+    const resumo = document.getElementById('resumoContratos');
+    if (resumo) resumo.textContent = '';
 }
 
 let contratos = [];
@@ -177,8 +178,6 @@ function renderTabelaContrato(lista) {
         if (c.desativado) tr.classList.add('linha-desativada');
         if (c.situacao === 'encerrado') tr.classList.add('linha-contrato-encerrado');
 
-        console.log('[DEBUG] renderTabelaContrato -- c.id:', c.id, '| typeof:', typeof c.id, '| contrato:', c.contrato);
-
         const btnEditar = c.desativado
             ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
             : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarContrato('${c.id}')">✏️</button>`;
@@ -187,8 +186,14 @@ function renderTabelaContrato(lista) {
             ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarContratoUI('${c.id}')">♻️</button>`
             : `<button class="btn-acao btn-excluir-linha" title="Excluir" onclick="confirmarExclusaoContrato('${c.id}')">🗑️</button>`;
 
+        const btnVer = `
+            <span class="contrato-ver-wrapper">
+                <button class="btn-acao btn-ver-linha" title="Ver detalhes" onclick="abrirDetalhesContrato('${c.id}', '${c.situacao}')">👁️</button>
+                ${c.temAnexo ? '<span class="contrato-anexo-selo" title="Tem anexo">📁</span>' : ''}
+            </span>`;
+
         tr.innerHTML = `
-        <td class="acao-cell"><button class="btn-acao btn-ver-linha" title="Ver detalhes" onclick="abrirDetalhesContrato('${c.id}', '${c.situacao}')">👁️</button></td>
+        <td class="acao-cell">${btnVer}</td>
         <td>${escapeHtml(c.numero)}</td>
         <td>${c.contrato ? escapeHtml(c.contrato) : '--'}</td>
         <td>${c.sei ? escapeHtml(c.sei) : '--'}</td>
@@ -207,7 +212,6 @@ function renderTabelaContrato(lista) {
 }
 
 function editarContrato(id) {
-    console.log('[DEBUG] editarContrato recebeu id:', id, '| typeof:', typeof id);
     trocarPagina('contratos-form', id);
 }
 
@@ -239,10 +243,42 @@ async function abrirDetalhesContrato(contratoId, situacao) {
         const dados = await runServerFunction('buscarContratoParaEdicao', contratoId);
         conteudo.innerHTML = montarDetalheContratoHtml(dados, situacao);
         trocarSecaoDetalheContrato('complementares');
+        carregarAnexosContratoUI(contratoId);
     } catch (error) {
         console.error('Erro em buscarContratoParaEdicao: ' + error.message);
         if (conteudo) conteudo.innerHTML = '<p>Erro ao carregar os detalhes do contrato.</p>';
     }
+}
+
+// Anexos são carregados à parte (não vêm de buscarContratoParaEdicao) --
+// mesmo padrão do Chamados: abre o modal com um "Carregando anexos...",
+// busca em paralelo e substitui quando chega.
+async function carregarAnexosContratoUI(contratoId) {
+    const lista = document.getElementById('anexosContratoLista');
+    if (!lista) return;
+    try {
+        const anexos = await runServerFunction('buscarAnexosContrato', contratoId);
+        lista.innerHTML = montarAnexosContratoHtml(anexos);
+    } catch (error) {
+        console.error('Erro ao buscar anexos do contrato:', error);
+        lista.innerHTML = '<p class="detalhe-contrato-vazio">Erro ao buscar anexos.</p>';
+    }
+}
+
+// Só leitura (sem adicionar/excluir) -- "ver detalhes" não edita nada,
+// quem quiser mudar anexos faz isso no Cadastro (Editar Contrato).
+function montarAnexosContratoHtml(lista) {
+    const itens = Array.isArray(lista) ? lista : [];
+    if (!itens.length) return '<p class="detalhe-contrato-vazio">Nenhum documento anexado.</p>';
+
+    return itens.map(item => {
+        const nomeExibido = escapeHtml(nomeArquivoSemData(item.nomeArquivo));
+        return `
+        <a href="${item.url}" target="_blank" rel="noopener" title="${nomeExibido}" class="anexo-card">
+            <div class="anexo-card-icone">📄</div>
+            <span class="anexo-card-nome">${nomeExibido}</span>
+        </a>`;
+    }).join('');
 }
 
 function montarDetalheContratoHtml(c, situacao) {
@@ -287,10 +323,19 @@ function montarDetalheContratoHtml(c, situacao) {
         ${linha('Data de Encerramento', formatarDataContrato(c.dataEncerramento))}
         ${linha('Valor', formatarValorContrato(c.valor))}
         ${linha('Observações', c.observacoes)}
+        <div class="anexo-secao">
+            <span class="anexo-secao-titulo">Documentos Anexados</span>
+            <div id="anexosContratoLista" class="anexo-lista">
+                <p class="detalhe-contrato-vazio">Carregando anexos...</p>
+            </div>
+        </div>
     `;
 
     const servicosHtml = lista(c.servicos, 'Nenhum serviço cadastrado.', s => `
-        <li><strong>${escapeHtml(s.servico)}</strong><br>Periodicidade: ${escapeHtml(s.periodicidade)}</li>`);
+        <li>
+            <strong>${escapeHtml(s.categoria)} ${escapeHtml(s.tipo)} ${escapeHtml(s.capacidade)}</strong><br>
+            Periodicidade: ${escapeHtml(s.periodicidade)}
+        </li>`);
 
     const equipamentosHtml = lista(c.equipamentos, 'Nenhum equipamento vinculado.', e => `
         <li>
@@ -309,8 +354,6 @@ function montarDetalheContratoHtml(c, situacao) {
         <h5 class="detalhe-contrato-subtitulo">Anual</h5>
         ${lista(checklistAnual, 'Nenhum item anual.', itemChecklist)}
     `;
-
-    console.log('[DEBUG] montarDetalheContratoHtml -- c.id:', c.id, '| typeof:', typeof c.id);
 
     const infoComEditar = `
         <div class="detalhe-contrato-secao">
