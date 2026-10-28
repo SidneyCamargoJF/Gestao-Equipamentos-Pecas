@@ -3,7 +3,7 @@
 // Camada de acesso a dados da aba "tbl_equipamentos".
 // Herda de SheetModel (classe base genérica de leitura).
 // =====================================================
-
+/**
 class EquipmentsModel extends SheetModel {
 
   constructor() {
@@ -174,3 +174,4 @@ class EquipmentsModel extends SheetModel {
   }
 
 }
+  */

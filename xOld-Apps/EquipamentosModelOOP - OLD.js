@@ -1,4 +1,5 @@
-class EquipmentsModel extends SheetModel {
+/**
+ * class EquipmentsModel extends SheetModel {
   constructor() {
     // Inicializa a classe pai (SheetModel) com a aba e linha inicial
     super('tbl_equipments', 3, 1);  // constructor(sheetName, firstLine, firstColumn)
@@ -22,7 +23,7 @@ class EquipmentsModel extends SheetModel {
 
   /**
    * Lê todos os equipamentos e formata as colunas de data
-   */
+   *
   read() {
     const rows = this.readAll(this.numColumns);
 
@@ -39,7 +40,7 @@ class EquipmentsModel extends SheetModel {
 
   /**
    * Função auxiliar para formatação de data
-   */
+   *
   formatDate(val) {
     if (!val) return "";
     return typeof dateToString === 'function' ? dateToString(val) : String(val);
@@ -47,7 +48,7 @@ class EquipmentsModel extends SheetModel {
 
   /**
    * Busca um ID exato na planilha
-   */
+   *
   findId(id) {
     const cell = this.searchContext(id, true, this.numColumns);
     return cell ? cell.getRow() : null;
@@ -55,7 +56,7 @@ class EquipmentsModel extends SheetModel {
 
   /**
    * Busca um equipamento por campo específico ou no escopo geral
-   */
+   *
   find(columnName, context) {
     switch (columnName) {
       case 'id':
@@ -70,7 +71,7 @@ class EquipmentsModel extends SheetModel {
 
   /**
    * Exclui um equipamento/marca aplicando preenchimento e data de exclusão
-   */
+   *
   delete(par_id) {
     try {
       const id = Number(par_id);
@@ -113,7 +114,7 @@ class EquipmentsModel extends SheetModel {
 
   /**
    * Exclui um equipamento/marca aplicando preenchimento e data de exclusão
-   */
+   *
   status(par_id, par_status) {
     try {
       const id = Number(par_id);
@@ -153,3 +154,4 @@ class EquipmentsModel extends SheetModel {
     }
   }
 }
+  */

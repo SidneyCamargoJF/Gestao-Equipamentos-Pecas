@@ -2,7 +2,7 @@
  * Função obrigatória para servir o Web App HTML via requisição GET.
  */
 function doGet() {
-  return HtmlService.createTemplateFromFile('Index')
+  return HtmlService.createTemplateFromFile('index')
     .evaluate()
     .setTitle('Gerenciador Web - Google Sheets')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -38,7 +38,7 @@ function buscarDadosPlanilha() {
 
 
 function doGetx() {
-  return HtmlService.createTemplateFromFile('DashboardHtml')
+  return HtmlService.createTemplateFromFile('apps/Controller/Dashboard/DashboardHtml')
     .evaluate()
     .setTitle('Sistema de Gestão de Equipamentos')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')

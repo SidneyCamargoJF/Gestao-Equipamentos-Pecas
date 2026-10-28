@@ -8,31 +8,31 @@
 
   <style>
 
-    <?!= include('IndexCSS'); ?>
-    <?!= include('actionsCSS'); ?>
-    <?!= include('botoesCSS'); ?>
-    <?!= include('colorsCSS'); ?>
-    <?!= include('crudCSS'); ?>
-    <?!= include('DashboardCSS'); ?>
-    <?!= include('fieldCSS'); ?>
-    <?!= include('filtersCSS'); ?>
-    <?!= include('formCSS'); ?>
-    <?!= include('headerCSS'); ?>
-    <?!= include('modalCSS'); ?>
-    <?!= include('responsiveCSS'); ?>
-    <?!= include('searchCSS'); ?>
-    <?!= include('tableCSS'); ?>
+    <?!= include('css/IndexCSS'); ?>
+    <?!= include('css/actionsCSS'); ?>
+    <?!= include('css/botoesCSS'); ?>
+    <?!= include('css/colorsCSS'); ?>
+    <?!= include('css/crudCSS'); ?>
+    <?!= include('css/fieldCSS'); ?>
+    <?!= include('css/filtersCSS'); ?>
+    <?!= include('css/formCSS'); ?>
+    <?!= include('css/headerCSS'); ?>
+    <?!= include('css/modalCSS'); ?>
+    <?!= include('css/responsiveCSS'); ?>
+    <?!= include('css/searchCSS'); ?>
+    <?!= include('css/tableCSS'); ?>
 
-    <?!= include('ConsultaPecasFormCSS'); ?>
-    <?!= include('ConsultaMarcaFormCSS'); ?>
+    <?!= include('apps/Controller/Dashboard/DashboardCSS'); ?>
+    <?!= include('apps/Controller/Pecas/front/ConsultaPecasFormCSS'); ?>
+    <?!= include('apps/Controller/Marcas/ConsultaMarcaFormCSS'); ?>
 
-    <?!= include('ConsultaFornecedorFormCSS'); ?>
-    <?!= include('CadastroFornecedorFormCSS'); ?>
-    <?!= include('CadastroChamadoFormCSS'); ?>
-    <?!= include('ConsultaChamadoFormCSS'); ?>
-    <?!= include('CadastroContratoFormCSS'); ?>
-    <?!= include('ConsultaContratoFormCSS'); ?>
-    <?!= include('CadastroEquipmentsFormCSS'); ?>
+    <?!= include('apps/Controller/Fornecedor/consulta/ConsultaFornecedorFormCSS'); ?>
+    <?!= include('apps/Controller/Fornecedor/cadastro/CadastroFornecedorFormCSS'); ?>
+    <?!= include('apps/Controller/Chamados/cadastro/CadastroChamadoFormCSS'); ?>
+    <?!= include('apps/Controller/Chamados/consulta/ConsultaChamadoFormCSS'); ?>
+    <?!= include('apps/Controller/Contrato/cadastro/CadastroContratoFormCSS'); ?>
+    <?!= include('apps/Controller/Contrato/consulta/ConsultaContratoFormCSS'); ?>
+    <?!= include('apps/Controller/Equipments/cadastro/CadastroEquipmentsCSS'); ?>
 
   </style>
 </head>
@@ -43,24 +43,25 @@
   <!-- MAIN SPA CONTENT CONTAINER -->
   <main class="main-container">
 
-    <?!= include('DashboardHtml'); ?>
-    <?!= include('AgendaHtml'); ?>
+    <?!= include('apps/Controller/Dashboard/DashboardHtml'); ?>
+    <?!= include('apps/AgendaHtml'); ?>
 
-    <?!= include('ConsultaMarcaForm'); ?>
+    <?!= include('apps/Controller/Marcas/ConsultaMarcaForm'); ?>
 
-    <?!= include('ConsultaPecasFormH'); ?>
-    <?!= include('CadastroPecasFormH'); ?>
+    <?!= include('apps/Controller/Pecas/front/ConsultaPecasFormH'); ?>
+    <?!= include('apps/Controller/Pecas/front/CadastroPecasFormH'); ?>
 
-    <?!= include('ConsultaContratoForm'); ?>
-    <?!= include("CadastroContratoForm") ?>
+    <?!= include('apps/Controller/Contrato/consulta/ConsultaContratoForm'); ?>
+    <?!= include("apps/Controller/Contrato/cadastro/CadastroContratoForm") ?>
 
-    <?!= include('ConsultaFornecedorForm'); ?>
-    <?!= include('CadastroFornecedorForm'); ?>
-    <?!= include('CadastroChamadoForm'); ?>
-    <?!= include('ConsultaChamadoForm'); ?>
+    <?!= include('apps/Controller/Fornecedor/consulta/ConsultaFornecedorForm'); ?>
+    <?!= include('apps/Controller/Fornecedor/cadastro/CadastroFornecedorForm'); ?>
 
-    <?!= include('ConsultaEquipmentsForm'); ?>
-    <?!= include('CadastroEquipmentsForm'); ?>
+    <?!= include('apps/Controller/Chamados/consulta/ConsultaChamadoForm'); ?>
+    <?!= include('apps/Controller/Chamados/cadastro/CadastroChamadoForm'); ?>
+
+    <?!= include('apps/Controller/Equipments/consulta/ConsultaEquipmentsForm'); ?>
+    <?!= include('apps/Controller/Equipments/cadastro/CadastroEquipmentsForm'); ?>
 
     <?!= include('Pages'); ?>
 
@@ -68,51 +69,52 @@
 
 <!-- ===== MODAL DETALHES ===== -->
 
-  <?!= include('Modal'); ?>
+  <?!= include('apps/Modal/Modal'); ?>
 
 
-  <?!= include("ConsultaMarcaFormModal") ?>
+  <?!= include("apps/Controller/Marcas/ConsultaMarcaFormModal") ?>
 
 <!-- ===== JAVASCRIPT LOGIC ===== -->
 
-  <?!= include("IndexSPAJS") ?>
-  <?!= include("GlobalVarsJS") ?>  
-  <?!= include("ModalJS") ?>
-  <?!= include("SearchJS") ?>
-  <?!= include("SearchOOPJS") ?>
-  <?!= include("CrudJS") ?>
-  <?!= include("TabsJS") ?>
+  <?!= include("apps/Modal/ModalJS") ?>
 
-  <?!= include("HelperJS") ?>
-  <?!= include("AnexosCadastroJS") ?>
+  <?!= include("js/IndexSPAJS") ?>
+  <?!= include("js/GlobalVarsJS") ?>  
+  <?!= include("js/SearchJS") ?>
+  <?!= include("js/SearchOOPJS") ?>
+  <?!= include("js/CrudJS") ?>
+  <?!= include("js/TabsJS") ?>
 
-  <?!= include("StateStoreDataJS") ?>
+  <?!= include("apps/Helper/HelperJS") ?>
+  <?!= include("apps/Helper/AnexosCadastroJS") ?>
+
+  <?!= include("js/StateStoreDataJS") ?>
 
 
   <!-- ESTÁ CAUSANDO PROBLEMA   -->
 
-  <?!= include("DashboardJS") ?>
+  <?!= include("apps/Controller/Dashboard/DashboardJS") ?>
 
-  <?!= include('ConsultaMarcaFormJS'); ?>
+  <?!= include('apps/Controller/Marcas/ConsultaMarcaFormJS'); ?>
 
-  <?!= include("ConsultaPecasFormJS") ?>
-  <?!= include("CadastroPecasFormJS") ?>
+  <?!= include("apps/Controller/Pecas/front/ConsultaPecasFormJS") ?>
+  <?!= include("apps/Controller/Pecas/front/CadastroPecasFormJS") ?>
 
-  <?!= include("CadastroContratoFormJS") ?>
-  <?!= include('ConsultaContratoFormJS'); ?>
+  <?!= include("apps/Controller/Contrato/cadastro/CadastroContratoFormJS") ?>
+  <?!= include("apps/Controller/Contrato/consulta/ConsultaContratoFormJS"); ?>
 
-  <?!= include('ConsultaFornecedorFormJS'); ?>
-  <?!= include('CadastroFornecedorFormJS'); ?>
+  <?!= include("apps/Controller/Fornecedor/consulta/ConsultaFornecedorFormJS"); ?>
+  <?!= include("apps/Controller/Fornecedor/cadastro/CadastroFornecedorFormJS"); ?>
 
-  <?!= include('CadastroChamadoFormJS'); ?>
-  <?!= include('ConsultaChamadoFormJS'); ?>
+  <?!= include("apps/Controller/Chamados/cadastro/CadastroChamadoFormJS"); ?>
+  <?!= include("apps/Controller/Chamados/consulta/ConsultaChamadoFormJS"); ?>
 
-  <?!= include('ConsultaEquipmentsJS'); ?>
-  <?!= include('CadastroEquipmentsFormJS'); ?>
+  <?!= include('apps/Controller/Equipments/consulta/ConsultaEquipmentsJS'); ?>
+  <?!= include('apps/Controller/Equipments/cadastro/CadastroEquipmentsJS'); ?>
 
 
-  <?!= include("IndexPagesJS") ?>
-  <?!= include("IndexJS") ?>  
+  <?!= include("js/IndexPagesJS") ?>
+  <?!= include("js/IndexJS") ?>  
 
 
 <script>
