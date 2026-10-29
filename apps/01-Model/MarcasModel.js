@@ -78,11 +78,9 @@ function desativarMarca(idMarcaInput) {
       abaConsultaMarca.getRange(linhaLocalizada, brandDtAlteracaoCol).setValue(dataExclusao);
       abaConsultaMarca.getRange(linhaLocalizada, 1, 1, 4).setBackground("#F4CCCC");
 
-      Logger.log("Marca ID " + idMarca + " desativada na linha " + linhaLocalizada);   
       return true
 
     } else {
-      Logger.log("Marca ativa não encontrada para o ID: " + idMarca);
       return false
 
     }

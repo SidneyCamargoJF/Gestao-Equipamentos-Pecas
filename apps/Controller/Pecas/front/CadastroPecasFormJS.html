@@ -1,11 +1,9 @@
 <script>
   // ===== 1. PROMISES AUXILIARES PARA BUSCAR DADOS DO BACKEND =====
   function loadBrands() {
-    console.log("📡 [loadBrands] Solicitando marcas ao servidor...");
     return new Promise((resolve) => {
       google.script.run
         .withSuccessHandler(res => {
-          console.log("✅ [loadBrands] Marcas recebidas:", res);
           resolve(res || []);
         })
         .withFailureHandler(err => {
@@ -17,11 +15,9 @@
   }
 
   function loadLocations() {
-    console.log("📡 [loadLocations] Solicitando localizações ao servidor...");
     return new Promise((resolve) => {
       google.script.run
         .withSuccessHandler(res => {
-          console.log("✅ [loadLocations] Localizações recebidas:", res);
           resolve(res || []);
         })
         .withFailureHandler(err => {
@@ -33,11 +29,9 @@
   }
 
   function loadSuppliers() {
-    console.log("📡 [loadSuppliers] Solicitando fornecedores ao servidor...");
     return new Promise((resolve) => {
       google.script.run
         .withSuccessHandler(res => {
-          console.log("✅ [loadSuppliers] Fornecedores recebidos:", res);
           resolve(res || []);
         })
         .withFailureHandler(err => {
@@ -50,7 +44,6 @@
 
   // ===== 2. PREENCHEDOR DE SELECTS =====
   function preencherSelect(elementId, listaBruta, labelPadrao) {
-    console.log(`⚙️ [preencherSelect] Preenchendo "${elementId}"...`);
     const select = document.getElementById(elementId);
     
     if (!select) {
@@ -76,7 +69,6 @@
         opt.textContent = item;
         select.appendChild(opt);
       });
-      console.log(`✅ [preencherSelect] ${listaUnica.length} opções adicionadas em "${elementId}".`);
     } else {
       select.innerHTML = `<option value="">Nenhum item encontrado</option>`;
       console.warn(`⚠️ [preencherSelect] Nenhuma opção disponível para "${elementId}".`);
@@ -217,8 +209,6 @@
 
   // ===== 3. INICIALIZAÇÃO E RENDERIZAÇÃO DA PÁGINA =====
   async function renderCadastroPecas(id) {
-    console.log("🚀 [renderCadastroPecas] Iniciando formulário. ID recebido:", id || "Novo Cadastro");
-
     // Validações com checagem de existência no DOM para evitar erros no F12
     const inputPecaId = document.getElementById('pecaId');
     if (inputPecaId) {
@@ -233,7 +223,6 @@
     }
 
     try {
-      console.log("⏳ [renderCadastroPecas] Aguardando respostas das 3 consultas (Marcas, Locais, Fornecedores)...");
       const [opcoesMarca, opcoesLocal, opcoesFornecedor] = await Promise.all([
         loadBrands(),
         loadLocations(),
@@ -317,8 +306,6 @@
 
   // ===== 4. ENVIAR DADOS AO SERVIDOR =====
   function salvarPeca() {
-    console.log("💾 [salvarPeca] Coletando dados do formulário...");
-
     const dadosPeca = {
       id: document.getElementById('pecaId')?.value || '',
       nome: document.getElementById('nomePeca')?.value.trim() || '',
@@ -337,38 +324,30 @@
       seiNum: document.getElementById('seiNum')?.value.trim() || ''
     };
 
-    console.log("📦 [salvarPeca] Objeto estruturado:", dadosPeca);
-
     // Validações no cliente
     if (!dadosPeca.nome) {
       alert('Por favor, informe o Nome da Peça.');
-      console.warn("⚠️ [salvarPeca] Validação falhou: Nome da Peça vazio.");
       document.getElementById('nomePeca')?.focus();
       return;
     }
 
     if (!dadosPeca.marca) {
       alert('Por favor, selecione uma Marca da lista.');
-      console.warn("⚠️ [salvarPeca] Validação falhou: Marca não selecionada.");
       document.getElementById('marcaSelect')?.focus();
       return;
     }
 
     if (!dadosPeca.local) {
       alert('Por favor, selecione uma Localização da lista.');
-      console.warn("⚠️ [salvarPeca] Validação falhou: Localização não selecionada.");
       document.getElementById('localSelect')?.focus();
       return;
     }
 
     if (!dadosPeca.fornecedor) {
       alert('Por favor, selecione um Fornecedor da lista.');
-      console.warn("⚠️ [salvarPeca] Validação falhou: Fornecedor não selecionado.");
       document.getElementById('fornecedorSelect')?.focus();
       return;
     }
-
-    console.log("📤 [salvarPeca] Enviando dados para salvarPeca() no servidor Apps Script...");
 
     const btnSalvar = document.getElementById('btnSalvarPeca');
     if (btnSalvar) btnSalvar.disabled = true;
@@ -376,7 +355,6 @@
 
     google.script.run
       .withSuccessHandler((resposta) => {
-        console.log("📥 [salvarPeca] Resposta do servidor:", resposta);
         if (btnSalvar) btnSalvar.disabled = false;
         if (typeof fecharModal === 'function') fecharModal('processando');
 
@@ -401,7 +379,6 @@
 
   // ===== 5. LIMPAR FORMULÁRIO =====
   function limparPeca() {
-    console.log("🧹 [limparPeca] Limpando formulário...");
 
     const form = document.getElementById('formPeca');
 

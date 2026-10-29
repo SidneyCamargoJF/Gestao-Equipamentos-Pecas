@@ -1,7 +1,6 @@
 <script>
   
   async function executarExclusao(table, id) {
-    console.log('function executarExclusao em crudJS')
     if (!id) {
       alert("Nenhum registro selecionado.");
       return false;
@@ -19,7 +18,6 @@
     // espera a resposta do servidor. runServerFunction() (HelperJS.html) resolve isso.
     try {
       const resposta = await runServerFunction('ExcluirRegistro', table, id);
-      console.log('executarExclusao resposta de runServerFunction: ' + resposta)
       if (resposta && resposta.sucesso === false) {
         alert(resposta.mensagem);
         return false;
@@ -49,19 +47,15 @@
     }
 
     readId(id) {
-      console.log('CrudJs.readId(id)')
-
       google.script.run
         .withSuccessHandler(objData => this.returnRead(objData))
-        .withFailureHandler(err => console.log('Erro ao Ler o ID:  ' + id + ' - ', err))
-        readById(this.table, id)
+        .withFailureHandler(err => console.error('Erro ao ler o ID: ' + id + ' - ', err))
+        .readById(this.table, id)
 
         return
     }
-  
-    readContext(criterios) {
-      console.log('CrudJs.readContext(criterios)')
 
+    readContext(criterios) {
       google.script.run
         .withSuccessHandler(objData => this.returnRead(objData))
         .withFailureHandler(err => console.error('Erro ao consultar: ', err))
@@ -71,8 +65,6 @@
     }
 
     returnRead(objData) {
-      console.log('CrudJs.returnRead')
-      console.log(objData)
       return true
     }
   }

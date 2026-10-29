@@ -149,11 +149,9 @@ class SheetModel {
     const result = finder.findNext();
 
     if (result) {
-      Logger.log(`Contexto '${context}' encontrado na linha: ${result.getRow()}`);
       return result;
     }
 
-    Logger.log(`Contexto '${context}' não encontrado.`);
     return null;
   }
 

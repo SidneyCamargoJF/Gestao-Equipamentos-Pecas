@@ -1,5 +1,5 @@
 function showFornecedor() {
-  const form = HtmlService.createTemplateFromFile("ConsultaFornecedorForm");
+  const form = HtmlService.createTemplateFromFile("apps/Controller/Fornecedor/consulta/ConsultaFornecedorForm");
   const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);
   showForm.setTitle("Consulta de Fornecedor").setHeight(900).setWidth(1400);
   SpreadsheetApp.getUi().showModalDialog(showForm, "Consulta de Fornecedor");

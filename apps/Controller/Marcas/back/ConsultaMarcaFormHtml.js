@@ -138,7 +138,6 @@ function editarMarca(idMarcaInput, novoNome) {
 
       abaConsultaMarca.getRange(linhaLocalizada, 5).setValue(dataHoje);
 
-      Logger.log("Marca ID " + idMarca + " editada na linha " + linhaLocalizada);
       return {
         sucesso: true,
         mensagem: "Marca editada com sucesso.",
@@ -147,7 +146,6 @@ function editarMarca(idMarcaInput, novoNome) {
       };
 
     } else {
-      Logger.log("Marca não encontrada para o ID: " + idMarca);
       return { sucesso: false, mensagem: "Marca não encontrada na planilha." };
     }
   } catch (e) {

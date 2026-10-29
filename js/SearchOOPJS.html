@@ -21,8 +21,6 @@
 
     initSearch(inputId, dropdownId, wrapperId, opcoes) {
 
-      console.log('initSearch')
-
       const input = document.getElementById(inputId);
       const dropdown = document.getElementById(dropdownId);
       const wrapper = document.getElementById(wrapperId);
@@ -78,7 +76,6 @@
 
     // ===== ORDENAÇÃO =====
     ordenar(coluna) {
-      console.log('ordenar( '+ coluna + ' )')
       if (this.sortState.coluna === coluna) {
         this.sortState.direcao = this.sortState.direcao === 'asc' ? 'desc' : 'asc';
       } else {
@@ -90,7 +87,6 @@
     }
 
     atualizarIndicadores() {
-      console.log('atualizarIndicadores()')
       document.querySelectorAll('.data-table th').forEach(th => {
         th.classList.remove('sorted');
         const span = th.querySelector('.sort-arrow');
@@ -107,7 +103,6 @@
     }
 
     aplicarOrdenacao(lista) {
-      console.log('aplicarOrdenacao - lista ' + lista)
       if (!this.sortState.coluna) return lista;
       const col = this.sortState.coluna;
       const dir = this.sortState.direcao === 'asc' ? 1 : -1;

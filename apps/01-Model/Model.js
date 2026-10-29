@@ -20,8 +20,8 @@ function filterMultipleColumns(table, conditions = [], startLine = 3, numColumns
   const dados = intervaloRows.getValues();
   
   // 2. Monta os critérios
-  var criterioColunaA = "Ativo"; // Exemplo: coluna 1 (índice 0) deve ser "Ativo"
-  var termoPesquisa = "Londrina"; // Exemplo: coluna 2 ou 3 deve conter "Londrina"
+  var criterioColunaA = "Ativo";
+  var termoPesquisa = "Londrina";
   
   // 3. Aplique o filtro usando os índices das colunas (0 = Coluna A, 1 = Coluna B, etc.)
   let dadosFiltrados = dados.filter(function(linha) {
@@ -30,7 +30,7 @@ function filterMultipleColumns(table, conditions = [], startLine = 3, numColumns
       condition[2]  (conditions[2] == "" || conditions[2] == linha[i][2] )
     }
     let condicao1 = linha[0] === criterioColunaA; // Coluna A
-    let condicao2 = linha[1].toString().includes(termoPesquisa) || linha[2].toString().includes(termoPesquisa); // Coluna B ou C
+    let condicao2 = linha[1].toString().includes(termoPesquisa) || linha[2].toString().includes(termoPesquisa); 
     
     return condicao1 && condicao2;
   });
@@ -60,12 +60,8 @@ function ReadSheetColumns(sheetName, startLine, numColumns, context, fixed = fal
   var resultado = encontrador.findNext();
   
   if (resultado) {
-    var linhaEncontrada = resultado.getRow();
-    Logger.log("Código encontrado na linha: " + linhaEncontrada);
     // Opcional: Seleciona a célula na planilha
     resultado.activate();
-  } else {
-    Logger.log("Código não encontrado.");
   }
 }
  
@@ -83,7 +79,6 @@ function ExcluirRegistro( table, id ) {
 function readContext ( table, criterios ) {
 
   if (table === 'tbl_equipment') {
-    console.log('Model - ReadContext - tbl_equipment')
-    return 
+    return
   }
 }

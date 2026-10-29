@@ -256,15 +256,12 @@
 
   // ===== LOCALIZAÇÃO: BUSCA REAL EM tbl_localizacao =====
   async function carregarLocaisChamado() {
-    console.log('⏳ [renderLocalização] Buscando localizações em tbl_localizacao...');
     try {
       const res = await runServerFunction('ReadLocations');
       if (!Array.isArray(res)) {
-        console.log('⚠️ [renderLocalização] Resposta não é array:', res);
         return [];
       }
       const locais = res.map(line => line[1]).filter(Boolean);
-      console.log('✅ [renderLocalização] ' + locais.length + ' localização(ões) carregada(s):', locais);
       return locais;
     } catch (error) {
       console.error('❌ [renderLocalização] Erro ao buscar localizações:', error);
@@ -275,15 +272,12 @@
   // ===== "ATRIBUÍDO A": BUSCA COM SUGESTÃO DE FORNECEDORES PRESTADORES DE
   // SERVIÇO, MAS ACEITA QUALQUER TEXTO DIGITADO (técnico interno, etc.) =====
   async function carregarFornecedoresPrestadoresChamado() {
-    console.log('⏳ [renderPrestadoresDeServiço] Buscando fornecedores prestadores de serviço...');
     try {
       const res = await runServerFunction('filtrarFornecedores', { tipo: 'prestador' });
       if (!Array.isArray(res)) {
-        console.log('⚠️ [renderPrestadoresDeServiço] Resposta não é array:', res);
         return [];
       }
       const nomes = res.map(f => f.nomeFantasia || f.razaoSocial).filter(Boolean);
-      console.log('✅ [renderPrestadoresDeServiço] ' + nomes.length + ' prestador(es) carregado(s):', nomes);
       return nomes;
     } catch (error) {
       console.error('❌ [renderPrestadoresDeServiço] Erro ao buscar fornecedores prestadores de serviço:', error);
@@ -292,15 +286,12 @@
   }
 
   async function carregarFuncionariosChamado() {
-    console.log('⏳ [renderFuncionarios] Buscando funcionários...');
     try {
       const res = await runServerFunction('filtrarFuncionarios');
       if (!Array.isArray(res)) {
-        console.log('⚠️ [renderFuncionarios] Resposta não é array:', res);
         return [];
       }
       const nomes = res.map(f => f.nome).filter(Boolean);
-      console.log('✅ [renderFuncionarios] ' + nomes.length + ' funcionário(s) carregado(s):', nomes);
       return nomes;
     } catch (error) {
       console.error('❌ [renderFuncionarios] Erro ao buscar funcionários:', error);
@@ -433,7 +424,6 @@
 
       try {
         const resposta = await runServerFunction('salvarChamadoBackend', dadosChamado);
-        console.log('[anexo-duplicado] resposta do servidor (cadastro):', resposta);
 
         if (resposta && resposta.sucesso === false) {
           alert(resposta.mensagem);

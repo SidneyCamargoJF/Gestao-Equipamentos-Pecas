@@ -1,5 +1,5 @@
 function ShowForm(formHTML, title, height, width) {
-  const form = HtmlService.createTemplateFromFile("formHTML");
+  const form = HtmlService.createTemplateFromFile(formHTML);
 
   const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);
 
@@ -14,8 +14,6 @@ function showPage(codeName, title, height, width) {
   const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);
 
   showForm.setTitle(title).setHeight(height).setWidth(width)
-
-  Logger.log('Tela')
 
   SpreadsheetApp.getUi().showModalDialog(showForm, title)
 }
