@@ -1,7 +1,6 @@
 <script>
       // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
       async function renderPecas() {
-        console.log('renderPecas')
         await inicializarPecas();
 
         const inputNome = document.getElementById('filtro-nome');
@@ -191,7 +190,6 @@
         const garantia = document.getElementById('filtro-garantia')?.value || '';
 
         const criterios = { nome, marca, localizacao, fornecedor, garantia };
-        console.log('📤 [consultarPecas] Critérios enviados:', criterios);
 
         mostrarCarregandoPecas(true);
 
@@ -221,8 +219,6 @@
       }
 
       function ReturnPecas(objPecas) {
-        console.log('📥 [ReturnPecas] Resposta bruta do servidor:', objPecas);
-
         if (objPecas === "NoData" || !Array.isArray(objPecas)) {
           pecas = [];
           renderTabela([]);
@@ -344,20 +340,16 @@
       }
 
       function abrirModalExclusao(id) {
-        console.log('abrirModalExclusao(' + id + ')')
         idExclusao = id;
         exibirModal('modalExclusao');
 
       const btnDelete = document.getElementById('btn-delete');
-        console.log(btnDelete)
 
         btnDelete.onclick = () => executarExclusaoPeca();
 
       }
 
       async function executarExclusaoPeca() {
-        console.log('executarExclusaoPeca()')
-
         return false;
 
         if (idExclusao === null) return;
@@ -417,7 +409,6 @@
 
       // ===== INICIALIZAÇÃO ASSÍNCRONA =====
       async function inicializarPecas() {
-        console.log('inicializa Peças')
         const [opcoesMarca, opcoesLocalizacao, opcoesFornecedor] = await Promise.all([
           loadBrandsPecasConsulta(),
           loadLocationsPecasConsulta(),

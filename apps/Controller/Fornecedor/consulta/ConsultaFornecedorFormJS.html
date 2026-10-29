@@ -21,15 +21,11 @@
     // (o backend filtra os dois com o mesmo texto e junta o resultado).
     const criterios = { cnpj, razaoSocial: nome, nomeFantasia: nome, estado, cidade, tipo };
 
-    console.log('📤 [consultarFornecedores] Critérios enviados:', criterios);
-
     mostrarCarregandoFornecedores(true);
 
     google.script.run
       .withSuccessHandler((objFornecedores) => {
         mostrarCarregandoFornecedores(false);
-        console.log('📥 [consultarFornecedores] Resposta bruta do servidor:', objFornecedores);
-        console.log('📥 [consultarFornecedores] Quantidade recebida:', Array.isArray(objFornecedores) ? objFornecedores.length : 'não é array');
         ReturnFornecedores(objFornecedores);
       })
       .withFailureHandler((err) => {
@@ -250,7 +246,6 @@
   }
 
   function editarFornecedor(id) {
-    console.log('✏️ [editarFornecedor] id clicado:', id, '(tipo:', typeof id, ')');
     if (typeof trocarPagina === 'function') {
       trocarPagina('fornecedor-form', id);
     }

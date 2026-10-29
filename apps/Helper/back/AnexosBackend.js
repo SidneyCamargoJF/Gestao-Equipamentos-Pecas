@@ -1,28 +1,5 @@
-// =====================================================
-// ANEXOS -- backend genérico compartilhado entre Chamados, Contrato e
-// qualquer outra tela que precise anexar arquivo a um registro.
-// Movido de CadastroChamadoBackend.js / ConsultaChamadoBackend.js. Cada
-// módulo mantém uma TABELA DE ANEXOS PRÓPRIA (tbl_chamado_anexos,
-// tbl_contrato_anexos, ...) com o mesmo layout de 8 colunas:
-// [ID, ID_REGISTRO, TIPO, NOME_ARQUIVO, URL, HASH, DATA_UPLOAD, DATA_EXCLUSAO]
-// e expõe só funções "wrapper" fininhas (ex: adicionarAnexoChamado,
-// adicionarAnexoContrato) que chamam as genéricas abaixo passando o nome da
-// própria tabela -- não duplicar a lógica de novo em cada módulo.
-// =====================================================
-
-// ID da pasta do Google Drive onde os anexos de TODOS os módulos são salvos.
-// Troque pelo ID da SUA pasta -- abre a pasta no Drive e copia o trecho da
-// URL depois de "folders/".
 const PASTA_ANEXOS_ID = '1Ef7rs5vSw4GQR18W96tzpSsBL1dwcwg8';
 
-/**
- * Salva um anexo no Google Drive, dentro da pasta fixa PASTA_ANEXOS_ID.
- * "arquivo" vem do cliente como { nome, tipo, base64 } (ver
- * lerArquivoComoBase64/lerArquivosComoBase64) ou null se o campo ficou
- * vazio. Retorna a URL do arquivo no Drive, ou '' se não veio nada.
- * Efeito colateral: preenche arquivo.hash (MD5 do conteúdo), usado pela
- * checagem de duplicidade em adicionarAnexoGenerico.
- */
 function salvarArquivoAnexo(arquivo) {
   if (!arquivo || !arquivo.base64) {
     return '';

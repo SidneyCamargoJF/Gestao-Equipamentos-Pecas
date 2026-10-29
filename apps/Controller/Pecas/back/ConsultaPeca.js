@@ -1,9 +1,9 @@
 function ConsultaPecasHtml() {
-  return HtmlService.createHtmlOutputFromFile('ConsultaPecasForm').getContent();
+  return HtmlService.createHtmlOutputFromFile('apps/Controller/Pecas/front/ConsultaPecasFormH').getContent();
 }
 
 function showPecas() {
-  const form = HtmlService.createTemplateFromFile("ConsultaPecasForm");
+  const form = HtmlService.createTemplateFromFile("apps/Controller/Pecas/front/ConsultaPecasFormH");
   const showForm = form.evaluate().setSandboxMode(HtmlService.SandboxMode.IFRAME);
   showForm.setTitle("Consulta de Peças").setHeight(900).setWidth(1600);
 

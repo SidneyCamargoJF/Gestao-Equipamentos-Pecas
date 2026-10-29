@@ -15,8 +15,6 @@ class SheetModel {
     this.colDtAlteracao = 5
     this.colDtExclusao = 6
 
-    Logger.log('Constructor - firstLine' + firstLine)
-
     this.ss = this.getSheet()
   }
 
@@ -45,9 +43,6 @@ class SheetModel {
    * Obtém a instância da aba ativa
    */
   getSheet() {
-    Logger.log('SheetModel - getSheet')
-    Logger.log(this.ss)
-    Logger.log(this.tableName)
     const ss = SpreadsheetApp.getActive();
     const sheet = ss.getSheetByName(this.tableName);
     if (!sheet) {
@@ -60,7 +55,6 @@ class SheetModel {
    * Lê todos os dados da aba a partir da linha e quantidade de colunas definidas
    */
   readAll() {
-    Logger.log('sheetModel - readAll')
     const lastRow = this.ss.getLastRow();
 
     if (lastRow === 0 || lastRow < this.firstLine) {
@@ -71,8 +65,6 @@ class SheetModel {
   }
 
   arrayToOfObjects(range) {
-    console.log('arrayToOfObjects(' + range +')')
-
     let headers = range[this.firstLine -2]
     let nameColumn = "";
     for (let i = 0; i < headers.length ; i++ ) {
@@ -105,9 +97,6 @@ class SheetModel {
     const rows = this.readAll();
     
     if (!rows) return false;
-
-    Logger.log('Rows: ')
-    Logger.log(rows)
 
     return rows
   }
@@ -147,11 +136,9 @@ class SheetModel {
     const result = finder.findNext();
 
     if (result) {
-      Logger.log(`Contexto '${context}' encontrado na linha: ${result.getRow()}`);
       return result;
     }
 
-    Logger.log(`Contexto '${context}' não encontrado.`);
     return null;
   }
 
@@ -170,11 +157,9 @@ class SheetModel {
   }
 
   readContext( criterios ) {
-    console.log('SheetModel.readContext(' + criterios + ')' )
   }
 
   excluir(par_id) {
-    console.log('SheetModel.excluir(' + par_id + ')' )
     const id = Number(par_id)
     if (!id) return { sucesso: false, mensagem: 'ID inválido.'};
 
@@ -184,18 +169,15 @@ class SheetModel {
       const dados = this.findId(id)
 
       if (!dados) {
-        Logger.log("Registro não encontrado para o ID: " + id);
         return false
       }
       let linhaLocalizada = dados.line;
-      console.log( dados )
 
       const dataExclusao = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
 
       tab.getRange(linhaLocalizada, this.colDtExclusao).setValue(dataExclusao);
       tab.getRange(linhaLocalizada, 1, 1, this.numColumns).setBackground("#F4CCCC");
 
-      console.log("Registro " + id + " Excluido " + linhaLocalizada);   
       return true
 
     } catch (e) {
@@ -206,8 +188,6 @@ class SheetModel {
   }
 
   setStatus(id) {
-    Logger.log('SheetModel.js - metodo setStatus')
-
     try{
 
       if (typeof id !== 'number') {
@@ -241,11 +221,9 @@ class SheetModel {
         tab.getRange(linhaLocalizada, this.colDtExclusao).setValue(dataExclusao);
         tab.getRange(linhaLocalizada, 1, 1, this.numColumns).setBackground("#F4CCCC");
 
-        Logger.log("Registro " + id + " Excluido " + linhaLocalizada);   
         return true
 
       } else {
-        Logger.log("Registro não encontrado para o ID: " + id);
         return false
 
       }
@@ -258,8 +236,6 @@ class SheetModel {
 }
 
 function readContext ( table, criterios ) {
-  console.log('SheetModel - readContext(table: '+ table + ', id: ' + id + ')')
-
   switch (table) {
     case 'tbl_equipamentos':
       model = new EquipmentsModel()
@@ -273,8 +249,6 @@ function readContext ( table, criterios ) {
 }
 
 function readById(table, id) {
-  console.log('SheetModel - readById(' + id + ')')
-
   switch (table) {
     case 'tbl_equipamentos':
       model = new EquipmentsModel()

@@ -280,10 +280,8 @@
   // BUSCA DE FORNECEDOR PELO ID (vem da tela de Consulta, botão editar)
   //
   function carregarFornecedorParaEdicao(id) {
-    console.log('📤 [carregarFornecedorParaEdicao] id enviado ao servidor:', id, '(tipo:', typeof id, ')');
     google.script.run
       .withSuccessHandler(function (dados) {
-        console.log('📥 [carregarFornecedorParaEdicao] resposta do servidor:', dados);
         if (!dados) {
           alert('Fornecedor não encontrado.');
           return;

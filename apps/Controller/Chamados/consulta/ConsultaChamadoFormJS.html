@@ -30,15 +30,11 @@ function consultarChamados() {
         status: status
     };
 
-    console.log('Criterios de busca:', criterios);
-
     mostrarCarregandoChamados(true);
 
     google.script.run
         .withSuccessHandler((objChamados) => {
             mostrarCarregandoChamados(false);
-            console.log('Resposta bruta do servidor:', objChamados);
-            console.log('Quantidade de chamados recebidos:', Array.isArray(objChamados) ? objChamados.length : 'não é array');
             ReturnChamados(objChamados);
         })
         .withFailureHandler((error) => {
@@ -712,7 +708,6 @@ async function onArquivoAnexoSelecionado() {
 
     try {
         const resposta = await runServerFunction('adicionarAnexoChamado', chamadoIdAtualModal, tipoAnexoNovo, arquivo);
-        console.log('[anexo-duplicado] resposta do servidor (ver detalhes):', resposta);
         if (resposta && resposta.sucesso === false) {
             alert(resposta.mensagem);
             return;

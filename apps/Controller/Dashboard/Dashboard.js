@@ -1,3 +1,3 @@
 function ShowDashboard() {
-  showPage('DashboardHtml', 'Dashboard', 900, 1440)
+  showPage('apps/Controller/Dashboard/DashboardHtml', 'Dashboard', 900, 1440)
 }
