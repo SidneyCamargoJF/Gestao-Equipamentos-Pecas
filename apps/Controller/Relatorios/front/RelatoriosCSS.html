@@ -1,0 +1,98 @@
+<style>
+
+#page-relatorios .panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+#page-relatorios .panel .field {
+  flex: 1 1 13.75rem;
+}
+
+#page-relatorios #btnGerarRelatorio {
+  flex: 0 0 auto;
+}
+
+#page-relatorios #relatorioResultado {
+  flex: 1 1 100%;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 0.0625rem solid var(--color-slate-200, #e2e8f0);
+}
+
+#page-relatorios #relatorioResultado:empty::before {
+  content: 'Selecione um contrato e clique em "Gerar Relatório".';
+  display: block;
+  color: var(--color-slate-400);
+  font-size: 0.9375rem;
+  padding: 1rem 0;
+}
+
+#page-relatorios #relatorioResultado > p:first-child {
+  padding: 0.75rem 1rem;
+  background: var(--color-slate-50, #f8fafc);
+  border: 0.0625rem solid var(--color-slate-200, #e2e8f0);
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--color-slate-700, #334155);
+}
+
+#page-relatorios #relatorioResultado h3 {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-slate-600, #475569);
+}
+
+#page-relatorios #relatorioResultado ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#page-relatorios #relatorioResultado li {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.375rem 0;
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  color: var(--color-slate-700, #334155);
+}
+
+#page-relatorios #relatorioResultado li::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  border: 0.0938rem solid var(--color-slate-400, #94a3b8);
+  border-radius: 0.1875rem;
+}
+
+@media print {
+  .top-menu,
+  #page-relatorios .panel .field,
+  #page-relatorios #btnGerarRelatorio {
+    display: none !important;
+  }
+
+  #page-relatorios .panel {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  #page-relatorios #relatorioResultado {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+}
+
+</style>

@@ -1,6 +1,42 @@
 <section id="page-relatorios" class="spa-page">
-    <div class="page-header">
-        <h1>Relatórios</h1>
+
+<div class="page-header">
+<div class="actions-bar">
+    <h1>📊 Relatórios</h1>
+</div>
+<div class="actions-bar">
+    <button type="button" class="btn-secondary" onclick="limparFiltrosRelatorio()">Limpar</button>
+    <button type="button" class="btn-secondary" onclick="window.print()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir
+    </button>
+</div>
+</div>
+
+<div class="panel">
+
+    <div class="field">
+        <label class="field__label" for="relatorioTipo">Tipo de Relatório</label>
+        <select class="field__select" id="relatorioTipo">
+            <option value="checklist">Checklist</option>
+        </select>
     </div>
-    <select class=""
+
+    <div class="field">
+        <label class="field__label" for="relatorioContratoId">Contrato</label>
+        <select class="field__select" id="relatorioContratoId">
+            <option value="">Selecione um contrato</option>
+        </select>
+    </div>
+
+    <button type="button" class="btn-primary" id="btnGerarRelatorio" onclick="gerarRelatorioChecklist()">
+        Gerar Relatório
+    </button>
+
+    <div id="relatorioResultado">
+        <!-- aqui o JS vai desenhar a tabela/resultado -->
+    </div>
+
+</div>
+
 </section>

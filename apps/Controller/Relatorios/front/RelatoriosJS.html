@@ -1,5 +1,65 @@
 <script>
 function renderRelatorios() {
-    
+    google.script.run
+        .withSuccessHandler(function(contratos){
+            const select = document.getElementById('relatorioContratoId');
+            select.innerHTML = '<option value="">Selecione um contrato</option>';
+            contratos.forEach(function (c) {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.numero + ' - ' + c.nome;
+                select.appendChild(opt);
+            });
+        })
+        .fillContracts();
+
+    document.getElementById('relatorioResultado').innerHTML = '';
 }
+
+function gerarRelatorioChecklist() {
+const select = document.getElementById('relatorioContratoId');
+const contratoId = select.value;
+
+if (!contratoId) {
+alert('Selecione um contrato.');
+return;
+}
+
+const btn = document.getElementById('btnGerarRelatorio');
+btn.disabled  = true;
+
+google.script.run
+.withSuccessHandler(function (dados) {
+    btn.disabled  = false;
+    renderizarResultadoRelatorio(dados);
+})
+.withFailureHandler(function (erro) {
+    btn.disabled = false;
+    alert('Erro ao gerar relatório: ' + erro.message);
+})
+.buscarRelatorioChecklist(contratoId);
+}
+
+function renderizarResultadoRelatorio(dados) {
+    const container = document.getElementById('relatorioResultado');
+
+    if (!dados || !dados.servico) {
+    container.innerHTML = '<p>Este contrato não tem serviço de checklist cadastrado.</p>';
+    return;
+    }
+
+    const mensal = dados.checklist.filter(function (c) { return c.periodo === 'mensal'; });
+    const anual = dados.checklist.filter(function (c) { return c.periodo === 'anual'; });
+
+    container.innerHTML =
+    '<p><strong>' + escapeHtml(dados.servico.categoria) + ' ' + escapeHtml(dados.servico.tipo) + ' ' + escapeHtml(dados.servico.capacidade) + '</strong> &mdash; ' + escapeHtml(dados.servico.periodicidade) + '</p>' +
+    '<h3>Mensal</h3><ul>' + (mensal.map(function (c) { return '<li>' + escapeHtml(c.descricao) + '</li>'; }).join('') || '<li>Nenhum item.</li>') + '</ul>' +
+    '<h3>Anual</h3><ul>' + (anual.map(function (c) { return '<li>' + escapeHtml(c.descricao) + '</li>'; }).join('') || '<li>Nenhum item.</li>') + '</ul>';
+}
+
+function limparFiltrosRelatorio() {
+    document.getElementById('relatorioContratoId').value = '';
+    document.getElementById('relatorioResultado').innerHTML = '';
+}
+
 </script>
