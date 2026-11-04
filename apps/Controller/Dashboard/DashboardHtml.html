@@ -1,91 +1,244 @@
     <!-- PAGE 1: DASHBOARD -->
     <section id="page-dashboard" class="spa-page active">
       <div class="page-header">
-        <h1>Dashboard de Manutenção</h1>
+        <h1>Dashboard</h1>
         <div class="date-badge">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span class="data-hoje"></span>
         </div>
       </div>
 
-      <!-- Metrics -->
-      <div class="content-grid equal-col">
-        <div class="panel">
-          <div class="metrics-grid" id="metricsGrid"></div>
+      <!-- ===== CHAMADOS ===== -->
+      <div class="dash-secao" id="dashSecaoChamados">
+        <h2 class="dash-secao-titulo">📨 Chamados</h2>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Abertos</div>
+            <div class="metric-value" id="dashChamadosAbertos">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Em Andamento</div>
+            <div class="metric-value" id="dashChamadosAndamento">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Concluídos</div>
+            <div class="metric-value" id="dashChamadosConcluidos">—</div>
+          </div>
+        </div>
+
+        <div class="dash-grid-3">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Por Prioridade</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashChamadosPrioridade','chamados_por_prioridade.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashChamadosPrioridade" class="dash-painel-corpo">Carregando...</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Por Tipo</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashChamadosTipo','chamados_por_tipo.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashChamadosTipo" class="dash-painel-corpo">Carregando...</div>
+          </div>
         </div>
       </div>
 
-      <!-- Dashboard Main Grid -->
-      <div class="content-grid two-col">
-        <div class="panel">
-          <div class="panel-header">
-            <h2>🔧 Preventivas Mensais</h2>
-            <span class="badge badge-blue" id="badgeMensal">0 pendentes</span>
+      <!-- ===== CONTRATOS ===== -->
+      <div class="dash-secao" id="dashSecaoContratos">
+        <h2 class="dash-secao-titulo">📄 Contratos</h2>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Contratos Ativos</div>
+            <div class="metric-value" id="dashContratosTotal">—</div>
           </div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Equipamento</th>
-                  <th>Patrimônio</th>
-                  <th>Data Prevista</th>
-                  <th>Status</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="bodyMensais"></tbody>
-            </table>
+          <div class="metric-card">
+            <div class="metric-label">Valor Total (vigentes)</div>
+            <div class="metric-value" id="dashContratosValor">—</div>
           </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-header">
-            <h2>📅 Anuais Pendentes</h2>
-            <span class="badge badge-amber" id="badgeAnuais">0 equipamentos</span>
+        <div class="dash-grid-3">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Situação</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashContratosSituacao','contratos_por_situacao.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashContratosSituacao" class="dash-painel-corpo">Carregando...</div>
           </div>
-          <div class="equip-list" id="listaAnuais"></div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>⏰ Vencendo em até 30 dias</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashContratosVencendo','contratos_vencendo.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashContratosVencendo" class="dash-painel-corpo">Carregando...</div>
+          </div>
         </div>
       </div>
 
-      <div class="content-grid equal-col">
-        <div class="panel">
-          <div class="panel-header">
-            <h2>📋 Próximas (30 Dias)</h2>
-            <span class="badge badge-green" id="badgeProximas">0 eventos</span>
+      <!-- ===== EQUIPAMENTOS ===== -->
+      <div class="dash-secao" id="dashSecaoEquipamentos">
+        <h2 class="dash-secao-titulo">🖥️ Equipamentos</h2>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Equipamentos Ativos</div>
+            <div class="metric-value" id="dashEquipamentosTotal">—</div>
           </div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Equipamento</th>
-                  <th>Tipo</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="bodyProximas"></tbody>
-            </table>
+          <div class="metric-card">
+            <div class="metric-label">Com Chamado Aberto</div>
+            <div class="metric-value" id="dashEquipamentosComChamado">—</div>
+          </div>
+        </div>
+
+        <div class="dash-grid-3">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Por Marca</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashEquipamentosPorMarca','equipamentos_por_marca.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashEquipamentosPorMarca" class="dash-painel-corpo">Carregando...</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Por Localização</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashEquipamentosPorLocalizacao','equipamentos_por_localizacao.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashEquipamentosPorLocalizacao" class="dash-painel-corpo">Carregando...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PEÇAS ===== -->
+      <div class="dash-secao" id="dashSecaoPecas">
+        <h2 class="dash-secao-titulo">🔧 Peças</h2>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Peças Ativas</div>
+            <div class="metric-value" id="dashPecasTotal">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Cadastradas (últimos 30 dias)</div>
+            <div class="metric-value" id="dashPecasCadastradas30">—</div>
+          </div>
+        </div>
+
+        <div class="dash-grid-3">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Garantia</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashPecasGarantia','pecas_garantia.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashPecasGarantia" class="dash-painel-corpo">Carregando...</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Por Marca</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashPecasPorMarca','pecas_por_marca.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashPecasPorMarca" class="dash-painel-corpo">Carregando...</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Por Localização</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashPecasPorLocalizacao','pecas_por_localizacao.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashPecasPorLocalizacao" class="dash-painel-corpo">Carregando...</div>
           </div>
         </div>
 
         <div class="panel">
           <div class="panel-header">
-            <h2>📊 Resumo por Status</h2>
-            <span class="badge badge-blue" id="badgeStatus">total: 0</span>
+            <h2>⏰ Garantias vencendo em até 7 dias</h2>
+            <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashPecasVencendo','pecas_garantias_vencendo.csv')">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              CSV
+            </button>
           </div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Status</th>
-                  <th>Quantidade</th>
-                  <th>Proporção</th>
-                </tr>
-              </thead>
-              <tbody id="bodyStatus"></tbody>
-            </table>
-          </div>
-          <div class="mini-chart" id="miniChart"></div>
+          <div id="dashPecasVencendo" class="dash-painel-corpo">Carregando...</div>
         </div>
       </div>
+
+      <!-- ===== FORNECEDORES ===== -->
+      <div class="dash-secao" id="dashSecaoFornecedores">
+        <h2 class="dash-secao-titulo">🏢 Fornecedores</h2>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Fornecedores Ativos</div>
+            <div class="metric-value" id="dashFornecedorTotal">—</div>
+          </div>
+        </div>
+
+        <div class="dash-grid-3">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Tipo de Fornecedor</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashFornecedorTipos','fornecedores_por_tipo.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashFornecedorTipos" class="dash-painel-corpo">Carregando...</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Top Fornecedores por Peças</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashFornecedorTopPecas','fornecedores_top_pecas.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashFornecedorTopPecas" class="dash-painel-corpo">Carregando...</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>⚠️ Fornecedores ativos sem peça ou contrato vinculado</h2>
+            <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashFornecedorSemVinculo','fornecedores_sem_vinculo.csv')">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              CSV
+            </button>
+          </div>
+          <div id="dashFornecedorSemVinculo" class="dash-painel-corpo">Carregando...</div>
+        </div>
+      </div>
+
     </section>

@@ -34,8 +34,9 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
             Peças e Estoque
           </div>
-          <div class="dropdown-item" id="nav-chamado-view" onclick="trocarPagina('chamado-view')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail-icon lucide-mail"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>            Chamados
+          <div class="dropdown-item" id="nav-ordens" onclick="trocarPagina('ordens')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Ordens
           </div>
           <div class="dropdown-item" id="nav-contratos-form" onclick="trocarPagina('contratos-view')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -64,9 +65,9 @@
         </div>
       </li>
 
-      <li class="menu-item" id="nav-ordens" onclick="trocarPagina('ordens')">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        <span>Ordens</span>
+      <li class="menu-item" id="nav-chamado-view" onclick="trocarPagina('chamado-view')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
+        <span>Chamados</span>
       </li>
 
       <li class="menu-item" id="nav-agenda" onclick="trocarPagina('agenda')">
@@ -90,3 +91,10 @@
       <div class="avatar">UN</div>
     </div>
   </nav>
+
+  <!-- Botão global de voltar -- escondido na tela inicial (Dashboard),
+       aparece em qualquer outra página pra onde o usuário for redirecionado.
+       Visibilidade e navegação controladas em js/IndexSPAJS.html. -->
+  <button type="button" id="btnVoltarGlobal" class="btn-voltar-global" title="Voltar" onclick="voltarPagina()" style="display:none;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>

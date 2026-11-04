@@ -1,7 +1,34 @@
 <script>
 
+  // Histórico de navegação pro botão "Voltar" global (#btnVoltarGlobal).
+  // voltandoPagina evita empilhar de novo a página que a gente está
+  // deixando quando a troca foi disparada pelo próprio botão de voltar.
+  let paginaHistorico = [];
+  let voltandoPagina = false;
+
+  function voltarPagina() {
+    if (paginaHistorico.length === 0) {
+      trocarPagina('dashboard');
+      return;
+    }
+    const anterior = paginaHistorico.pop();
+    voltandoPagina = true;
+    trocarPagina(anterior);
+  }
+
   // SPA View Switcher
   function trocarPagina(paginaId, param) {
+    const paginaAtivaAntes = document.querySelector('.spa-page.active');
+    const idAtual = paginaAtivaAntes ? paginaAtivaAntes.id.replace('page-', '') : null;
+
+    if (!voltandoPagina && idAtual && idAtual !== paginaId) {
+      paginaHistorico.push(idAtual);
+    }
+    voltandoPagina = false;
+
+    const btnVoltar = document.getElementById('btnVoltarGlobal');
+    if (btnVoltar) btnVoltar.style.display = (paginaId === 'dashboard') ? 'none' : 'flex';
+
     // Hide all SPA pages
     document.querySelectorAll('.spa-page').forEach(page => page.classList.remove('active'));
 

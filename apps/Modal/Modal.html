@@ -94,17 +94,20 @@
           <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalDetalheChamado')">✕</button>
         </div>
 
+        <div id="detalheChamadoFixo" class="detalhe-chamado-fixo"><!-- preenchido via JS: montarInfoFixaChamado() --></div>
+
         <div class="tabs-nav">
-          <button type="button" class="tab-btn active" id="tabBtnInfoChamado" onclick="trocarAbaModalChamado('info')">Informações do Chamado</button>
-          <button type="button" class="tab-btn" id="tabBtnHistoricoChamado" onclick="trocarAbaModalChamado('historico')">Histórico</button>
+          <button type="button" class="tab-btn active" id="tabBtnHistoricoChamado" onclick="trocarAbaModalChamado('historico')">Movimentações</button>
+          <button type="button" class="tab-btn" id="tabBtnInfoChamado" onclick="trocarAbaModalChamado('info')">Informações do Chamado</button>
         </div>
 
-        <div class="tab-panel active" id="tabPanelInfoChamado" style="display:flex; flex-direction:column;">
+        <div class="tab-panel" id="tabPanelInfoChamado" style="display:none;">
           <div id="detalheChamadoConteudo"><!-- preenchido via JS: montarDetalheChamadoHtml() --></div>
-          <div id="detalheChamadoStatusBotoes" class="chamado-status-botoes"><!-- preenchido via JS: montarBotoesStatusChamado() --></div>
         </div>
 
-        <div class="tab-panel" id="tabPanelHistoricoChamado" style="display:none;">
+        <div class="tab-panel active" id="tabPanelHistoricoChamado" style="display:flex; flex-direction:column;">
+          <div id="detalheChamadoStatusBotoes" class="chamado-status-botoes"><!-- preenchido via JS: montarBotoesStatusChamado() --></div>
+          <div id="chamadoAcaoStatus" class="chamado-acao-status"><!-- preenchido via JS: montarBotaoAcaoStatusChamado() --></div>
           <div class="chamado-historico-nova">
             <textarea class="field__input" id="novaAnotacaoChamado" rows="2" placeholder="Adicionar anotação (ex: &quot;Serviço no período da manhã&quot;)..."></textarea>
             <button type="button" class="btn-primary" id = "salvarAnotacao" style="width:auto;" onclick="salvarAnotacaoChamadoUI()">

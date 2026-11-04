@@ -81,6 +81,38 @@
       z-index: 500;
     }
 
+    /* Botão global de voltar -- fixo no canto superior esquerdo da área de
+       conteúdo (abaixo do menu fixo), visível em qualquer página exceto o
+       Dashboard. Mostrar/escconder e navegação ficam em js/IndexSPAJS.html. */
+    .btn-voltar-global {
+      position: fixed;
+      top: 4.75rem;
+      left: 1.25rem;
+      z-index: 400;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      border: 0.0625rem solid #e2e8f0;
+      background: #fff;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0.125rem 0.5rem rgba(15, 23, 42, 0.12);
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .btn-voltar-global svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .btn-voltar-global:hover {
+      background: #f1f5f9;
+      transform: translateX(-0.125rem);
+    }
+
     .menu-brand {
       display: flex;
       align-items: center;
