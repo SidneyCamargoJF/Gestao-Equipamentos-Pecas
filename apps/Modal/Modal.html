@@ -106,19 +106,28 @@
         </div>
 
         <div class="tab-panel active" id="tabPanelHistoricoChamado" style="display:flex; flex-direction:column;">
-          <div id="detalheChamadoStatusBotoes" class="chamado-status-botoes"><!-- preenchido via JS: montarBotoesStatusChamado() --></div>
-          <div id="chamadoAcaoStatus" class="chamado-acao-status"><!-- preenchido via JS: montarBotaoAcaoStatusChamado() --></div>
-          <div class="chamado-historico-nova">
-            <textarea class="field__input" id="novaAnotacaoChamado" rows="2" placeholder="Adicionar anotação (ex: &quot;Serviço no período da manhã&quot;)..."></textarea>
-            <button type="button" class="btn-primary" id = "salvarAnotacao" style="width:auto;" onclick="salvarAnotacaoChamadoUI()">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-              </svg>
-              <span id="textoBotaoSalvarAnotacao">Adicionar</span>
+          <div class="chamado-acoes-fixas" id="chamadoAcoesFixas">
+            <div id="chamadoAcaoStatus" class="chamado-acao-status"><!-- preenchido via JS: montarBotaoAcaoStatusChamado() --></div>
+            <button type="button" class="btn-secondary" style="width:auto;" onclick="abrirCaixaTextoChamado('anotacao')">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Adicionar anotação
             </button>
-            <button type="button" class="btn-secondary" id = "descatarEdicaoAnotacao" style="width:auto; display:none;" onclick="cancelarEdicaoAnotacaoUI()">Descartar edição</button>
           </div>
+
+          <div class="chamado-caixa-texto" id="chamadoCaixaTexto">
+            <span class="chamado-caixa-texto-rotulo" id="chamadoCaixaTextoRotulo">Nova anotação</span>
+            <textarea class="field__input" id="novaAnotacaoChamado" rows="3" placeholder="Ex: &quot;Serviço no período da manhã&quot;..."></textarea>
+            <div class="chamado-caixa-texto-botoes">
+              <button type="button" class="btn-secondary" style="width:auto;" onclick="cancelarCaixaTextoChamado()">Cancelar</button>
+              <button type="button" class="btn-primary" id="salvarAnotacao" style="width:auto;" onclick="confirmarCaixaTextoChamado()">
+                <span id="textoBotaoSalvarAnotacao">Adicionar</span>
+              </button>
+            </div>
+          </div>
+
           <div id="historicoChamadoLista" class="chamado-historico-lista"><!-- preenchido via JS: montarHistoricoChamadoHtml() --></div>
+
+          <div id="detalheChamadoStatusBotoes" class="chamado-status-botoes"><!-- preenchido via JS: montarBotoesStatusChamado() --></div>
         </div>
       </div>
     </div>

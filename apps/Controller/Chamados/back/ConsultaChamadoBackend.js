@@ -142,11 +142,12 @@ function desativarChamado(idInput) {
 }
 
 /**
- * Muda o status do chamado (Aberto / Em Andamento / Concluído -- botões do
- * modal de detalhes). Preenche DATA_INICIO_ANDAMENTO ou DATA_FINALIZACAO
- * quando faz sentido, e registra a troca no histórico.
+ * Muda o status do chamado (Aberto / Em Andamento / Concluído -- botões
+ * Atender/Resolver do modal de detalhes). Preenche DATA_INICIO_ANDAMENTO ou
+ * DATA_FINALIZACAO quando faz sentido, e registra a troca no histórico.
+ * Pra "Concluido" exige um motivo de encerramento, registrado no histórico.
  */
-function alterarStatusChamado(idInput, novoStatus) {
+function alterarStatusChamado(idInput, novoStatus, motivo) {
     try {
         const idBuscado = Number(idInput);
         if (!idBuscado) {
@@ -159,6 +160,11 @@ function alterarStatusChamado(idInput, novoStatus) {
         const statusValidos = ['Aberto', 'Em Andamento', 'Concluido'];
         if (statusValidos.indexOf(novoStatus) === -1) {
             return { sucesso: false, mensagem: "Status inválido." };
+        }
+
+        const motivoLimpo = String(motivo || '').trim();
+        if (novoStatus === 'Concluido' && !motivoLimpo) {
+            return { sucesso: false, mensagem: "Informe o motivo do encerramento." };
         }
 
         const planilha = SpreadsheetApp.getActiveSpreadsheet();
@@ -182,9 +188,10 @@ function alterarStatusChamado(idInput, novoStatus) {
                 }
                 if (novoStatus === 'Concluido') {
                     abaChamados.getRange(linhaReal, ticketsDtFinalizacaoCol).setValue(dataAtual);
+                    adicionarHistoricoSistema(idBuscado, 'Chamado encerrado. Motivo: ' + motivoLimpo);
+                } else {
+                    adicionarHistoricoSistema(idBuscado, 'Status alterado para "' + novoStatus + '".');
                 }
-
-                adicionarHistoricoSistema(idBuscado, 'Status alterado para "' + novoStatus + '".');
                 return { sucesso: true, mensagem: 'Status atualizado para "' + novoStatus + '".' };
             }
         }

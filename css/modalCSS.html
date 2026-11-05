@@ -85,16 +85,49 @@
 
 .detalhe-chamado-fixo {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
   flex-shrink: 0;
   padding-bottom: 1rem;
   margin-bottom: 1rem;
   border-bottom: 0.0625rem solid var(--color-slate-200, #e2e8f0);
 }
 
-.detalhe-chamado-fixo .detalhe-chamado-linha {
-  grid-template-columns: 7rem 1fr;
+.detalhe-chamado-fixo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  padding: 0.625rem 0.875rem;
+  background: var(--color-slate-50, #f8fafc);
+  border: 0.0625rem solid var(--color-slate-200, #e2e8f0);
+  border-radius: 0.5rem;
+}
+
+.detalhe-chamado-fixo-rotulo {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-slate-400, #94a3b8);
+}
+
+.detalhe-chamado-fixo-valor {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-slate-700, #334155);
+  word-break: break-word;
+}
+
+@media (max-width: 40rem) {
+  .detalhe-chamado-fixo {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 26rem) {
+  .detalhe-chamado-fixo {
+    grid-template-columns: 1fr;
+  }
 }
 
 .detalhe-chamado-linha {
@@ -466,17 +499,95 @@
 }
 
 /* ===== ABA HISTÓRICO DO CHAMADO ===== */
-.chamado-historico-nova {
+
+/* Barra sempre visível com os dois botões fixos ("Adicionar anotação" e o
+   botão de estado Atender/Resolver/Reabrir) -- nenhum dos dois abre caixa
+   de texto por padrão, só quando precisa (ver .chamado-caixa-texto). */
+.chamado-acoes-fixas {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  align-items: flex-end;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
-.chamado-historico-nova textarea {
-  flex: 1;
+.chamado-acoes-fixas .chamado-acao-status {
+  margin-top: 0;
+}
+
+/* Botão de transição de estado (Atender/Resolver/Reabrir) -- mais destaque
+   que os outros botões da barra, e muda de cor conforme a ação: Atender
+   (azul) -> Resolver (verde) -> Reabrir (amarelo). */
+.chamado-btn-acao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.chamado-btn-acao:hover {
+  transform: translateY(-0.0625rem);
+  box-shadow: 0 0.25rem 0.625rem rgba(0, 0, 0, 0.22);
+}
+
+.chamado-btn-acao--atender {
+  background: #2563eb;
+  color: #fff;
+}
+.chamado-btn-acao--atender:hover { background: #1d4ed8; }
+
+.chamado-btn-acao--resolver {
+  background: #16a34a;
+  color: #fff;
+}
+.chamado-btn-acao--resolver:hover { background: #15803d; }
+
+.chamado-btn-acao--reabrir {
+  background: #eab308;
+  color: #422006;
+}
+.chamado-btn-acao--reabrir:hover { background: #ca8a04; }
+
+/* Caixa de texto única, escondida por padrão -- é mostrada (display:flex)
+   via JS tanto pra nova anotação quanto pra editar uma anotação existente
+   quanto pro motivo de encerramento ao Resolver (nunca mais um prompt()). */
+.chamado-caixa-texto {
+  display: none;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding: 0.875rem 1rem;
+  background: var(--color-slate-50, #f8fafc);
+  border: 0.0625rem solid var(--color-slate-200, #e2e8f0);
+  border-radius: 0.5rem;
+}
+
+.chamado-caixa-texto-rotulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-slate-500, #64748b);
+}
+
+.chamado-caixa-texto textarea {
   resize: vertical;
-  min-height: 2.75rem;
+  min-height: 4.5rem;
+}
+
+.chamado-caixa-texto-botoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
 
 .chamado-historico-lista {
