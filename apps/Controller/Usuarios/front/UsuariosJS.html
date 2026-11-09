@@ -1,0 +1,106 @@
+<script>
+
+async function renderConfiguracoes() {
+    await consultarUsuarios();
+}
+
+async function consultarUsuarios() {
+    const tbody = document.getElementById('usuariosTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+
+    try {
+        const usuarios = await runServerFunction('filtrarUsuarios', {});
+        renderTabelaUsuarios(usuarios);
+    } catch (error) {
+        console.error('Erro ao consultar usuários:', error);
+        if (tbody) tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Erro ao buscar usuários.</td></tr>';
+    }
+}
+
+function renderTabelaUsuarios(lista) {
+    const tbody = document.getElementById('usuariosTableBody');
+    if (!tbody) return;
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum usuário cadastrado.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = lista.map(u => `
+        <tr${u.desativado ? ' class="linha-desativada"' : ''}>
+            <td>${escapeHtml(u.matricula)}</td>
+            <td>${escapeHtml(u.nome)}</td>
+            <td>${escapeHtml(u.lotacao)}</td>
+            <td>${escapeHtml(u.setor)}</td>
+            <td class="acao-cell">
+                ${u.desativado
+                    ? `<button class="btn-acao" title="Reativar" onclick="reativarUsuarioUI('${u.id}')">♻️</button>`
+                    : `<button class="btn-acao" title="Desativar" onclick="desativarUsuarioUI('${u.id}')">🗑️</button>`}
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function cadastrarUsuarioUI() {
+    const matriculaEl = document.getElementById('usuarioMatriculaInput');
+    const nomeEl = document.getElementById('usuarioNomeInput');
+    const lotacaoEl = document.getElementById('usuarioLotacaoInput');
+    const setorEl = document.getElementById('usuarioSetorInput');
+    const matricula = matriculaEl ? matriculaEl.value.trim() : '';
+    const nome = nomeEl ? nomeEl.value.trim() : '';
+    const lotacao = lotacaoEl ? lotacaoEl.value.trim() : '';
+    const setor = setorEl ? setorEl.value.trim() : '';
+
+    if (!matricula || !nome || !lotacao || !setor) {
+        alert('Preencha matrícula, nome, lotação e setor.');
+        return;
+    }
+
+    try {
+        const resposta = await runServerFunction('cadastrarUsuario', matricula, nome, lotacao, setor);
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        if (matriculaEl) matriculaEl.value = '';
+        if (nomeEl) nomeEl.value = '';
+        if (lotacaoEl) lotacaoEl.value = '';
+        if (setorEl) setorEl.value = '';
+        consultarUsuarios();
+    } catch (error) {
+        console.error('Erro ao cadastrar usuário:', error);
+        alert('Erro ao cadastrar usuário.');
+    }
+}
+
+async function desativarUsuarioUI(id) {
+    if (!confirm('Desativar esse usuário?')) return;
+
+    try {
+        const resposta = await runServerFunction('desativarUsuario', id);
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        consultarUsuarios();
+    } catch (error) {
+        console.error('Erro ao desativar usuário:', error);
+        alert('Erro ao desativar usuário.');
+    }
+}
+
+async function reativarUsuarioUI(id) {
+    try {
+        const resposta = await runServerFunction('reativarUsuario', id);
+        if (resposta && resposta.sucesso === false) {
+            alert(resposta.mensagem);
+            return;
+        }
+        consultarUsuarios();
+    } catch (error) {
+        console.error('Erro ao reativar usuário:', error);
+        alert('Erro ao reativar usuário.');
+    }
+}
+
+</script>

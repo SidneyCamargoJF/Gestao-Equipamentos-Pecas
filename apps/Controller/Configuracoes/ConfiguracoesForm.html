@@ -1,0 +1,39 @@
+    <!-- CONFIGURAÇÕES -->
+    <section id="page-configuracoes" class="spa-page">
+      <div class="page-header" style="margin-bottom: 1.5rem;">
+        <h1>⚙️ Configurações do Sistema</h1>
+      </div>
+
+      <div class="panel">
+        <h2 style="font-size:1.0625rem; font-weight:700; margin-bottom:1rem; color:#0f172a;">Usuários</h2>
+
+        <form autocomplete="off" onsubmit="return false;" style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap; margin-bottom:1.5rem;">
+          <div class="field" style="flex:1; min-width:8rem;">
+            <label class="field__label" for="usuarioMatriculaInput">Matrícula</label>
+            <input class="field__input" type="text" id="usuarioMatriculaInput" placeholder="Matrícula...">
+          </div>
+          <div class="field" style="flex:2; min-width:12rem;">
+            <label class="field__label" for="usuarioNomeInput">Nome</label>
+            <input class="field__input" type="text" id="usuarioNomeInput" placeholder="Nome do usuário...">
+          </div>
+          <div class="field" style="flex:1; min-width:10rem;">
+            <label class="field__label" for="usuarioLotacaoInput">Lotação</label>
+            <input class="field__input" type="text" id="usuarioLotacaoInput" placeholder="Lotação...">
+          </div>
+          <div class="field" style="flex:1; min-width:10rem;">
+            <label class="field__label" for="usuarioSetorInput">Setor</label>
+            <input class="field__input" type="text" id="usuarioSetorInput" placeholder="Setor...">
+          </div>
+          <button type="button" class="btn-primary" style="width:auto;" onclick="cadastrarUsuarioUI()">Adicionar</button>
+        </form>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr><th>Matrícula</th><th>Nome</th><th>Lotação</th><th>Setor</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="usuariosTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>

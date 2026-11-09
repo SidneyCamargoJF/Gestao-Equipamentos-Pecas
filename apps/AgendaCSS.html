@@ -1,0 +1,192 @@
+<style>
+#page-agenda .page-header {
+  max-width: 64rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 2rem;
+}
+
+.agenda-painel {
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.agenda-controles {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.agenda-controles-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.agenda-btn-nav {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.agenda-mes-rotulo {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-slate-800, #1e293b);
+  min-width: 7rem;
+  text-align: center;
+}
+
+.agenda-ano-select {
+  width: auto;
+  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+}
+
+.agenda-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 0.0625rem solid var(--color-slate-100, #f1f5f9);
+}
+
+.agenda-legenda-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-size: 0.8125rem;
+  color: var(--color-slate-600, #475569);
+}
+
+.agenda-ponto {
+  width: 0.5625rem;
+  height: 0.5625rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.agenda-cor-chamado { background: #2563eb; }
+.agenda-cor-contrato { background: #d97706; }
+.agenda-cor-peca { background: #dc2626; }
+
+.agenda-dias-semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.375rem;
+  margin-bottom: 0.5rem;
+}
+
+.agenda-dias-semana span {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-slate-400, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.agenda-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.375rem;
+}
+
+.agenda-dia {
+  min-height: 5.5rem;
+  padding: 0.5rem;
+  border: 0.0625rem solid var(--color-slate-200, #e2e8f0);
+  border-radius: 0.5rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.agenda-dia-vazio {
+  background: transparent;
+  border-color: transparent;
+}
+
+.agenda-dia-numero {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-slate-500, #64748b);
+}
+
+.agenda-dia-hoje {
+  border-color: #4f46e5;
+  background: #eef2ff;
+}
+
+.agenda-dia-hoje .agenda-dia-numero {
+  color: #4f46e5;
+}
+
+.agenda-dia-com-evento {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.agenda-dia-com-evento:hover {
+  box-shadow: 0 0.1875rem 0.5rem rgba(0, 0, 0, 0.1);
+  transform: translateY(-0.0625rem);
+}
+
+.agenda-dia-pontos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: auto;
+}
+
+/* ===== MODAL DO DIA (lista de eventos) ===== */
+.agenda-evento-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 0.0625rem solid var(--color-slate-200, #e2e8f0);
+  border-left-width: 0.25rem;
+  background: var(--color-slate-50, #f8fafc);
+  cursor: pointer;
+  margin-bottom: 0.625rem;
+  transition: background 0.15s ease;
+}
+
+.agenda-evento-item:hover {
+  background: var(--color-slate-100, #f1f5f9);
+}
+
+.agenda-evento-item:last-child {
+  margin-bottom: 0;
+}
+
+.agenda-cor-borda-chamado { border-left-color: #2563eb; }
+.agenda-cor-borda-contrato { border-left-color: #d97706; }
+.agenda-cor-borda-peca { border-left-color: #dc2626; }
+
+.agenda-evento-tipo {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-slate-500, #64748b);
+}
+
+.agenda-evento-titulo {
+  font-size: 0.875rem;
+  color: var(--color-slate-700, #334155);
+}
+
+</style>

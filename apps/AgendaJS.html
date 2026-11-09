@@ -1,0 +1,157 @@
+<script>
+
+let agendaAnoAtual = new Date().getFullYear();
+let agendaMesAtual = new Date().getMonth() + 1;
+let agendaEventosAtuais = [];
+
+const AGENDA_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const AGENDA_ROTULOS_TIPO = { chamado: 'Chamado', contrato: 'Contrato vencendo', peca: 'Garantia de peça vencendo' };
+
+async function renderAgenda() {
+    popularAnoAgenda();
+    await carregarEventosAgenda();
+}
+
+function popularAnoAgenda() {
+    const select = document.getElementById('agendaAnoSelect');
+    if (!select || select.options.length) return;
+
+    const anoHoje = new Date().getFullYear();
+    for (let ano = anoHoje - 5; ano <= anoHoje + 5; ano++) {
+        const opt = document.createElement('option');
+        opt.value = ano;
+        opt.textContent = ano;
+        select.appendChild(opt);
+    }
+}
+
+async function carregarEventosAgenda() {
+    const rotuloEl = document.getElementById('agendaMesRotulo');
+    if (rotuloEl) rotuloEl.textContent = AGENDA_MESES[agendaMesAtual - 1];
+
+    const anoSelect = document.getElementById('agendaAnoSelect');
+    if (anoSelect) anoSelect.value = String(agendaAnoAtual);
+
+    const grid = document.getElementById('agendaGrid');
+    if (grid) grid.innerHTML = '<p class="dash-vazio">Carregando...</p>';
+
+    try {
+        agendaEventosAtuais = await runServerFunction('buscarEventosAgenda', agendaAnoAtual, agendaMesAtual);
+    } catch (error) {
+        console.error('Erro ao buscar eventos da agenda:', error);
+        agendaEventosAtuais = [];
+    }
+
+    desenharGradeAgenda();
+}
+
+function mudarMesAgenda(delta) {
+    agendaMesAtual += delta;
+    if (agendaMesAtual > 12) { agendaMesAtual = 1; agendaAnoAtual++; }
+    if (agendaMesAtual < 1) { agendaMesAtual = 12; agendaAnoAtual--; }
+    carregarEventosAgenda();
+}
+
+function mudarAnoAgenda() {
+    const select = document.getElementById('agendaAnoSelect');
+    if (!select) return;
+    agendaAnoAtual = Number(select.value);
+    carregarEventosAgenda();
+}
+
+function irParaHojeAgenda() {
+    const hoje = new Date();
+    agendaAnoAtual = hoje.getFullYear();
+    agendaMesAtual = hoje.getMonth() + 1;
+    carregarEventosAgenda();
+}
+
+function formatarDataISOLocalAgenda(data) {
+    return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+}
+
+function desenharGradeAgenda() {
+    const grid = document.getElementById('agendaGrid');
+    if (!grid) return;
+
+    const eventosPorDia = {};
+    agendaEventosAtuais.forEach(ev => {
+        if (!eventosPorDia[ev.data]) eventosPorDia[ev.data] = [];
+        eventosPorDia[ev.data].push(ev);
+    });
+
+    const primeiroDiaSemana = new Date(agendaAnoAtual, agendaMesAtual - 1, 1).getDay();
+    const totalDiasMes = new Date(agendaAnoAtual, agendaMesAtual, 0).getDate();
+    const hojeStr = formatarDataISOLocalAgenda(new Date());
+
+    let html = '';
+    for (let i = 0; i < primeiroDiaSemana; i++) {
+        html += '<div class="agenda-dia agenda-dia-vazio"></div>';
+    }
+
+    for (let dia = 1; dia <= totalDiasMes; dia++) {
+        const dataStr = `${agendaAnoAtual}-${String(agendaMesAtual).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        const eventosDoDia = eventosPorDia[dataStr] || [];
+        const ehHoje = dataStr === hojeStr;
+
+        const contagem = {};
+        eventosDoDia.forEach(ev => { contagem[ev.tipo] = (contagem[ev.tipo] || 0) + 1; });
+
+        const pontos = Object.keys(contagem)
+            .map(tipo => `<span class="agenda-ponto agenda-cor-${tipo}" title="${contagem[tipo]} ${AGENDA_ROTULOS_TIPO[tipo] || tipo}"></span>`)
+            .join('');
+
+        const classes = ['agenda-dia'];
+        if (ehHoje) classes.push('agenda-dia-hoje');
+        if (eventosDoDia.length) classes.push('agenda-dia-com-evento');
+
+        const onclickAttr = eventosDoDia.length ? ` onclick="abrirDetalheDiaAgenda('${dataStr}')"` : '';
+
+        html += `
+            <div class="${classes.join(' ')}"${onclickAttr}>
+                <span class="agenda-dia-numero">${dia}</span>
+                <div class="agenda-dia-pontos">${pontos}</div>
+            </div>`;
+    }
+
+    grid.innerHTML = html;
+}
+
+function abrirDetalheDiaAgenda(dataStr) {
+    const eventosDoDia = agendaEventosAtuais.filter(ev => ev.data === dataStr);
+    const [ano, mes, dia] = dataStr.split('-');
+
+    const tituloEl = document.getElementById('modalAgendaDiaTitulo');
+    if (tituloEl) tituloEl.textContent = `${dia}/${mes}/${ano}`;
+
+    const listaEl = document.getElementById('modalAgendaDiaLista');
+    if (listaEl) {
+        listaEl.innerHTML = eventosDoDia.map(ev => `
+            <div class="agenda-evento-item agenda-cor-borda-${ev.tipo}" onclick="irParaEventoAgenda('${ev.tipo}', '${ev.id}')">
+                <span class="agenda-evento-tipo">${AGENDA_ROTULOS_TIPO[ev.tipo] || ev.tipo}</span>
+                <span class="agenda-evento-titulo">${escapeHtml(ev.titulo)}</span>
+            </div>
+        `).join('');
+    }
+
+    if (typeof exibirModal === 'function') exibirModal('modalAgendaDia');
+}
+
+function irParaEventoAgenda(tipo, id) {
+    if (typeof fecharModal === 'function') fecharModal('modalAgendaDia');
+
+    if (tipo === 'chamado') {
+        trocarPagina('chamado-view');
+        if (typeof abrirDetalhesChamado === 'function') abrirDetalhesChamado(id);
+    } else if (tipo === 'contrato') {
+        trocarPagina('contratos-view');
+        if (typeof abrirDetalhesContrato === 'function') abrirDetalhesContrato(id);
+    } else if (tipo === 'peca') {
+        trocarPagina('pecas-view');
+        const campo = document.getElementById('filtro-garantia');
+        if (campo) campo.value = 'vencendo';
+        if (typeof consultarPecas === 'function') consultarPecas();
+    }
+}
+
+</script>

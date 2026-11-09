@@ -1,32 +1,6 @@
 <script>
 
     // Calculations & Dynamic Rendering Functions
-    function gerarPreventivasMensais() {
-      const hoje = new Date();
-      const ano = hoje.getFullYear();
-      const mes = hoje.getMonth();
-
-      return equipamentosMock.map(eq => {
-        const dia = (eq.id * 7 % 20) + 1;
-        const data = new Date(ano, mes, dia);
-        const diff = Math.floor((data - hoje) / (1000 * 60 * 60 * 24));
-        
-        let status = diff < 0 ? 'Vencida' : diff <= 5 ? 'Programada' : 'Agendada';
-        let statusClass = diff < 0 ? 'pill-red' : diff <= 5 ? 'pill-amber' : 'pill-green';
-
-        return {
-          equipamento: eq.nome,
-          patrimonio: eq.patrimonio,
-          data: data,
-          dataStr: data.toLocaleDateString('pt-BR'),
-          status: status,
-          statusClass: statusClass,
-          diasRestantes: diff,
-          equipamentoId: eq.id
-        };
-      }).sort((a, b) => a.data - b.data);
-    }
-
     function renderEquipamentos() {
       const tbody = document.getElementById('bodyEquipamentosView');
       tbody.innerHTML = equipamentosMock.map(eq => `
@@ -55,18 +29,8 @@
       `;
     }
 
-    function renderAgenda() {
-      const tbody = document.getElementById('bodyAgendaView');
-      const mensais = gerarPreventivasMensais();
-      tbody.innerHTML = mensais.map(m => `
-        <tr>
-          <td><strong>${m.dataStr}</strong></td>
-          <td>${m.equipamento}</td>
-          <td>Limpeza e Higienização de Filtros</td>
-          <td>Equipe A</td>
-        </tr>
-      `).join('');
-    }
+    // renderAgenda() mock removido -- a Agenda de verdade está em
+    // apps/AgendaJS.html agora.
 
     function filtrarEquipamentos() {
       const q = document.getElementById('searchEquip').value.toLowerCase();

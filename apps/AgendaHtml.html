@@ -1,23 +1,31 @@
     <!-- PAGE 6: AGENDA -->
     <section id="page-agenda" class="spa-page">
       <div class="page-header">
-        <h1>📅 Agenda de Manutenções</h1>
+        <h1>📅 Agenda</h1>
       </div>
-      <div class="panel">
-        <p style="color:#64748b; font-size: 0.875rem;">Cronograma mensal de rotinas preventivas e corretivas agendadas.</p>
-        <div class="table-wrapper" style="margin-top: 1rem;">
-          <table>
-            <thead>
-              <tr>
-                <th>Data Prevista</th>
-                <th>Equipamento</th>
-                <th>Atividade</th>
-                <th>Responsável</th>
-              </tr>
-            </thead>
-            <tbody id="bodyAgendaView"></tbody>
-          </table>
+
+      <div class="panel agenda-painel">
+        <div class="agenda-controles">
+          <div class="agenda-controles-nav">
+            <button type="button" class="btn-secondary agenda-btn-nav" onclick="mudarMesAgenda(-1)">‹</button>
+            <span id="agendaMesRotulo" class="agenda-mes-rotulo"></span>
+            <select id="agendaAnoSelect" class="field__select agenda-ano-select" onchange="mudarAnoAgenda()"></select>
+            <button type="button" class="btn-secondary agenda-btn-nav" onclick="mudarMesAgenda(1)">›</button>
+          </div>
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="irParaHojeAgenda()">Hoje</button>
         </div>
+
+        <div class="agenda-legenda">
+          <span class="agenda-legenda-item"><span class="agenda-ponto agenda-cor-chamado"></span>Chamados</span>
+          <span class="agenda-legenda-item"><span class="agenda-ponto agenda-cor-contrato"></span>Contratos vencendo</span>
+          <span class="agenda-legenda-item"><span class="agenda-ponto agenda-cor-peca"></span>Garantias de peças vencendo</span>
+        </div>
+
+        <div class="agenda-dias-semana">
+          <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+        </div>
+
+        <div id="agendaGrid" class="agenda-grid"><!-- preenchido via JS: desenharGradeAgenda() --></div>
       </div>
     </section>
 
