@@ -394,14 +394,34 @@
     word-break: normal;
   }
 
-  #tabelaFornecedores th:nth-child(1), #tabelaFornecedores td:nth-child(1) { width: 20%; }
-  #tabelaFornecedores th:nth-child(2), #tabelaFornecedores td:nth-child(2) { width: 17%; }
-  #tabelaFornecedores th:nth-child(3), #tabelaFornecedores td:nth-child(3) { width: 11%; }
-  #tabelaFornecedores th:nth-child(4), #tabelaFornecedores td:nth-child(4) { width: 10%; }
-  #tabelaFornecedores th:nth-child(5), #tabelaFornecedores td:nth-child(5) { width: 15%; }
-  #tabelaFornecedores th:nth-child(6), #tabelaFornecedores td:nth-child(6) { width: 9%; }
-  #tabelaFornecedores th:nth-child(7), #tabelaFornecedores td:nth-child(7) { width: 12%; }
-  #tabelaFornecedores th:nth-child(8), #tabelaFornecedores td:nth-child(8) { width: 6%; }
+  /* Recalibrado pra ordem atual das colunas: Detalhes | Razão Social |
+     Nome Fantasia | CNPJ | Telefone | Cidade/UF | Observação | Ações.
+     Detalhes/Ações usam largura FIXA em rem (não %) -- numa coluna em %,
+     o espaço real depende da largura da tabela inteira, e pode ficar menor
+     que o botão (2.25rem) + padding do <td> (2rem no total), espremendo o
+     botão pra fora da célula. Em rem, o espaço pro(s) botão(ões) é
+     garantido não importa a largura da tabela. Também centraliza o
+     conteúdo dessas duas colunas (cabeçalho e botões), que por padrão
+     ficam alinhados à esquerda. */
+  #tabelaFornecedores th:nth-child(1), #tabelaFornecedores td:nth-child(1) {
+    width: 4rem;
+    text-align: center;
+  }
+  #tabelaFornecedores th:nth-child(8), #tabelaFornecedores td:nth-child(8) {
+    width: 6rem;
+    text-align: center;
+  }
+  #tabelaFornecedores td:nth-child(1).acao-cell,
+  #tabelaFornecedores td:nth-child(8).acao-cell {
+    justify-content: center;
+  }
+
+  #tabelaFornecedores th:nth-child(2), #tabelaFornecedores td:nth-child(2) { width: 23%; }
+  #tabelaFornecedores th:nth-child(3), #tabelaFornecedores td:nth-child(3) { width: 19%; }
+  #tabelaFornecedores th:nth-child(4), #tabelaFornecedores td:nth-child(4) { width: 13%; }
+  #tabelaFornecedores th:nth-child(5), #tabelaFornecedores td:nth-child(5) { width: 12%; }
+  #tabelaFornecedores th:nth-child(6), #tabelaFornecedores td:nth-child(6) { width: 11%; }
+  #tabelaFornecedores th:nth-child(7), #tabelaFornecedores td:nth-child(7) { width: 16%; }
 
   /* ===== AÇÕES ===== */
   .acao-cell {

@@ -64,6 +64,60 @@ function filtrarFornecedores(criterios) {
 }
 
 /**
+ * Busca um fornecedor por ID com TODOS os campos (pro "ver detalhes" da
+ * Consulta) -- diferente de filtrarFornecedores(), que só traz um resumo
+ * pra tabela. Mesmos índices de array já usados em filtrarFornecedores()
+ * acima (0-based, batendo com a ordem real das colunas da planilha).
+ */
+function buscarFornecedorDetalhado(idInput) {
+  try {
+    const idBuscado = Number(idInput);
+    if (!idBuscado) {
+      return { sucesso: false, mensagem: "ID do fornecedor inválido." };
+    }
+
+    const dados = ReadSuppliers();
+
+    for (let i = 0; i < dados.length; i++) {
+      if (Number(dados[i][0]) === idBuscado) {
+        const linha = dados[i];
+        return {
+          sucesso: true,
+          fornecedor: {
+            id: linha[0],
+            prestadorServico: String(linha[1] || '').trim().toLowerCase() === 'sim',
+            distribuidorProdutos: String(linha[2] || '').trim().toLowerCase() === 'sim',
+            razaoSocial: linha[3],
+            nomeFantasia: linha[4],
+            cnpj: linha[5],
+            inscEstadual: linha[6],
+            inscMunicipal: linha[7],
+            email: linha[8],
+            telefone: linha[9],
+            celular: linha[10],
+            whatsapp: linha[11],
+            cep: linha[12],
+            logradouro: linha[13],
+            numero: linha[14],
+            bairro: linha[15],
+            cidade: linha[16],
+            estado: linha[17],
+            complemento: linha[18],
+            dtCadastro: linha[19],
+            dtAlteracao: linha[20],
+            desativado: String(linha[21] || '').trim().toLowerCase() === 'inativo'
+          }
+        };
+      }
+    }
+
+    return { sucesso: false, mensagem: "Fornecedor não encontrado." };
+  } catch (e) {
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
+}
+
+/**
  * Desativa (soft-delete) um fornecedor: marca a coluna Status como "Inativo",
  * grava a data de alteração e pinta a linha de vermelho na planilha -- mesmo
  * padrão usado em desativarPeca() (ConsultaPeca.js). Não remove a linha.

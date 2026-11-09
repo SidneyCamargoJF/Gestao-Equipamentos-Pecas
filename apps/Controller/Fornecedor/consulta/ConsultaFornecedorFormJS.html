@@ -162,7 +162,7 @@
       if (span) span.textContent = '';
     });
 
-    const indices = { razaoSocial: 0, nomeFantasia: 1, cnpj: 2, telefone: 3, email: 4, cidade: 5 };
+    const indices = { razaoSocial: 1, nomeFantasia: 2, cnpj: 3, telefone: 4, cidade: 5 };
     const idx = indices[sortStateFornecedor.coluna];
     if (idx !== undefined && ths[idx]) {
       ths[idx].classList.add('sorted');
@@ -208,26 +208,106 @@
         ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarFornecedorUI('${f.id}')">♻️</button>`
         : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="confirmarExclusaoFornecedor('${f.id}')">🗑️</button>`;
 
+      const btnVer = `<button class="btn-acao" title="Ver detalhes" onclick="abrirDetalhesFornecedor('${f.id}')">👁️</button>`;
+
       const observacao = [
         f.prestadorServico ? 'Prestador de Serviço' : '',
         f.distribuidorProdutos ? 'Distribuidor de Produtos' : ''
       ].filter(Boolean).join(' / ');
 
       tr.innerHTML = `
+        <td class="acao-cell">${btnVer}</td>
         <td>${escapeHtml(f.razaoSocial)} ${f.desativado ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
         <td>${escapeHtml(f.nomeFantasia)}</td>
         <td>${escapeHtml(f.cnpj)}</td>
         <td>${escapeHtml(f.telefone)}</td>
-        <td>${escapeHtml(f.email)}</td>
         <td>${escapeHtml(f.cidade)}${f.estado ? '/' + escapeHtml(f.estado) : ''}</td>
         <td>${escapeHtml(observacao)}</td>
-        <td>
+        <td class="acao-cell">
           ${btnEditar}
           ${btnExcluir}
         </td>
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  // ===== VER DETALHES  =====
+  async function abrirDetalhesFornecedor(id) {
+    const conteudo = document.getElementById('detalhesFornecedorConteudo');
+    if (conteudo) conteudo.innerHTML = '<p>Carregando...</p>';
+    if (typeof exibirModal === 'function') exibirModal('modalDetalhesFornecedor');
+
+    try {
+      const resposta = await runServerFunction('buscarFornecedorDetalhado', id);
+      if (!resposta || resposta.sucesso === false) {
+        if (conteudo) conteudo.innerHTML = `<p>${escapeHtml(resposta ? resposta.mensagem : 'Fornecedor não encontrado.')}</p>`;
+        return;
+      }
+      if (conteudo) conteudo.innerHTML = montarDetalheFornecedorHtml(resposta.fornecedor);
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do fornecedor:', error);
+      if (conteudo) conteudo.innerHTML = '<p>Erro ao buscar detalhes do fornecedor.</p>';
+    }
+  }
+
+  function montarDetalheFornecedorHtml(f) {
+    const linha = (rotulo, valor) => `
+        <div class="detalhe-contrato-linha">
+            <span class="detalhe-contrato-rotulo">${rotulo}</span>
+            <span class="detalhe-contrato-valor">${valor && String(valor).trim() ? escapeHtml(valor) : '--'}</span>
+        </div>`;
+
+    const secao = (titulo, conteudoHtml) => `
+        <div class="detalhe-contrato-secao">
+            <h4 class="detalhe-contrato-secao-titulo">${titulo}</h4>
+            ${conteudoHtml}
+        </div>`;
+
+    const tipo = [
+      f.prestadorServico ? 'Prestador de Serviço' : '',
+      f.distribuidorProdutos ? 'Distribuidor de Produtos' : ''
+    ].filter(Boolean).join(' / ') || '--';
+
+    const principaisHtml = `
+        ${linha('Razão Social', f.razaoSocial)}
+        ${linha('Nome Fantasia', f.nomeFantasia)}
+        ${linha('CNPJ', f.cnpj)}
+        ${linha('Tipo', tipo)}
+        <div class="detalhe-contrato-linha">
+            <span class="detalhe-contrato-rotulo">Status</span>
+            <span class="detalhe-contrato-valor">${f.desativado ? '<span class="status-desativado">Desativado</span>' : 'Ativo'}</span>
+        </div>
+    `;
+
+    // Gmail web (não mailto:) -- abre a tela de "Escrever" do Gmail numa
+    // aba nova do navegador, já com o destinatário preenchido, em vez de
+    // tentar abrir o aplicativo de e-mail nativo do computador.
+    const contatoBtn = f.email
+      ? `<a class="btn-secondary" style="width:auto; display:inline-flex; align-items:center; gap:0.5rem; margin-top:0.25rem;" href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(f.email)}" target="_blank" rel="noopener">📧 Contatar por e-mail (Gmail)</a>`
+      : '';
+
+    const endereco = [f.logradouro, f.numero].filter(Boolean).join(', ');
+    const cidadeUf = [f.cidade, f.estado].filter(Boolean).join('/');
+
+    const complementaresHtml = `
+        ${linha('E-mail', f.email)}
+        ${contatoBtn}
+        ${linha('Telefone', f.telefone)}
+        ${linha('Celular', f.celular)}
+        ${linha('WhatsApp', f.whatsapp)}
+        ${linha('Inscrição Estadual', f.inscEstadual)}
+        ${linha('Inscrição Municipal', f.inscMunicipal)}
+        ${linha('CEP', f.cep)}
+        ${linha('Endereço', endereco)}
+        ${linha('Bairro', f.bairro)}
+        ${linha('Cidade/UF', cidadeUf)}
+        ${linha('Complemento', f.complemento)}
+        ${linha('Cadastrado em', f.dtCadastro)}
+        ${linha('Última Alteração', f.dtAlteracao)}
+    `;
+
+    return secao('Informações Principais', principaisHtml) + secao('Complementares', complementaresHtml);
   }
 
   // ===== AÇÕES DA INTERFACE =====
@@ -251,8 +331,7 @@
     }
   }
 
-  // ==== MODAL DE EXCLUSÃO (próprio de Fornecedor, ver apps/Modal/Modal.html) ====
-  // Desativação persistente (soft-delete), mesmo padrão de desativarPeca().
+  // ==== MODAL DE EXCLUSÃO ====
   function confirmarExclusaoFornecedor(id) {
     if (!id) {
       alert('Erro: Nenhum registro selecionado.');
