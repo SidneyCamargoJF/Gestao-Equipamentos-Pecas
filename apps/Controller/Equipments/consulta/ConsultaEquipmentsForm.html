@@ -8,14 +8,14 @@
           <!-- Botoes de limpar e adicionar -->
 
           <div class="actions-bar">
-            <button type="button" class="btn-secondary" onclick="equipmentsViewController.limparFiltros()">Limpar</button>
-            <button type="button" class="btn-success" onclick="equipmentsViewController.cadastro()">
+            <button type="button" class="btn-secondary" onclick="limparFiltrosEquipamento()">Limpar</button>
+            <button type="button" class="btn-success" onclick="trocarPagina('equipments-form', 0)">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
               Adicionar
             </button>
-            <button type="button" class="btn-primary" onclick="equipmentsViewController.consultar()"> <!-- filtrar() -->
+            <button type="button" class="btn-primary" onclick="consultarEquipamentos()">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
@@ -30,7 +30,12 @@
           <form autocomplete="off" onsubmit="return false;">
             <div class="filters-primary">
               <div class="field">
-                <label class="field__label">Equipamentos</label>
+                <label class="field__label" for="filtroEquipPatrimonio">Patrimônio</label>
+                <input class="field__input" type="text" id="filtroEquipPatrimonio" placeholder="Digite o patrimônio...">
+              </div>
+
+              <div class="field">
+                <label class="field__label">Nome</label>
                 <div class="search-wrapper" id="equipmentWrapper">
                   <span class="search-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -41,20 +46,36 @@
                   <div class="search-dropdown" id="equipmentDropdown"></div>
                 </div>
               </div>
-            </div> 
+
+              <div class="field">
+                <label class="field__label" for="filtroEquipCapacidade">Capacidade</label>
+                <input class="field__input" type="text" id="filtroEquipCapacidade" placeholder="Ex: 12.000" inputmode="numeric" oninput="this.value = aplicarMascaraMilharEquip(this.value)">
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="filtroEquipMarca">Marca</label>
+                <input class="field__input" type="text" id="filtroEquipMarca" placeholder="Digite a marca...">
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="filtroEquipLocalizacao">Localização</label>
+                <input class="field__input" type="text" id="filtroEquipLocalizacao" placeholder="Digite a localização...">
+              </div>
+            </div>
           </form>
 
           <!-- TABELA -->
           <div class="table-wrapper">
-          <table class="data-table">
+          <table class="data-table" id="tabelaEquipamentos">
             <thead>
               <tr>
-                <th onclick="equipmentsViewController.ordenar('patrimonio')">PATRIMONIO <span class="sort-arrow"></span></th>
-                <th onclick="equipmentsViewController.ordenar('equipamento')">EQUIPAMENTO <span class="sort-arrow"></span></th>
-                <th onclick="equipmentsViewController.ordenar('capacidade')">CAPACIDADE <span class="sort-arrow"></span></th>
-                <th onclick="equipmentsViewController.ordenar('marca')">MARCA <span class="sort-arrow"></span></th>
-                <th onclick="equipmentsViewController.ordenar('modelo')">MODELO <span class="sort-arrow"></span></th>
-                <th onclick="equipmentsViewController.ordenar('localizacao')">LOCALIZAÇÃO <span class="sort-arrow"></span></th>
+                <th style="cursor:default;">DETALHES</th>
+                <th onclick="ordenarEquipamento('patrimonio')">PATRIMONIO <span class="sort-arrow"></span></th>
+                <th onclick="ordenarEquipamento('nome')">EQUIPAMENTO <span class="sort-arrow"></span></th>
+                <th onclick="ordenarEquipamento('capacidade')">CAPACIDADE <span class="sort-arrow"></span></th>
+                <th onclick="ordenarEquipamento('marca')">MARCA <span class="sort-arrow"></span></th>
+                <th onclick="ordenarEquipamento('modelo')">MODELO <span class="sort-arrow"></span></th>
+                <th onclick="ordenarEquipamento('localizacao')">LOCALIZAÇÃO <span class="sort-arrow"></span></th>
                 <th style="cursor:default;">AÇÕES</th>
               </tr>
             </thead>

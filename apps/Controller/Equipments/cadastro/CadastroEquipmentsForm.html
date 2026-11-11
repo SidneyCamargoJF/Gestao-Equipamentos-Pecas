@@ -3,7 +3,16 @@
 
   <div class="page-header">
     <div class="actions-bar">
-      <h1 class="page-title" id="equipmentsFormTitulo">⚙️ Equipments</h1>
+      <h1 class="page-title" id="equipmentsFormTitulo">⚙️ Equipmentos</h1>
+    </div>
+
+      <!-- ============================================= -->
+      <!-- BOTÕES DE AÇÃO                                -->
+      <!-- ============================================= -->
+    <div class="form-actions">
+      <button type="button" class="btn-secondary"  onclick="trocarPagina('equipments-view')">Cancelar</button>
+      <button type="button" class="btn btn-danger" onclick="limparFormularioEquipamento()">Limpar</button>
+      <button type="button" class="btn-success"    onclick="salvarEquipamentoUI()" id="cadEquipSave">Salvar</button>
     </div>
   </div>
 
@@ -27,7 +36,7 @@
 
           <div class="field">
             <label class="field__label" for="cadEquipPatrimonio">Patrimonio</label>
-            <input class="field__input" type="text" id="cadEquipPatrimonio" placeholder="patrimonio" onchange="equipmentsFormController.jaExistePatrimonio()" required>
+            <input class="field__input" type="text" id="cadEquipPatrimonio" placeholder="patrimonio" required>
           </div>
         </div>
 
@@ -35,17 +44,34 @@
 
           <div class="field">
             <label class="field__label" for="cadEquipNome">Nome *</label>
-            <input class="field__input" type="text" id="cadEquipNome" placeholder="Nome do equipamento" required> 
+            <div class="search-wrapper" id="cadEquipNomeWrapper">
+              <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
+              <input class="search-input" type="text" id="cadEquipNome" placeholder="Ex: Ar-condicionado..." autocomplete="off" required oninput="atualizarUnidadeCapacidadeEquip()">
+              <div class="search-dropdown" id="cadEquipNomeDropdown"></div>
+            </div>
+          </div>
+
+          <div class="field-with-plus">
+            <div class="field">
+              <label class="field__label" for="cadEquipMarca">Marca *</label>
+              <select id="cadEquipMarca" class="field__input field__select">
+                <option value="">Carregando marcas...</option>
+              </select>
+            </div>
+            <button type="button" class="btn-plus" title="Cadastrar nova marca" onclick="abrirModalCadastroMarca('equipamentos')">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
           </div>
 
           <div class="field">
-            <label class="field__label" for="cadEquipMarca">Marca *</label>
-            <input class="field__input" type="text" id="cadEquipMarca" placeholder="Marca" required>
-          </div>
-
-          <div class="field">
-            <label class="field__label" for="cadEquipCapacidade">Capacidade</label>
-            <input class="field__input" type="text" id="cadEquipCapacidade" placeholder="capacidade" required>
+            <label class="field__label" for="cadEquipCapacidade">Capacidade <span id="cadEquipCapacidadeUnidade" style="font-weight:400; color:var(--color-slate-500,#64748b);"></span></label>
+            <input class="field__input" type="text" id="cadEquipCapacidade" inputmode="numeric" oninput="this.value = aplicarMascaraMilharEquip(this.value)" required>
           </div>
 
         </div>
@@ -62,22 +88,84 @@
             <input class="field__input" type="text" id="cadEquipSequencia" placeholder="55" >
           </div>
 
+          <div class="field-with-plus">
+            <div class="field">
+              <label class="field__label" for="cadEquipLocalizacao">Localização</label>
+              <select id="cadEquipLocalizacao" class="field__input field__select">
+                <option value="">Carregando localizações...</option>
+              </select>
+            </div>
+            <button type="button" class="btn-plus" title="Cadastrar nova localização" onclick="abrirModalCadastroLocalizacao('equipamentos')">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
 
-          <div class="field">
-            <label class="field__label" for="cadEquipLocalizacao">Localização</label>
-            <input class="field__input" type="text" id="cadEquipLocalizacao" placeholder="55" >
+        </div>
+
+        <div class="form-grid-3">
+
+          <div class="field-with-plus">
+            <div class="field">
+              <label class="field__label" for="cadEquipFornecedor">Fornecedor</label>
+              <select id="cadEquipFornecedor" class="field__input field__select">
+                <option value="">Carregando fornecedores...</option>
+              </select>
+            </div>
+            <button type="button" class="btn-plus" title="Cadastrar novo fornecedor" onclick="abrirModalCadastroFornecedor('equipamentos')">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
           </div>
 
         </div>
 
       </fieldset>
+
+      <!-- ============================================= -->
+      <!-- PARTE 2: INFORMAÇÕES COMPLEMENTARES           -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal">
+        <legend class="fieldset-legend">Informações Complementares</legend>
+
+        <div class="form-grid-3">
+
+          <div class="field">
+            <label class="field__label" for="cadEquipDataEntrada">Data de Entrada</label>
+            <input class="field__input" type="date" id="cadEquipDataEntrada">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="cadEquipNotaFiscal">Nota Fiscal</label>
+            <input class="field__input" type="text" id="cadEquipNotaFiscal" placeholder="Ex: NF-12345">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="cadEquipValorAquisicao">Valor de Aquisição (R$)</label>
+            <input class="field__input" type="text" id="cadEquipValorAquisicao" placeholder="0,00" inputmode="numeric" oninput="this.value = aplicarMascaraMoedaEquip(this.value)">
+          </div>
+
+        </div>
+
+        <div class="form-grid-3">
+
+          <div class="field" style="grid-column: 1 / -1;">
+            <label class="field__label" for="cadEquipObservacoes">Observações</label>
+            <textarea class="field__input" id="cadEquipObservacoes" rows="3" placeholder="Observações gerais sobre o equipamento..."></textarea>
+          </div>
+
+        </div>
+      </fieldset>
+
       <!-- ============================================= -->
       <!-- BOTÕES DE AÇÃO                                -->
       <!-- ============================================= -->
     <div class="form-actions">
       <button type="button" class="btn-secondary"  onclick="trocarPagina('equipments-view')">Cancelar</button>
-      <button type="button" class="btn btn-danger" onclick="equipmentsController.limpar()">Limpar</button>
-      <button type="button" class="btn-success"    onclick="equipmentsController.salvar()" id="cadEquipSave">Salvar</button>
+      <button type="button" class="btn btn-danger" onclick="limparFormularioEquipamento()">Limpar</button>
+      <button type="button" class="btn-success"    onclick="salvarEquipamentoUI()" id="cadEquipSave">Salvar</button>
     </div>
     </form>
   </div>

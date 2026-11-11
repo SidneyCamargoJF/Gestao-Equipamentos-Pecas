@@ -1,193 +1,179 @@
 <script>
-
-  class EquipmentsFormController {
-
-    constructor() {
-      console.log('EquipmentsFormController.constructor()')
-        this.equipPatrimonio = document.getElementById('cadEquipPatrimonio')
-        this.equipNome = document.getElementById('cadEquipNome')
-        this.equipMarca = document.getElementById('cadEquipMarca')
-        this.equipCapacidade = document.getElementById('cadEquipCapacidade')
-        this.equipModelo = document.getElementById('cadEquipModelo')
-        this.equipSequencia = document.getElementById('cadEquipSequencia')
-        this.equipLocalizacao = document.getElementById('cadEquipLocalizacao')
-        this.btnEquipSave = document.getElementById('cadEquipSave')
-
-        this.tblEquipment = new CrudJs('tbl_equipamentos');
-
-    }
-
-    // =====================================================
-    // CADASTRO DE EQUIPAMENTOS - JS (CLIENTE)
-    // Roda no navegador (dentro do HTML). A gravação na planilha
-    // acontece no servidor, em Fornecedor_Backend.gs, chamado via
-    // google.script.run.
-    // =====================================================
-
-    preencherFormulario(dados) {
-      document.getElementById('complemento').value = dados.complemento || '';
-    }
-
-    // 
-    // COLETA DOS DADOS DO FORMULÁRIO
-    // 
-    coletarDados() {
-    console.log('coletarDados')
-      let dados = [];
-      if ( !this.validarFormulario() ) return false;
-
-      let patrimonio = document.getElementById('cadEquipPatrimonio').value.trim()
-
-      return dados;
-    }
-
-    jaExistePatrimonio() {
-      console.log('jaExistePatrimonio()')
-
-      if (!this.buscaPatrimonio()) {
-        this.btnEquipSave.style.display = 'inline-block'
-        return false
-      }
-
-      console.log('Já existe um Patrimônio com este número cadastrado.')
-      this.btnEquipSave.style.display = 'none'
-
-      return true
-    }
-
-    /**
-     *  verifica se existe o patrimonio no bd quando for novo, para não deixar cadastrar repetido
-     */
-    buscaPatrimonio() {
-      console.log('conferePatrimonio()')
-
-      let patrimonio = this.equipPatrimonio.value;
-      let dados = this.tblEquipment.readContext('patrimonio', '=', patrimonio );
-
-      if (dados) return dados;
-
-      return false
-    }
-
-    // 
-    // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
-    // 
-    validarFormulario() {
-      const CAMPOS_OBRIGATORIOS = [
-        'patrimonio', 'nome', 'marca', 'localizacao'
-      ];
-
-      let primeiroInvalido = null;
-
-      CAMPOS_OBRIGATORIOS.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el.value.trim()) {
-          el.classList.add('campo-invalido');
-          if (!primeiroInvalido) primeiroInvalido = el;
-        } else {
-          el.classList.remove('campo-invalido');
-        }
-      });
-
-      if (primeiroInvalido) {
-        primeiroInvalido.focus();
-        alert('ERRO: Faltam dados obrigatórios.');
-        return false;
-      }
-
-      return true;
-    }
-
-    // 
-    // UTILITÁRIOS
-    // 
-    escapeHtml(s) {
-      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
-
-    limpar() {
-      document.querySelectorAll('.field__input, .field__select').forEach(el => {
-        el.value = '';
-      });
-
-      document.getElementById('formTitulo').textContent = 'Novo';
-      document.getElementById('formStatus').textContent = 'Rascunho';
-    }
-
-    // 
-    // SALVAR FORNECEDOR (cria ou atualiza, conforme o CNPJ)
-    // Chama salvarFornecedorBackend() no Fornecedor_Backend.gs
-    // 
-    salvar() {
-      if (!this.validarFormulario()) return;
-
-      const dados = this.coletarDados();
-      const btn = document.querySelector('.btn-primary');
-      btn.disabled = true;
-
-      google.script.run
-        .withSuccessHandler(function (resultado) {
-          btn.disabled = false;
-          if (!resultado.sucesso) {
-            alert(resultado.mensagem);
-            return;
-          }
-          alert(resultado.mensagem);
-          this.limpar();
-        })
-        .withFailureHandler(function (erro) {
-          btn.disabled = false;
-          alert('Erro ao salvar fornecedor: ' + erro.message);
-        })
-        .saveEquipments(dados);
-    }
-
-    // RENDER / INICIALIZAÇÃO DA TELA
-    // Chamada pelo sistema de navegação (SPA) logo depois de injetar o HTML
-    // do CadastroFornecedorForm no container da página — igual o padrão do
-    // renderContratosForm() do Contrato. Liga as máscaras e os eventos nos
-    // campos, já que aqui não existe um "DOMContentLoaded" novo (o HTML foi
-    // injetado dinamicamente, não carregado como página).
-
-    async render(id) {
-      console.log('EquipmentsFormController.render(' + id + ')')
-
-      //this.equipPatrimonio.focus();
-
-      if (id == 0) {
-        this.clearFields();
-        return
-      }
-
-      this.tblEquipment.readId(id)
-
-
-        // Inicializar dados - Novo ou Edição
-        // Quando Id >= 1, entra em modo de edição em modo edição, trazer os dados do BD
-        // 
-
-      return
-
-    }
-
-    clearFields() {
-      console.log('EquipmentsFormController.clearFields()')
-
-      return
-    }
-
+  function aplicarMascaraMilharEquip(valor) {
+    const digitos = String(valor || '').replace(/\D/g, '');
+    if (!digitos) return '';
+    return Number(digitos).toLocaleString('pt-BR');
   }
 
-  // Fallback: se essa tela algum dia for aberta direto (fora da SPA), garante
-  // que a inicialização também rode no carregamento normal da página.
+  function aplicarMascaraMoedaEquip(valor) {
+    const digitos = String(valor || '').replace(/\D/g, '');
+    if (!digitos) return '';
+    const numero = Number(digitos) / 100;
+    return numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
 
-  const equipmentsFormController = new EquipmentsFormController()
-  
+  function detectarUnidadeCapacidadeEquip(nome) {
+    const n = String(nome || '').toLowerCase();
+    if (n.includes('elevador')) return 'kg';
+    if (n.includes('bebedouro')) return 'L';
+    if (n.includes('condicionado') || n.includes('climatizador') || n.includes('split')) return 'BTU';
+    return '';
+  }
 
-  /*
-  document.addEventListener('DOMContentLoaded', () => {
+  function atualizarUnidadeCapacidadeEquip() {
+    const nome = document.getElementById('cadEquipNome')?.value || '';
+    const unidade = detectarUnidadeCapacidadeEquip(nome);
+    const span = document.getElementById('cadEquipCapacidadeUnidade');
+    if (span) span.textContent = unidade ? `(${unidade})` : '';
+  }
 
-  });
-  */
+  async function carregarNomesEquipamento() {
+    try {
+      const res = await runServerFunction('buscarNomesUnicosEquipamento');
+      return Array.isArray(res) ? res : [];
+    } catch (error) {
+      console.error('Erro ao buscar nomes de equipamento:', error);
+      return [];
+    }
+  }
+
+  async function renderEquipamentoForm(id) {
+    limparFormularioEquipamento();
+
+    const tituloForm = document.getElementById('formTitulo');
+    const inputId = document.getElementById('cadEquipId');
+
+
+    const [nomes, opcoesMarca, opcoesLocal, opcoesFornecedor] = await Promise.all([
+      carregarNomesEquipamento(),
+      loadBrands(),
+      loadLocations(),
+      loadSuppliers()
+    ]);
+
+    initSearchChamado('cadEquipNome', 'cadEquipNomeDropdown', 'cadEquipNomeWrapper', nomes);
+    preencherSelect('cadEquipMarca', opcoesMarca, 'Selecione a Marca');
+    preencherSelect('cadEquipLocalizacao', opcoesLocal, 'Selecione a Localização');
+    preencherSelect('cadEquipFornecedor', opcoesFornecedor.map(linha => linha[3]).filter(Boolean), 'Selecione o Fornecedor');
+
+    if (!id || id === 0 || id === '0') {
+      if (tituloForm) tituloForm.textContent = 'Novo';
+      if (inputId) inputId.value = '0';
+      return;
+    }
+
+    if (tituloForm) tituloForm.textContent = 'Editar';
+    if (inputId) inputId.value = id;
+
+    try {
+      const resposta = await runServerFunction('buscarEquipamentoParaEdicao', id);
+      if (!resposta || resposta.sucesso === false) {
+        alert(resposta ? resposta.mensagem : 'Equipamento não encontrado.');
+        trocarPagina('equipments-view');
+        return;
+      }
+      preencherFormularioEquipamento(resposta.equipamento);
+    } catch (error) {
+      console.error('Erro ao buscar equipamento para edição:', error);
+      alert('Erro ao buscar equipamento para edição.');
+    }
+  }
+
+  function preencherFormularioEquipamento(eq) {
+    document.getElementById('cadEquipId').value = eq.id || '0';
+    document.getElementById('cadEquipPatrimonio').value = eq.patrimonio || '';
+    document.getElementById('cadEquipNome').value = eq.nome || '';
+    document.getElementById('cadEquipMarca').value = eq.marca || '';
+    document.getElementById('cadEquipCapacidade').value = aplicarMascaraMilharEquip(eq.capacidade || '');
+    document.getElementById('cadEquipModelo').value = eq.modelo || '';
+    document.getElementById('cadEquipSequencia').value = eq.sequencia || '';
+    document.getElementById('cadEquipLocalizacao').value = eq.localizacao || '';
+    document.getElementById('cadEquipFornecedor').value = eq.fornecedor || '';
+    document.getElementById('cadEquipDataEntrada').value = eq.dataEntrada || '';
+    document.getElementById('cadEquipNotaFiscal').value = eq.notaFiscal || '';
+    document.getElementById('cadEquipValorAquisicao').value = eq.valorAquisicao || '';
+    document.getElementById('cadEquipObservacoes').value = eq.observacoes || '';
+    atualizarUnidadeCapacidadeEquip();
+  }
+
+  function limparFormularioEquipamento() {
+    document.getElementById('cadEquipId').value = '0';
+    ['cadEquipPatrimonio', 'cadEquipNome', 'cadEquipMarca', 'cadEquipCapacidade', 'cadEquipModelo', 'cadEquipSequencia', 'cadEquipLocalizacao', 'cadEquipFornecedor', 'cadEquipDataEntrada', 'cadEquipNotaFiscal', 'cadEquipValorAquisicao', 'cadEquipObservacoes'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = '';
+        el.classList.remove('campo-invalido');
+      }
+    });
+
+    const tituloForm = document.getElementById('formTitulo');
+    if (tituloForm) tituloForm.textContent = 'Novo';
+    atualizarUnidadeCapacidadeEquip();
+  }
+
+  function validarFormularioEquipamento() {
+    const CAMPOS_OBRIGATORIOS = ['cadEquipPatrimonio', 'cadEquipNome', 'cadEquipMarca'];
+    let primeiroInvalido = null;
+
+    CAMPOS_OBRIGATORIOS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (!el.value.trim()) {
+        el.classList.add('campo-invalido');
+        if (!primeiroInvalido) primeiroInvalido = el;
+      } else {
+        el.classList.remove('campo-invalido');
+      }
+    });
+
+    if (primeiroInvalido) {
+      primeiroInvalido.focus();
+      alert('Preencha Patrimônio, Nome e Marca antes de salvar.');
+      return false;
+    }
+
+    return true;
+  }
+
+  function coletarDadosEquipamento() {
+    return {
+      id: document.getElementById('cadEquipId')?.value || '0',
+      patrimonio: document.getElementById('cadEquipPatrimonio')?.value.trim() || '',
+      nome: document.getElementById('cadEquipNome')?.value.trim() || '',
+      marca: document.getElementById('cadEquipMarca')?.value.trim() || '',
+      capacidade: (document.getElementById('cadEquipCapacidade')?.value || '').replace(/\D/g, ''),
+      modelo: document.getElementById('cadEquipModelo')?.value.trim() || '',
+      sequencia: document.getElementById('cadEquipSequencia')?.value.trim() || '',
+      localizacao: document.getElementById('cadEquipLocalizacao')?.value.trim() || '',
+      fornecedor: document.getElementById('cadEquipFornecedor')?.value.trim() || '',
+      dataEntrada: document.getElementById('cadEquipDataEntrada')?.value || '',
+      notaFiscal: document.getElementById('cadEquipNotaFiscal')?.value.trim() || '',
+      valorAquisicao: document.getElementById('cadEquipValorAquisicao')?.value.trim() || '',
+      observacoes: document.getElementById('cadEquipObservacoes')?.value.trim() || ''
+    };
+  }
+
+  async function salvarEquipamentoUI() {
+    if (!validarFormularioEquipamento()) return;
+
+    const dados = coletarDadosEquipamento();
+    const btn = document.getElementById('cadEquipSave');
+    if (btn) btn.disabled = true;
+
+    try {
+      const resposta = await runServerFunction('salvarEquipamento', dados);
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return;
+      }
+      alert(resposta.mensagem || 'Equipamento salvo com sucesso!');
+      trocarPagina('equipments-view');
+    } catch (error) {
+      console.error('Erro ao salvar equipamento:', error);
+      alert('Erro ao salvar equipamento: ' + (error.message || error));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
 
 </script>

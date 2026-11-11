@@ -1,196 +1,271 @@
-<!-- JAVASCRIPT ORIENTADO A OBJETOS -->
 <script>
-class EquipmentsViewController extends SearchOOP {
+  let listaEquipamentosConsulta = [];
+  let sortStateEquipamento = { coluna: null, direcao: 'asc' };
 
-  // ===== INICIALIZAÇÃO =====
-
-  bindEvents() {
-    const inputEquipment = document.getElementById('equipmentSearch');
-    if (inputEquipment) inputEquipment.focus();
-
-    // Eventos de overlay e esc
-    const modais = ['modalExclusaoEquipment', 'modalEdicaoEquipment', 'modalCadastroEquipment'];
-    modais.forEach(idModal => {
-      const elModal = document.getElementById(idModal);
-      if (elModal) {
-        elModal.addEventListener('click', (e) => {
-          if (e.target.classList.contains('modal-overlay')) {
-            this.fecharTodosModais();
-          }
-        });
-      }
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        this.fecharTodosModais();
-      }
-    });
+  async function renderEquipamentos() {
+    const inputBusca = document.getElementById('equipmentSearch');
+    if (inputBusca) inputBusca.focus();
   }
 
-  fecharTodosModais() {
-    if (typeof fecharModal === 'function') {
-      fecharModal('modalCadastroEquipment');
-      fecharModal('modalEdicaoEquipment');
-      fecharModal('modalExclusaoEquipment');
-    }
-  }
+  function consultarEquipamentos() {
+    const criterios = {
+      nome: document.getElementById('equipmentSearch')?.value.trim() || '',
+      patrimonio: document.getElementById('filtroEquipPatrimonio')?.value.trim() || '',
+      capacidade: document.getElementById('filtroEquipCapacidade')?.value.trim() || '',
+      marca: document.getElementById('filtroEquipMarca')?.value.trim() || '',
+      localizacao: document.getElementById('filtroEquipLocalizacao')?.value.trim() || ''
+    };
 
-  // ===== CONSULTA E FILTROS =====
-  consultar() {
-    const equipmentInput = document.getElementById('equipmentSearch');
-    const equipment = equipmentInput ? equipmentInput.value.trim().toLowerCase() : '';
-    console.log('EquipmentController.consultar')
-    console.log(equipment)
-    const criterios = { equipment };
+    mostrarCarregandoEquipamentos(true);
 
     google.script.run
-      .withSuccessHandler(objEquipments => this.retorno(objEquipments))
-      .withFailureHandler(err => console.error('Erro ao consultar: ', err))
+      .withSuccessHandler((objEquipamentos) => {
+        mostrarCarregandoEquipamentos(false);
+        listaEquipamentosConsulta = Array.isArray(objEquipamentos) ? objEquipamentos : [];
+        renderTabelaEquipamentos(ordenarDesativadosPorUltimoEquip(aplicarOrdenacaoEquipamento(listaEquipamentosConsulta)));
+      })
+      .withFailureHandler((err) => {
+        mostrarCarregandoEquipamentos(false);
+        console.error('Erro ao consultar equipamentos:', err);
+        alert('Erro ao consultar equipamentos: ' + (err.message || err));
+      })
       .filtrarEquipamentos(criterios);
   }
 
-  retorno(objectList) {
-    console.log( 'retorno: ')
-    console.log(objectList)
-    this.list = Array.isArray(objectList) ? objectList : [];
-    // console.log( 'list: ' + this.list)
-    this.listaFiltrada = typeof this.aplicarOrdenacao === 'function' ? this.aplicarOrdenacao(this.list) : this.list;
-console.log('listaFiltrada: ' + this.listaFiltrada)
-    const opcoesEquipment = [...new Set(this.list.map(it => it.Equipment).filter(Boolean))];
-    if (typeof initSearch === 'function') {
-      console.log('if typeof initSearch')
-      initSearch('equipmentSearch', 'equipmentDropdown', 'equipmentWrapper', opcoesEquipment);
+  function mostrarCarregandoEquipamentos(carregando) {
+    if (!carregando) return;
+    const tbody = document.getElementById('tabelaBodyEquipment');
+    if (tbody) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><span class="spinner"></span>Buscando equipamentos...</td></tr>';
     }
-
-    console.log('retorno - Lista Filtrada: ')
-    console.log(this.listaFiltrada)
-    
-    this.render(this.listaFiltrada);
   }
 
-  filtrar() {
-    const equipmentInput = document.getElementById('equipmentSearch');
-    const equipment = equipmentInput ? equipmentInput.value.trim().toLowerCase() : '';
+  function ordenarDesativadosPorUltimoEquip(lista) {
+    if (!Array.isArray(lista)) return lista;
+    return lista.slice().sort((a, b) => (a.desativada ? 1 : 0) - (b.desativada ? 1 : 0));
+  }
 
-    this.listaFiltrada = this.list.filter(it => {
-      if (equipment && !(it.equipment || '').toLowerCase().includes(equipment)) return false;
-      return true;
+  // ===== ORDENAÇÃO =====
+  function ordenarEquipamento(coluna) {
+    if (sortStateEquipamento.coluna === coluna) {
+      sortStateEquipamento.direcao = sortStateEquipamento.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortStateEquipamento.coluna = coluna;
+      sortStateEquipamento.direcao = 'asc';
+    }
+    atualizarIndicadoresEquipamento();
+    renderTabelaEquipamentos(ordenarDesativadosPorUltimoEquip(aplicarOrdenacaoEquipamento(listaEquipamentosConsulta)));
+  }
+
+  function atualizarIndicadoresEquipamento() {
+    const ths = document.querySelectorAll('#page-equipments-view .data-table th');
+    ths.forEach(th => {
+      th.classList.remove('sorted');
+      const span = th.querySelector('.sort-arrow');
+      if (span) span.textContent = '';
     });
 
-    if (typeof aplicarOrdenacao === 'function') {
-      this.listaFiltrada = this.aplicarOrdenacao(this.listaFiltrada);
+    const indices = { patrimonio: 1, nome: 2, capacidade: 3, marca: 4, modelo: 5, localizacao: 6 };
+    const idx = indices[sortStateEquipamento.coluna];
+    if (idx !== undefined && ths[idx]) {
+      ths[idx].classList.add('sorted');
+      const span = ths[idx].querySelector('.sort-arrow');
+      if (span) span.textContent = sortStateEquipamento.direcao === 'asc' ? '▲' : '▼';
     }
-    this.render(this.listaFiltrada);
   }
 
-  limparFiltros() {
-    const inputEquipment = document.getElementById('equipmentSearch');
-    if (inputEquipment) inputEquipment.value = '';
-
-    this.sortState = { coluna: null, direcao: 'asc' };
-    if (typeof atualizarIndicadores === 'function') atualizarIndicadores();
-    this.consultar();
-
-    if (inputEquipment) inputEquipment.focus();
+  function aplicarOrdenacaoEquipamento(lista) {
+    if (!sortStateEquipamento.coluna || !Array.isArray(lista)) return lista;
+    const col = sortStateEquipamento.coluna;
+    const dir = sortStateEquipamento.direcao === 'asc' ? 1 : -1;
+    const arr = lista.slice();
+    arr.sort((a, b) => {
+      const va = String(a[col] || '').toLowerCase();
+      const vb = String(b[col] || '').toLowerCase();
+      return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;
+    });
+    return arr;
   }
 
-  // ===== RENDERIZAÇÃO DE TABELA =====
-  render(lista) {
+  // ===== RENDERIZAÇÃO DA TABELA =====
+  function renderTabelaEquipamentos(lista) {
     const tbody = document.getElementById('tabelaBodyEquipment');
     if (!tbody) return;
 
     tbody.innerHTML = '';
 
     if (!lista || lista.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="2">Nenhum registro encontrado.</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhum equipamento encontrado.</td></tr>';
       return;
     }
 
-    console.log(lista)
-
-    lista.forEach(it => {
+    lista.forEach(eq => {
       const tr = document.createElement('tr');
-      if (it.desativada) tr.classList.add('linha-desativada');
+      if (eq.desativada) tr.classList.add('linha-desativada');
 
-      const btnEditar = it.desativada
+      const btnEditar = eq.desativada
         ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
-        : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="equipmentsViewController.edit('${it.id}')">✏️</button>`;
+        : `<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarEquipamento('${eq.id}')">✏️</button>`;
 
-      const btnExcluir = it.desativada
-        ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="equipmentsViewController.reativar('${it.id}')">♻️</button>`
-        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="equipmentsViewController.confirmaExclusao('${it.id}')">🗑️</button>`;
+      const btnExcluir = eq.desativada
+        ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarEquipamentoUI('${eq.id}')">♻️</button>`
+        : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="abrirModalExclusaoEquipamento('${eq.id}')">🗑️</button>`;
+
+      const btnVer = `<button class="btn-acao" title="Ver detalhes" onclick="abrirDetalhesEquipamento('${eq.id}')">👁️</button>`;
 
       tr.innerHTML = `
-        <td>${escapeHtml(it.patrimonio)} ${it.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
-        <td>${escapeHtml(it.nome)}</td>
-        <td>${escapeHtml(it.capacidade)}</td>
-        <td>${escapeHtml(it.marca)}</td>
-        <td>${escapeHtml(it.modelo)}</td>
-        <td>${escapeHtml(it.localizacao)}</td>
-        <td>
+        <td class="acao-cell">${btnVer}</td>
+        <td>${escapeHtml(eq.patrimonio)} ${eq.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
+        <td>${escapeHtml(eq.nome)}</td>
+        <td>${escapeHtml(eq.capacidade)}</td>
+        <td>${escapeHtml(eq.marca)}</td>
+        <td>${escapeHtml(eq.modelo)}</td>
+        <td>${escapeHtml(eq.localizacao)}</td>
+        <td class="acao-cell">
           ${btnEditar}
           ${btnExcluir}
         </td>
       `;
       tbody.appendChild(tr);
-
     });
   }
 
+  // ===== VER DETALHES =====
+  async function abrirDetalhesEquipamento(id) {
+    const conteudo = document.getElementById('detalhesEquipamentoConteudo');
+    if (conteudo) conteudo.innerHTML = '<p>Carregando...</p>';
+    if (typeof exibirModal === 'function') exibirModal('modalDetalhesEquipamento');
 
-  cadastro() {
-    console.log('EquipmentsViewController.cadastro')
-
-    trocarPagina('equipments-form', 0);
-
-    return true
+    try {
+      const resposta = await runServerFunction('buscarEquipamentoDetalhado', id);
+      if (!resposta || resposta.sucesso === false) {
+        if (conteudo) conteudo.innerHTML = `<p>${escapeHtml(resposta ? resposta.mensagem : 'Equipamento não encontrado.')}</p>`;
+        return;
+      }
+      if (conteudo) conteudo.innerHTML = montarDetalheEquipamentoHtml(resposta.equipamento);
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do equipamento:', error);
+      if (conteudo) conteudo.innerHTML = '<p>Erro ao buscar detalhes do equipamento.</p>';
+    }
   }
 
-  edit( id ) {
-    console.log('EquipmentsViewController.edit(' + id + ')')    
+  function montarDetalheEquipamentoHtml(eq) {
+    const linha = (rotulo, valor) => `
+        <div class="detalhe-contrato-linha">
+            <span class="detalhe-contrato-rotulo">${rotulo}</span>
+            <span class="detalhe-contrato-valor">${valor && String(valor).trim() ? escapeHtml(valor) : '--'}</span>
+        </div>`;
 
-    return true
+    const secao = (titulo, conteudoHtml) => `
+        <div class="detalhe-contrato-secao">
+            <h4 class="detalhe-contrato-secao-titulo">${titulo}</h4>
+            ${conteudoHtml}
+        </div>`;
+
+    const principaisHtml = `
+        ${linha('Patrimônio', eq.patrimonio)}
+        ${linha('Nome', eq.nome)}
+        ${linha('Marca', eq.marca)}
+        ${linha('Capacidade', eq.capacidade)}
+        ${linha('Modelo', eq.modelo)}
+        ${linha('Sequência', eq.sequencia)}
+        ${linha('Localização', eq.localizacao)}
+        ${linha('Fornecedor', eq.fornecedor)}
+        <div class="detalhe-contrato-linha">
+            <span class="detalhe-contrato-rotulo">Status</span>
+            <span class="detalhe-contrato-valor">${eq.desativado ? '<span class="status-desativado">Desativado</span>' : 'Ativo'}</span>
+        </div>
+    `;
+
+    const complementaresHtml = `
+        ${linha('Data de Entrada', eq.dataEntrada)}
+        ${linha('Nota Fiscal', eq.notaFiscal)}
+        ${linha('Valor de Aquisição', eq.valorAquisicao)}
+        ${linha('Observações', eq.observacoes)}
+        ${linha('Cadastrado em', eq.dtCadastro)}
+        ${linha('Última Alteração', eq.dtAlteracao)}
+    `;
+
+    return secao('Informações Principais', principaisHtml) + secao('Complementares', complementaresHtml);
   }
 
-  setStatus( id ) {
-    console.log('EquipmentsViewController.setStatus(' + id + ')')
+  // ===== AÇÕES DA INTERFACE =====
+  function limparFiltrosEquipamento() {
+    const inputBusca = document.getElementById('equipmentSearch');
+    if (inputBusca) inputBusca.value = '';
+    ['filtroEquipPatrimonio', 'filtroEquipCapacidade', 'filtroEquipMarca', 'filtroEquipLocalizacao'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
 
-    return true;
+    sortStateEquipamento = { coluna: null, direcao: 'asc' };
+    atualizarIndicadoresEquipamento();
+    consultarEquipamentos();
+
+    if (inputBusca) inputBusca.focus();
   }
 
-  // ===== MODAL DE EXCLUSÃO =====
-  confirmaExclusao(id) {
-  console.log('EquipmentsViewController.confirmaExclusao(' + id + ')')
+  function editarEquipamento(id) {
+    if (typeof trocarPagina === 'function') {
+      trocarPagina('equipments-form', id);
+    }
+  }
 
-  if (!id) {
-      alert("Erro: Nenhum registro selecionado.");
+  let idExclusaoEquipamento = null;
+
+  function abrirModalExclusaoEquipamento(id) {
+    if (!id) {
+      alert('Erro: Nenhum registro selecionado.');
       return;
     }
-
-    exibirModal('modalExclusao');
+    idExclusaoEquipamento = id;
+    if (typeof exibirModal === 'function') exibirModal('modalExclusao');
 
     const btnDelete = document.getElementById('btn-delete');
-    console.log(btnDelete)
-
-    btnDelete.onclick = () => this.excluir(id);
+    if (btnDelete) btnDelete.onclick = () => executarExclusaoEquipamento();
   }
 
-  async excluir(id) {
-    console.log('equipmentsViewController.excluir(' + id + ')')
-    if (typeof executarExclusao === 'function') {
-      executarExclusao('tbl_equipment', id);
+  async function executarExclusaoEquipamento() {
+    if (!idExclusaoEquipamento) return;
+
+    try {
+      const resposta = await runServerFunction('desativarEquipamento', idExclusaoEquipamento);
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return;
+      }
+
+      const eq = listaEquipamentosConsulta.find(e => String(e.id) === String(idExclusaoEquipamento));
+      if (eq) eq.desativada = true;
+
+      idExclusaoEquipamento = null;
+      if (typeof fecharModal === 'function') fecharModal('modalExclusao');
+      renderTabelaEquipamentos(ordenarDesativadosPorUltimoEquip(aplicarOrdenacaoEquipamento(listaEquipamentosConsulta)));
+    } catch (err) {
+      console.error('Erro ao desativar equipamento:', err);
+      alert('Erro ao conectar com o servidor.');
     }
-    this.consultar();
-    if (typeof fecharModal === 'function') fecharModal('modalExclusao');
   }
-}
 
-// Instanciação da Controller
-const equipmentsViewController = new EquipmentsViewController();
+  async function reativarEquipamentoUI(id) {
+    if (!id) return;
+    if (!confirm('Deseja reativar este equipamento?')) return;
 
-document.addEventListener('DOMContentLoaded', () => {
-  equipmentsViewController.init();
-});
+    try {
+      const resposta = await runServerFunction('reativarEquipamento', id);
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return;
+      }
+
+      const eq = listaEquipamentosConsulta.find(e => String(e.id) === String(id));
+      if (eq) eq.desativada = false;
+
+      renderTabelaEquipamentos(ordenarDesativadosPorUltimoEquip(aplicarOrdenacaoEquipamento(listaEquipamentosConsulta)));
+    } catch (err) {
+      console.error('Erro ao reativar equipamento:', err);
+      alert('Erro ao conectar com o servidor.');
+    }
+  }
 
 </script>

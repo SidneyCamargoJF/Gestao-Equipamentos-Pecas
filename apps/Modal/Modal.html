@@ -29,6 +29,24 @@
       </div>
     </div>
 
+    <!-- MODAL DE CADASTRO RÁPIDO DE MARCA (botão "+" de Peças/Equipamentos --
+         diferente do modalCadastroMarca da própria tela de Marcas, que usa
+         marcaController e não pode ser reaproveitado aqui sem risco) -->
+    <div class="modal-overlay" id="modalCadastroMarcaRapida">
+      <div class="modal">
+        <h3>Nova Marca</h3>
+        <div class="form-group">
+          <label for="novaMarcaRapidaNome" class="field__label">Nome da Marca *</label>
+          <input type="text" id="novaMarcaRapidaNome" class="search-input" placeholder="Digite o nome da marca..."/>
+          <span class="field__error-msg">Informe o nome da marca.</span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroMarcaRapida')">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="salvarNovaMarcaRapida()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- FORNECEDOR -->
 
     <!-- MODAL DE CADASTRO RÁPIDO DE FORNECEDOR -->
@@ -84,6 +102,21 @@
           </button>
         </div>
         <div id="detalhesFornecedorConteudo"></div>
+      </div>
+    </div>
+
+    <!-- MODAL DE DETALHES DO EQUIPAMENTO -->
+    <div class="modal-overlay" id="modalDetalhesEquipamento">
+      <div class="modal modal-detalhes-equipamento">
+        <div class="modal-detalhes-header">
+          <h3>Detalhes do Equipamento</h3>
+          <button class="btn-modal-fechar" onclick="fecharModal('modalDetalhesEquipamento')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div id="detalhesEquipamentoConteudo"></div>
       </div>
     </div>
 

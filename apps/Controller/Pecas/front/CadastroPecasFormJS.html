@@ -75,7 +75,13 @@
     }
   }
 
-  // ===== 2.1 CADASTRO RÁPIDO VIA BOTÃO "+" (Marca, Fornecedor, Localização) =====
+  let contextoCadastroRapido = 'pecas';
+
+  const SELECTS_CADASTRO_RAPIDO = {
+    marca: { pecas: 'marcaSelect', equipamentos: 'cadEquipMarca' },
+    fornecedor: { pecas: 'fornecedorSelect', equipamentos: 'cadEquipFornecedor' },
+    localizacao: { pecas: 'localSelect', equipamentos: 'cadEquipLocalizacao' }
+  };
 
   async function atualizarMarcaSelectPecas(nomeSelecionar) {
     const opcoesMarca = await loadBrands();
@@ -86,7 +92,47 @@
     }
   }
 
-  function abrirModalCadastroFornecedor() {
+  function abrirModalCadastroMarca(contexto) {
+    contextoCadastroRapido = contexto || 'pecas';
+    const input = document.getElementById('novaMarcaRapidaNome');
+    if (input) {
+      input.value = '';
+      input.classList.remove('is-invalid');
+    }
+    if (typeof exibirModal === 'function') exibirModal('modalCadastroMarcaRapida');
+    setTimeout(() => input && input.focus(), 100);
+  }
+
+  async function salvarNovaMarcaRapida() {
+    const input = document.getElementById('novaMarcaRapidaNome');
+    const nome = input ? input.value.trim() : '';
+
+    if (!nome) {
+      if (input) { input.classList.add('is-invalid'); input.focus(); }
+      return;
+    }
+
+    try {
+      const resposta = await runServerFunction('cadastrarMarca', nome);
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return;
+      }
+      if (typeof fecharModal === 'function') fecharModal('modalCadastroMarcaRapida');
+
+      const selectId = (SELECTS_CADASTRO_RAPIDO.marca[contextoCadastroRapido]) || 'marcaSelect';
+      const opcoesMarca = await loadBrands();
+      preencherSelect(selectId, opcoesMarca, 'Selecione a Marca');
+      const select = document.getElementById(selectId);
+      if (select) select.value = nome;
+    } catch (error) {
+      console.error('Erro ao cadastrar marca:', error);
+      alert('Erro ao cadastrar marca.');
+    }
+  }
+
+  function abrirModalCadastroFornecedor(contexto) {
+    contextoCadastroRapido = contexto || 'pecas';
     ['novoFornecedorCnpj', 'novoFornecedorRazaoSocial', 'novoFornecedorNomeFantasia', 'novoFornecedorCidade', 'novoFornecedorEmail', 'novoFornecedorTelefoneFixo'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
@@ -138,9 +184,10 @@
       .withSuccessHandler(async (resposta) => {
         if (resposta && resposta.sucesso) {
           fecharModalCadastroFornecedor();
+          const selectId = (SELECTS_CADASTRO_RAPIDO.fornecedor[contextoCadastroRapido]) || 'fornecedorSelect';
           const opcoesFornecedor = (await loadSuppliers()).map(linha => linha[3]).filter(Boolean);
-          preencherSelect('fornecedorSelect', opcoesFornecedor, 'Selecione o Fornecedor');
-          const select = document.getElementById('fornecedorSelect');
+          preencherSelect(selectId, opcoesFornecedor, 'Selecione o Fornecedor');
+          const select = document.getElementById(selectId);
           if (select) select.value = dados.razaoSocial;
         } else {
           alert(resposta ? resposta.mensagem : 'Erro ao cadastrar fornecedor.');
@@ -153,7 +200,8 @@
       .cadastrarFornecedorRapido(dados);
   }
 
-  function abrirModalCadastroLocalizacao() {
+  function abrirModalCadastroLocalizacao(contexto) {
+    contextoCadastroRapido = contexto || 'pecas';
     const input = document.getElementById('novaLocalizacaoNome');
     if (input) {
       input.value = '';
@@ -185,9 +233,10 @@
       .withSuccessHandler(async (resposta) => {
         if (resposta && resposta.sucesso) {
           fecharModalCadastroLocalizacao();
+          const selectId = (SELECTS_CADASTRO_RAPIDO.localizacao[contextoCadastroRapido]) || 'localSelect';
           const opcoesLocal = await loadLocations();
-          preencherSelect('localSelect', opcoesLocal, 'Selecione a Localização');
-          const select = document.getElementById('localSelect');
+          preencherSelect(selectId, opcoesLocal, 'Selecione a Localização');
+          const select = document.getElementById(selectId);
           if (select) select.value = nomeLocalizacao;
         } else {
           alert(resposta ? resposta.mensagem : 'Erro ao cadastrar localização.');
