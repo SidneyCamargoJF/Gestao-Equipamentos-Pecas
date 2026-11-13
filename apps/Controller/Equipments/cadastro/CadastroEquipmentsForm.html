@@ -130,24 +130,39 @@
       <fieldset class="fieldset-principal">
         <legend class="fieldset-legend">Informações Complementares</legend>
 
-        <div class="form-grid-3">
+    <div class="form-grid-3">
 
-          <div class="field">
-            <label class="field__label" for="cadEquipDataEntrada">Data de Entrada</label>
-            <input class="field__input" type="date" id="cadEquipDataEntrada">
-          </div>
+      <div class="field">
+        <label class="field__label" for="cadEquipDataEntrada">Data de Entrada</label>
+        <input class="field__input" type="date" id="cadEquipDataEntrada">
+      </div>
 
-          <div class="field">
-            <label class="field__label" for="cadEquipNotaFiscal">Nota Fiscal</label>
-            <input class="field__input" type="text" id="cadEquipNotaFiscal" placeholder="Ex: NF-12345">
-          </div>
+      <div class="field">
+        <label class="field__label" for="cadEquipNotaFiscal">Nota Fiscal</label>
+        <input class="field__input" type="text" id="cadEquipNotaFiscal" placeholder="Ex: NF-12345">
+      </div>
 
-          <div class="field">
-            <label class="field__label" for="cadEquipValorAquisicao">Valor de Aquisição (R$)</label>
-            <input class="field__input" type="text" id="cadEquipValorAquisicao" placeholder="0,00" inputmode="numeric" oninput="this.value = aplicarMascaraMoedaEquip(this.value)">
-          </div>
+      <div class="field">
+        <label class="field__label" for="cadEquipSei">Número do SEI</label>
+        <input class="field__input" type="text" id="cadEquipSei" placeholder="Ex: 00000.000000/0000-00">
+      </div>
 
-        </div>
+    </div>
+
+    <div class="form-grid-3">
+
+      <div class="field">
+        <label class="field__label" for="cadEquipDataGarantia">Data da Garantia (Vencimento)</label>
+        <input class="field__input" type="date" id="cadEquipDataGarantia">
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="cadEquipValorAquisicao">Valor de Aquisição (R$)</label>
+        <input class="field__input" type="text" id="cadEquipValorAquisicao" placeholder="0,00" inputmode="numeric" oninput="this.value = aplicarMascaraMoedaEquip(this.value)">
+      </div>
+
+    </div>
+
 
         <div class="form-grid-3">
 

@@ -1,11 +1,3 @@
-// =====================================================
-// DASHBOARD - Indicadores de Fornecedores
-// Lê tbl_fornecedor (via filtrarFornecedores, já existente) e cruza com
-// tbl_pecas/tbl_contratos pelo nome do fornecedor (Fornecedor não é uma FK
-// real nessas tabelas, é texto solto -- por isso a comparação é por nome
-// normalizado, sem acento/caixa).
-// =====================================================
-
 function normalizarNomeFornecedor_(s) {
   return String(s || '')
     .trim()
@@ -34,9 +26,6 @@ function buscarIndicadoresFornecedor() {
       contagemPecas[chave] = (contagemPecas[chave] || 0) + 1;
     });
 
-  // Contratos entram só pra decidir quem está "sem vínculo" -- o ranking
-  // "Top Fornecedores por Contratos" foi removido da tela, mas sem isso o
-  // fornecedor que só tem contrato (sem peça) apareceria como sem vínculo.
   const contagemContratos = {};
   ReadContracts()
     .filter(l => !l[contractDataExclusaoCol])
@@ -130,16 +119,6 @@ function buscarIndicadoresPecas() {
   };
 }
 
-// =====================================================
-// DASHBOARD - Indicadores de Chamados
-// Índices de ReadTickets() são os mesmos usados em filtrarChamados() e
-// buscarChamadoDetalhado() (ConsultaChamadoBackend.js): 0=id, 1=equipamentoId,
-// 2=motivo, 3=tipo, 4=prioridade, 5=dataAbertura, 6=abertoPor, 7=atribuidoA,
-// 8=dataInicioAndamento, 9=dataFinalizacao, 10=observacao, 11=status,
-// 12=dataAlteracao. As constantes ticketsXCol do ChamadosModel.js são
-// 1-based (pra getRange), não servem pra indexar esse array.
-// =====================================================
-
 function buscarIndicadoresChamados() {
   const ativos = ReadTickets().filter(l => String(l[11] || '').trim().toLowerCase() !== 'cancelado');
 
@@ -153,11 +132,13 @@ function buscarIndicadoresChamados() {
     else if (status === 'em andamento') andamento++;
     else if (status === 'concluido') concluidos++;
 
+    if (status === 'aberto') {
     const prioridade = String(l[4] || '').trim().toLowerCase();
     if (prioridade) porPrioridade[prioridade] = (porPrioridade[prioridade] || 0) + 1;
 
     const tipo = String(l[3] || '').trim().toLowerCase();
     if (tipo) porTipo[tipo] = (porTipo[tipo] || 0) + 1;
+    }
   });
 
   return {
@@ -168,13 +149,6 @@ function buscarIndicadoresChamados() {
     porTipo: paraRankingOrdenado_(porTipo)
   };
 }
-
-// =====================================================
-// DASHBOARD - Indicadores de Equipamentos
-// Usa ReadSheet direto (em vez do EquipmentsModel.read(), que devolve
-// objetos com chaves pelo cabeçalho literal da planilha -- aqui é mais
-// seguro usar os índices de coluna já declarados na classe).
-// =====================================================
 
 function buscarIndicadoresEquipamentos() {
   const model = new EquipmentsModel();

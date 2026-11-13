@@ -1,20 +1,9 @@
 <script>
 
-    // Calculations & Dynamic Rendering Functions
-    function renderEquipamentos() {
-      const tbody = document.getElementById('bodyEquipamentosView');
-      tbody.innerHTML = equipamentosMock.map(eq => `
-        <tr>
-          <td><strong>${eq.patrimonio}</strong></td>
-          <td>${eq.nome}</td>
-          <td>${eq.marca}</td>
-          <td>${eq.localizacao}</td>
-          <td>
-            <button class="btn btn-secondary btn-small" onclick="verDetalhes(${eq.id})">Ver Histórico</button>
-          </td>
-        </tr>
-      `).join('');
-    }
+    // renderEquipamentos() (mock) removido -- a Consulta de Equipamentos de
+    // verdade está em apps/Controller/Equipments/consulta/ConsultaEquipmentsJS.html.
+    // Essa versão antiga escrevia num <tbody> que não existe mais e, por ser
+    // declarada depois no index.html, sobrescrevia a função real.
 
     // renderChamados() (mock) removido -- a Consulta de Chamados de verdade
     // está sendo construída em apps/Chamados/consulta/. Lembre de religar o

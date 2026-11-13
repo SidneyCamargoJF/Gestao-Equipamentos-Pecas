@@ -43,29 +43,35 @@
     const tituloForm = document.getElementById('formTitulo');
     const inputId = document.getElementById('cadEquipId');
 
+    // Máscara "00000.000000/0000-00" -- mesma função já usada no campo SEI
+    // de Contrato (apps/Helper/HelperJS.html/mascaraSEI).
+    const seiField = document.getElementById('cadEquipSei');
+    if (seiField) mascaraSEI(seiField);
 
-    const [nomes, opcoesMarca, opcoesLocal, opcoesFornecedor] = await Promise.all([
-      carregarNomesEquipamento(),
-      loadBrands(),
-      loadLocations(),
-      loadSuppliers()
-    ]);
-
-    initSearchChamado('cadEquipNome', 'cadEquipNomeDropdown', 'cadEquipNomeWrapper', nomes);
-    preencherSelect('cadEquipMarca', opcoesMarca, 'Selecione a Marca');
-    preencherSelect('cadEquipLocalizacao', opcoesLocal, 'Selecione a Localização');
-    preencherSelect('cadEquipFornecedor', opcoesFornecedor.map(linha => linha[3]).filter(Boolean), 'Selecione o Fornecedor');
-
-    if (!id || id === 0 || id === '0') {
-      if (tituloForm) tituloForm.textContent = 'Novo';
-      if (inputId) inputId.value = '0';
-      return;
-    }
-
-    if (tituloForm) tituloForm.textContent = 'Editar';
-    if (inputId) inputId.value = id;
+    if (typeof exibirModal === 'function') exibirModal('processando');
 
     try {
+      const [nomes, opcoesMarca, opcoesLocal, opcoesFornecedor] = await Promise.all([
+        carregarNomesEquipamento(),
+        loadBrands(),
+        loadLocations(),
+        loadSuppliers()
+      ]);
+
+      initSearchChamado('cadEquipNome', 'cadEquipNomeDropdown', 'cadEquipNomeWrapper', nomes);
+      preencherSelect('cadEquipMarca', opcoesMarca, 'Selecione a Marca');
+      preencherSelect('cadEquipLocalizacao', opcoesLocal, 'Selecione a Localização');
+      preencherSelect('cadEquipFornecedor', opcoesFornecedor.map(linha => linha[3]).filter(Boolean), 'Selecione o Fornecedor');
+
+      if (!id || id === 0 || id === '0') {
+        if (tituloForm) tituloForm.textContent = 'Novo';
+        if (inputId) inputId.value = '0';
+        return;
+      }
+
+      if (tituloForm) tituloForm.textContent = 'Editar';
+      if (inputId) inputId.value = id;
+
       const resposta = await runServerFunction('buscarEquipamentoParaEdicao', id);
       if (!resposta || resposta.sucesso === false) {
         alert(resposta ? resposta.mensagem : 'Equipamento não encontrado.');
@@ -76,21 +82,43 @@
     } catch (error) {
       console.error('Erro ao buscar equipamento para edição:', error);
       alert('Erro ao buscar equipamento para edição.');
+    } finally {
+      if (typeof fecharModal === 'function') fecharModal('processando');
     }
+  }
+
+  // Seleciona a opção com esse valor no <select>; se o valor salvo não bater
+  // com nenhuma opção carregada (ex.: marca foi renomeada/desativada depois
+  // que o equipamento foi cadastrado), adiciona ele como opção extra em vez
+  // de deixar o campo em branco silenciosamente.
+  function selecionarOuAdicionarOpcaoEquip(selectId, valor) {
+    const select = document.getElementById(selectId);
+    if (!select || !valor) return;
+
+    const existe = Array.from(select.options).some(opt => opt.value === valor);
+    if (!existe) {
+      const opt = document.createElement('option');
+      opt.value = valor;
+      opt.textContent = valor;
+      select.appendChild(opt);
+    }
+    select.value = valor;
   }
 
   function preencherFormularioEquipamento(eq) {
     document.getElementById('cadEquipId').value = eq.id || '0';
     document.getElementById('cadEquipPatrimonio').value = eq.patrimonio || '';
     document.getElementById('cadEquipNome').value = eq.nome || '';
-    document.getElementById('cadEquipMarca').value = eq.marca || '';
+    selecionarOuAdicionarOpcaoEquip('cadEquipMarca', eq.marca);
     document.getElementById('cadEquipCapacidade').value = aplicarMascaraMilharEquip(eq.capacidade || '');
     document.getElementById('cadEquipModelo').value = eq.modelo || '';
     document.getElementById('cadEquipSequencia').value = eq.sequencia || '';
-    document.getElementById('cadEquipLocalizacao').value = eq.localizacao || '';
-    document.getElementById('cadEquipFornecedor').value = eq.fornecedor || '';
+    selecionarOuAdicionarOpcaoEquip('cadEquipLocalizacao', eq.localizacao);
+    selecionarOuAdicionarOpcaoEquip('cadEquipFornecedor', eq.fornecedor);
     document.getElementById('cadEquipDataEntrada').value = eq.dataEntrada || '';
     document.getElementById('cadEquipNotaFiscal').value = eq.notaFiscal || '';
+    document.getElementById('cadEquipSei').value = eq.sei || '';
+    document.getElementById('cadEquipDataGarantia').value = eq.dataGarantia || '';
     document.getElementById('cadEquipValorAquisicao').value = eq.valorAquisicao || '';
     document.getElementById('cadEquipObservacoes').value = eq.observacoes || '';
     atualizarUnidadeCapacidadeEquip();
@@ -98,7 +126,7 @@
 
   function limparFormularioEquipamento() {
     document.getElementById('cadEquipId').value = '0';
-    ['cadEquipPatrimonio', 'cadEquipNome', 'cadEquipMarca', 'cadEquipCapacidade', 'cadEquipModelo', 'cadEquipSequencia', 'cadEquipLocalizacao', 'cadEquipFornecedor', 'cadEquipDataEntrada', 'cadEquipNotaFiscal', 'cadEquipValorAquisicao', 'cadEquipObservacoes'].forEach(id => {
+    ['cadEquipPatrimonio', 'cadEquipNome', 'cadEquipMarca', 'cadEquipCapacidade', 'cadEquipModelo', 'cadEquipSequencia', 'cadEquipLocalizacao', 'cadEquipFornecedor', 'cadEquipDataEntrada', 'cadEquipNotaFiscal', 'cadEquipSei', 'cadEquipDataGarantia', 'cadEquipValorAquisicao', 'cadEquipObservacoes'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.value = '';
@@ -148,6 +176,8 @@
       fornecedor: document.getElementById('cadEquipFornecedor')?.value.trim() || '',
       dataEntrada: document.getElementById('cadEquipDataEntrada')?.value || '',
       notaFiscal: document.getElementById('cadEquipNotaFiscal')?.value.trim() || '',
+      sei: document.getElementById('cadEquipSei')?.value.trim() || '',
+      dataGarantia: document.getElementById('cadEquipDataGarantia')?.value || '',
       valorAquisicao: document.getElementById('cadEquipValorAquisicao')?.value.trim() || '',
       observacoes: document.getElementById('cadEquipObservacoes')?.value.trim() || ''
     };

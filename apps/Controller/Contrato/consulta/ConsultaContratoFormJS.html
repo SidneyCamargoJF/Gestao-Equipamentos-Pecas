@@ -333,7 +333,7 @@ function montarDetalheContratoHtml(c, situacao) {
 
     const servicosHtml = lista(c.servicos, 'Nenhum serviço cadastrado.', s => `
         <li>
-            <strong>${escapeHtml(s.categoria)} ${escapeHtml(s.tipo)} ${escapeHtml(s.capacidade)}</strong><br>
+            <strong>${escapeHtml(s.tipoManutencao)} — ${escapeHtml(s.categoria)} ${escapeHtml(s.tipo)} ${escapeHtml(s.capacidade)}</strong><br>
             Periodicidade: ${escapeHtml(s.periodicidade)}
         </li>`);
 

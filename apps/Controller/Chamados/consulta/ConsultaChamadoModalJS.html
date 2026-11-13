@@ -191,6 +191,10 @@ function abrirCaixaTextoChamado(modo) {
         if (rotuloEl) rotuloEl.textContent = 'Motivo do encerramento';
         if (textoEl) textoEl.placeholder = 'Descreva o que foi feito para resolver o chamado...';
         if (textoBotaoEl) textoBotaoEl.textContent = 'Confirmar encerramento';
+    } else if (modo === 'reabrir') {
+        if (rotuloEl) rotuloEl.textContent = 'Motivo da reabertura';
+        if (textoEl) textoEl.placeholder = 'Descreva por que esse chamado está sendo reaberto...';
+        if (textoBotaoEl) textoBotaoEl.textContent = 'Confirmar reabertura';
     } else {
         if (rotuloEl) rotuloEl.textContent = 'Nova anotação';
         if (textoEl) textoEl.placeholder = 'Ex: "Serviço no período da manhã"...';
@@ -220,6 +224,17 @@ async function confirmarCaixaTextoChamado() {
             return;
         }
         await alterarStatusChamadoUI('Concluido', motivo);
+        return;
+    }
+
+    if (chamadoCaixaTextoModo === 'reabrir') {
+        const textoEl = document.getElementById('novaAnotacaoChamado');
+        const motivo = textoEl ? textoEl.value.trim() : '' ;
+        if(!motivo) {
+            alert('Informe o motivo da reabertura.');
+            return;
+        }
+        await reabrirChamadoComMotivoUI(motivo);
         return;
     }
 
@@ -440,14 +455,19 @@ function resolverChamadoUI() {
 }
 
 async function reabrirChamadoUI() {
+    abrirCaixaTextoChamado('reabrir');
+}
+
+async function reabrirChamadoComMotivoUI(motivo) {
     if (!chamadoIdAtualModal) return;
 
     try {
-        const resposta = await runServerFunction('reativarChamado', chamadoIdAtualModal);
+        const resposta = await runServerFunction('reativarChamado', chamadoIdAtualModal, motivo);
         if (resposta && resposta.sucesso === false) {
             alert(resposta.mensagem);
             return;
         }
+        cancelarCaixaTextoChamado();
         abrirDetalhesChamado(chamadoIdAtualModal);
         consultarChamados();
     } catch (error) {
@@ -455,6 +475,7 @@ async function reabrirChamadoUI() {
         alert('Erro ao reabrir chamado.');
     }
 }
+
 
 async function excluirAnotacaoChamadoUI(historicoId) {
     if (!confirm('Excluir essa anotação?')) return;

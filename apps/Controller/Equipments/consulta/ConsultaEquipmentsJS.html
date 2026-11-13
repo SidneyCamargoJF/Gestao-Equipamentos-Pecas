@@ -1,20 +1,30 @@
 <script>
+  // Mesmo padrão do badge de Garantia já usado em Peças (.garantia-badge +
+  // .ativa/.vencida/.vencendo, definidos em ConsultaPecasFormCSS.html --
+  // classes genéricas, sem escopo de página, reaproveitadas aqui).
+  function formatarGarantiaEquip(g) {
+    const map = { ativa: 'Ativa', vencida: 'Vencida', vencendo: 'Vencendo' };
+    return map[String(g || '').toLowerCase()] || '--';
+  }
+
   let listaEquipamentosConsulta = [];
   let sortStateEquipamento = { coluna: null, direcao: 'asc' };
 
   async function renderEquipamentos() {
     const inputBusca = document.getElementById('equipmentSearch');
     if (inputBusca) inputBusca.focus();
+    consultarEquipamentos();
   }
 
   function consultarEquipamentos() {
     const criterios = {
       nome: document.getElementById('equipmentSearch')?.value.trim() || '',
-      patrimonio: document.getElementById('filtroEquipPatrimonio')?.value.trim() || '',
       capacidade: document.getElementById('filtroEquipCapacidade')?.value.trim() || '',
       marca: document.getElementById('filtroEquipMarca')?.value.trim() || '',
-      localizacao: document.getElementById('filtroEquipLocalizacao')?.value.trim() || ''
+      localizacao: document.getElementById('filtroEquipLocalizacao')?.value.trim() || '',
+      sei: document.getElementById('filtroEquipSei')?.value.trim() || ''
     };
+
 
     mostrarCarregandoEquipamentos(true);
 
@@ -36,7 +46,7 @@
     if (!carregando) return;
     const tbody = document.getElementById('tabelaBodyEquipment');
     if (tbody) {
-      tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><span class="spinner"></span>Buscando equipamentos...</td></tr>';
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span>Buscando equipamentos...</td></tr>';
     }
   }
 
@@ -65,7 +75,7 @@
       if (span) span.textContent = '';
     });
 
-    const indices = { patrimonio: 1, nome: 2, capacidade: 3, marca: 4, modelo: 5, localizacao: 6 };
+    const indices = { patrimonio: 1, nome: 2, capacidade: 3, marca: 4, modelo: 5, localizacao: 6, sei: 7, garantia: 8 };
     const idx = indices[sortStateEquipamento.coluna];
     if (idx !== undefined && ths[idx]) {
       ths[idx].classList.add('sorted');
@@ -95,7 +105,7 @@
     tbody.innerHTML = '';
 
     if (!lista || lista.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhum equipamento encontrado.</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Nenhum equipamento encontrado.</td></tr>';
       return;
     }
 
@@ -113,6 +123,10 @@
 
       const btnVer = `<button class="btn-acao" title="Ver detalhes" onclick="abrirDetalhesEquipamento('${eq.id}')">👁️</button>`;
 
+      const garantiaHtml = eq.garantia
+        ? `<span class="garantia-badge ${escapeHtml(eq.garantia)}">${formatarGarantiaEquip(eq.garantia)}</span>`
+        : '--';
+
       tr.innerHTML = `
         <td class="acao-cell">${btnVer}</td>
         <td>${escapeHtml(eq.patrimonio)} ${eq.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
@@ -121,6 +135,8 @@
         <td>${escapeHtml(eq.marca)}</td>
         <td>${escapeHtml(eq.modelo)}</td>
         <td>${escapeHtml(eq.localizacao)}</td>
+        <td>${escapeHtml(eq.sei)}</td>
+        <td>${garantiaHtml}</td>
         <td class="acao-cell">
           ${btnEditar}
           ${btnExcluir}
@@ -180,6 +196,8 @@
     const complementaresHtml = `
         ${linha('Data de Entrada', eq.dataEntrada)}
         ${linha('Nota Fiscal', eq.notaFiscal)}
+        ${linha('Número do SEI', eq.sei)}
+        ${linha('Data da Garantia (Vencimento)', eq.dataGarantia)}
         ${linha('Valor de Aquisição', eq.valorAquisicao)}
         ${linha('Observações', eq.observacoes)}
         ${linha('Cadastrado em', eq.dtCadastro)}
@@ -193,7 +211,7 @@
   function limparFiltrosEquipamento() {
     const inputBusca = document.getElementById('equipmentSearch');
     if (inputBusca) inputBusca.value = '';
-    ['filtroEquipPatrimonio', 'filtroEquipCapacidade', 'filtroEquipMarca', 'filtroEquipLocalizacao'].forEach(id => {
+    ['filtroEquipCapacidade', 'filtroEquipMarca', 'filtroEquipLocalizacao', 'filtroEquipSei'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });

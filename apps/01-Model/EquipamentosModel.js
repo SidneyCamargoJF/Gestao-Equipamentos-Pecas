@@ -15,12 +15,12 @@ class EquipmentsModel extends SheetModel {
     // complementares (J a M), e só depois Active/DtCadastro/DtAlteracao/
     // DtExclusao (N a Q).
     this.setIdColumn(0)            // A - ID
-    this.setActiveColumn(13)       // N - Active
-    this.setDtCadastroColumn(14)   // O - dt_cadastro
-    this.setDtAlteracaoColumn(15)  // P - dt_alteracao
-    this.setDtExclusaoColumn(16)   // Q - dt_exclusao
+    this.setActiveColumn(15)       // O - Active
+    this.setDtCadastroColumn(16)   // P - dt_cadastro
+    this.setDtAlteracaoColumn(17)  // Q - dt_alteracao
+    this.setDtExclusaoColumn(18)   // R - dt_exclusao
 
-    this.setNumColumns(17)
+    this.setNumColumns(19)
 
     this.colNome           = 1;  // B - Nome
     this.colMarca          = 2;  // C - Marca
@@ -32,8 +32,10 @@ class EquipmentsModel extends SheetModel {
     this.colFornecedor     = 8;  // I - Fornecedor
     this.colDataEntrada    = 9;  // J - Data de Entrada
     this.colNotaFiscal     = 10; // K - Nota Fiscal
-    this.colValorAquisicao = 11; // L - Valor de Aquisição
-    this.colObservacoes    = 12; // M - Observações
+    this.colSei            = 11; // l - SEI
+    this.colDataGarantia   = 12; // M - Data Garantia 
+    this.colValorAquisicao = 13; // N - Valor
+    this.colObservacoes    = 14; // O -
 
 
   }

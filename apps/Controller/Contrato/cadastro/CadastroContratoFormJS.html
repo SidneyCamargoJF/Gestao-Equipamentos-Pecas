@@ -132,30 +132,27 @@
       renderizarEquipamentos();
       renderizarProdutos();
 
-      // Categoria/Tipo/Capacidade agora têm coluna própria em
-      // tbl_contratos_servicos, então dá pra "desmontar" de volta certinho
-      // e já deixar os 3 selects em cascata com o valor salvo -- só o Tipo
-      // de Manutenção ainda não tem coluna própria, então esse campo some
-      // na edição (fica no padrão "Preventiva").
       const servicoSalvo = (dados.servicos || [])[0];
       if (servicoSalvo) {
         await carregarOpcoesEspecificacaoServico();
 
         servicoAtual = {
-          tipoManutencao: '',
+          tipoManutencao: servicoSalvo.tipoManutencao || '',
           categoriaEquip: servicoSalvo.categoria || '',
           tipoEquip: servicoSalvo.tipo || '',
           capacidadeEquip: servicoSalvo.capacidade || '',
           periodicidade: servicoSalvo.periodicidade || 'anual',
-          nomeCompleto: [servicoSalvo.categoria, servicoSalvo.tipo, formatarCapacidadeComPonto(servicoSalvo.capacidade)]
-            .filter(Boolean).join(' ')
+          nomeCompleto: [servicoSalvo.tipoManutencao, [servicoSalvo.categoria, servicoSalvo.tipo, formatarCapacidadeComPonto(servicoSalvo.capacidade)].filter(Boolean).join(' ')]
+            .filter(Boolean).join(' — ')
         };
 
+        const tipoManutencaoSelect = document.getElementById('servicoTipoManutencao');
         const catSelect = document.getElementById('servicoCategoriaEquip');
         const tipoSelect = document.getElementById('servicoTipoEquip');
         const capSelect = document.getElementById('servicoCapacidadeEquip');
         const periodicidadeSelect = document.getElementById('servicoPeriodicidade');
 
+        if (tipoManutencaoSelect) tipoManutencaoSelect.value = servicoAtual.tipoManutencao;
         if (catSelect) {
           catSelect.value = servicoAtual.categoriaEquip;
           atualizarSelectTipoServico();
@@ -1105,6 +1102,7 @@ async function salvarContrato() {
       anexos: anexos,
       equipamentos: equipamentos,
       servicos: servicoAtual ? [{
+        tipoManutencao: servicoAtual.tipoManutencao,
         categoria: servicoAtual.categoriaEquip,
         tipo: servicoAtual.tipoEquip,
         capacidade: servicoAtual.capacidadeEquip,

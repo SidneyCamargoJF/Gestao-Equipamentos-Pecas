@@ -52,7 +52,7 @@ function renderizarResultadoRelatorio(dados) {
     const anual = dados.checklist.filter(function (c) { return c.periodo === 'anual'; });
 
     container.innerHTML =
-    '<p><strong>' + escapeHtml(dados.servico.categoria) + ' ' + escapeHtml(dados.servico.tipo) + ' ' + escapeHtml(dados.servico.capacidade) + '</strong> &mdash; ' + escapeHtml(dados.servico.periodicidade) + '</p>' +
+    '<p><strong>' + escapeHtml(dados.servico.tipoManutencao) + ' — ' + escapeHtml(dados.servico.categoria) + ' ' + escapeHtml(dados.servico.tipo) + ' ' + escapeHtml(dados.servico.capacidade) + '</strong> &mdash; ' + escapeHtml(dados.servico.periodicidade) + '</p>' +
     '<h3>Mensal</h3><ul>' + (mensal.map(function (c) { return '<li>' + escapeHtml(c.descricao) + '</li>'; }).join('') || '<li>Nenhum item.</li>') + '</ul>' +
     '<h3>Anual</h3><ul>' + (anual.map(function (c) { return '<li>' + escapeHtml(c.descricao) + '</li>'; }).join('') || '<li>Nenhum item.</li>') + '</ul>';
 }

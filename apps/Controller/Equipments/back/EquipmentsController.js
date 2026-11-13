@@ -31,16 +31,42 @@ function formatarDataExibicaoEquip_(valorCelula) {
   return texto;
 }
 
+// Status da garantia ("vencida"/"vencendo"/"ativa") pro badge da Consulta --
+// mesma lógica/helpers já usados em Peças (statusGarantia/calculaDias,
+// apps/Helper/back/HelperDate.js). Devolve '' se não tiver data de garantia.
+function calcularStatusGarantiaEquip_(valorCelula) {
+  if (!valorCelula) return '';
+
+  let data = null;
+  if (valorCelula instanceof Date) {
+    data = valorCelula;
+  } else {
+    const texto = String(valorCelula).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+      data = new Date(texto + 'T00:00:00');
+    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
+      data = stringToDate(texto);
+    }
+  }
+
+  if (!data || isNaN(data)) return '';
+
+  const dias = calculaDias(data, new Date());
+  return statusGarantia(dias);
+}
+
 function filtrarEquipamentos(criterios) {
   criterios = criterios || {};
   const model = new EquipmentsModel();
   const linhas = ReadSheet('tbl_equipamentos', 3, model.numColumns);
 
-  const nomeBusca = String(criterios.nome || '').trim().toLowerCase();
-  const patrimonioBusca = String(criterios.patrimonio || '').trim().toLowerCase();
+  // Nome e Patrimônio foram unidos num campo só na Consulta -- um termo que
+  // bate em qualquer um dos dois já é suficiente (filtro "OU", não "E").
+  const nomeOuPatrimonioBusca = String(criterios.nome || '').trim().toLowerCase();
   const capacidadeBusca = String(criterios.capacidade || '').replace(/\D/g, '');
   const marcaBusca = String(criterios.marca || '').trim().toLowerCase();
   const localizacaoBusca = String(criterios.localizacao || '').trim().toLowerCase();
+  const seiBusca = String(criterios.sei || '').trim().toLowerCase();
 
   const res = linhas
     .map(l => ({
@@ -53,14 +79,16 @@ function filtrarEquipamentos(criterios) {
       sequencia: String(l[model.colSequencia] || '').trim(),
       localizacao: String(l[model.colLocalizacao] || '').trim(),
       fornecedor: String(l[model.colFornecedor] || '').trim(),
+      sei: String(l[model.colSei] || '').trim(),
+      garantia: calcularStatusGarantiaEquip_(l[model.colDataGarantia]),
       desativada: !!(l[model.colDtExclusao] && String(l[model.colDtExclusao]).trim() !== '')
     }))
     .filter(eq => eq.nome || eq.patrimonio)
-    .filter(eq => nomeBusca === '' || eq.nome.toLowerCase().includes(nomeBusca))
-    .filter(eq => patrimonioBusca === '' || eq.patrimonio.toLowerCase().includes(patrimonioBusca))
+    .filter(eq => nomeOuPatrimonioBusca === '' || eq.nome.toLowerCase().includes(nomeOuPatrimonioBusca) || eq.patrimonio.toLowerCase().includes(nomeOuPatrimonioBusca))
     .filter(eq => capacidadeBusca === '' || eq.capacidade.replace(/\D/g, '').includes(capacidadeBusca))
     .filter(eq => marcaBusca === '' || eq.marca.toLowerCase().includes(marcaBusca))
-    .filter(eq => localizacaoBusca === '' || eq.localizacao.toLowerCase().includes(localizacaoBusca));
+    .filter(eq => localizacaoBusca === '' || eq.localizacao.toLowerCase().includes(localizacaoBusca))
+    .filter(eq => seiBusca === '' || eq.sei.toLowerCase().includes(seiBusca));
 
   res.sort((a, b) => (a.desativada ? 1 : 0) - (b.desativada ? 1 : 0));
 
@@ -99,6 +127,8 @@ function buscarEquipamentoParaEdicao(idInput) {
             fornecedor: String(l[model.colFornecedor] || ''),
             dataEntrada: converterParaInputDateEquip_(l[model.colDataEntrada]),
             notaFiscal: String(l[model.colNotaFiscal] || ''),
+            sei: String(l[model.colSei] || ''),
+            dataGarantia: converterParaInputDateEquip_(l[model.colDataGarantia]),
             valorAquisicao: l[model.colValorAquisicao] || '',
             observacoes: String(l[model.colObservacoes] || '')
           }
@@ -136,6 +166,8 @@ function buscarEquipamentoDetalhado(idInput) {
             fornecedor: String(l[model.colFornecedor] || ''),
             dataEntrada: formatarDataExibicaoEquip_(l[model.colDataEntrada]),
             notaFiscal: String(l[model.colNotaFiscal] || ''),
+            sei: String(l[model.colSei] || ''),
+            dataGarantia: formatarDataExibicaoEquip_(l[model.colDataGarantia]),
             valorAquisicao: l[model.colValorAquisicao] || '',
             observacoes: String(l[model.colObservacoes] || ''),
             dtCadastro: formatarDataExibicaoEquip_(l[model.colDtCadastro]),
@@ -194,6 +226,8 @@ function salvarEquipamento(dados) {
           aba.getRange(linhaReal, model.colFornecedor + 1).setValue(dados.fornecedor || '');
           aba.getRange(linhaReal, model.colDataEntrada + 1).setValue(dados.dataEntrada || '');
           aba.getRange(linhaReal, model.colNotaFiscal + 1).setValue(dados.notaFiscal || '');
+          aba.getRange(linhaReal, model.colSei + 1).setValue(dados.sei || '');
+          aba.getRange(linhaReal, model.colDataGarantia + 1).setValue(dados.dataGarantia || '');
           aba.getRange(linhaReal, model.colValorAquisicao + 1).setValue(dados.valorAquisicao || '');
           aba.getRange(linhaReal, model.colObservacoes + 1).setValue(dados.observacoes || '');
           aba.getRange(linhaReal, model.colDtAlteracao + 1).setValue(dataHoje);
@@ -222,6 +256,8 @@ function salvarEquipamento(dados) {
     novaLinha[model.colFornecedor] = dados.fornecedor || '';
     novaLinha[model.colDataEntrada] = dados.dataEntrada || '';
     novaLinha[model.colNotaFiscal] = dados.notaFiscal || '';
+    novaLinha[model.colSei] = dados.sei || '';
+    novaLinha[model.colDataGarantia] = dados.dataGarantia || '';
     novaLinha[model.colValorAquisicao] = dados.valorAquisicao || '';
     novaLinha[model.colObservacoes] = dados.observacoes || '';
     novaLinha[model.colActive] = 'Y';

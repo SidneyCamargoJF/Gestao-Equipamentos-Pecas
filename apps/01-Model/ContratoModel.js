@@ -84,17 +84,18 @@ function ReadContractsEquipaments() {
 // ===== tbl_contratos_servicos =====
 let contractsServicosTableName = 'tbl_contratos_servicos'
 let firstLineContractsServicos = 3
-let numColumnsContractsServicos = 9
+let numColumnsContractsServicos = 10
 
 let contractsServicosIdCol = 0
 let contractsServicosIdContratoCol = 1
-let contractsServicosCategoriaCol = 2
-let contractsServicosTipoCol = 3
-let contractsServicosCapacidadeCol = 4
-let contractsServicosPeriodicidadeCol = 5
-let contractServicosDataCadastroCol = 6
-let contractsServicosDataExclusaoCol = 7
-let contractsServicosDataAlteracaoCol = 8
+let contractsServicosTipoManutencaoCol = 2
+let contractsServicosCategoriaCol = 3
+let contractsServicosTipoCol = 4
+let contractsServicosCapacidadeCol = 5
+let contractsServicosPeriodicidadeCol = 6
+let contractServicosDataCadastroCol = 7
+let contractsServicosDataExclusaoCol = 8
+let contractsServicosDataAlteracaoCol = 9
 
 function ReadContractsServicos() {
   const objRows = ReadSheet(contractsServicosTableName, firstLineContractsServicos, numColumnsContractsServicos)

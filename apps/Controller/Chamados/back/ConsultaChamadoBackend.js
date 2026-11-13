@@ -201,7 +201,7 @@ function alterarStatusChamado(idInput, novoStatus, motivo) {
     }
 }
 
-function reativarChamado(idInput) {
+function reativarChamado(idInput, motivo) {
     try {
         const idBuscado = Number(idInput);
         if (!idBuscado) {
@@ -222,9 +222,10 @@ function reativarChamado(idInput) {
                 const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
 
                 abaChamados.getRange(linhaReal, ticketsDtAlteracaoCol).setValue(dataAtual);
+                const motivoLimpo = String(motivo || '').trim();
                 abaChamados.getRange(linhaReal, ticketsStatusCol).setValue("Aberto");
                 abaChamados.getRange(linhaReal, 1, 1, numColumnsTickets).setBackground(null);
-                adicionarHistoricoSistema(idBuscado, 'Chamado reativado');
+                adicionarHistoricoSistema(idBuscado, 'Chamado reativado'); 
                 return { sucesso: true, mensagem: "Chamado reativado com sucesso." };
             }
         }
@@ -240,15 +241,7 @@ function buscarMotivosUnicosChamado() {
     return [...new Set(motivos)]
 }
 
-/**
- * Lista as entradas de tbl_chamado_historico de um chamado (aba Histórico
- * do modal de detalhes), mais recente primeiro. Cada entrada vem com
- * "tipo" pra a tela colorir/mostrar botão de excluir diferente:
- * - 'sistema': gerada automaticamente (abertura, troca de status,
- *   reativação...) -- imutável, sem botão de excluir.
- * - 'alerta': igual sistema, mas destacada em vermelho (chamado desativado).
- * - 'anotacao': digitada manualmente por alguém -- pode ser excluída.
- */
+
 function buscarHistoricoChamado(chamadoId) {
     const idBuscado = Number(chamadoId);
     const dados = ReadTicketHistorico();

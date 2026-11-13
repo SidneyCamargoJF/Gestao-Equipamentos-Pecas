@@ -2,7 +2,7 @@
 
         <div class="page-header">
           <div class="actions-bar">
-            <h1>⚙️ Equipments</h1>
+            <h1>⚙️ Equipmentos</h1>
           </div>
 
           <!-- Botoes de limpar e adicionar -->
@@ -30,19 +30,14 @@
           <form autocomplete="off" onsubmit="return false;">
             <div class="filters-primary">
               <div class="field">
-                <label class="field__label" for="filtroEquipPatrimonio">Patrimônio</label>
-                <input class="field__input" type="text" id="filtroEquipPatrimonio" placeholder="Digite o patrimônio...">
-              </div>
-
-              <div class="field">
-                <label class="field__label">Nome</label>
+                <label class="field__label">Nome / Patrimônio</label>
                 <div class="search-wrapper" id="equipmentWrapper">
                   <span class="search-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
                   </span>
-                  <input class="search-input" type="text" id="equipmentSearch" placeholder="Selecione o equipamento..." autocomplete="off">
+                  <input class="search-input" type="text" id="equipmentSearch" placeholder="Digite o nome ou o patrimônio..." autocomplete="off">
                   <div class="search-dropdown" id="equipmentDropdown"></div>
                 </div>
               </div>
@@ -61,8 +56,14 @@
                 <label class="field__label" for="filtroEquipLocalizacao">Localização</label>
                 <input class="field__input" type="text" id="filtroEquipLocalizacao" placeholder="Digite a localização...">
               </div>
+
+              <div class="field">
+                <label class="field__label" for="filtroEquipSei">SEI</label>
+                <input class="field__input" type="text" id="filtroEquipSei" placeholder="Digite o número do SEI...">
+              </div>
             </div>
           </form>
+
 
           <!-- TABELA -->
           <div class="table-wrapper">
@@ -76,6 +77,8 @@
                 <th onclick="ordenarEquipamento('marca')">MARCA <span class="sort-arrow"></span></th>
                 <th onclick="ordenarEquipamento('modelo')">MODELO <span class="sort-arrow"></span></th>
                 <th onclick="ordenarEquipamento('localizacao')">LOCALIZAÇÃO <span class="sort-arrow"></span></th>
+                <th onclick="ordenarEquipamento('sei')">SEI <span class="sort-arrow"></span></th>
+                <th onclick="ordenarEquipamento('garantia')">GARANTIA <span class="sort-arrow"></span></th>
                 <th style="cursor:default;">AÇÕES</th>
               </tr>
             </thead>

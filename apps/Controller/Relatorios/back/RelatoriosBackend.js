@@ -16,6 +16,7 @@ function buscarRelatorioChecklist(contratoId) {
     const servicos = ReadContractsServicos()
         .filter(linha => Number(linha[contractsServicosIdContratoCol]) === idBuscado && !linha[contractsServicosDataExclusaoCol])
         .map(linha => ({
+        tipoManutencao: linha[contractsServicosTipoManutencaoCol] || '',
         categoria: linha[contractsServicosCategoriaCol] || '',
         tipo: linha[contractsServicosTipoCol] || '',
         capacidade: linha[contractsServicosCapacidadeCol] || '',

@@ -69,6 +69,7 @@ function buscarContratoParaEdicao(idInput) {
       })
       .map(function (l) {
         return {
+          tipoManutencao: l[contractsServicosTipoManutencaoCol] || '',
           categoria: l[contractsServicosCategoriaCol] || '',
           tipo: l[contractsServicosTipoCol] || '',
           capacidade: l[contractsServicosCapacidadeCol] || '',
@@ -174,8 +175,8 @@ function salvarServicosContrato(contratoId, lista) {
 
   (lista || []).forEach(function (item) {
     const pos = proximoIdTabela(aba, firstLineContractsServicos);
-    // ordem das colunas: Id, IdContrato, Categoria, Tipo, Capacidade, Periodicidade, DataCadastro, DataExclusao, DataAlteracao
-    const linha = [pos.novoId, contratoId, item.categoria || '', item.tipo || '', item.capacidade || '', item.periodicidade || '', dataAtual, '', ''];
+    // ordem das colunas: Id, IdContrato, TipoManutencao, Categoria, Tipo, Capacidade, Periodicidade, DataCadastro, DataExclusao, DataAlteracao
+    const linha = [pos.novoId, contratoId, item.tipoManutencao || '', item.categoria || '', item.tipo || '', item.capacidade || '', item.periodicidade || '', dataAtual, '', ''];
     aba.getRange(pos.proximaLinha, 1, 1, numColumnsContractsServicos).setValues([linha]);
   });
 }
