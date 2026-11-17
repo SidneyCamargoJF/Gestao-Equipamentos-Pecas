@@ -237,6 +237,13 @@ function salvarContratoBackend (dados) {
       }
     }
 
+    if (!(dados.servicos || []).length) {
+      return { sucesso: false, mensagem: 'Especifique pelo menos um serviço antes de salvar o contrato.' };
+    }
+    if (!(dados.equipamentos || []).length) {
+      return { sucesso: false, mensagem: 'Vincule pelo menos um equipamento (por patrimônio) antes de salvar o contrato.' };
+    }
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaContratos = ss.getSheetByName(contractTableName);
     if (!abaContratos) {

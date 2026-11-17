@@ -154,9 +154,9 @@ async function renderDashboardEquipamentos() {
 }
 
 // ===== CHAMADOS =====
-const DASH_CORES_PRIORIDADE = { baixa: '#16a34a', media: '#2563eb', alta: '#f59e0b', urgente: '#dc2626' };
-const DASH_ROTULOS_PRIORIDADE = { baixa: 'Baixa', media: 'Média', alta: 'Alta', urgente: 'Urgente' };
-const DASH_ROTULOS_TIPO_CHAMADO = { corretiva: 'Corretiva', preventiva: 'Preventiva', instalacao: 'Instalação', desinstalacao : 'Desinstalação', outro: 'Outro' };
+const DASH_CORES_PRIORIDADE = { baixa: '#16a34a', media: '#2563eb', alta: '#f59e0b', urgente: '#dc2626', indefinida: '#94a3b8' };
+const DASH_ROTULOS_PRIORIDADE = { baixa: 'Baixa', media: 'Média', alta: 'Alta', urgente: 'Urgente', indefinida: 'Sem prioridade' };
+const DASH_ROTULOS_TIPO_CHAMADO = { corretiva: 'Corretiva', preventiva: 'Preventiva', instalacao: 'Instalação', desinstalacao : 'Desinstalação', outro: 'Outro', indefinido: 'Sem tipo' };
 
 async function renderDashboardChamados() {
   try {

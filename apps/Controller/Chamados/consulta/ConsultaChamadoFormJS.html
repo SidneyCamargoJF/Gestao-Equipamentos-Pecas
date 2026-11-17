@@ -2,6 +2,7 @@
 async function renderConsultaChamados() {
     const motivos = await carregarMotivosChamado();
     initSearchChamado('motivoChamadoSearch', 'motivoChamadoDropdown', 'motivoChamadoWrapper', motivos);
+    consultarChamados();
 }
 
 async function carregarMotivosChamado() {

@@ -1,12 +1,17 @@
 <script>
       // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
       async function renderPecas() {
-        await inicializarPecas();
+        try {
+          await inicializarPecas();
+        } catch (error) {
+          console.error('Erro ao inicializar filtros de Peças:', error);
+        }
 
         const inputNome = document.getElementById('filtro-nome');
         if (inputNome) {
           inputNome.focus();
         }
+        consultarPecas();
       }
 
       // ===== CARREGAR MARCAS =====

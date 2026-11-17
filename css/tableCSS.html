@@ -3,6 +3,11 @@
 /* ===== TABELA ===== */
 .table-wrapper {
   overflow-x: auto;
+  /* overflow-y:hidden é o que faz o fundo do hover da última linha/coluna
+     respeitar o canto arredondado -- sem isso, o retângulo reto do hover
+     vaza um pouquinho pra fora da borda arredondada (ver mesmo ajuste em
+     .crud-table-wrapper, css/crudCSS.html). */
+  overflow-y: hidden;
   border-radius: 0.5rem;
   border: 0.0625rem solid var(--color-slate-200);
 }

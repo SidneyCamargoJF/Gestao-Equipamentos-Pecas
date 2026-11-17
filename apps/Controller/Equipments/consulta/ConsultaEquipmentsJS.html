@@ -89,7 +89,19 @@
     const col = sortStateEquipamento.coluna;
     const dir = sortStateEquipamento.direcao === 'asc' ? 1 : -1;
     const arr = lista.slice();
+
+    // Patrimonio e Capacidade são números "disfarçados" de texto (podem vir
+    // formatados, ex: "12.000") -- comparar como texto faz "10" vir antes de
+    // "9". Pra essas colunas, compara pelo valor numérico; as demais seguem
+    // ordenação alfabética normal.
+    const colunasNumericas = ['patrimonio', 'capacidade'];
+
     arr.sort((a, b) => {
+      if (colunasNumericas.includes(col)) {
+        const na = Number(String(a[col] || '').replace(/\D/g, '')) || 0;
+        const nb = Number(String(b[col] || '').replace(/\D/g, '')) || 0;
+        return (na - nb) * dir;
+      }
       const va = String(a[col] || '').toLowerCase();
       const vb = String(b[col] || '').toLowerCase();
       return va < vb ? -1 * dir : va > vb ? 1 * dir : 0;

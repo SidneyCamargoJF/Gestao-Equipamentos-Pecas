@@ -16,14 +16,41 @@
   opacity: 0.8;
 }
 
+.campo-contrato-auto-preenchido {
+  font-style: italic;
+  color: #64748b;
+}
 
-/*
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-*/
+/* Tabela "Equipamentos Vinculados ao Contrato" -- sem table-layout:fixed +
+   largura por coluna, o navegador decide sozinho quanto espaço dar pra
+   cada coluna (table-layout:auto, o padrão) e sobra espaço solto depois
+   da coluna AÇÕES, onde o hover (.crud-table tbody tr:hover) ainda pinta
+   mas não tem nenhum conteúdo -- mesmo padrão já usado nas telas de
+   Consulta (ex: ConsultaEquipmentsCSS.html). */
+#tabelaEquipamentosContrato {
+  table-layout: fixed;
+}
 
-/*
-.main-container { display: block; padding: 1.25rem 1rem 2rem; }
-*/
+#tabelaEquipamentosContrato th,
+#tabelaEquipamentosContrato td {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+#tabelaEquipamentosContrato th:nth-child(1), #tabelaEquipamentosContrato td:nth-child(1) { width: 24%; }
+#tabelaEquipamentosContrato th:nth-child(2), #tabelaEquipamentosContrato td:nth-child(2) { width: 12%; }
+#tabelaEquipamentosContrato th:nth-child(3), #tabelaEquipamentosContrato td:nth-child(3) { width: 13%; }
+#tabelaEquipamentosContrato th:nth-child(4), #tabelaEquipamentosContrato td:nth-child(4) { width: 13%; }
+#tabelaEquipamentosContrato th:nth-child(5), #tabelaEquipamentosContrato td:nth-child(5) { width: 13%; }
+#tabelaEquipamentosContrato th:nth-child(6), #tabelaEquipamentosContrato td:nth-child(6) { width: 20%; }
+#tabelaEquipamentosContrato th:nth-child(7), #tabelaEquipamentosContrato td:nth-child(7) {
+  width: 5%;
+  text-align: right;
+}
+#tabelaEquipamentosContrato td:nth-child(7).acao-cell {
+  justify-content: flex-end;
+}
+
 
 .btn-remover-checkbox-custom {
   display: inline-flex;
@@ -175,37 +202,30 @@
   margin-top: 0.5rem;
 }
 
-/* Seção de anexos do Cadastro de Contrato -- separada do resto do
-   formulário por uma linha, com espaço próprio garantido (não depende do
-   espaçamento automático entre .form-grid-2/.form-grid-3, que só cobre
-   algumas combinações de vizinhos e deixava isso colado no campo de cima). */
+#servicoConfirmadoCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
 .contrato-anexos-secao {
   margin-top: 1.75rem;
   padding-top: 1.25rem;
   border-top: 0.0625rem solid var(--color-slate-200);
 }
 
-/* Resultados da busca por Nome (pode bater com vários) -- espaço entre os
-   cards, senão ficam grudados um no outro. */
 #eqResultadoLista {
   margin-top: 1rem;
 }
 
-/* O JS só troca display:none/block no #eqResultadoLista (mostrar/esconder o
-   bloco inteiro) -- o flex+gap fica aqui dentro, num filho que o JS nunca
-   toca o display, senão o style inline (display:block) sempre ganharia
-   desse display:flex e o gap nunca apareceria. */
+
 #eqResultadoListaItens {
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
 }
 
-/* ===== CHECKLIST (lista vertical arrastável) =====
-   Cada grupo (Preventiva/Corretiva/Instalação/Limpeza) nasce com
-   checklist-grupo-oculto -- o JS mostra o grupo certo removendo essa
-   classe (não precisa de uma classe "ativa" à parte: tirando o oculto,
-   o display:flex de .checklist-lista já assume). */
+/* ===== CHECKLIST ===== */
 .checklist-grupo-oculto {
   display: none !important;
 }
@@ -309,10 +329,7 @@
   margin-bottom: 0;
 }
 
-/* A partir daqui (mesmo ponto em que .form-grid-2 vira 2 colunas) Mensal e
-   Anual ficam lado a lado, com uma linha vertical separando os dois --
-   sem isso os dois blocos "Outro" ficavam um embaixo do outro, iguaizinhos,
-   e parecia que o campo tinha se repetido por engano. */
+
 @media (min-width: 36rem) {
   .checklist-periodos-grid {
     grid-template-columns: 1fr 1fr;
@@ -337,11 +354,7 @@
   margin-top: 1.25rem;
 }
 
-/* Tabela de Produtos só tem 2 colunas (Produto/Ações), mas .crud-table
-   (compartilhada) tem min-width:35rem pensado pra tabelas maiores tipo
-   Equipamentos -- sem largura fixa aqui, o navegador distribuía o espaço
-   sobrando de um jeito torto, deixando Ações "no meio" em vez de na
-   borda direita. Fixando 50/50 resolve. */
+
 #tabelaProdutos th,
 #tabelaProdutos td {
   width: 50%;

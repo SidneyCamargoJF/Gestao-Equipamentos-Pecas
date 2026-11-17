@@ -279,6 +279,11 @@
 /* ===== CRUD TABLES ===== */
 .crud-table-wrapper {
   overflow-x: auto;
+  /* overflow-y:hidden (não "visible" implícito) é o que faz o fundo do
+     hover da última coluna respeitar o canto arredondado -- sem isso, o
+     retângulo reto do hover vaza um pouquinho pra fora da borda
+     arredondada no canto superior/inferior direito. */
+  overflow-y: hidden;
   border: 0.0625rem solid var(--color-slate-200);
   border-radius: 0.5rem;
 }

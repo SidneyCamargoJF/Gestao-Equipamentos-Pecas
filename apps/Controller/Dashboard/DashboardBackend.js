@@ -133,11 +133,14 @@ function buscarIndicadoresChamados() {
     else if (status === 'concluido') concluidos++;
 
     if (status === 'aberto') {
-    const prioridade = String(l[4] || '').trim().toLowerCase();
-    if (prioridade) porPrioridade[prioridade] = (porPrioridade[prioridade] || 0) + 1;
+    // Sempre conta, mesmo sem prioridade/tipo preenchido -- cair fora do
+    // ranking nesse caso fazia a soma do gráfico não bater com o card de
+    // "Abertos" (chamado contava ali, mas desaparecia do gráfico).
+    const prioridade = String(l[4] || '').trim().toLowerCase() || 'indefinida';
+    porPrioridade[prioridade] = (porPrioridade[prioridade] || 0) + 1;
 
-    const tipo = String(l[3] || '').trim().toLowerCase();
-    if (tipo) porTipo[tipo] = (porTipo[tipo] || 0) + 1;
+    const tipo = String(l[3] || '').trim().toLowerCase() || 'indefinido';
+    porTipo[tipo] = (porTipo[tipo] || 0) + 1;
     }
   });
 

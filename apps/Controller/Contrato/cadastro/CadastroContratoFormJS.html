@@ -5,11 +5,19 @@
     carregarFornecedoresParaEmpresa();
     carregarOpcoesEspecificacaoServico();
     registrarCampoAnexoCadastro('contratoAnexoArquivo', 'contratoAnexoLista');
+    limparAnexosCadastroSelecionados(['contratoAnexoArquivo']);
     initDataEncerramentoOpacidade();
     registrarEventosChecklist();
 
     const telField = document.getElementById('telefone');
     if (telField) mascaraTelefone(telField);
+
+    contatoEmpresaAutoValor = { telefone: '', email: '' };
+    registrarRemocaoMarcaAutoPreenchido('telefone');
+    registrarRemocaoMarcaAutoPreenchido('email');
+    if (telField) telField.classList.remove('campo-contrato-auto-preenchido');
+    const emailFieldInicial = document.getElementById('email');
+    if (emailFieldInicial) emailFieldInicial.classList.remove('campo-contrato-auto-preenchido');
 
     const seiField = document.getElementById('sei');
     if (seiField) mascaraSEI(seiField);
@@ -33,21 +41,23 @@
 
     ['numero', 'contrato', 'sei', 'dataFechamento', 'empresaSearch', 'objeto',
       'observacoes', 'dataEncerramento', 'dataInicial', 'dataFinal', 'contatoEmpresa',
-      'telefone', 'email', 'valor', 'gestor'].forEach(function (campoId) {
+      'telefone', 'email', 'gestor'].forEach(function (campoId) {
       const el = document.getElementById(campoId);
       if (el) el.value = '';
     });
+    const valorField = document.getElementById('valorContrato');
+    if (valorField) valorField.value = '';
     atualizarOpacidadeDataEncerramento();
 
     equipamentos = [];
-    servicoAtual = null;
+    servicos = [];
     produtos = [];
     checklist = [];
 
     limparChecklistUI();
 
     renderizarEquipamentos();
-    renderizarServicoCard();
+    renderizarServicos();
     atualizarChecklistParaServico();
     renderizarProdutos();
     renderizarChecklist();
@@ -86,25 +96,49 @@
     }
   }
 
-  // Só preenche se o campo estiver vazio -- não sobrescreve um telefone/email
-  // que a pessoa já tinha digitado na mão pra esse contrato específico.
+  // Preenche Telefone/E-mail com os dados da Empresa escolhida -- e marca
+  // visualmente (itálico, ver .campo-contrato-auto-preenchido) que veio de
+  // lá. Só NÃO sobrescreve se a pessoa já editou esse campo na mão (valor
+  // diferente do que foi auto-preenchido da última vez) -- assim trocar de
+  // fornecedor atualiza o telefone/email antigo, mas uma edição manual
+  // continua respeitada.
+  let contatoEmpresaAutoValor = { telefone: '', email: '' };
+
   function preencherContatoEmpresa(nomeEmpresa) {
     const dados = fornecedoresPorNome[nomeEmpresa];
     if (!dados) return;
 
     const telField = document.getElementById('telefone');
-    if (telField && !telField.value.trim() && dados.telefone) {
-      telField.value = dados.telefone;
-      // mascaraTelefone (já registrada no load do form) só reformata em
-      // resposta a um evento "input" de verdade -- setar .value direto não
-      // dispara isso sozinho, por isso o dispatch manual aqui.
-      telField.dispatchEvent(new Event('input'));
+    if (telField && dados.telefone) {
+      const intocado = !telField.value.trim() || telField.value === contatoEmpresaAutoValor.telefone;
+      if (intocado) {
+        telField.value = dados.telefone;
+        // mascaraTelefone (já registrada no load do form) só reformata em
+        // resposta a um evento "input" de verdade -- setar .value direto não
+        // dispara isso sozinho, por isso o dispatch manual aqui. Esse mesmo
+        // dispatch passa pelo listener que remove a classe de "auto" (ver
+        // abaixo), por isso ela só é adicionada DEPOIS.
+        telField.dispatchEvent(new Event('input'));
+        contatoEmpresaAutoValor.telefone = telField.value;
+        telField.classList.add('campo-contrato-auto-preenchido');
+      }
     }
 
     const emailField = document.getElementById('email');
-    if (emailField && !emailField.value.trim() && dados.email) {
-      emailField.value = dados.email;
+    if (emailField && dados.email) {
+      const intocado = !emailField.value.trim() || emailField.value === contatoEmpresaAutoValor.email;
+      if (intocado) {
+        emailField.value = dados.email;
+        contatoEmpresaAutoValor.email = dados.email;
+        emailField.classList.add('campo-contrato-auto-preenchido');
+      }
     }
+  }
+
+  // Edição manual tira a marca de "auto-preenchido" na hora.
+  function registrarRemocaoMarcaAutoPreenchido(campoId) {
+    const el = document.getElementById(campoId);
+    if (el) el.addEventListener('input', () => el.classList.remove('campo-contrato-auto-preenchido'));
   }
 
   // ===== CARREGAR CONTRATO EXISTENTE PARA EDIÇÃO =====
@@ -120,10 +154,12 @@
 
       ['numero', 'contrato', 'sei', 'dataFechamento', 'objeto', 'observacoes',
         'dataEncerramento', 'dataInicial', 'dataFinal', 'contatoEmpresa', 'telefone',
-        'email', 'valor', 'gestor'].forEach(function (campoId) {
+        'email', 'gestor'].forEach(function (campoId) {
         const el = document.getElementById(campoId);
         if (el) el.value = dados[campoId] || '';
       });
+      const valorField = document.getElementById('valorContrato');
+      if (valorField) valorField.value = formatarValorExibicaoContrato(dados.valor);
       document.getElementById('empresaSearch').value = dados.empresa || '';
       atualizarOpacidadeDataEncerramento();
 
@@ -132,41 +168,19 @@
       renderizarEquipamentos();
       renderizarProdutos();
 
-      const servicoSalvo = (dados.servicos || [])[0];
-      if (servicoSalvo) {
-        await carregarOpcoesEspecificacaoServico();
-
-        servicoAtual = {
-          tipoManutencao: servicoSalvo.tipoManutencao || '',
-          categoriaEquip: servicoSalvo.categoria || '',
-          tipoEquip: servicoSalvo.tipo || '',
-          capacidadeEquip: servicoSalvo.capacidade || '',
-          periodicidade: servicoSalvo.periodicidade || 'anual',
-          nomeCompleto: [servicoSalvo.tipoManutencao, [servicoSalvo.categoria, servicoSalvo.tipo, formatarCapacidadeComPonto(servicoSalvo.capacidade)].filter(Boolean).join(' ')]
+      await carregarOpcoesEspecificacaoServico();
+      servicos = (dados.servicos || []).map(function (s) {
+        return {
+          tipoManutencao: s.tipoManutencao || '',
+          categoriaEquip: s.categoria || '',
+          tipoEquip: s.tipo || '',
+          capacidadeEquip: s.capacidade || '',
+          periodicidade: s.periodicidade || 'anual',
+          nomeCompleto: [s.tipoManutencao, [s.categoria, s.tipo, formatarCapacidadeComPonto(s.capacidade)].filter(Boolean).join(' ')]
             .filter(Boolean).join(' — ')
         };
-
-        const tipoManutencaoSelect = document.getElementById('servicoTipoManutencao');
-        const catSelect = document.getElementById('servicoCategoriaEquip');
-        const tipoSelect = document.getElementById('servicoTipoEquip');
-        const capSelect = document.getElementById('servicoCapacidadeEquip');
-        const periodicidadeSelect = document.getElementById('servicoPeriodicidade');
-
-        if (tipoManutencaoSelect) tipoManutencaoSelect.value = servicoAtual.tipoManutencao;
-        if (catSelect) {
-          catSelect.value = servicoAtual.categoriaEquip;
-          atualizarSelectTipoServico();
-        }
-        if (tipoSelect) {
-          tipoSelect.value = servicoAtual.tipoEquip;
-          atualizarSelectCapacidadeServico();
-        }
-        if (capSelect) capSelect.value = servicoAtual.capacidadeEquip;
-        if (periodicidadeSelect) periodicidadeSelect.value = servicoAtual.periodicidade;
-      } else {
-        servicoAtual = null;
-      }
-      renderizarServicoCard();
+      });
+      renderizarServicos();
       atualizarChecklistParaServico();
 
       checklist = dados.checklist || [];
@@ -211,7 +225,7 @@
 
 // CRUD arrays
 let equipamentos = [];
-let servicoAtual = null; // um serviço só por contrato -- não é mais array
+let servicos = []; // um contrato pode ter mais de um serviço especificado
 let produtos = [];
 let checklist = [];
 
@@ -461,9 +475,9 @@ function confirmarRemocaoEquipamentoContrato(idx) {
   if (typeof exibirModal === 'function') exibirModal('modalRemoverItemContrato');
 }
 
-function confirmarRemocaoServicoContrato() {
-  if (!servicoAtual) return;
-  remocaoItemContratoPendente = { tipo: 'servico' };
+function confirmarRemocaoServicoContrato(idx) {
+  if (!servicos[idx]) return;
+  remocaoItemContratoPendente = { tipo: 'servico', idx: idx };
   if (typeof exibirModal === 'function') exibirModal('modalRemoverItemContrato');
 }
 
@@ -488,8 +502,8 @@ function executarRemocaoItemContrato() {
 
     montarListaResultadosBuscaNome(equipamentosEncontradosPorNome);
   } else if (tipo === 'servico') {
-    servicoAtual = null;
-    renderizarServicoCard();
+    servicos.splice(idx, 1);
+    renderizarServicos();
     atualizarChecklistParaServico();
   } else if (tipo === 'produto') {
     produtos.splice(idx, 1);
@@ -636,17 +650,32 @@ async function confirmarServicoContrato() {
     return;
   }
 
-  servicoAtual = {
+  const jaExiste = servicos.some(function (s) {
+    return s.tipoManutencao === tipoManutencao && s.categoriaEquip === categoria &&
+      s.tipoEquip === tipoEquip && s.capacidadeEquip === capacidade && s.periodicidade === periodicidade;
+  });
+  if (jaExiste) {
+    alert('Esse serviço já está especificado neste contrato.');
+    return;
+  }
+
+  servicos.push({
     tipoManutencao: tipoManutencao,
     categoriaEquip: categoria,
     tipoEquip: tipoEquip,
     capacidadeEquip: capacidade,
     periodicidade: periodicidade,
     nomeCompleto: tipoManutencao + ' — ' + categoria + ' ' + tipoEquip + ' ' + formatarCapacidadeComPonto(capacidade)
-  };
+  });
 
-  renderizarServicoCard();
+  renderizarServicos();
   atualizarChecklistParaServico();
+
+  // Reseta a especificação (categoria/tipo/capacidade em cascata) pra
+  // ficar pronta pra especificar o próximo serviço, sem carregar a
+  // seleção anterior.
+  document.getElementById('servicoCategoriaEquip').value = '';
+  atualizarSelectTipoServico();
 
   try {
     const encontrados = await runServerFunction('buscarEquipamentosPorEspecificacao', categoria, tipoEquip, capacidade);
@@ -676,41 +705,44 @@ async function confirmarServicoContrato() {
   }
 }
 
-function renderizarServicoCard() {
+function renderizarServicos() {
   const container = document.getElementById('servicoConfirmadoCard');
   if (!container) return;
 
-  if (!servicoAtual) {
+  if (servicos.length === 0) {
     container.innerHTML = '<p class="equip-result-empty">Nenhum serviço especificado ainda.</p>';
     return;
   }
 
-  container.innerHTML =
-    '<div class="equip-result-card">' +
+  container.innerHTML = servicos.map(function (s, i) {
+    return '<div class="equip-result-card">' +
       '<div class="equip-result-info">' +
-        '<span class="equip-result-nome">' + escapeHtml(servicoAtual.nomeCompleto) + '</span>' +
-        '<span class="equip-result-det">Periodicidade: ' + formatarPeriodicidade(servicoAtual.periodicidade) + '</span>' +
+        '<span class="equip-result-nome">' + escapeHtml(s.nomeCompleto) + '</span>' +
+        '<span class="equip-result-det">Periodicidade: ' + formatarPeriodicidade(s.periodicidade) + '</span>' +
       '</div>' +
-      '<button class="btn-acao btn-excluir-linha" title="Remover serviço" onclick="confirmarRemocaoServicoContrato()">' +
+      '<button class="btn-acao btn-excluir-linha" title="Remover serviço" onclick="confirmarRemocaoServicoContrato(' + i + ')">' +
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
           '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
         '</svg>' +
       '</button>' +
     '</div>';
+  }).join('');
 }
 
 // Mostra/esconde o bloco de checklist conforme tem ou não serviço
-// especificado, e atualiza o título com o nome do serviço.
+// especificado. O checklist é do contrato como um todo (não de um serviço
+// específico -- ver comentário no HTML), então o "título" aqui só lista os
+// nomes dos serviços já especificados, lado a lado.
 function atualizarChecklistParaServico() {
   const aviso = document.getElementById('checklistSemServicoAviso');
   const conteudo = document.getElementById('checklistConteudo');
   const titulo = document.getElementById('checklistServicoTitulo');
   if (!aviso || !conteudo || !titulo) return;
 
-  if (servicoAtual) {
+  if (servicos.length > 0) {
     aviso.style.display = 'none';
     conteudo.classList.remove('checklist-grupo-oculto');
-    titulo.textContent = servicoAtual.nomeCompleto;
+    titulo.textContent = servicos.map(function (s) { return s.nomeCompleto; }).join(' + ');
   } else {
     aviso.style.display = 'block';
     conteudo.classList.add('checklist-grupo-oculto');
@@ -1056,6 +1088,24 @@ function renderizarChecklist() {
   }).join('');
 }
 
+// VALOR (R$) -- o campo usa a mesma máscara de digitação de Equipamentos
+// (aplicarMascaraMoedaEquip), mas o que é salvo/lido na planilha continua
+// sendo número puro (é o que formatarValorContrato, na Consulta, espera
+// pra conseguir ordenar e formatar como moeda). Por isso essas duas
+// conversões: exibição (número -> "15.000,50") e desmascarar (texto
+// mascarado -> número) nas duas pontas.
+function formatarValorExibicaoContrato(valor) {
+  const n = Number(valor);
+  if (valor === '' || valor === null || valor === undefined || isNaN(n)) return '';
+  return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function desmascararValorContrato(valorMascarado) {
+  const limpo = String(valorMascarado || '').trim().replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(limpo);
+  return isNaN(n) ? '' : n;
+}
+
 // UTILITÁRIOS
 function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -1074,6 +1124,15 @@ async function salvarContrato() {
   if (btnRodape) btnRodape.disabled = true;
 
   try {
+    if (servicos.length === 0) {
+      alert('Especifique pelo menos um serviço antes de salvar o contrato.');
+      return;
+    }
+    if (equipamentos.length === 0) {
+      alert('Vincule pelo menos um equipamento (por patrimônio) antes de salvar o contrato.');
+      return;
+    }
+
     let anexos = [];
     try {
       anexos = await lerArquivosComoBase64(anexosCadastroSelecionados.contratoAnexoArquivo);
@@ -1097,17 +1156,19 @@ async function salvarContrato() {
       contatoEmpresa: document.getElementById('contatoEmpresa').value.trim(),
       telefone: document.getElementById('telefone').value.trim(),
       email: document.getElementById('email').value.trim(),
-      valor: document.getElementById('valor').value.trim(),
+      valor: desmascararValorContrato(document.getElementById('valorContrato')?.value),
       gestor: document.getElementById('gestor').value.trim(),
       anexos: anexos,
       equipamentos: equipamentos,
-      servicos: servicoAtual ? [{
-        tipoManutencao: servicoAtual.tipoManutencao,
-        categoria: servicoAtual.categoriaEquip,
-        tipo: servicoAtual.tipoEquip,
-        capacidade: servicoAtual.capacidadeEquip,
-        periodicidade: servicoAtual.periodicidade
-      }] : [],
+      servicos: servicos.map(function (s) {
+        return {
+          tipoManutencao: s.tipoManutencao,
+          categoria: s.categoriaEquip,
+          tipo: s.tipoEquip,
+          capacidade: s.capacidadeEquip,
+          periodicidade: s.periodicidade
+        };
+      }),
       produtos: produtos,
       checklist: checklist
     };
