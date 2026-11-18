@@ -106,7 +106,23 @@
     });
   }
 
+  //
+  // VALOR (R$) -- exibição/desmascarar genéricos. A máscara de digitação
+  // em si é aplicarMascaraMoedaEquip() (CadastroEquipmentsJS.html, apesar
+  // do nome já reaproveitada em Contrato) -- aqui só as duas conversões
+  // que telas com "valor" guardado como número puro no banco precisam:
+  // número -> "1.500,50" pra mostrar no campo, e texto mascarado -> número
+  // de volta, pra salvar.
+  function formatarValorExibicaoMonetario(valor) {
+    const n = Number(valor);
+    if (valor === '' || valor === null || valor === undefined || isNaN(n)) return '';
+    return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
 
-
+  function desmascararValorMonetario(valorMascarado) {
+    const limpo = String(valorMascarado || '').trim().replace(/\./g, '').replace(',', '.');
+    const n = parseFloat(limpo);
+    return isNaN(n) ? '' : n;
+  }
 
 </script>

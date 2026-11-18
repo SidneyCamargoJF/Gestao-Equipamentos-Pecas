@@ -4,10 +4,19 @@
 
   // ===== RENDERIZAÇÃO INICIAL DA PÁGINA =====
   // Nome exigido pelo roteador da SPA (js/IndexSPAJS.html: trocarPagina).
+  // false na primeira visualização da tela (não dispara busca sozinha);
+  // vira true depois disso, então voltar de um salvar/editar já busca os
+  // dados atualizados automaticamente.
+  let fornecedoresJaVisualizado = false;
+
   async function renderFornecedorView() {
     const inputNome = document.getElementById('filtro-fornecedor-nome');
     if (inputNome) inputNome.focus();
-    consultarFornecedores();
+    if (fornecedoresJaVisualizado) {
+      consultarFornecedores();
+    } else {
+      fornecedoresJaVisualizado = true;
+    }
   }
 
   // ===== CONSULTAR, FILTRAR E RENDERIZAR =====

@@ -1,8 +1,17 @@
 <script>
+// false na primeira visualização da tela (não dispara busca sozinha);
+// vira true depois disso, então voltar de um salvar/editar já busca os
+// dados atualizados automaticamente.
+let chamadosJaVisualizado = false;
+
 async function renderConsultaChamados() {
     const motivos = await carregarMotivosChamado();
     initSearchChamado('motivoChamadoSearch', 'motivoChamadoDropdown', 'motivoChamadoWrapper', motivos);
-    consultarChamados();
+    if (chamadosJaVisualizado) {
+      consultarChamados();
+    } else {
+      chamadosJaVisualizado = true;
+    }
 }
 
 async function carregarMotivosChamado() {

@@ -290,7 +290,8 @@
 
 .crud-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.8125rem;
   min-width: 35rem;
 }
@@ -309,6 +310,11 @@
   letter-spacing: 0.025em;
   white-space: nowrap;
 }
+
+.crud-table thead th:first-child { border-top-left-radius: 0.5rem; }
+.crud-table thead th:last-child { border-top-right-radius: 0.5rem; }
+.crud-table tbody tr:last-child td:first-child { border-bottom-left-radius: 0.5rem; }
+.crud-table tbody tr:last-child td:last-child { border-bottom-right-radius: 0.5rem; }
 
 .crud-table tbody td {
   padding: 0.55rem 0.75rem;

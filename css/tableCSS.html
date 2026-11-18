@@ -111,4 +111,119 @@
   display: inline-block;
 }
 
+/* =====================================================
+   TABELA EM GRID (.gtable-*) -- padrão compartilhado pra reconstruir
+   tabelas de Consulta sem <table>, usando CSS Grid.
+   Por que: <table> tem um conjunto de pegadinhas de renderização que nos
+   deram trabalho em Contrato (distribuição de espaço sobrando em
+   table-layout:auto/fixed, border-radius não funcionar com
+   border-collapse:collapse, corte de overflow em cantos arredondados não
+   ser confiável). CSS Grid não tem nada disso -- cabeçalho e linhas são
+   <div>s irmãs dentro do MESMO grid (compartilham grid-template-columns),
+   então nunca desalinham entre si, e por serem <div>s comuns, bordas
+   arredondadas/hover cortam do jeito normal, sem exceção.
+
+   Como usar numa tela nova (ex: Consulta de Equipamentos):
+   1. HTML: <div class="gtable-wrapper"><div class="gtable" id="tabelaX">
+        <div class="gtable-row gtable-head" role="row">
+          <div class="gtable-cell" role="columnheader" onclick="...">Col <span class="sort-arrow"></span></div>
+          ... (uma div por coluna, igual tinha um <th> antes)
+        </div>
+        <div class="gtable-body" id="xBody" role="rowgroup">...</div>
+      </div></div>
+   2. CSS (no arquivo da própria tela): só a largura das colunas --
+        #tabelaX { grid-template-columns: 3.5rem 1fr 1fr ... ; min-width: ...rem; }
+      Use classes utilitárias gtable-cell-center/gtable-cell-end na coluna
+      que precisar (ex: ícone de Detalhes centralizado, Ações encostada
+      na direita).
+   3. JS: troca <tr>/<td> por <div class="gtable-row">/<div class="gtable-cell">
+      no innerHTML que monta as linhas (mesma lógica de sempre, só a tag
+      muda). Linha vazia/carregando: 1 div com gtable-cell-full
+      (grid-column:1/-1) pra ocupar a largura toda.
+   ===================================================== */
+.gtable-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 0.0625rem solid var(--color-slate-200);
+  border-radius: 0.5rem;
+}
+
+.gtable {
+  display: grid;
+  font-size: 0.875rem;
+  /* grid-template-columns é definido por tabela (largura de cada coluna
+     muda tela a tela) -- ver #id da tabela no CSS daquela tela. */
+}
+
+/* display:contents em .gtable-body e .gtable-row -- as células viram
+   filhas diretas (pro layout) do grid do .gtable ali de cima. Precisa nos
+   dois, senão a cadeia quebra no primeiro que não for "contents". O hover
+   por linha ainda funciona porque :hover acompanha a árvore do DOM, não a
+   caixa visual. */
+.gtable-body,
+.gtable-row {
+  display: contents;
+}
+
+.gtable-cell {
+  padding: 0.7rem 1rem;
+  color: var(--color-slate-700);
+  border-bottom: 0.0625rem solid var(--color-slate-100);
+  overflow-wrap: break-word;
+  word-break: normal;
+  display: flex;
+  align-items: center;
+}
+
+.gtable-head .gtable-cell {
+  background: var(--color-slate-50);
+  color: var(--color-slate-500);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  border-bottom: 0.125rem solid var(--color-slate-200);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.gtable-head .gtable-cell:hover,
+.gtable-head .gtable-cell.sorted {
+  color: var(--color-indigo);
+}
+
+.gtable-head .gtable-cell:first-child { border-top-left-radius: 0.4375rem; }
+.gtable-head .gtable-cell:last-child { border-top-right-radius: 0.4375rem; }
+
+.gtable-body .gtable-row:last-child .gtable-cell { border-bottom: none; }
+.gtable-body .gtable-row:last-child .gtable-cell:first-child { border-bottom-left-radius: 0.4375rem; }
+.gtable-body .gtable-row:last-child .gtable-cell:last-child { border-bottom-right-radius: 0.4375rem; }
+
+.gtable-body .gtable-row:not(.gtable-empty-row):not(.gtable-loading-row):hover .gtable-cell {
+  background: var(--color-indigo-50);
+}
+
+.gtable-cell-center { justify-content: center; }
+.gtable-cell-end { justify-content: flex-end; }
+
+.gtable-cell-full {
+  grid-column: 1 / -1;
+  justify-content: center;
+  text-align: center;
+  color: var(--color-slate-400);
+  font-style: italic;
+  padding: 1.5rem;
+}
+
+/* Linha desativada dentro de uma .gtable -- igual .linha-desativada (ali
+   em cima), só que redirecionada pra célula, porque .gtable-row é
+   display:contents e não tem caixa própria pra pintar fundo/opacidade. */
+.gtable-row.linha-desativada .gtable-cell {
+  opacity: 0.5;
+  background-color: #f9f9f9;
+  color: #888;
+}
+
 </style>

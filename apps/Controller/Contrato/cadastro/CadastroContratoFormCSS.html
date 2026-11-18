@@ -21,33 +21,36 @@
   color: #64748b;
 }
 
-/* Tabela "Equipamentos Vinculados ao Contrato" -- sem table-layout:fixed +
-   largura por coluna, o navegador decide sozinho quanto espaço dar pra
-   cada coluna (table-layout:auto, o padrão) e sobra espaço solto depois
-   da coluna AÇÕES, onde o hover (.crud-table tbody tr:hover) ainda pinta
-   mas não tem nenhum conteúdo -- mesmo padrão já usado nas telas de
-   Consulta (ex: ConsultaEquipmentsCSS.html). */
+
+/* Larguras de coluna dessa tabela -- o resto (grid, hover, cantos
+   arredondados, linha vazia) vem das classes .gtable-* compartilhadas em
+   css/tableCSS.html. */
 #tabelaEquipamentosContrato {
-  table-layout: fixed;
+  grid-template-columns: 2.2fr 1fr 1.1fr 1.1fr 1.1fr 1.6fr 3.5rem;
+  min-width: 40rem;
+  font-size: 0.8125rem;
 }
 
-#tabelaEquipamentosContrato th,
-#tabelaEquipamentosContrato td {
-  overflow-wrap: break-word;
-  word-break: normal;
+/* Essa tabela (embutida no Cadastro) usa o cabeçalho com texto indigo --
+   diferente do padrão cinza das telas de Consulta (.gtable-head padrão). */
+#tabelaEquipamentosContrato .gtable-head .gtable-cell {
+  color: var(--color-indigo);
+  font-weight: 600;
+  border-bottom: none;
 }
 
-#tabelaEquipamentosContrato th:nth-child(1), #tabelaEquipamentosContrato td:nth-child(1) { width: 24%; }
-#tabelaEquipamentosContrato th:nth-child(2), #tabelaEquipamentosContrato td:nth-child(2) { width: 12%; }
-#tabelaEquipamentosContrato th:nth-child(3), #tabelaEquipamentosContrato td:nth-child(3) { width: 13%; }
-#tabelaEquipamentosContrato th:nth-child(4), #tabelaEquipamentosContrato td:nth-child(4) { width: 13%; }
-#tabelaEquipamentosContrato th:nth-child(5), #tabelaEquipamentosContrato td:nth-child(5) { width: 13%; }
-#tabelaEquipamentosContrato th:nth-child(6), #tabelaEquipamentosContrato td:nth-child(6) { width: 20%; }
-#tabelaEquipamentosContrato th:nth-child(7), #tabelaEquipamentosContrato td:nth-child(7) {
-  width: 5%;
+/* Tabelas de Produtos e Checklist (ainda são <table>, usam .crud-table) --
+   o cabeçalho AÇÕES vem alinhado à esquerda por padrão (.crud-table thead
+   th) e o botão dentro da célula vem centralizado (.acao-cell, regra
+   compartilhada com outras telas do sistema) -- título e botão acabam em
+   posições diferentes. Aqui os dois jogam pra a borda direita. */
+#tabelaProdutos th:last-child,
+#tabelaChecklist th:last-child {
   text-align: right;
 }
-#tabelaEquipamentosContrato td:nth-child(7).acao-cell {
+
+#tabelaProdutos td.acao-cell,
+#tabelaChecklist td.acao-cell {
   justify-content: flex-end;
 }
 

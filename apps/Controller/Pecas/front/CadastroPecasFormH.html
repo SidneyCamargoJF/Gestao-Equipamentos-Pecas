@@ -144,7 +144,7 @@
 
           <div class="field">
             <label class="field__label" for="valor">Valor (R$)</label>
-            <input class="field__input" type="text" id="valor" placeholder="0,00">
+            <input class="field__input" type="text" id="valor" placeholder="0,00" inputmode="numeric" oninput="this.value = aplicarMascaraMoedaEquip(this.value)">
           </div>
 
           <div class="field">

@@ -73,26 +73,24 @@
 
         <div id="resumoContratos" style="margin-bottom:0.75rem; font-size:0.875rem; font-weight:600; color:var(--color-slate-600,#475569);"></div>
 
-        <div class="table-wrapper">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th onclick="ordenarContrato('detalhes')">Detalhes <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarContrato('numero')">Número <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarContrato('contrato')">Contrato <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarContrato('sei')">SEI <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarContrato('empresa')">Empresa <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarContrato('valor')">Valor <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarContrato('dataInicial')">Dt Inicial <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarContrato('dataFinal')">Dt Final <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarContrato('situacao')">Situação <span class="sort-arrow"></span></th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="contratosTableBody">
-                    <!-- Linhas da tabela serão preenchidas dinamicamente via JavaScript -->
-                </tbody>
-            </table>
+        <div class="gtable-wrapper">
+            <div class="gtable" id="tabelaContratos" role="table">
+                <div class="gtable-row gtable-head" role="row">
+                    <div class="gtable-cell gtable-cell-center" role="columnheader" onclick="ordenarContrato('detalhes')">Ver <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarContrato('numero')">Número <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarContrato('contrato')">Contrato <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarContrato('sei')">SEI <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarContrato('empresa')">Empresa <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarContrato('valor')">Valor <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarContrato('dataInicial')">Dt Inicial <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarContrato('dataFinal')">Dt Final <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarContrato('situacao')">Situação <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell gtable-cell-end" role="columnheader">Ações</div>
+                </div>
+                <div class="gtable-body" id="contratosTableBody" role="rowgroup">
+                    <!-- Linhas serão preenchidas dinamicamente via JavaScript -->
+                </div>
+            </div>
         </div>
     </div>
 </section>

@@ -76,9 +76,7 @@
     renderContratosForm();
   }
 
-  // ===== EMPRESA (busca em Fornecedor, preenche telefone/email ao escolher) =====
-  // nome -> { telefone, email }, usado por preencherContatoEmpresa quando a
-  // pessoa clica numa opção do dropdown.
+  // EMPRESA
   let fornecedoresPorNome = {};
 
   async function carregarFornecedoresParaEmpresa() {
@@ -96,12 +94,7 @@
     }
   }
 
-  // Preenche Telefone/E-mail com os dados da Empresa escolhida -- e marca
-  // visualmente (itálico, ver .campo-contrato-auto-preenchido) que veio de
-  // lá. Só NÃO sobrescreve se a pessoa já editou esse campo na mão (valor
-  // diferente do que foi auto-preenchido da última vez) -- assim trocar de
-  // fornecedor atualiza o telefone/email antigo, mas uma edição manual
-  // continua respeitada.
+  // Preenche Telefone/E-mail com os dados da Empresa escolhida
   let contatoEmpresaAutoValor = { telefone: '', email: '' };
 
   function preencherContatoEmpresa(nomeEmpresa) {
@@ -113,11 +106,6 @@
       const intocado = !telField.value.trim() || telField.value === contatoEmpresaAutoValor.telefone;
       if (intocado) {
         telField.value = dados.telefone;
-        // mascaraTelefone (já registrada no load do form) só reformata em
-        // resposta a um evento "input" de verdade -- setar .value direto não
-        // dispara isso sozinho, por isso o dispatch manual aqui. Esse mesmo
-        // dispatch passa pelo listener que remove a classe de "auto" (ver
-        // abaixo), por isso ela só é adicionada DEPOIS.
         telField.dispatchEvent(new Event('input'));
         contatoEmpresaAutoValor.telefone = telField.value;
         telField.classList.add('campo-contrato-auto-preenchido');
@@ -158,6 +146,7 @@
         const el = document.getElementById(campoId);
         if (el) el.value = dados[campoId] || '';
       });
+      contatoEmpresaAutoValor = { telefone: dados.telefone || '', email: dados.email || '' };
       const valorField = document.getElementById('valorContrato');
       if (valorField) valorField.value = formatarValorExibicaoContrato(dados.valor);
       document.getElementById('empresaSearch').value = dados.empresa || '';
@@ -533,36 +522,28 @@ function executarRemocaoItemContrato() {
 function renderizarEquipamentos() {
   const tbody = document.getElementById('bodyEquipamentos');
   if (equipamentos.length === 0) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhum equipamento vinculado ao contrato.</td></tr>';
+    tbody.innerHTML = '<div class="gtable-row gtable-empty-row" role="row">' +
+      '<div class="gtable-cell gtable-cell-full" role="cell">Nenhum equipamento vinculado ao contrato.</div>' +
+    '</div>';
     return;
   }
-  tbody.innerHTML = equipamentos.map((e, i) => '<tr>' +
-    '<td>' + escapeHtml(e.equipamento) + '</td>' +
-    '<td>' + escapeHtml(e.capacidade || '—') + '</td>' +
-    '<td>' + escapeHtml(e.marca) + '</td>' +
-    '<td>' + escapeHtml(e.modelo) + '</td>' +
-    '<td>' + escapeHtml(e.patrimonio) + '</td>' +
-    '<td>' + escapeHtml(e.localizacao) + '</td>' +
-    '<td class="acao-cell">' +
+  tbody.innerHTML = equipamentos.map((e, i) => '<div class="gtable-row" role="row">' +
+    '<div class="gtable-cell" role="cell">' + escapeHtml(e.equipamento) + '</div>' +
+    '<div class="gtable-cell" role="cell">' + escapeHtml(e.capacidade || '—') + '</div>' +
+    '<div class="gtable-cell" role="cell">' + escapeHtml(e.marca) + '</div>' +
+    '<div class="gtable-cell" role="cell">' + escapeHtml(e.modelo) + '</div>' +
+    '<div class="gtable-cell" role="cell">' + escapeHtml(e.patrimonio) + '</div>' +
+    '<div class="gtable-cell" role="cell">' + escapeHtml(e.localizacao) + '</div>' +
+    '<div class="gtable-cell gtable-cell-end" role="cell">' +
       '<button class="btn-acao btn-excluir-linha" title="Remover do contrato" onclick="confirmarRemocaoEquipamentoContrato(' + i + ')">' +
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
           '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
         '</svg>' +
       '</button>' +
-    '</td>' +
-  '</tr>').join('');
+    '</div>' +
+  '</div>').join('');
 }
 
-// SERVIÇOS -- um só por contrato. Especifica tipo de manutenção +
-// categoria/tipo/capacidade do equipamento; ao confirmar, busca sozinho
-// (buscarEquipamentosPorEspecificacao) os equipamentos que batem e já
-// adiciona em "equipamentos", e libera o checklist (Mensal/Anual).
-// Selects de Categoria/Tipo/Capacidade em cascata: cada um só mostra as
-// opções que realmente existem pra combinação já escolhida nos de cima
-// (escolher "Elevador" não deixa "18.000" aparecer em Capacidade, porque
-// elevador nenhum tem essa capacidade cadastrada). A lista completa de
-// combinações reais (buscarOpcoesEspecificacaoEquipamento) fica guardada
-// aqui e cada troca de select só filtra ela de novo, sem ir no servidor.
 let especificacaoEquipamentoCombinacoes = [];
 
 async function carregarOpcoesEspecificacaoServico() {
@@ -834,18 +815,7 @@ function renderizarProdutos() {
   }).join('');
 }
 
-//
-// CHECKLIST -- ligado ao serviço único do contrato. Duas listas (Mensal e
-// Anual), ambas criadas na hora pelo campo "Outro" de cada uma (não tem
-// item pré-pronto -- ninguém definiu ainda o que é mensal x anual de cada
-// tipo de manutenção).
-//
-
-// Um listener por lista (delegação) -- escuta o "change" de qualquer
-// checkbox lá dentro, sem precisar de onchange em cada input
-// individualmente. Os quatro listeners de arrasto (dragstart/dragover/
-// drop/dragend) seguem o mesmo princípio: um só por lista, em vez de um
-// por item. A mesma função serve tanto pra lista Mensal quanto Anual.
+// CHECKLIST 
 let checklistItemArrastado = null;
 
 function registrarEventosContainerChecklist(container) {
@@ -1088,12 +1058,7 @@ function renderizarChecklist() {
   }).join('');
 }
 
-// VALOR (R$) -- o campo usa a mesma máscara de digitação de Equipamentos
-// (aplicarMascaraMoedaEquip), mas o que é salvo/lido na planilha continua
-// sendo número puro (é o que formatarValorContrato, na Consulta, espera
-// pra conseguir ordenar e formatar como moeda). Por isso essas duas
-// conversões: exibição (número -> "15.000,50") e desmascarar (texto
-// mascarado -> número) nas duas pontas.
+// VALOR 
 function formatarValorExibicaoContrato(valor) {
   const n = Number(valor);
   if (valor === '' || valor === null || valor === undefined || isNaN(n)) return '';

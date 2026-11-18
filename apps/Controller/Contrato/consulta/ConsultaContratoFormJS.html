@@ -1,9 +1,18 @@
 <script>
 
+// false na primeira visualização da tela (não dispara busca sozinha);
+// vira true depois disso, então voltar de um salvar/editar já busca os
+// dados atualizados automaticamente.
+let contratosJaVisualizado = false;
+
 function renderConsultaContratos() {
     const resumo = document.getElementById('resumoContratos');
     if (resumo) resumo.textContent = '';
-    consultarContratos();
+    if (contratosJaVisualizado) {
+      consultarContratos();
+    } else {
+      contratosJaVisualizado = true;
+    }
 }
 
 let contratos = [];
@@ -40,7 +49,7 @@ function mostrarCarregandoContratos(carregando) {
     if (carregando) {
         const tbody = document.getElementById('contratosTableBody');
         if (tbody) {
-            tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span>Buscando contratos...</td></tr>';
+            tbody.innerHTML = '<div class="gtable-row gtable-loading-row" role="row"><div class="gtable-cell gtable-cell-full" role="cell"><span class="spinner"></span>Buscando contratos...</div></div>';
         }
     }
 }
@@ -81,7 +90,7 @@ function ordenarContrato(coluna) {
 }
 
 function atualizarIndicadoresContrato() {
-    const ths = document.querySelectorAll('#page-contratos-view .data-table th');
+    const ths = document.querySelectorAll('#page-contratos-view .gtable-head .gtable-cell');
     ths.forEach(th => {
         th.classList.remove('sorted');
         const span = th.querySelector('.sort-arrow');
@@ -167,17 +176,15 @@ function renderTabelaContrato(lista) {
     const tbody = document.getElementById('contratosTableBody');
     if (!tbody) return;
 
-    tbody.innerHTML = '';
-
     if (!lista || lista.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Nenhum contrato encontrado.</td></tr>';
+        tbody.innerHTML = '<div class="gtable-row gtable-empty-row" role="row"><div class="gtable-cell gtable-cell-full" role="cell">Nenhum contrato encontrado.</div></div>';
         return;
     }
 
-    lista.forEach(c => {
-        const tr = document.createElement('tr');
-        if (c.desativado) tr.classList.add('linha-desativada');
-        if (c.situacao === 'encerrado') tr.classList.add('linha-contrato-encerrado');
+    tbody.innerHTML = lista.map(c => {
+        let classesLinha = 'gtable-row';
+        if (c.desativado) classesLinha += ' linha-desativada';
+        if (c.situacao === 'encerrado') classesLinha += ' linha-contrato-encerrado';
 
         const btnEditar = c.desativado
             ? '<button class="btn-acao btn-editar-linha" title="Editar" disabled style="opacity:0.3; cursor:not-allowed;">✏️</button>'
@@ -193,23 +200,22 @@ function renderTabelaContrato(lista) {
                 ${c.temAnexo ? '<span class="contrato-anexo-selo" title="Tem anexo">📁</span>' : ''}
             </span>`;
 
-        tr.innerHTML = `
-        <td class="acao-cell">${btnVer}</td>
-        <td>${escapeHtml(c.numero)}</td>
-        <td>${c.contrato ? escapeHtml(c.contrato) : '--'}</td>
-        <td>${c.sei ? escapeHtml(c.sei) : '--'}</td>
-        <td>${c.empresa ? escapeHtml(c.empresa) : '--'}</td>
-        <td>${formatarValorContrato(c.valor)}</td>
-        <td>${formatarDataContrato(c.dataInicial)}</td>
-        <td>${formatarDataContrato(c.dataFinal)}</td>
-        <td><span class="situacao-badge ${c.situacao}">${formatarSituacaoContrato(c.situacao)}</span></td>
-        <td class="acao-cell">
-            ${btnEditar}
-            ${btnExcluir}
-        </td>
-        `;
-        tbody.appendChild(tr);
-    });
+        return `<div class="${classesLinha}" role="row">
+            <div class="gtable-cell gtable-cell-center" role="cell">${btnVer}</div>
+            <div class="gtable-cell" role="cell">${escapeHtml(c.numero)}</div>
+            <div class="gtable-cell" role="cell">${c.contrato ? escapeHtml(c.contrato) : '--'}</div>
+            <div class="gtable-cell" role="cell">${c.sei ? escapeHtml(c.sei) : '--'}</div>
+            <div class="gtable-cell" role="cell">${c.empresa ? escapeHtml(c.empresa) : '--'}</div>
+            <div class="gtable-cell" role="cell">${formatarValorContrato(c.valor)}</div>
+            <div class="gtable-cell" role="cell">${formatarDataContrato(c.dataInicial)}</div>
+            <div class="gtable-cell" role="cell">${formatarDataContrato(c.dataFinal)}</div>
+            <div class="gtable-cell" role="cell"><span class="situacao-badge ${c.situacao}">${formatarSituacaoContrato(c.situacao)}</span></div>
+            <div class="gtable-cell gtable-cell-end" role="cell">
+                ${btnEditar}
+                ${btnExcluir}
+            </div>
+        </div>`;
+    }).join('');
 }
 
 function editarContrato(id) {

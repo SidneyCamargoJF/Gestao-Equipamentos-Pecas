@@ -255,11 +255,23 @@
   color: #7f1d1d;
 }
 
-tr.linha-contrato-encerrado {
+/* Larguras de coluna dessa tabela -- o resto (grid, hover, cantos
+   arredondados, cabeçalho, linha vazia) vem das classes .gtable-*
+   compartilhadas em css/tableCSS.html. */
+#tabelaContratos {
+  grid-template-columns: 3.5rem 1fr 2fr 1.3fr 1.6fr 1.1fr 0.9fr 0.9fr 1fr 5rem;
+  min-width: 70rem;
+}
+
+/* "Encerrado" é um estado específico de Contrato (além do .linha-desativada
+   genérico, que já vem de .gtable-row.linha-desativada em tableCSS.html).
+   Precisa aplicar na CÉLULA, não na .gtable-row (ela é display:contents,
+   não tem caixa própria pra pintar fundo nela). */
+.gtable-row.linha-contrato-encerrado .gtable-cell {
   background-color: #fef2f2;
 }
 
-tr.linha-desativada.linha-contrato-encerrado {
+.gtable-row.linha-desativada.linha-contrato-encerrado .gtable-cell {
   opacity: 1;
   background-color: #fecaca;
   color: inherit;

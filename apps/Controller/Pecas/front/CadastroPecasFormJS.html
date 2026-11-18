@@ -324,7 +324,6 @@
             garantia: peca.garantia,
             dtGarantia: peca.dtGarantia,
             modalidade: peca.modalidade,
-            valor: peca.valor,
             seiNum: peca.seiNum
           };
 
@@ -332,6 +331,9 @@
             const el = document.getElementById(elId);
             if (el) el.value = campos[elId] ?? '';
           });
+
+          const valorField = document.getElementById('valor');
+          if (valorField) valorField.value = formatarValorExibicaoMonetario(peca.valor);
 
           const marcaSelect = document.getElementById('marcaSelect');
           if (marcaSelect) marcaSelect.value = peca.marca || '';
@@ -369,7 +371,7 @@
       garantia: document.getElementById('garantia')?.value || '',
       dtGarantia: document.getElementById('dtGarantia')?.value || '',
       modalidade: document.getElementById('modalidade')?.value || '',
-      valor: document.getElementById('valor')?.value.trim() || '',
+      valor: desmascararValorMonetario(document.getElementById('valor')?.value),
       seiNum: document.getElementById('seiNum')?.value.trim() || ''
     };
 

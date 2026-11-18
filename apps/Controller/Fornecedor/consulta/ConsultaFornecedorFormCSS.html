@@ -310,15 +310,6 @@
     flex-shrink: 0;
   }
 
-  /* .table-wrapper/.data-table (base, hover, empty-row etc.) já vêm de
-     css/tableCSS.html, carregado globalmente -- não duplicar aqui. */
-
-  /* Razão Social/Nome Fantasia são nomes de empresa, às vezes bem longos --
-     sem largura própria, o .data-table (compartilhado, table-layout:auto)
-     deixava essas colunas espremidas entre CNPJ/Telefone/E-mail (que têm
-     formato fixo e curto), e o texto quebrava no meio da palavra. Fixando
-     a largura de cada coluna (table-layout:fixed) e permitindo quebra só
-     em espaço (word-break:normal) resolve os dois problemas. */
   #tabelaFornecedores {
     table-layout: fixed;
   }
@@ -329,15 +320,7 @@
     word-break: normal;
   }
 
-  /* Recalibrado pra ordem atual das colunas: Detalhes | Razão Social |
-     Nome Fantasia | CNPJ | Telefone | Cidade/UF | Observação | Ações.
-     Detalhes/Ações usam largura FIXA em rem (não %) -- numa coluna em %,
-     o espaço real depende da largura da tabela inteira, e pode ficar menor
-     que o botão (2.25rem) + padding do <td> (2rem no total), espremendo o
-     botão pra fora da célula. Em rem, o espaço pro(s) botão(ões) é
-     garantido não importa a largura da tabela. Também centraliza o
-     conteúdo dessas duas colunas (cabeçalho e botões), que por padrão
-     ficam alinhados à esquerda. */
+
   #tabelaFornecedores th:nth-child(1), #tabelaFornecedores td:nth-child(1) {
     width: 4rem;
     text-align: center;

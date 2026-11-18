@@ -296,23 +296,23 @@
             <!-- PARTE INFERIOR: Tabela de Equipamentos do Contrato -->
             <div class="equip-list-section">
               <h4 class="sub-section-title">Equipamentos Vinculados ao Contrato</h4>
-              <div class="crud-table-wrapper">
-                <table class="crud-table" id="tabelaEquipamentosContrato">
-                  <thead>
-                    <tr>
-                      <th>EQUIPAMENTO</th>
-                      <th>CAPACIDADE</th>
-                      <th>MARCA</th>
-                      <th>MODELO</th>
-                      <th>PATRIMÔNIO</th>
-                      <th>LOCALIZAÇÃO</th>
-                      <th>AÇÕES</th>
-                    </tr>
-                  </thead>
-                  <tbody id="bodyEquipamentos">
-                    <tr class="empty-row"><td colspan="7">Nenhum equipamento vinculado ao contrato.</td></tr>
-                  </tbody>
-                </table>
+              <div class="gtable-wrapper">
+                <div class="gtable" id="tabelaEquipamentosContrato" role="table">
+                  <div class="gtable-row gtable-head" role="row">
+                    <div class="gtable-cell" role="columnheader">EQUIPAMENTO</div>
+                    <div class="gtable-cell" role="columnheader">CAPACIDADE</div>
+                    <div class="gtable-cell" role="columnheader">MARCA</div>
+                    <div class="gtable-cell" role="columnheader">MODELO</div>
+                    <div class="gtable-cell" role="columnheader">PATRIMÔNIO</div>
+                    <div class="gtable-cell" role="columnheader">LOCALIZAÇÃO</div>
+                    <div class="gtable-cell gtable-cell-end" role="columnheader">AÇÕES</div>
+                  </div>
+                  <div class="gtable-body" id="bodyEquipamentos" role="rowgroup">
+                    <div class="gtable-row gtable-empty-row" role="row">
+                      <div class="gtable-cell gtable-cell-full" role="cell">Nenhum equipamento vinculado ao contrato.</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

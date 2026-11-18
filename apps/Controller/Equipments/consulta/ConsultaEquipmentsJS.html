@@ -10,10 +10,19 @@
   let listaEquipamentosConsulta = [];
   let sortStateEquipamento = { coluna: null, direcao: 'asc' };
 
+  // false na primeira visualização da tela (não dispara busca sozinha);
+  // vira true depois disso, então voltar de um salvar/editar (ou qualquer
+  // navegação seguinte) já busca os dados atualizados automaticamente.
+  let equipamentosJaVisualizado = false;
+
   async function renderEquipamentos() {
     const inputBusca = document.getElementById('equipmentSearch');
     if (inputBusca) inputBusca.focus();
-    consultarEquipamentos();
+    if (equipamentosJaVisualizado) {
+      consultarEquipamentos();
+    } else {
+      equipamentosJaVisualizado = true;
+    }
   }
 
   function consultarEquipamentos() {
