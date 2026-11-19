@@ -5,10 +5,11 @@ function formatarDataISOAgenda_(data) {
   return `${ano}-${mes}-${dia}`;
 }
 
+// parseDataFlex monta a data no fuso do script; stringToDate usava
+// new Date('yyyy-MM-dd') (meia-noite UTC), que cai no dia anterior em
+// Brasília e jogava o evento um dia antes na agenda.
 function paraDataAgenda_(raw) {
-  if (!raw) return null;
-  const data = raw instanceof Date ? raw : stringToDate(String(raw));
-  return (data && !isNaN(data)) ? data : null;
+  return parseDataFlex(raw);
 }
 
 function buscarEventosAgenda(ano, mes) {
@@ -18,6 +19,24 @@ function buscarEventosAgenda(ano, mes) {
   const eventos = [];
 
   ReadTickets().forEach(l => {
+    // Preventiva com DATA_PREVISTA aparece na data prevista (abaixo), não
+    // na data de abertura.
+    const ehPreventiva = String(l[3] || '').trim().toLowerCase() === 'preventiva';
+    const status = String(l[11] || '').trim();
+    const dataPrevista = paraDataAgenda_(l[ticketsDataPrevistaCol - 1]);
+    if (ehPreventiva && dataPrevista) {
+      if (status.toLowerCase() === 'cancelado' || dataPrevista < inicio || dataPrevista > fim) return;
+      eventos.push({
+        tipo: 'preventiva',
+        data: formatarDataISOAgenda_(dataPrevista),
+        id: l[0],
+        titulo: String(l[2] || ('Preventiva #' + l[0])) + (status ? ' (' + (status === 'Concluido' ? 'Concluído' : status) + ')' : ''),
+        status: status,
+        prioridade: String(l[4] || '')
+      });
+      return;
+    }
+
     const data = paraDataAgenda_(l[5]);
     if (!data || data < inicio || data > fim) return;
     eventos.push({

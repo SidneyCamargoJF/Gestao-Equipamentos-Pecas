@@ -245,3 +245,85 @@ function buscarIndicadoresContratos() {
     vencendoLista: vencendoLista.sort((a, b) => a.dias - b.dias).slice(0, 8)
   };
 }
+
+// =====================================================
+// DASHBOARD - Manutenção do mês
+// Preventivas da competência atual (situação + % de itens de checklist
+// executados), corretivas com prazo de SLA vencido e ranking de
+// equipamentos com mais corretivas nos últimos 12 meses.
+// =====================================================
+function buscarIndicadoresManutencao() {
+  const agora = new Date();
+  const tz = Session.getScriptTimeZone();
+  const competencia = Utilities.formatDate(agora, tz, 'yyyy-MM');
+  const chamados = ReadTickets().filter(l => String(l[ticketsStatusCol - 1] || '').trim().toLowerCase() !== 'cancelado');
+  const tipo = l => String(l[ticketsTypeCol - 1] || '').trim().toLowerCase();
+  const status = l => String(l[ticketsStatusCol - 1] || '').trim().toLowerCase();
+
+  // Preventiva "do mês": competência atual; sem competência (manual), pela
+  // data prevista ou, na falta dela, pela data de abertura.
+  const mesDe = valor => { const d = parseDataFlex(valor); return d ? Utilities.formatDate(d, tz, 'yyyy-MM') : ''; };
+  const preventivas = chamados.filter(l => {
+    if (tipo(l) !== 'preventiva') return false;
+    const comp = String(l[ticketsCompetenciaCol - 1] || '').trim();
+    if (comp) return comp === competencia;
+    return (mesDe(l[ticketsDataPrevistaCol - 1]) || mesDe(l[ticketsDtAberturaCol - 1])) === competencia;
+  });
+
+  const prev = { total: preventivas.length, concluidas: 0, andamento: 0, pendentes: 0, atrasadas: 0 };
+  preventivas.forEach(l => {
+    const s = status(l);
+    if (s === 'concluido') prev.concluidas++;
+    else if (s === 'em andamento') prev.andamento++;
+    else prev.pendentes++;
+    const prevista = parseDataFlex(l[ticketsDataPrevistaCol - 1]);
+    if (s !== 'concluido' && prevista && inicioDoDia(prevista) < inicioDoDia(agora)) prev.atrasadas++;
+  });
+
+  const idsPreventivas = new Set(preventivas.map(l => Number(l[0])));
+  const itens = ReadTicketChecklist().filter(l =>
+    idsPreventivas.has(Number(l[ticketChecklistChamadoIdCol - 1])) && !l[ticketChecklistDataExclusaoCol - 1]);
+  const executados = itens.filter(l => String(l[ticketChecklistResultadoCol - 1] || 'pendente').trim().toLowerCase() !== 'pendente').length;
+
+  const corretivasForaPrazo = chamados
+    .filter(l => tipo(l) === 'corretiva')
+    .map(l => ({ l: l, atraso: avaliarAtrasoChamado(l, agora) }))
+    .filter(x => x.atraso.prazoVencido)
+    .map(x => ({
+      id: x.l[0],
+      motivo: String(x.l[ticketsReasonCol - 1] || ''),
+      atribuidoA: String(x.l[ticketsAtribuidoCol - 1] || ''),
+      situacao: x.atraso.motivos.filter(m => m.indexOf('prazo') === 0).join(', ')
+    }))
+    .sort((a, b) => Number(a.id) - Number(b.id));
+
+  // Ranking: corretivas abertas nos últimos 12 meses, por equipamento.
+  const limite = new Date(agora.getFullYear() - 1, agora.getMonth(), agora.getDate());
+  const porEquip = {};
+  chamados.forEach(l => {
+    if (tipo(l) !== 'corretiva' || !l[ticketsEquipamentoIdCol - 1]) return;
+    const abertura = parseDataFlex(l[ticketsDtAberturaCol - 1]);
+    if (!abertura || abertura < limite) return;
+    const id = Number(l[ticketsEquipamentoIdCol - 1]);
+    porEquip[id] = (porEquip[id] || 0) + 1;
+  });
+  const equipamentos = {};
+  ReadEquipments().forEach(e => { equipamentos[Number(e[0])] = e; });
+  const rankingEquipamentos = Object.keys(porEquip)
+    .map(id => {
+      const e = equipamentos[Number(id)];
+      const label = e ? ((e[5] ? e[5] + ' - ' : '') + e[1] + (e[7] ? ' (' + e[7] + ')' : '')) : ('Equipamento #' + id);
+      return { label: label, patrimonio: e ? String(e[5] || '') : '', valor: porEquip[id] };
+    })
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 8);
+
+  return {
+    competencia: competencia,
+    preventivas: prev,
+    itens: { total: itens.length, executados: executados, percentual: itens.length ? Math.round(executados * 100 / itens.length) : 0 },
+    corretivasForaPrazo: corretivasForaPrazo.length,
+    corretivasForaPrazoLista: corretivasForaPrazo.slice(0, 8),
+    rankingEquipamentos: rankingEquipamentos
+  };
+}

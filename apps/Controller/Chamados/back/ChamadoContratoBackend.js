@@ -148,3 +148,44 @@ function verificarPatrimonioChamado(patrimonio) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
   }
 }
+
+/**
+ * Atraso de um chamado (linha de ReadTickets) em relação a "agora":
+ * - DATA_PREVISTA < hoje e não concluído (preventivas);
+ * - PRAZO_ATENDIMENTO vencido sem DATA_INICIO_ANDAMENTO;
+ * - PRAZO_SOLUCAO vencido sem DATA_FINALIZACAO.
+ * Cancelados e concluídos não ficam atrasados.
+ * Retorna { atrasado, motivos: [...], prazoVencido (só SLA) }.
+ */
+function avaliarAtrasoChamado(linha, agora) {
+  const resultado = { atrasado: false, motivos: [], prazoVencido: false };
+  const status = String(linha[ticketsStatusCol - 1] || '').trim().toLowerCase();
+  if (status === 'cancelado' || status === 'concluido') return resultado;
+  const ref = agora || new Date();
+
+  const prevista = parseDataFlex(linha[ticketsDataPrevistaCol - 1]);
+  if (prevista && inicioDoDia(prevista) < inicioDoDia(ref)) resultado.motivos.push('data prevista vencida');
+
+  const prazoAt = parseDataFlex(linha[ticketsPrazoAtendimentoCol - 1]);
+  if (prazoAt && prazoAt < ref && !linha[ticketsDtInicioAndamentoCol - 1]) {
+    resultado.motivos.push('prazo de atendimento vencido');
+    resultado.prazoVencido = true;
+  }
+  const prazoSol = parseDataFlex(linha[ticketsPrazoSolucaoCol - 1]);
+  if (prazoSol && prazoSol < ref && !linha[ticketsDtFinalizacaoCol - 1]) {
+    resultado.motivos.push('prazo de solução vencido');
+    resultado.prazoVencido = true;
+  }
+  resultado.atrasado = resultado.motivos.length > 0;
+  return resultado;
+}
+
+/** Contratos para o filtro da consulta de chamados (não excluídos). */
+function listarContratosParaFiltro() {
+  return ReadContracts()
+    .filter(function (l) { return l[contractIdCol] && !l[contractDataExclusaoCol]; })
+    .map(function (l) {
+      return { id: l[contractIdCol], numero: String(l[contractNumberCol] || ''), empresa: String(l[contractEmpresaCol] || '') };
+    })
+    .sort(function (a, b) { return a.numero.localeCompare(b.numero); });
+}

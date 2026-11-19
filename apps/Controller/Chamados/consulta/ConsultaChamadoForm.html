@@ -89,6 +89,30 @@
                         <option value="cancelado">Cancelado</option>
                     </select>
                 </div>
+
+                <div class="field">
+                    <label class="field__label" for="filtro-chamado-contrato">Contrato</label>
+                    <select class="field__select" id="filtro-chamado-contrato" onchange="consultarChamados()">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="filtro-chamado-origem">Origem</label>
+                    <select class="field__select" id="filtro-chamado-origem" onchange="consultarChamados()">
+                        <option value="">Todas</option>
+                        <option value="manual">Manual</option>
+                        <option value="automatica">Automática (preventiva)</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="filtro-chamado-atrasados">Prazo</label>
+                    <select class="field__select" id="filtro-chamado-atrasados" onchange="consultarChamados()">
+                        <option value="">Todos</option>
+                        <option value="1">Só atrasados</option>
+                    </select>
+                </div>
             </div>
         </form>
 

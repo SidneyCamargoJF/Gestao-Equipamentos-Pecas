@@ -5,7 +5,7 @@ let agendaMesAtual = new Date().getMonth() + 1;
 let agendaEventosAtuais = [];
 
 const AGENDA_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-const AGENDA_ROTULOS_TIPO = { chamado: 'Chamado', contrato: 'Contrato vencendo', peca: 'Garantia de peça vencendo' };
+const AGENDA_ROTULOS_TIPO = { chamado: 'Chamado', preventiva: 'Preventiva prevista', contrato: 'Contrato vencendo', peca: 'Garantia de peça vencendo' };
 
 async function renderAgenda() {
     popularAnoAgenda();
@@ -140,7 +140,7 @@ function abrirDetalheDiaAgenda(dataStr) {
 function irParaEventoAgenda(tipo, id) {
     if (typeof fecharModal === 'function') fecharModal('modalAgendaDia');
 
-    if (tipo === 'chamado') {
+    if (tipo === 'chamado' || tipo === 'preventiva') {
         trocarPagina('chamado-view');
         if (typeof abrirDetalhesChamado === 'function') abrirDetalhesChamado(id);
     } else if (tipo === 'contrato') {

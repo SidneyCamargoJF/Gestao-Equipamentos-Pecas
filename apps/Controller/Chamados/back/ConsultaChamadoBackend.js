@@ -14,6 +14,12 @@ function filtrarChamados(criterios) {
     let tipoBuscado = (criterios && criterios.tipo) ? String(criterios.tipo).trim().toLowerCase() : "";
     let prioridadeBuscada = (criterios && criterios.prioridade) ? String(criterios.prioridade).trim().toLowerCase() : "";
     let statusBuscado = (criterios && criterios.status) ? String(criterios.status).trim().toLowerCase() : "";
+    let contratoBuscado = (criterios && criterios.contratoId) ? Number(criterios.contratoId) : 0;
+    let origemBuscada = (criterios && criterios.origem) ? String(criterios.origem).trim().toLowerCase() : "";
+    let somenteAtrasados = !!(criterios && criterios.atrasados);
+    const agora = new Date();
+    const numeroContrato = {};
+    ReadContracts().forEach(c => { numeroContrato[Number(c[contractIdCol])] = String(c[contractNumberCol] || ''); });
 
     let idsComAnexo = new Set(
         ReadTicketAnexos()
@@ -40,8 +46,15 @@ function filtrarChamados(criterios) {
         let cTipo = (tipoBuscado === "" || colTipo.includes(tipoBuscado));
         let cPrioridade = (prioridadeBuscada === "" || colPrioridade.includes(prioridadeBuscada));
         let cStatus = (statusBuscado === "" || colStatus.includes(statusBuscado));
+        let colContrato = Number(dados[i][ticketsContratoIdCol - 1]) || 0;
+        // chamados antigos não têm ORIGEM: contam como manuais
+        let colOrigem = String(dados[i][ticketsOrigemCol - 1] || '').trim().toLowerCase() || 'manual';
+        let cContrato = (!contratoBuscado || colContrato === contratoBuscado);
+        let cOrigem = (origemBuscada === "" || colOrigem === origemBuscada);
+        let atraso = avaliarAtrasoChamado(dados[i], agora);
+        let cAtraso = (!somenteAtrasados || atraso.atrasado);
 
-        if(cEquipamento && cMotivo && cTipo && cPrioridade && cStatus) {
+        if(cEquipamento && cMotivo && cTipo && cPrioridade && cStatus && cContrato && cOrigem && cAtraso) {
             res.push({
                 id: dados[i][0],
                 equipamento: equipamentoTexto,
@@ -55,7 +68,11 @@ function filtrarChamados(criterios) {
                 status: dados[i][11],
                 desativado: desativado,
                 concluido: concluido,
-                temAnexo: idsComAnexo.has(Number(dados[i][0]))
+                temAnexo: idsComAnexo.has(Number(dados[i][0])),
+                contrato: colContrato ? (numeroContrato[colContrato] || ('#' + colContrato)) : '',
+                origem: colOrigem,
+                atrasado: atraso.atrasado,
+                motivoAtraso: atraso.motivos.join(', ')
             })
         }
     }

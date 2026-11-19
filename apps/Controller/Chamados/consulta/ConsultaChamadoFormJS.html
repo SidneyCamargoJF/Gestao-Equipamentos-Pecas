@@ -6,12 +6,29 @@ let chamadosJaVisualizado = false;
 
 async function renderConsultaChamados() {
     mostrarBotaoGerarPreventivas();
+    carregarContratosFiltroChamado();
     const motivos = await carregarMotivosChamado();
     initSearchChamado('motivoChamadoSearch', 'motivoChamadoDropdown', 'motivoChamadoWrapper', motivos);
     if (chamadosJaVisualizado) {
       consultarChamados();
     } else {
       chamadosJaVisualizado = true;
+    }
+}
+
+// ===== FILTRO POR CONTRATO =====
+async function carregarContratosFiltroChamado() {
+    const select = document.getElementById('filtro-chamado-contrato');
+    if (!select) return;
+    try {
+        const contratos = await runServerFunction('listarContratosParaFiltro');
+        const atual = select.value;
+        select.innerHTML = '<option value="">Todos</option>' + (contratos || []).map(c =>
+            `<option value="${escapeHtml(String(c.id))}">${escapeHtml(c.numero)}${c.empresa ? ' — ' + escapeHtml(c.empresa) : ''}</option>`
+        ).join('');
+        select.value = atual;
+    } catch (error) {
+        console.error('Erro ao carregar contratos para o filtro:', error);
     }
 }
 
@@ -81,7 +98,10 @@ function consultarChamados() {
         motivo: motivo,
         tipo: tipo,
         prioridade: prioridade,
-        status: status
+        status: status,
+        contratoId: document.getElementById('filtro-chamado-contrato')?.value || '',
+        origem: document.getElementById('filtro-chamado-origem')?.value || '',
+        atrasados: document.getElementById('filtro-chamado-atrasados')?.value === '1'
     };
 
     mostrarCarregandoChamados(true);
@@ -202,6 +222,10 @@ function limparFiltrosChamado() {
     document.getElementById('filtro-chamado-tipo').value = '';
     document.getElementById('filtro-chamado-prioridade').value = '';
     document.getElementById('filtro-chamado-status').value = '';
+    ['filtro-chamado-contrato', 'filtro-chamado-origem', 'filtro-chamado-atrasados'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
     sortStateChamado = { coluna: null, direcao: 'asc' };
     consultarChamados();
 }
@@ -241,10 +265,14 @@ function renderTabelaChamados(lista) {
         <td>#${f.id}</td>
         <td>${f.equipamento ? escapeHtml(f.equipamento) : '--'}</td>
         <td>${f.localizacao ? escapeHtml(f.localizacao) : '--'}</td>
-        <td>${escapeHtml(f.motivo)}</td>
+        <td>${escapeHtml(f.motivo)}${f.contrato
+            ? `<br><small class="chamado-contrato-tag" title="Contrato">📄 ${escapeHtml(f.contrato)}${f.origem === 'automatica' ? ' · automática' : ''}</small>`
+            : ''}</td>
         <td>${escapeHtml(f.tipo)}</td>
         <td>${montarBadgePrioridadeChamado(f.prioridade)}</td>
-        <td>${montarBadgeStatusChamado(f.status)}</td>
+        <td>${montarBadgeStatusChamado(f.status)}${f.atrasado
+            ? ` <span class="status-badge atrasado" title="${escapeHtml(f.motivoAtraso)}">Atrasado</span>`
+            : ''}</td>
         <td>${escapeHtml(f.atribuidoA)}</td>
         <td>${escapeHtml(f.dataAbertura)}</td>
         <td class="acao-cell">

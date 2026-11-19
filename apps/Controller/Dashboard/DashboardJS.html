@@ -5,6 +5,7 @@ function renderDashboard() {
     el.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   });
 
+  renderDashboardManutencao();
   renderDashboardChamados();
   renderDashboardContratos();
   renderDashboardEquipamentos();
@@ -186,6 +187,74 @@ async function renderDashboardChamados() {
     console.error('Erro ao buscar indicadores de chamados:', error);
     document.getElementById('dashChamadosPrioridade').innerHTML = '<p class="dash-vazio">Erro ao carregar.</p>';
   }
+}
+
+// ===== MANUTENÇÃO DO MÊS =====
+async function renderDashboardManutencao() {
+  try {
+    const dados = await runServerFunction('buscarIndicadoresManutencao');
+    const p = dados.preventivas;
+    const [ano, mes] = String(dados.competencia).split('-');
+    document.getElementById('dashManutCompetencia').textContent = mes && ano ? '(' + mes + '/' + ano + ')' : '';
+    document.getElementById('dashManutPreventivas').textContent = p.total;
+    document.getElementById('dashManutItens').textContent = dados.itens.total
+      ? dados.itens.percentual + '% (' + dados.itens.executados + '/' + dados.itens.total + ')'
+      : '—';
+    document.getElementById('dashManutAtrasadas').textContent = p.atrasadas;
+    document.getElementById('dashManutCorretivasForaPrazo').textContent = dados.corretivasForaPrazo;
+
+    const situacao = [
+      { label: 'Concluídas', valor: p.concluidas, cor: '#16a34a' },
+      { label: 'Em andamento', valor: p.andamento, cor: '#f59e0b' },
+      { label: 'Pendentes', valor: p.pendentes, cor: '#2563eb' }
+    ];
+    document.getElementById('dashManutSituacao').innerHTML = desenharRosca(situacao) +
+      (p.atrasadas ? '<p class="dash-vazio" style="color:#b91c1c;">' + p.atrasadas + ' atrasada(s): data prevista já passou.</p>' : '');
+    registrarExportDash('dashManutSituacao', ['Situação', 'Quantidade'],
+      situacao.map(s => [s.label, s.valor]).concat([['Atrasadas', p.atrasadas]]));
+
+    const corretivasEl = document.getElementById('dashManutCorretivas');
+    if (!dados.corretivasForaPrazoLista.length) {
+      corretivasEl.innerHTML = '<p class="dash-vazio">Nenhuma corretiva com prazo vencido.</p>';
+    } else {
+      corretivasEl.innerHTML = '<ul class="dash-lista-simples">' +
+        dados.corretivasForaPrazoLista.map(c => '<li onclick="irParaChamadoDash(' + Number(c.id) + ')">#' + escapeHtml(String(c.id)) + ' — ' + escapeHtml(c.motivo) + ' — ' + escapeHtml(c.situacao) + '</li>').join('') +
+        '</ul>' + (dados.corretivasForaPrazo > dados.corretivasForaPrazoLista.length
+          ? '<p class="dash-vazio">e mais ' + (dados.corretivasForaPrazo - dados.corretivasForaPrazoLista.length) + '…</p>' : '');
+    }
+    registrarExportDash('dashManutCorretivas', ['Chamado', 'Motivo', 'Atribuído a', 'Situação'],
+      dados.corretivasForaPrazoLista.map(c => [c.id, c.motivo, c.atribuidoA, c.situacao]));
+
+    document.getElementById('dashManutRanking').innerHTML = desenharRankingBarras(
+      dados.rankingEquipamentos.map(r => ({ label: r.label, valor: r.valor })),
+      'Nenhuma corretiva nos últimos 12 meses.'
+    );
+    registrarExportDash('dashManutRanking', ['Equipamento', 'Corretivas'],
+      dados.rankingEquipamentos.map(r => [r.label, r.valor]));
+  } catch (error) {
+    console.error('Erro ao buscar indicadores de manutenção:', error);
+    document.getElementById('dashManutSituacao').innerHTML = '<p class="dash-vazio">Erro ao carregar.</p>';
+  }
+}
+
+// Drill-down: abre a Consulta de Chamados já filtrada.
+function irParaChamadosManutencao(filtros) {
+  trocarPagina('chamado-view');
+  const valores = {
+    'filtro-chamado-tipo': filtros.tipo || '',
+    'filtro-chamado-origem': filtros.origem || '',
+    'filtro-chamado-atrasados': filtros.atrasados ? '1' : ''
+  };
+  Object.keys(valores).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = valores[id];
+  });
+  if (typeof consultarChamados === 'function') consultarChamados();
+}
+
+function irParaChamadoDash(id) {
+  trocarPagina('chamado-view');
+  if (typeof abrirDetalhesChamado === 'function') abrirDetalhesChamado(id);
 }
 
 // ===== CONTRATOS =====

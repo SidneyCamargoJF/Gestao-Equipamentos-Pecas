@@ -8,6 +8,65 @@
         </div>
       </div>
 
+      <!-- ===== MANUTENÇÃO DO MÊS ===== -->
+      <div class="dash-secao" id="dashSecaoManutencao">
+        <h2 class="dash-secao-titulo">🛠️ Manutenção do mês <span id="dashManutCompetencia" class="dash-secao-sub"></span></h2>
+
+        <div class="metrics-grid">
+          <div class="metric-card" style="cursor:pointer;" onclick="irParaChamadosManutencao({ tipo: 'preventiva', origem: 'automatica' })">
+            <div class="metric-label">Preventivas do mês</div>
+            <div class="metric-value" id="dashManutPreventivas">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Itens de checklist executados</div>
+            <div class="metric-value" id="dashManutItens">—</div>
+          </div>
+          <div class="metric-card" style="cursor:pointer;" onclick="irParaChamadosManutencao({ tipo: 'preventiva', atrasados: true })">
+            <div class="metric-label">Preventivas atrasadas</div>
+            <div class="metric-value" id="dashManutAtrasadas">—</div>
+          </div>
+          <div class="metric-card" style="cursor:pointer;" onclick="irParaChamadosManutencao({ tipo: 'corretiva', atrasados: true })">
+            <div class="metric-label">Corretivas fora do prazo</div>
+            <div class="metric-value" id="dashManutCorretivasForaPrazo">—</div>
+          </div>
+        </div>
+
+        <div class="dash-grid-3">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Situação das preventivas</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashManutSituacao','preventivas_do_mes.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashManutSituacao" class="dash-painel-corpo">Carregando...</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Corretivas fora do prazo (SLA)</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashManutCorretivas','corretivas_fora_do_prazo.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashManutCorretivas" class="dash-painel-corpo">Carregando...</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Equipamentos com mais corretivas (12 meses)</h2>
+              <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashManutRanking','equipamentos_mais_corretivas.csv')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            </div>
+            <div id="dashManutRanking" class="dash-painel-corpo">Carregando...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== CHAMADOS ===== -->
       <div class="dash-secao" id="dashSecaoChamados">
         <h2 class="dash-secao-titulo">📨 Chamados</h2>
