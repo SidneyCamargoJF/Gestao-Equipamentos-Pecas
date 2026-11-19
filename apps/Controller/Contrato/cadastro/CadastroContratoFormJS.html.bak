@@ -1,0 +1,1147 @@
+<script> // CadastroContratosFormJS.html
+
+  async function renderContratosForm(id) {
+    initTabs();
+    carregarFornecedoresParaEmpresa();
+    carregarOpcoesEspecificacaoServico();
+    registrarCampoAnexoCadastro('contratoAnexoArquivo', 'contratoAnexoLista');
+    initDataEncerramentoOpacidade();
+    registrarEventosChecklist();
+
+    const telField = document.getElementById('telefone');
+    if (telField) mascaraTelefone(telField);
+
+    const seiField = document.getElementById('sei');
+    if (seiField) mascaraSEI(seiField);
+
+    const patField = document.getElementById('eqBuscaPat');
+    if (patField) {
+      patField.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); buscarEquipamentoBase(); }
+      });
+    }
+    const nomeField = document.getElementById('eqBuscaNome');
+    if (nomeField) {
+      nomeField.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); buscarEquipamentoBase(); }
+      });
+    }
+
+    document.getElementById('contratoId').value = '';
+    document.getElementById('formTitulo').textContent = id ? 'Editar Contrato' : 'Novo Contrato';
+    document.getElementById('formStatus').textContent = id ? 'Edição' : 'Rascunho';
+
+    ['numero', 'contrato', 'sei', 'dataFechamento', 'empresaSearch', 'objeto',
+      'observacoes', 'dataEncerramento', 'dataInicial', 'dataFinal', 'contatoEmpresa',
+      'telefone', 'email', 'valor', 'gestor'].forEach(function (campoId) {
+      const el = document.getElementById(campoId);
+      if (el) el.value = '';
+    });
+    atualizarOpacidadeDataEncerramento();
+
+    equipamentos = [];
+    servicoAtual = null;
+    produtos = [];
+    checklist = [];
+
+    limparChecklistUI();
+
+    renderizarEquipamentos();
+    renderizarServicoCard();
+    atualizarChecklistParaServico();
+    renderizarProdutos();
+    renderizarChecklist();
+
+    if (id) {
+      if (typeof exibirModal === 'function') exibirModal('processando');
+      try {
+        await preencherFormularioContratoParaEdicao(id);
+      } finally {
+        if (typeof fecharModal === 'function') fecharModal('processando');
+      }
+    }
+  }
+
+  function limparContrato() {
+    renderContratosForm();
+  }
+
+  // ===== EMPRESA (busca em Fornecedor, preenche telefone/email ao escolher) =====
+  // nome -> { telefone, email }, usado por preencherContatoEmpresa quando a
+  // pessoa clica numa opção do dropdown.
+  let fornecedoresPorNome = {};
+
+  async function carregarFornecedoresParaEmpresa() {
+    try {
+      const fornecedores = await runServerFunction('buscarFornecedoresParaEmpresa');
+      fornecedoresPorNome = {};
+      const nomes = (fornecedores || []).map(function (f) {
+        fornecedoresPorNome[f.nome] = { telefone: f.telefone, email: f.email };
+        return f.nome;
+      });
+      initSearch('empresaSearch', 'empresaDropdown', 'empresaWrapper', nomes, preencherContatoEmpresa);
+    } catch (error) {
+      console.error('Erro ao carregar fornecedores para Empresa:', error);
+      initSearch('empresaSearch', 'empresaDropdown', 'empresaWrapper', []);
+    }
+  }
+
+  // Só preenche se o campo estiver vazio -- não sobrescreve um telefone/email
+  // que a pessoa já tinha digitado na mão pra esse contrato específico.
+  function preencherContatoEmpresa(nomeEmpresa) {
+    const dados = fornecedoresPorNome[nomeEmpresa];
+    if (!dados) return;
+
+    const telField = document.getElementById('telefone');
+    if (telField && !telField.value.trim() && dados.telefone) {
+      telField.value = dados.telefone;
+      // mascaraTelefone (já registrada no load do form) só reformata em
+      // resposta a um evento "input" de verdade -- setar .value direto não
+      // dispara isso sozinho, por isso o dispatch manual aqui.
+      telField.dispatchEvent(new Event('input'));
+    }
+
+    const emailField = document.getElementById('email');
+    if (emailField && !emailField.value.trim() && dados.email) {
+      emailField.value = dados.email;
+    }
+  }
+
+  // ===== CARREGAR CONTRATO EXISTENTE PARA EDIÇÃO =====
+  async function preencherFormularioContratoParaEdicao(id) {
+    try {
+      const dados = await runServerFunction('buscarContratoParaEdicao', id);
+      if (!dados) {
+        alert('Não foi possível carregar esse contrato para edição.');
+        return;
+      }
+
+      document.getElementById('contratoId').value = dados.id || '';
+
+      ['numero', 'contrato', 'sei', 'dataFechamento', 'objeto', 'observacoes',
+        'dataEncerramento', 'dataInicial', 'dataFinal', 'contatoEmpresa', 'telefone',
+        'email', 'valor', 'gestor'].forEach(function (campoId) {
+        const el = document.getElementById(campoId);
+        if (el) el.value = dados[campoId] || '';
+      });
+      document.getElementById('empresaSearch').value = dados.empresa || '';
+      atualizarOpacidadeDataEncerramento();
+
+      equipamentos = dados.equipamentos || [];
+      produtos = dados.produtos || [];
+      renderizarEquipamentos();
+      renderizarProdutos();
+
+      // Categoria/Tipo/Capacidade agora têm coluna própria em
+      // tbl_contratos_servicos, então dá pra "desmontar" de volta certinho
+      // e já deixar os 3 selects em cascata com o valor salvo -- só o Tipo
+      // de Manutenção ainda não tem coluna própria, então esse campo some
+      // na edição (fica no padrão "Preventiva").
+      const servicoSalvo = (dados.servicos || [])[0];
+      if (servicoSalvo) {
+        await carregarOpcoesEspecificacaoServico();
+
+        servicoAtual = {
+          tipoManutencao: '',
+          categoriaEquip: servicoSalvo.categoria || '',
+          tipoEquip: servicoSalvo.tipo || '',
+          capacidadeEquip: servicoSalvo.capacidade || '',
+          periodicidade: servicoSalvo.periodicidade || 'anual',
+          nomeCompleto: [servicoSalvo.categoria, servicoSalvo.tipo, formatarCapacidadeComPonto(servicoSalvo.capacidade)]
+            .filter(Boolean).join(' ')
+        };
+
+        const catSelect = document.getElementById('servicoCategoriaEquip');
+        const tipoSelect = document.getElementById('servicoTipoEquip');
+        const capSelect = document.getElementById('servicoCapacidadeEquip');
+        const periodicidadeSelect = document.getElementById('servicoPeriodicidade');
+
+        if (catSelect) {
+          catSelect.value = servicoAtual.categoriaEquip;
+          atualizarSelectTipoServico();
+        }
+        if (tipoSelect) {
+          tipoSelect.value = servicoAtual.tipoEquip;
+          atualizarSelectCapacidadeServico();
+        }
+        if (capSelect) capSelect.value = servicoAtual.capacidadeEquip;
+        if (periodicidadeSelect) periodicidadeSelect.value = servicoAtual.periodicidade;
+      } else {
+        servicoAtual = null;
+      }
+      renderizarServicoCard();
+      atualizarChecklistParaServico();
+
+      checklist = dados.checklist || [];
+      checklist.forEach(function (item) { recriarChecklistItemVisual(item.descricao, item.periodo); });
+      renderizarChecklist();
+    } catch (error) {
+      console.error('Erro ao carregar contrato para edição:', error);
+      alert('Erro ao carregar contrato para edição.');
+    }
+  }
+
+  // Limpa as listas de checklist (Mensal/Anual) na tela -- chamado ao
+  // abrir um "Novo Contrato", pra não sobrar item de uma edição anterior
+  // (o DOM é reaproveitado pela SPA, nunca é recriado do zero).
+  function limparChecklistUI() {
+    const mensal = document.getElementById('checklistMensal');
+    const anual = document.getElementById('checklistAnual');
+    if (mensal) mensal.innerHTML = '';
+    if (anual) anual.innerHTML = '';
+  }
+
+  // Campo "Data Encerramento" fica opaco por padrão
+  function atualizarOpacidadeDataEncerramento() {
+    const input = document.getElementById('dataEncerramento');
+    const campo = input ? input.closest('.field-opcional-encerramento') : null;
+    if (!input || !campo) return;
+
+    const ativo = (document.activeElement === input) || !!input.value;
+    campo.classList.toggle('campo-ativo', ativo);
+  }
+
+  function initDataEncerramentoOpacidade() {
+    const input = document.getElementById('dataEncerramento');
+    if (!input) return;
+
+    input.addEventListener('focus', atualizarOpacidadeDataEncerramento);
+    input.addEventListener('blur', atualizarOpacidadeDataEncerramento);
+    input.addEventListener('input', atualizarOpacidadeDataEncerramento);
+    atualizarOpacidadeDataEncerramento();
+  }
+
+
+// CRUD arrays
+let equipamentos = [];
+let servicoAtual = null; // um serviço só por contrato -- não é mais array
+let produtos = [];
+let checklist = [];
+
+// Edit indexes
+let produtoEditIdx = -1;
+let checklistEditIdx = -1;
+
+// Variáveis globais para busca
+let equipamentoSelecionado = null;
+
+
+// 
+// BUSCA E VINCULAÇÃO DE EQUIPAMENTOS (BASE → CONTRATO)
+// 
+
+function initBuscaEquipNome() {
+  const input = document.getElementById('eqBuscaNome');
+  const dropdown = document.getElementById('eqBuscaNomeDropdown');
+  const wrapper = document.getElementById('eqBuscaNomeWrapper');
+
+  function renderLista(filtro) {
+    const f = (filtro || '').toLowerCase();
+    dropdown.innerHTML = '';
+    if (f.length < 2) {
+      dropdown.innerHTML = '<div class="search-no-result">Digite pelo menos 2 caracteres...</div>';
+      return;
+    }
+    const itens = baseEquipamentos
+      .filter(e => e.nome.toLowerCase().includes(f))
+      .slice(0, 10)
+      .map(e => ({ label: e.nome + ' | ' + e.patrimonio, value: e }));
+
+    if (itens.length === 0) {
+      dropdown.innerHTML = '<div class="search-no-result">Nenhum resultado</div>';
+    } else {
+      itens.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'search-option';
+        div.textContent = item.label;
+        div.addEventListener('click', () => {
+          input.value = item.value.nome;
+          dropdown.classList.remove('visible');
+          equipamentoSelecionado = item.value;
+          mostrarResultadoBusca(item.value);
+        });
+        dropdown.appendChild(div);
+      });
+    }
+  }
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      dropdown.classList.add('visible');
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (input.value.trim().length >= 2) {
+      renderLista(input.value);
+      if (!dropdown.classList.contains('visible')) dropdown.classList.add('visible');
+    } else {
+      dropdown.classList.remove('visible');
+    }
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); dropdown.classList.remove('visible'); buscarEquipamentoBase(); }
+    if (e.key === 'Escape') dropdown.classList.remove('visible');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) dropdown.classList.remove('visible');
+  });
+}
+
+async function buscarEquipamentoBase() {
+  const pat = document.getElementById('eqBuscaPat').value.trim();
+  const nome = document.getElementById('eqBuscaNome').value.trim();
+
+  if (!pat && !nome) {
+    alert('Informe o patrimônio ou o nome para buscar.'); return;
+  }
+
+  // Patrimônio é uma chave única -- só pode achar um. Nome não é (ex: "ar
+  // condicionado" pode bater em vários aparelhos diferentes), então usa
+  // uma função e uma exibição diferente pra cada caso.
+  if (pat) {
+    await buscarEquipamentoPorPatrimonio(pat);
+  } else {
+    await buscarEquipamentosPorNomeUI(nome);
+  }
+}
+
+async function buscarEquipamentoPorPatrimonio(pat) {
+  document.getElementById('eqResultadoLista').style.display = 'none';
+
+  try {
+    const resultado = await runServerFunction('verificarPatrimonioEquipamento', pat);
+    if (resultado && resultado.existe) {
+      equipamentoSelecionado = {
+        id: resultado.id,
+        nome: resultado.nome,
+        marca: resultado.marca,
+        modelo: resultado.modelo,
+        capacidade: resultado.capacidade,
+        patrimonio: pat,
+        localizacao: resultado.localizacao
+      };
+      mostrarResultadoBusca(equipamentoSelecionado);
+    } else {
+      equipamentoSelecionado = null;
+      document.getElementById('eqResultado').style.display = 'none';
+      document.getElementById('eqVazio').style.display = 'block';
+    }
+  } catch (error) {
+    console.error('Erro ao buscar equipamento:', error);
+    alert('Erro ao buscar equipamento.');
+  }
+}
+
+// Guarda a última lista de resultados da busca por Nome, pra achar de novo
+// pelo índice quando clica em "Adicionar" num deles.
+let equipamentosEncontradosPorNome = [];
+
+async function buscarEquipamentosPorNomeUI(nome) {
+  document.getElementById('eqResultado').style.display = 'none';
+
+  try {
+    const resultados = await runServerFunction('buscarEquipamentosPorNome', nome);
+    equipamentosEncontradosPorNome = Array.isArray(resultados) ? resultados : [];
+    montarListaResultadosBuscaNome(equipamentosEncontradosPorNome);
+  } catch (error) {
+    console.error('Erro ao buscar equipamento:', error);
+    alert('Erro ao buscar equipamento.');
+  }
+}
+
+// Monta a lista por concatenação de string (com '+'), igual renderizarEquipamentos
+// logo abaixo -- NÃO usar template literal (crase) aqui. Foi template
+// literal com SVG dentro que causou o SyntaxError "linha 351" na forma como
+// o Apps Script empacota a página inteira numa string só.
+//
+// Esconde da lista quem já está em "equipamentos" (vinculados ao
+// contrato) -- por isso filtra ANTES de desenhar, mas guarda o índice
+// ORIGINAL de equipamentosEncontradosPorNome em cada item (não o índice
+// da lista já filtrada), senão adicionarEquipamentoDaListaBusca ia pegar
+// o equipamento errado depois que algum item for escondido.
+function montarListaResultadosBuscaNome(lista) {
+  const container = document.getElementById('eqResultadoLista');
+  const itensContainer = document.getElementById('eqResultadoListaItens');
+  const vazio = document.getElementById('eqVazio');
+
+  const itensVisiveis = [];
+  (lista || []).forEach(function (eq, i) {
+    const jaVinculado = equipamentos.some(function (e) { return e.patrimonio === eq.patrimonio; });
+    if (!jaVinculado) itensVisiveis.push({ eq: eq, indiceOriginal: i });
+  });
+
+  if (itensVisiveis.length === 0) {
+    container.style.display = 'none';
+    vazio.style.display = 'block';
+    return;
+  }
+
+  vazio.style.display = 'none';
+  container.style.display = 'block';
+  itensContainer.innerHTML = itensVisiveis.map(function (item) {
+    const eq = item.eq;
+    const detalhe = (eq.capacidade ? escapeHtml(eq.capacidade) + ' | ' : '') +
+      escapeHtml(eq.marca) + ' | ' + escapeHtml(eq.modelo) + ' | Pat: ' + escapeHtml(eq.patrimonio) + ' | ' + escapeHtml(eq.localizacao);
+
+    return '<div class="equip-result-card">' +
+      '<div class="equip-result-info">' +
+        '<span class="equip-result-nome">' + escapeHtml(eq.nome) + '</span>' +
+        '<span class="equip-result-det">' + detalhe + '</span>' +
+      '</div>' +
+      '<button class="btn-success btn-equip-add" onclick="adicionarEquipamentoDaListaBusca(' + item.indiceOriginal + ')">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+          '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>' +
+        '</svg>' +
+        'Adicionar ao Contrato' +
+      '</button>' +
+    '</div>';
+  }).join('');
+}
+
+function adicionarEquipamentoDaListaBusca(indice) {
+  const eq = equipamentosEncontradosPorNome[indice];
+  if (!eq) return;
+  if (equipamentos.some(e => e.patrimonio === eq.patrimonio)) { alert('Este equipamento já está vinculado ao contrato.'); return; }
+  equipamentos.push({
+    equipamento: eq.nome,
+    capacidade: eq.capacidade,
+    marca: eq.marca,
+    modelo: eq.modelo,
+    patrimonio: eq.patrimonio,
+    localizacao: eq.localizacao
+  });
+  renderizarEquipamentos();
+  montarListaResultadosBuscaNome(equipamentosEncontradosPorNome);
+}
+
+function mostrarResultadoBusca(eq) {
+  document.getElementById('eqResultNome').textContent = eq.nome;
+  document.getElementById('eqResultDet').textContent =
+    (eq.capacidade ? eq.capacidade + ' | ' : '') +
+    eq.marca + ' | ' + eq.modelo + ' | Pat: ' + eq.patrimonio + ' | ' + eq.localizacao;
+  document.getElementById('eqResultado').style.display = 'block';
+  document.getElementById('eqVazio').style.display = 'none';
+}
+
+function addEquipContrato() {
+  if (!equipamentoSelecionado) { alert('Nenhum equipamento selecionado.'); return; }
+  const eq = equipamentoSelecionado;
+  if (equipamentos.some(e => e.patrimonio === eq.patrimonio)) { alert('Este equipamento já está vinculado ao contrato.'); return; }
+  equipamentos.push({
+    equipamento: eq.nome,
+    capacidade: eq.capacidade,
+    marca: eq.marca,
+    modelo: eq.modelo,
+    patrimonio: eq.patrimonio,
+    localizacao: eq.localizacao
+  });
+  renderizarEquipamentos();
+  montarListaResultadosBuscaNome(equipamentosEncontradosPorNome);
+  limparBuscaEquipamento();
+}
+
+function limparBuscaEquipamento() {
+  document.getElementById('eqBuscaPat').value = '';
+  document.getElementById('eqBuscaNome').value = '';
+  document.getElementById('eqResultado').style.display = 'none';
+  document.getElementById('eqVazio').style.display = 'none';
+  equipamentoSelecionado = null;
+  document.getElementById('eqBuscaPat').focus();
+}
+
+// Remoção de item das listas em memória (equipamento/serviço/produto/
+// checklist) -- nada disso foi salvo no servidor ainda, então não precisa
+// chamar backend, só tirar da lista local. Modal customizado em vez do
+// confirm() nativo, igual o resto do app.
+let remocaoItemContratoPendente = null;
+
+function confirmarRemocaoEquipamentoContrato(idx) {
+  remocaoItemContratoPendente = { tipo: 'equipamento', idx: idx };
+  if (typeof exibirModal === 'function') exibirModal('modalRemoverItemContrato');
+}
+
+function confirmarRemocaoServicoContrato() {
+  if (!servicoAtual) return;
+  remocaoItemContratoPendente = { tipo: 'servico' };
+  if (typeof exibirModal === 'function') exibirModal('modalRemoverItemContrato');
+}
+
+function confirmarRemocaoProdutoContrato(idx) {
+  remocaoItemContratoPendente = { tipo: 'produto', idx: idx };
+  if (typeof exibirModal === 'function') exibirModal('modalRemoverItemContrato');
+}
+
+function confirmarRemocaoChecklistContrato(idx) {
+  remocaoItemContratoPendente = { tipo: 'checklist', idx: idx };
+  if (typeof exibirModal === 'function') exibirModal('modalRemoverItemContrato');
+}
+
+function executarRemocaoItemContrato() {
+  if (!remocaoItemContratoPendente) return;
+  const tipo = remocaoItemContratoPendente.tipo;
+  const idx = remocaoItemContratoPendente.idx;
+
+  if (tipo === 'equipamento') {
+    equipamentos.splice(idx, 1);
+    renderizarEquipamentos();
+
+    montarListaResultadosBuscaNome(equipamentosEncontradosPorNome);
+  } else if (tipo === 'servico') {
+    servicoAtual = null;
+    renderizarServicoCard();
+    atualizarChecklistParaServico();
+  } else if (tipo === 'produto') {
+    produtos.splice(idx, 1);
+    if (produtoEditIdx === idx) produtoEditIdx = -1;
+    else if (produtoEditIdx > idx) produtoEditIdx--;
+    renderizarProdutos();
+  } else if (tipo === 'checklist') {
+    const itemRemovido = checklist[idx] || null;
+    checklist.splice(idx, 1);
+    if (checklistEditIdx === idx) checklistEditIdx = -1;
+    else if (checklistEditIdx > idx) checklistEditIdx--;
+    renderizarChecklist();
+
+    if (itemRemovido) {
+      const checkboxEl = encontrarCheckboxChecklist(itemRemovido.descricao, itemRemovido.periodo);
+      if (checkboxEl) {
+        const wrapper = checkboxEl.closest('.checklist-item');
+        if (wrapper) wrapper.remove();
+      }
+    }
+  }
+
+  remocaoItemContratoPendente = null;
+  if (typeof fecharModal === 'function') fecharModal('modalRemoverItemContrato');
+}
+
+function renderizarEquipamentos() {
+  const tbody = document.getElementById('bodyEquipamentos');
+  if (equipamentos.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhum equipamento vinculado ao contrato.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = equipamentos.map((e, i) => '<tr>' +
+    '<td>' + escapeHtml(e.equipamento) + '</td>' +
+    '<td>' + escapeHtml(e.capacidade || '—') + '</td>' +
+    '<td>' + escapeHtml(e.marca) + '</td>' +
+    '<td>' + escapeHtml(e.modelo) + '</td>' +
+    '<td>' + escapeHtml(e.patrimonio) + '</td>' +
+    '<td>' + escapeHtml(e.localizacao) + '</td>' +
+    '<td class="acao-cell">' +
+      '<button class="btn-acao btn-excluir-linha" title="Remover do contrato" onclick="confirmarRemocaoEquipamentoContrato(' + i + ')">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
+        '</svg>' +
+      '</button>' +
+    '</td>' +
+  '</tr>').join('');
+}
+
+// SERVIÇOS -- um só por contrato. Especifica tipo de manutenção +
+// categoria/tipo/capacidade do equipamento; ao confirmar, busca sozinho
+// (buscarEquipamentosPorEspecificacao) os equipamentos que batem e já
+// adiciona em "equipamentos", e libera o checklist (Mensal/Anual).
+// Selects de Categoria/Tipo/Capacidade em cascata: cada um só mostra as
+// opções que realmente existem pra combinação já escolhida nos de cima
+// (escolher "Elevador" não deixa "18.000" aparecer em Capacidade, porque
+// elevador nenhum tem essa capacidade cadastrada). A lista completa de
+// combinações reais (buscarOpcoesEspecificacaoEquipamento) fica guardada
+// aqui e cada troca de select só filtra ela de novo, sem ir no servidor.
+let especificacaoEquipamentoCombinacoes = [];
+
+async function carregarOpcoesEspecificacaoServico() {
+  try {
+    const opcoes = await runServerFunction('buscarOpcoesEspecificacaoEquipamento');
+    especificacaoEquipamentoCombinacoes = (opcoes && opcoes.combinacoes) || [];
+
+    const categorias = Array.from(new Set(especificacaoEquipamentoCombinacoes.map(function (c) { return c.categoria; })));
+    preencherSelectEspecificacao('servicoCategoriaEquip', categorias, false);
+    atualizarSelectTipoServico();
+  } catch (error) {
+    console.error('Erro ao carregar opções de especificação do serviço:', error);
+  }
+}
+
+// Reage à troca de Categoria: refaz Tipo (só com os tipos daquela
+// categoria) e, em cadeia, Capacidade também.
+function atualizarSelectTipoServico() {
+  const categoria = document.getElementById('servicoCategoriaEquip').value;
+  const tipoSelect = document.getElementById('servicoTipoEquip');
+
+  const tipos = categoria
+    ? Array.from(new Set(
+        especificacaoEquipamentoCombinacoes
+          .filter(function (c) { return c.categoria === categoria; })
+          .map(function (c) { return c.tipo; })
+      ))
+    : [];
+
+  preencherSelectEspecificacao('servicoTipoEquip', tipos, false);
+  tipoSelect.disabled = !categoria;
+
+  atualizarSelectCapacidadeServico();
+}
+
+// Reage à troca de Tipo: refaz Capacidade com só as que existem pra esse
+// par categoria+tipo.
+function atualizarSelectCapacidadeServico() {
+  const categoria = document.getElementById('servicoCategoriaEquip').value;
+  const tipo = document.getElementById('servicoTipoEquip').value;
+  const capSelect = document.getElementById('servicoCapacidadeEquip');
+
+  const capacidades = (categoria && tipo)
+    ? Array.from(new Set(
+        especificacaoEquipamentoCombinacoes
+          .filter(function (c) { return c.categoria === categoria && c.tipo === tipo; })
+          .map(function (c) { return c.capacidade; })
+      ))
+    : [];
+
+  preencherSelectEspecificacao('servicoCapacidadeEquip', capacidades, true);
+  capSelect.disabled = !(categoria && tipo);
+}
+
+function preencherSelectEspecificacao(selectId, valores, formatarComoCapacidade) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  select.innerHTML = '<option value="">Selecione...</option>' +
+    (valores || []).map(function (v) {
+      const rotulo = formatarComoCapacidade ? formatarCapacidadeComPonto(v) : v;
+      // value fica com o texto exato que está na base (pra busca bater
+      // certinho); o rótulo mostrado é que pode ganhar o ponto a cada
+      // centena, só pra ficar mais fácil de ler.
+      return '<option value="' + escapeHtml(v) + '">' + escapeHtml(rotulo) + '</option>';
+    }).join('');
+}
+
+// "18000" -> "18.000". Se já vier formatado ou não for só dígitos, devolve
+// como está (não força nada em cima de um valor que já tem outra coisa).
+function formatarCapacidadeComPonto(valor) {
+  const texto = String(valor || '').trim();
+  if (!/^\d+$/.test(texto)) return texto;
+  return texto.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+async function confirmarServicoContrato() {
+  const tipoManutencao = document.getElementById('servicoTipoManutencao').value;
+  const periodicidade = document.getElementById('servicoPeriodicidade').value;
+  const categoria = document.getElementById('servicoCategoriaEquip').value.trim();
+  const tipoEquip = document.getElementById('servicoTipoEquip').value.trim();
+  const capacidade = document.getElementById('servicoCapacidadeEquip').value.trim();
+
+  if (!categoria || !tipoEquip || !capacidade) {
+    alert('Selecione categoria, tipo e capacidade do equipamento.');
+    return;
+  }
+
+  servicoAtual = {
+    tipoManutencao: tipoManutencao,
+    categoriaEquip: categoria,
+    tipoEquip: tipoEquip,
+    capacidadeEquip: capacidade,
+    periodicidade: periodicidade,
+    nomeCompleto: tipoManutencao + ' — ' + categoria + ' ' + tipoEquip + ' ' + formatarCapacidadeComPonto(capacidade)
+  };
+
+  renderizarServicoCard();
+  atualizarChecklistParaServico();
+
+  try {
+    const encontrados = await runServerFunction('buscarEquipamentosPorEspecificacao', categoria, tipoEquip, capacidade);
+    let adicionados = 0;
+    (encontrados || []).forEach(function (eq) {
+      if (equipamentos.some(function (e) { return e.patrimonio === eq.patrimonio; })) return;
+      equipamentos.push({
+        equipamento: eq.nome,
+        capacidade: eq.capacidade,
+        marca: eq.marca,
+        modelo: eq.modelo,
+        patrimonio: eq.patrimonio,
+        localizacao: eq.localizacao
+      });
+      adicionados++;
+    });
+    renderizarEquipamentos();
+
+    if (adicionados > 0) {
+      alert(adicionados + ' equipamento(s) adicionado(s) automaticamente na aba Equipamentos, com base no serviço especificado.');
+    } else {
+      alert('Nenhum equipamento encontrado com essa especificação. Você pode adicionar manualmente na aba Equipamentos.');
+    }
+  } catch (error) {
+    console.error('Erro ao buscar equipamentos pela especificação do serviço:', error);
+    alert('Serviço especificado, mas houve erro ao buscar os equipamentos automaticamente. Adicione manualmente na aba Equipamentos, se precisar.');
+  }
+}
+
+function renderizarServicoCard() {
+  const container = document.getElementById('servicoConfirmadoCard');
+  if (!container) return;
+
+  if (!servicoAtual) {
+    container.innerHTML = '<p class="equip-result-empty">Nenhum serviço especificado ainda.</p>';
+    return;
+  }
+
+  container.innerHTML =
+    '<div class="equip-result-card">' +
+      '<div class="equip-result-info">' +
+        '<span class="equip-result-nome">' + escapeHtml(servicoAtual.nomeCompleto) + '</span>' +
+        '<span class="equip-result-det">Periodicidade: ' + formatarPeriodicidade(servicoAtual.periodicidade) + '</span>' +
+      '</div>' +
+      '<button class="btn-acao btn-excluir-linha" title="Remover serviço" onclick="confirmarRemocaoServicoContrato()">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
+        '</svg>' +
+      '</button>' +
+    '</div>';
+}
+
+// Mostra/esconde o bloco de checklist conforme tem ou não serviço
+// especificado, e atualiza o título com o nome do serviço.
+function atualizarChecklistParaServico() {
+  const aviso = document.getElementById('checklistSemServicoAviso');
+  const conteudo = document.getElementById('checklistConteudo');
+  const titulo = document.getElementById('checklistServicoTitulo');
+  if (!aviso || !conteudo || !titulo) return;
+
+  if (servicoAtual) {
+    aviso.style.display = 'none';
+    conteudo.classList.remove('checklist-grupo-oculto');
+    titulo.textContent = servicoAtual.nomeCompleto;
+  } else {
+    aviso.style.display = 'block';
+    conteudo.classList.add('checklist-grupo-oculto');
+    titulo.textContent = '';
+  }
+}
+
+function formatarPeriodicidade(p) {
+  const map = {
+    unica:'Única', diaria:'Diária', semanal:'Semanal', quinzenal:'Quinzenal',
+    mensal:'Mensal', bimestral:'Bimestral', trimestral:'Trimestral',
+    semestral:'Semestral', anual:'Anual', 'sob-demanda':'Sob Demanda'
+  };
+  return map[p] || p || '—';
+}
+
+//
+// PRODUTOS -- texto livre, sem busca em base nenhuma. Adiciona, edita e
+// remove só o texto digitado.
+//
+
+function adicionarProdutoContrato() {
+  const input = document.getElementById('produtoTexto');
+  const nome = input.value.trim();
+  if (!nome) { alert('Escreva o nome do produto antes de adicionar.'); return; }
+  if (produtos.some(function (p) { return p.nome.toLowerCase() === nome.toLowerCase(); })) {
+    alert('Esse produto já está na lista.');
+    return;
+  }
+  produtos.push({ nome: nome });
+  renderizarProdutos();
+
+  input.value = '';
+  input.focus();
+}
+
+function editarProdutoContrato(idx) {
+  produtoEditIdx = idx;
+  renderizarProdutos();
+}
+
+function cancelarEdicaoProduto() {
+  produtoEditIdx = -1;
+  renderizarProdutos();
+}
+
+function salvarEdicaoProdutoInline(idx) {
+  const nome = document.getElementById('inlineEditProduto').value.trim();
+  if (!nome) { alert('Informe o nome do produto.'); return; }
+  produtos[idx] = { nome: nome };
+  produtoEditIdx = -1;
+  renderizarProdutos();
+}
+
+function renderizarProdutos() {
+  const tbody = document.getElementById('bodyProdutos');
+  if (produtos.length === 0) {
+    produtoEditIdx = -1;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="2">Nenhum produto vinculado ao contrato.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = produtos.map((p, i) => {
+    if (produtoEditIdx === i) {
+      return '<tr class="editing-row">' +
+        '<td><input class="field__input inline-edit-input" type="text" id="inlineEditProduto" value="' + escapeHtml(p.nome) + '"></td>' +
+        '<td class="acao-cell">' +
+          '<button class="btn-acao" title="Salvar" style="color:#10b981" onclick="salvarEdicaoProdutoInline(' + i + ')">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '</button>' +
+          '<button class="btn-acao btn-excluir-linha" title="Cancelar" onclick="cancelarEdicaoProduto()">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button>' +
+        '</td>' +
+      '</tr>';
+    }
+    return '<tr>' +
+      '<td>' + escapeHtml(p.nome) + '</td>' +
+      '<td class="acao-cell">' +
+        '<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarProdutoContrato(' + i + ')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+        '</button>' +
+        '<button class="btn-acao btn-excluir-linha" title="Remover do contrato" onclick="confirmarRemocaoProdutoContrato(' + i + ')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
+          '</svg>' +
+        '</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+//
+// CHECKLIST -- ligado ao serviço único do contrato. Duas listas (Mensal e
+// Anual), ambas criadas na hora pelo campo "Outro" de cada uma (não tem
+// item pré-pronto -- ninguém definiu ainda o que é mensal x anual de cada
+// tipo de manutenção).
+//
+
+// Um listener por lista (delegação) -- escuta o "change" de qualquer
+// checkbox lá dentro, sem precisar de onchange em cada input
+// individualmente. Os quatro listeners de arrasto (dragstart/dragover/
+// drop/dragend) seguem o mesmo princípio: um só por lista, em vez de um
+// por item. A mesma função serve tanto pra lista Mensal quanto Anual.
+let checklistItemArrastado = null;
+
+function registrarEventosContainerChecklist(container) {
+  if (!container) return;
+
+  container.addEventListener('change', function (event) {
+    if (!event.target.matches('input[type="checkbox"]')) return;
+    onToggleChecklistItem(event.target);
+  });
+
+  // Começou a arrastar: guarda qual item é, e deixa ele meio transparente
+  container.addEventListener('dragstart', function (event) {
+    const item = event.target.closest('.checklist-item');
+    if (!item) return;
+    checklistItemArrastado = item;
+    item.classList.add('checklist-item-arrastando');
+  });
+
+  // Passando por cima de outro item: mostra uma linha indicando onde vai
+  // cair. precisa do preventDefault, senão o navegador nem deixa soltar.
+  container.addEventListener('dragover', function (event) {
+    if (!checklistItemArrastado || !container.contains(checklistItemArrastado)) return;
+    const alvo = event.target.closest('.checklist-item');
+    if (!alvo || alvo === checklistItemArrastado) return;
+    event.preventDefault();
+
+    container.querySelectorAll('.checklist-item-sobre').forEach(function (el) {
+      el.classList.remove('checklist-item-sobre');
+    });
+    alvo.classList.add('checklist-item-sobre');
+  });
+
+  // Soltou: move de verdade o item arrastado pra antes ou depois do alvo,
+  // dependendo de em qual metade do alvo o mouse estava.
+  container.addEventListener('drop', function (event) {
+    if (!checklistItemArrastado || !container.contains(checklistItemArrastado)) return;
+    const alvo = event.target.closest('.checklist-item');
+    if (!alvo || alvo === checklistItemArrastado) return;
+    event.preventDefault();
+
+    const rect = alvo.getBoundingClientRect();
+    const depoisDoAlvo = (event.clientY - rect.top) > (rect.height / 2);
+    const pai = alvo.parentNode;
+    pai.insertBefore(checklistItemArrastado, depoisDoAlvo ? alvo.nextSibling : alvo);
+
+    alvo.classList.remove('checklist-item-sobre');
+  });
+
+  // Terminou o arrasto (soltou ou cancelou) -- limpa os visuais
+  container.addEventListener('dragend', function () {
+    if (checklistItemArrastado) checklistItemArrastado.classList.remove('checklist-item-arrastando');
+    container.querySelectorAll('.checklist-item-sobre').forEach(function (el) {
+      el.classList.remove('checklist-item-sobre');
+    });
+    checklistItemArrastado = null;
+  });
+}
+
+function registrarEventosChecklist() {
+  registrarEventosContainerChecklist(document.getElementById('checklistMensal'));
+  registrarEventosContainerChecklist(document.getElementById('checklistAnual'));
+}
+
+function onToggleChecklistItem(checkboxEl) {
+  const texto = checkboxEl.getAttribute('data-item');
+  const periodo = checkboxEl.getAttribute('data-periodo');
+  if (!texto || !periodo) return;
+
+  if (checkboxEl.checked) {
+    if (checklist.some(function (c) { return c.periodo === periodo && c.descricao === texto; })) return;
+    checklist.push({ descricao: texto, periodo: periodo });
+  } else {
+    const idx = checklist.findIndex(function (c) { return c.periodo === periodo && c.descricao === texto; });
+    if (idx !== -1) checklist.splice(idx, 1);
+  }
+  renderizarChecklist();
+}
+
+// Procura dentro da lista certa (Mensal ou Anual) -- o mesmo texto não é
+// mais garantidamente único entre as duas listas, por isso o periodo
+// importa aqui.
+function encontrarCheckboxChecklist(descricao, periodo) {
+  const containerId = periodo === 'mensal' ? 'checklistMensal' : 'checklistAnual';
+  const container = document.getElementById(containerId);
+  if (!container) return null;
+  let encontrado = null;
+  container.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+    if (cb.getAttribute('data-item') === descricao) encontrado = cb;
+  });
+  return encontrado;
+}
+
+
+function removerItemChecklist(botaoEl) {
+  const item = botaoEl.closest('.checklist-item');
+  if (!item) return;
+
+  const checkbox = item.querySelector('input[type="checkbox"]');
+  const texto = checkbox ? checkbox.getAttribute('data-item') : null;
+  const periodo = checkbox ? checkbox.getAttribute('data-periodo') : null;
+
+  if (texto) {
+    const idx = checklist.findIndex(function (c) { return c.periodo === periodo && c.descricao === texto; });
+    if (idx !== -1) {
+      checklist.splice(idx, 1);
+      if (checklistEditIdx === idx) checklistEditIdx = -1;
+      else if (checklistEditIdx > idx) checklistEditIdx--;
+      renderizarChecklist();
+    }
+  }
+
+  item.remove();
+}
+
+let checklistCustomContador = 0;
+
+// Monta só o elemento visual (checkbox + alça + remover) e encaixa no
+// container certo (Mensal ou Anual) -- não mexe no array checklist, quem
+// chama decide se precisa adicionar/pular isso (criarChecklistCustom
+// adiciona; o carregamento pra edição só recria o visual porque o item já
+// veio do servidor).
+function recriarChecklistItemVisual(texto, periodo) {
+  checklistCustomContador++;
+  const idCheckbox = 'checklistItem' + checklistCustomContador;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'checklist-item';
+  wrapper.id = idCheckbox + '-wrapper';
+  wrapper.draggable = true;
+
+  const alca = document.createElement('span');
+  alca.className = 'checklist-item-alca';
+  alca.textContent = '⠿';
+
+  const label = document.createElement('label');
+  label.className = 'checklist-item-label';
+
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.id = idCheckbox;
+  checkbox.checked = true;
+  checkbox.setAttribute('data-item', texto);
+  checkbox.setAttribute('data-periodo', periodo);
+
+  label.appendChild(checkbox);
+  label.appendChild(document.createTextNode(' ' + texto));
+
+  const btnRemover = document.createElement('button');
+  btnRemover.type = 'button';
+  btnRemover.className = 'btn-remover-checkbox-custom';
+  btnRemover.title = 'Remover essa etapa';
+  btnRemover.textContent = '✕';
+  btnRemover.addEventListener('click', function () {
+    removerItemChecklist(btnRemover);
+  });
+
+  wrapper.appendChild(alca);
+  wrapper.appendChild(label);
+  wrapper.appendChild(btnRemover);
+
+  const containerId = periodo === 'mensal' ? 'checklistMensal' : 'checklistAnual';
+  const container = document.getElementById(containerId);
+  if (container) container.appendChild(wrapper);
+}
+
+function criarChecklistCustom(periodo) {
+  const inputId = periodo === 'mensal' ? 'checklistOutroMensal' : 'checklistOutroAnual';
+  const input = document.getElementById(inputId);
+  const texto = input.value.trim();
+  if (!texto) { alert('Escreva a etapa antes de adicionar.'); return; }
+  if (checklist.some(function (c) { return c.periodo === periodo && c.descricao.toLowerCase() === texto.toLowerCase(); })) {
+    alert('Essa etapa já está na lista.');
+    return;
+  }
+
+  recriarChecklistItemVisual(texto, periodo);
+
+  checklist.push({ descricao: texto, periodo: periodo });
+  renderizarChecklist();
+
+  input.value = '';
+  input.focus();
+}
+
+function editarItemChecklist(idx) {
+  checklistEditIdx = idx;
+  renderizarChecklist();
+}
+
+function cancelarEdicaoChecklist() {
+  checklistEditIdx = -1;
+  renderizarChecklist();
+}
+
+function salvarEdicaoInline(idx) {
+  const desc = document.getElementById('inlineEditDesc').value.trim();
+  if (!desc) { alert('Informe a descrição.'); return; }
+  checklist[idx] = { descricao: desc, periodo: checklist[idx].periodo };
+  checklistEditIdx = -1;
+  renderizarChecklist();
+}
+
+function formatarPeriodoChecklist(p) {
+  return p === 'mensal' ? 'Mensal' : (p === 'anual' ? 'Anual' : (p || '—'));
+}
+
+function renderizarChecklist() {
+  const tbody = document.getElementById('bodyChecklist');
+  if (checklist.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Nenhum item vinculado ao contrato.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = checklist.map((item, i) => {
+    if (checklistEditIdx === i) {
+      return '<tr class="editing-row">' +
+        '<td><input class="field__input inline-edit-input" type="text" id="inlineEditDesc" value="' + escapeHtml(item.descricao) + '"></td>' +
+        '<td>' + formatarPeriodoChecklist(item.periodo) + '</td>' +
+        '<td class="acao-cell">' +
+          '<button class="btn-acao" title="Salvar" style="color:#10b981" onclick="salvarEdicaoInline(' + i + ')">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '</button>' +
+          '<button class="btn-acao btn-excluir-linha" title="Cancelar" onclick="cancelarEdicaoChecklist()">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button>' +
+        '</td>' +
+      '</tr>';
+    }
+    return '<tr>' +
+      '<td>' + escapeHtml(item.descricao) + '</td>' +
+      '<td>' + formatarPeriodoChecklist(item.periodo) + '</td>' +
+      '<td class="acao-cell">' +
+        '<button class="btn-acao btn-editar-linha" title="Editar" onclick="editarItemChecklist(' + i + ')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+        '</button>' +
+        '<button class="btn-acao btn-excluir-linha" title="Remover" onclick="confirmarRemocaoChecklistContrato(' + i + ')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' +
+        '</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+// UTILITÁRIOS
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function salvarRascunho() { alert('Contrato salvo como rascunho!'); }
+
+let salvandoContrato = false;
+
+async function salvarContrato() {
+  if (salvandoContrato) return;
+  salvandoContrato = true;
+  const btnTopo = document.getElementById('contratoBtnSalvarTopo');
+  const btnRodape = document.getElementById('contratoBtnSalvarRodape');
+  if (btnTopo) btnTopo.disabled = true;
+  if (btnRodape) btnRodape.disabled = true;
+
+  try {
+    let anexos = [];
+    try {
+      anexos = await lerArquivosComoBase64(anexosCadastroSelecionados.contratoAnexoArquivo);
+    } catch (erroArquivo) {
+      alert(erroArquivo.message);
+      return;
+    }
+
+    const dados = {
+      id: document.getElementById('contratoId')?.value || '',
+      numero: document.getElementById('numero').value.trim(),
+      contrato: document.getElementById('contrato').value.trim(),
+      sei: document.getElementById('sei').value.trim(),
+      dataFechamento: document.getElementById('dataFechamento').value,
+      empresa: document.getElementById('empresaSearch').value.trim(),
+      objeto: document.getElementById('objeto').value.trim(),
+      observacoes: document.getElementById('observacoes').value.trim(),
+      dataEncerramento: document.getElementById('dataEncerramento').value,
+      dataInicial: document.getElementById('dataInicial').value,
+      dataFinal: document.getElementById('dataFinal').value,
+      contatoEmpresa: document.getElementById('contatoEmpresa').value.trim(),
+      telefone: document.getElementById('telefone').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      valor: document.getElementById('valor').value.trim(),
+      gestor: document.getElementById('gestor').value.trim(),
+      anexos: anexos,
+      equipamentos: equipamentos,
+      servicos: servicoAtual ? [{
+        categoria: servicoAtual.categoriaEquip,
+        tipo: servicoAtual.tipoEquip,
+        capacidade: servicoAtual.capacidadeEquip,
+        periodicidade: servicoAtual.periodicidade
+      }] : [],
+      produtos: produtos,
+      checklist: checklist
+    };
+
+    if (typeof exibirModal === 'function') exibirModal('processando');
+
+    try {
+      const resposta = await runServerFunction('salvarContratoBackend', dados);
+
+      if (resposta && resposta.sucesso === false) {
+        alert(resposta.mensagem);
+        return;
+      }
+
+      alert(resposta.mensagem);
+
+      if (resposta && resposta.duplicado) {
+        exibirAvisoAnexoDuplicado('Você anexou dois ou mais documentos idênticos.');
+      }
+
+      trocarPagina('contratos-view');
+    } catch (err) {
+      console.error('Erro ao salvar contrato:', err);
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      if (typeof fecharModal === 'function') fecharModal('processando');
+    }
+  } finally {
+    salvandoContrato = false;
+    if (btnTopo) btnTopo.disabled = false;
+    if (btnRodape) btnRodape.disabled = false;
+  }
+}
+
+</script>
