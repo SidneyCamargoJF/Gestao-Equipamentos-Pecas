@@ -342,3 +342,21 @@ function adicionarHistoricoSistema(chamadoId, texto) {
 }
 
 
+
+/**
+ * Várias entradas de sistema no histórico de uma vez (um setValues só) --
+ * usado pela geração automática de preventivas. itens: [{ chamadoId, texto }]
+ */
+function adicionarHistoricoSistemaLote(itens) {
+  if (!itens || !itens.length) return;
+  executarComLock(function () {
+    const abaHistorico = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ticketHistoricoTableName);
+    if (!abaHistorico) return;
+    const pos = proximoIdTabela(abaHistorico, firstLineTicketHistorico);
+    const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
+    const linhas = itens.map(function (item, i) {
+      return [pos.novoId + i, item.chamadoId, HISTORICO_CHAMADO_PREFIXO_SISTEMA + item.texto, dataAtual, ''];
+    });
+    abaHistorico.getRange(pos.proximaLinha, 1, linhas.length, numColumnsTicketHistorico).setValues(linhas);
+  });
+}

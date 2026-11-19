@@ -5,12 +5,57 @@
 let chamadosJaVisualizado = false;
 
 async function renderConsultaChamados() {
+    mostrarBotaoGerarPreventivas();
     const motivos = await carregarMotivosChamado();
     initSearchChamado('motivoChamadoSearch', 'motivoChamadoDropdown', 'motivoChamadoWrapper', motivos);
     if (chamadosJaVisualizado) {
       consultarChamados();
     } else {
       chamadosJaVisualizado = true;
+    }
+}
+
+// ===== GERAR PREVENTIVAS DO MÊS (admin) =====
+async function mostrarBotaoGerarPreventivas() {
+    const btn = document.getElementById('btnGerarPreventivas');
+    if (!btn) return;
+    try {
+        btn.style.display = (await runServerFunction('usuarioEhAdmin')) ? '' : 'none';
+    } catch (e) {
+        btn.style.display = 'none';
+    }
+}
+
+async function gerarPreventivasDoMesUI() {
+    const hoje = new Date();
+    const padrao = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+    const competencia = prompt('Gerar as preventivas de qual mês? (AAAA-MM)\nContratos que já têm a OS do mês são pulados.', padrao);
+    if (competencia === null) return;
+    if (!/^\d{4}-\d{2}$/.test(competencia.trim())) {
+        alert('Informe o mês no formato AAAA-MM (ex.: ' + padrao + ').');
+        return;
+    }
+
+    const btn = document.getElementById('btnGerarPreventivas');
+    if (btn) btn.disabled = true;
+    if (typeof exibirModal === 'function') exibirModal('processando');
+    try {
+        const r = await runServerFunction('gerarPreventivasDoMesManual', competencia.trim());
+        if (!r || r.sucesso === false) {
+            alert((r && r.mensagem) || 'Não foi possível gerar as preventivas.');
+            return;
+        }
+        const pulados = (r.detalhes || []).filter(d => d.situacao.indexOf('gerada:') !== 0);
+        alert(r.mensagem + (pulados.length
+            ? '\n\nContratos sem OS nova:\n' + pulados.map(d => '• ' + d.numero + ': ' + d.situacao).join('\n')
+            : ''));
+        consultarChamados();
+    } catch (error) {
+        console.error('Erro ao gerar preventivas:', error);
+        alert('Erro ao gerar preventivas: ' + (error.message || error));
+    } finally {
+        if (btn) btn.disabled = false;
+        if (typeof fecharModal === 'function') fecharModal('processando');
     }
 }
 

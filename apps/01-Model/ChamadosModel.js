@@ -94,3 +94,37 @@ function ReadTicketAnexos() {
     })
   )
 }
+
+// ===== tbl_chamado_checklist =====
+// Itens do checklist a executar numa OS (chamado), um por equipamento x item.
+// Constantes 1-based, como o resto deste arquivo (índice no array = col - 1).
+let ticketChecklistTableName = 'tbl_chamado_checklist'
+let firstLineTicketChecklist = 3
+let numColumnsTicketChecklist = 13
+
+let ticketChecklistIdCol = 1
+let ticketChecklistChamadoIdCol = 2
+let ticketChecklistEquipamentoIdCol = 3
+let ticketChecklistChecklistIdCol = 4
+let ticketChecklistDescricaoCol = 5
+let ticketChecklistPeriodicidadeCol = 6
+let ticketChecklistResultadoCol = 7     // pendente | ok | nao_conforme | nao_aplicavel
+let ticketChecklistObservacaoCol = 8
+let ticketChecklistExecutadoEmCol = 9   // dd/MM/yyyy HH:mm
+let ticketChecklistRegistradoPorCol = 10
+let ticketChecklistDataCadastroCol = 11
+let ticketChecklistDataAlteracaoCol = 12
+let ticketChecklistDataExclusaoCol = 13
+
+const RESULTADOS_CHECKLIST_CHAMADO = ['pendente', 'ok', 'nao_conforme', 'nao_aplicavel']
+
+function ReadTicketChecklist() {
+  const objRows = ReadSheetSeExistir(ticketChecklistTableName, firstLineTicketChecklist, numColumnsTicketChecklist)
+
+  return objRows.map(linha =>
+    linha.map((valor, idx) => {
+      if (!(valor instanceof Date)) return valor
+      return (idx === ticketChecklistExecutadoEmCol - 1) ? dateTimeToString(valor) : dateToString(valor)
+    })
+  )
+}
