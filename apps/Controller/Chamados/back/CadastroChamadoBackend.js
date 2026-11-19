@@ -28,7 +28,10 @@ function salvarChamadoBackend(dados) {
   }
 }
 
-function salvarChamadoBackend_(dados) {
+// opcoes (uso interno, não vem da tela): { contratoId } força o contrato
+// em vez de procurar o vigente -- usado pela corretiva aberta a partir de
+// um item não conforme, que herda o contrato da OS de origem.
+function salvarChamadoBackend_(dados, opcoes) {
   try {
     if (!dados || !String(dados.motivo || '').trim()) {
       return { sucesso: false, mensagem: 'Preencha o motivo do chamado.' };
@@ -75,8 +78,15 @@ function salvarChamadoBackend_(dados) {
     const dataAtual = Utilities.formatDate(agora, 'GMT-3', 'dd/MM/yyyy');
     const idEdicao = dados.id ? Number(dados.id) : null;
 
-    const cacheContratos = equipamentoId ? carregarCacheContratos_() : null;
-    const vigente = equipamentoId ? buscarContratoVigentePorEquipamento(equipamentoId, agora, cacheContratos) : null;
+    const contratoForcado = opcoes && opcoes.contratoId ? Number(opcoes.contratoId) : 0;
+    const cacheContratos = (equipamentoId || contratoForcado) ? carregarCacheContratos_() : null;
+    let vigente = null;
+    if (contratoForcado) {
+      const linhaContrato = cacheContratos.contratos.find(l => Number(l[contractIdCol]) === contratoForcado);
+      if (linhaContrato) vigente = { contrato: montarContratoResumo_(linhaContrato, cacheContratos), aviso: '' };
+    } else if (equipamentoId) {
+      vigente = buscarContratoVigentePorEquipamento(equipamentoId, agora, cacheContratos);
+    }
     const contrato = vigente ? vigente.contrato : null;
     const atribuidoA = String(dados.atribuidoA || '').trim() || (contrato ? contrato.empresa : '');
 

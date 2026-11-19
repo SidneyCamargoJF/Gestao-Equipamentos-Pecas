@@ -17,6 +17,10 @@ async function abrirDetalhesChamado(chamadoId) {
     if (tituloEl) tituloEl.textContent = '#' + chamadoId;
 
     cancelarCaixaTextoChamado();
+    checklistChamadoAtual = null;
+    chamadoStatusAtualModal = '';
+    const btnAbaChecklist = document.getElementById('tabBtnChecklistChamado');
+    if (btnAbaChecklist) btnAbaChecklist.style.display = 'none';
 
     ajustarTamanhoModalChamado();
     trocarAbaModalChamado('historico');
@@ -34,6 +38,9 @@ async function abrirDetalhesChamado(chamadoId) {
         if (conteudo) conteudo.innerHTML = montarDetalheChamadoHtml(resposta.chamado);
         carregarAnexosChamadoUI(chamadoId);
 
+        chamadoStatusAtualModal = String(resposta.chamado.status || '').trim();
+        carregarChecklistChamadoUI(chamadoId);
+
         const botoesStatus = document.getElementById('detalheChamadoStatusBotoes');
         if (botoesStatus) botoesStatus.innerHTML = montarBotoesStatusChamado(resposta.chamado.status);
 
@@ -50,16 +57,28 @@ async function abrirDetalhesChamado(chamadoId) {
 function trocarAbaModalChamado(aba) {
     const btnInfo = document.getElementById('tabBtnInfoChamado');
     const btnHistorico = document.getElementById('tabBtnHistoricoChamado');
+    const btnChecklist = document.getElementById('tabBtnChecklistChamado');
     const painelInfo = document.getElementById('tabPanelInfoChamado');
     const painelHistorico = document.getElementById('tabPanelHistoricoChamado');
+    const painelChecklist = document.getElementById('tabPanelChecklistChamado');
 
     const mostrarInfo = aba === 'info';
+    const mostrarChecklist = aba === 'checklist';
+    const mostrarHistorico = !mostrarInfo && !mostrarChecklist;
 
     if (btnInfo) btnInfo.classList.toggle('active', mostrarInfo);
-    if (btnHistorico) btnHistorico.classList.toggle('active', !mostrarInfo);
+    if (btnHistorico) btnHistorico.classList.toggle('active', mostrarHistorico);
+    if (btnChecklist) btnChecklist.classList.toggle('active', mostrarChecklist);
 
     aplicarEstiloPainelModalChamado(painelInfo, mostrarInfo);
-    aplicarEstiloPainelModalChamado(painelHistorico, !mostrarInfo);
+    aplicarEstiloPainelModalChamado(painelHistorico, mostrarHistorico);
+    aplicarEstiloPainelModalChamado(painelChecklist, mostrarChecklist);
+    const conteudoChecklist = document.getElementById('chamadoChecklistConteudo');
+    if (conteudoChecklist) {
+        conteudoChecklist.style.flex = '1 1 auto';
+        conteudoChecklist.style.minHeight = '0';
+        conteudoChecklist.style.overflowY = 'auto';
+    }
 
     const conteudoInfo = document.getElementById('detalheChamadoConteudo');
     if (conteudoInfo) {
@@ -81,7 +100,7 @@ function trocarAbaModalChamado(aba) {
         listaHistorico.style.overflowY = 'auto';
     }
 
-    if (!mostrarInfo && chamadoIdAtualModal) {
+    if (mostrarHistorico && chamadoIdAtualModal) {
         carregarHistoricoChamadoUI(chamadoIdAtualModal);
     }
 }
@@ -349,6 +368,11 @@ function montarDetalheChamadoHtml(c) {
         ${linhaDetalheChamado('Status', c.status === 'Concluido' ? 'Concluído' : c.status)}
         ${linhaDetalheChamado('Aberto por', c.abertoPor)}
         ${linhaDetalheChamado('Atribuído a', c.atribuidoA)}
+        ${linhaDetalheChamado('Contrato', c.contrato)}
+        ${linhaDetalheChamado('Origem', c.origem === 'automatica' ? 'Automática' + (c.competencia ? ' (' + c.competencia + ')' : '') : (c.origem ? 'Manual' : ''))}
+        ${c.dataPrevista ? linhaDetalheChamado('Data prevista', c.dataPrevista) : ''}
+        ${c.prazoAtendimento ? linhaDetalheChamado('Prazo de atendimento', c.prazoAtendimento) : ''}
+        ${c.prazoSolucao ? linhaDetalheChamado('Prazo de solução', c.prazoSolucao) : ''}
     `;
 
     const infoObservacao = `
@@ -452,6 +476,13 @@ function atenderChamadoUI() {
 
 function resolverChamadoUI() {
     abrirCaixaTextoChamado('resolver');
+    const pendentes = checklistChamadoAtual ? checklistChamadoAtual.resumo.pendente : 0;
+    if (pendentes) {
+        const rotuloEl = document.getElementById('chamadoCaixaTextoRotulo');
+        const textoEl = document.getElementById('novaAnotacaoChamado');
+        if (rotuloEl) rotuloEl.textContent = 'Motivo do encerramento — há ' + pendentes + ' item(ns) pendente(s) no checklist';
+        if (textoEl) textoEl.placeholder = 'Explique por que a OS está sendo concluída com itens pendentes...';
+    }
 }
 
 async function reabrirChamadoUI() {
@@ -592,6 +623,134 @@ async function onArquivoAnexoSelecionado() {
         alert('Erro ao adicionar anexo.');
     } finally {
         if (inputEl) inputEl.value = '';
+    }
+}
+
+// ===== CHECKLIST DA OS =====
+let checklistChamadoAtual = null;   // { grupos, resumo } como veio do servidor
+let chamadoStatusAtualModal = '';
+
+const CHECKLIST_RESULTADOS_UI = [
+    { valor: 'pendente', rotulo: 'Pendente' },
+    { valor: 'ok', rotulo: 'OK' },
+    { valor: 'nao_conforme', rotulo: 'Não conforme' },
+    { valor: 'nao_aplicavel', rotulo: 'N/A' }
+];
+
+function checklistChamadoSomenteLeitura() {
+    const s = chamadoStatusAtualModal.toLowerCase();
+    return s === 'concluido' || s === 'cancelado';
+}
+
+async function carregarChecklistChamadoUI(chamadoId) {
+    const btnAba = document.getElementById('tabBtnChecklistChamado');
+    try {
+        const resposta = await runServerFunction('buscarChecklistChamado', chamadoId);
+        if (String(chamadoId) !== String(chamadoIdAtualModal)) return; // trocou de chamado no meio
+        if (!resposta || resposta.sucesso === false || !resposta.grupos.length) {
+            checklistChamadoAtual = null;
+            if (btnAba) btnAba.style.display = 'none';
+            return;
+        }
+        checklistChamadoAtual = resposta;
+        if (btnAba) btnAba.style.display = '';
+        renderizarChecklistChamado();
+    } catch (error) {
+        console.error('Erro ao buscar checklist do chamado:', error);
+        if (btnAba) btnAba.style.display = 'none';
+    }
+}
+
+function renderizarChecklistChamado() {
+    const conteudo = document.getElementById('chamadoChecklistConteudo');
+    const resumoEl = document.getElementById('chamadoChecklistResumo');
+    const btnSalvar = document.getElementById('btnSalvarChecklistChamado');
+    if (!conteudo || !checklistChamadoAtual) return;
+
+    const r = checklistChamadoAtual.resumo;
+    if (resumoEl) {
+        resumoEl.textContent = r.total + ' itens — ' + r.ok + ' ok, ' + r.nao_conforme + ' não conformes, ' +
+            r.pendente + ' pendentes' + (r.nao_aplicavel ? ', ' + r.nao_aplicavel + ' N/A' : '');
+    }
+    const leitura = checklistChamadoSomenteLeitura();
+    if (btnSalvar) btnSalvar.style.display = leitura ? 'none' : '';
+
+    conteudo.innerHTML = (leitura ? '<p class="chamado-checklist-aviso">Chamado ' +
+        (chamadoStatusAtualModal.toLowerCase() === 'concluido' ? 'concluído' : 'cancelado') +
+        ': checklist somente leitura.</p>' : '') +
+        checklistChamadoAtual.grupos.map((g, gi) => `
+        <div class="chamado-checklist-grupo">
+            <div class="chamado-checklist-grupo-cabecalho">
+                <strong>${g.patrimonio ? 'Patrimônio ' + escapeHtml(g.patrimonio) : 'Equipamento #' + escapeHtml(String(g.equipamentoId))}</strong>
+                <span>${escapeHtml(g.nome)}${g.localizacao ? ' — ' + escapeHtml(g.localizacao) : ''}</span>
+                ${leitura ? '' : `<button type="button" class="btn-secondary chamado-checklist-todos-ok" onclick="marcarTodosOkChecklistChamado(${gi})">Marcar todos OK</button>`}
+            </div>
+            <table class="data-table chamado-checklist-tabela">
+                <thead><tr><th>Item</th><th>Resultado</th><th>Observação</th><th>Execução</th><th></th></tr></thead>
+                <tbody>
+                ${g.itens.map(it => `
+                    <tr data-item-id="${escapeHtml(String(it.id))}" class="chamado-checklist-item resultado-${escapeHtml(it.resultado)}">
+                        <td>${escapeHtml(it.descricao)} <em class="chamado-checklist-periodo">(${escapeHtml(it.periodicidade)})</em></td>
+                        <td>
+                            <select class="field__select chamado-checklist-resultado" ${leitura ? 'disabled' : ''}>
+                                ${CHECKLIST_RESULTADOS_UI.map(o => `<option value="${o.valor}"${o.valor === it.resultado ? ' selected' : ''}>${o.rotulo}</option>`).join('')}
+                            </select>
+                        </td>
+                        <td><input type="text" class="field__input chamado-checklist-obs" maxlength="500" value="${escapeHtml(it.observacao)}" ${leitura ? 'disabled' : ''} placeholder="Observação..."></td>
+                        <td class="chamado-checklist-execucao">${it.executadoEm ? escapeHtml(it.executadoEm) + '<br>' + escapeHtml(it.registradoPor) : '--'}</td>
+                        <td>${it.resultado === 'nao_conforme'
+                            ? `<button type="button" class="btn-secondary chamado-checklist-corretiva" title="Abrir chamado corretivo para este equipamento" onclick="abrirCorretivaItemChecklistUI('${escapeHtml(String(it.id))}')">Abrir corretiva</button>`
+                            : ''}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>`).join('');
+}
+
+function marcarTodosOkChecklistChamado(indiceGrupo) {
+    const grupos = document.querySelectorAll('#chamadoChecklistConteudo .chamado-checklist-grupo');
+    const grupo = grupos[indiceGrupo];
+    if (!grupo) return;
+    grupo.querySelectorAll('select.chamado-checklist-resultado').forEach(sel => { sel.value = 'ok'; });
+}
+
+function lerChecklistChamadoDaTela() {
+    return Array.from(document.querySelectorAll('#chamadoChecklistConteudo tr.chamado-checklist-item')).map(tr => ({
+        id: tr.getAttribute('data-item-id'),
+        resultado: tr.querySelector('select.chamado-checklist-resultado').value,
+        observacao: tr.querySelector('input.chamado-checklist-obs').value.trim()
+    }));
+}
+
+async function salvarChecklistChamadoUI() {
+    if (!chamadoIdAtualModal || !checklistChamadoAtual) return;
+    const btn = document.getElementById('btnSalvarChecklistChamado');
+    if (btn) btn.disabled = true;
+    try {
+        const resposta = await runServerFunction('salvarChecklistChamado', chamadoIdAtualModal, lerChecklistChamadoDaTela());
+        if (!resposta || resposta.sucesso === false) {
+            alert((resposta && resposta.mensagem) || 'Não foi possível salvar o checklist.');
+            return;
+        }
+        await carregarChecklistChamadoUI(chamadoIdAtualModal);
+        if (resposta.alterados) alert(resposta.mensagem);
+    } catch (error) {
+        console.error('Erro ao salvar checklist:', error);
+        alert('Erro ao salvar checklist.');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function abrirCorretivaItemChecklistUI(itemId) {
+    if (!confirm('Abrir um chamado corretivo para este equipamento, ligado ao mesmo contrato desta OS?')) return;
+    try {
+        const resposta = await runServerFunction('abrirCorretivaItemChecklist', itemId);
+        alert(resposta ? resposta.mensagem : 'Sem resposta do servidor.');
+        if (resposta && resposta.sucesso) consultarChamados();
+    } catch (error) {
+        console.error('Erro ao abrir corretiva:', error);
+        alert('Erro ao abrir corretiva.');
     }
 }
 

@@ -147,6 +147,15 @@
         <div class="tabs-nav">
           <button type="button" class="tab-btn active" id="tabBtnHistoricoChamado" onclick="trocarAbaModalChamado('historico')">Movimentações</button>
           <button type="button" class="tab-btn" id="tabBtnInfoChamado" onclick="trocarAbaModalChamado('info')">Informações do Chamado</button>
+          <button type="button" class="tab-btn" id="tabBtnChecklistChamado" style="display:none;" onclick="trocarAbaModalChamado('checklist')">Checklist</button>
+        </div>
+
+        <div class="tab-panel" id="tabPanelChecklistChamado" style="display:none;">
+          <div class="chamado-checklist-topo">
+            <span id="chamadoChecklistResumo" class="chamado-checklist-resumo"></span>
+            <button type="button" class="btn-primary" id="btnSalvarChecklistChamado" style="width:auto;" onclick="salvarChecklistChamadoUI()">Salvar checklist</button>
+          </div>
+          <div id="chamadoChecklistConteudo" class="chamado-checklist-conteudo"><!-- preenchido via JS: montarChecklistChamadoHtml() --></div>
         </div>
 
         <div class="tab-panel" id="tabPanelInfoChamado" style="display:none;">

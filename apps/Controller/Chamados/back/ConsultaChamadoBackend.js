@@ -99,8 +99,18 @@ function buscarChamadoDetalhado(idInput) {
             dataFinalizacao: linha[9],
             observacao: linha[10],
             status: linha[11],
-            dataAlteracao: linha[12]
+            dataAlteracao: linha[12],
+            contrato: '',
+            origem: linha[ticketsOrigemCol - 1] || '',
+            competencia: linha[ticketsCompetenciaCol - 1] || '',
+            dataPrevista: linha[ticketsDataPrevistaCol - 1] || '',
+            prazoAtendimento: linha[ticketsPrazoAtendimentoCol - 1] || '',
+            prazoSolucao: linha[ticketsPrazoSolucaoCol - 1] || ''
         };
+        if (linha[ticketsContratoIdCol - 1]) {
+            const c = ReadContracts().find(l => Number(l[contractIdCol]) === Number(linha[ticketsContratoIdCol - 1]));
+            chamado.contrato = c ? (c[contractNumberCol] + ' — ' + c[contractEmpresaCol]) : ('ID ' + linha[ticketsContratoIdCol - 1]);
+        }
 
         return { sucesso: true, chamado: chamado };
     } catch (e) {
@@ -189,7 +199,12 @@ function alterarStatusChamado(idInput, novoStatus, motivo) {
                 }
                 if (novoStatus === 'Concluido') {
                     abaChamados.getRange(linhaReal, ticketsDtFinalizacaoCol).setValue(dataAtual);
-                    adicionarHistoricoSistema(idBuscado, 'Chamado encerrado. Motivo: ' + motivoLimpo);
+                    // OS com itens de checklist pendentes: o motivo informado
+                    // é a justificativa das pendências.
+                    const pendentes = contarPendentesChecklistChamado(idBuscado);
+                    adicionarHistoricoSistema(idBuscado, pendentes
+                        ? 'Chamado encerrado com ' + pendentes + ' item(ns) de checklist pendente(s). Motivo: ' + motivoLimpo
+                        : 'Chamado encerrado. Motivo: ' + motivoLimpo);
                 } else {
                     adicionarHistoricoSistema(idBuscado, 'Status alterado para "' + novoStatus + '".');
                 }
