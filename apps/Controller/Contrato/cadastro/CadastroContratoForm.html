@@ -89,6 +89,7 @@
           <button class="tab-btn" data-tab="equipamentos">🔧 Equipamentos</button>
           <button class="tab-btn" data-tab="produtos">📦 Produtos</button>
           <button class="tab-btn" data-tab="checklist-preventiva">✅ Checklist</button>
+          <button class="tab-btn" data-tab="sla">⏱️ SLA</button>
         </div>
 
         <!-- CONTEÚDO DAS ABAS -->
@@ -428,6 +429,54 @@
                   </thead>
                   <tbody id="bodyChecklist">
                     <tr class="empty-row"><td colspan="3">Nenhum item vinculado ao contrato.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- ABA 6: SLA               -->
+          <!-- ======================== -->
+          <div class="tab-panel" id="tab-sla">
+            <div class="equip-list-section">
+              <h4 class="sub-section-title">Prazos de atendimento (SLA)</h4>
+              <p class="servico-spec-ajuda">Prazos em horas, contados a partir da abertura do chamado. Marque "Só horário útil" para contar apenas seg–sex, das 08h às 18h. Prioridade sem prazo informado fica sem SLA.</p>
+              <div class="crud-table-wrapper">
+                <table class="crud-table" id="tabelaSlaContrato">
+                  <thead>
+                    <tr>
+                      <th>PRIORIDADE</th>
+                      <th>PRAZO DE ATENDIMENTO (h)</th>
+                      <th>PRAZO DE SOLUÇÃO (h)</th>
+                      <th>SÓ HORÁRIO ÚTIL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Baixa</td>
+                      <td><input class="field__input" type="number" min="0" step="0.5" id="slaAtend_baixa" placeholder="horas"></td>
+                      <td><input class="field__input" type="number" min="0" step="0.5" id="slaSol_baixa" placeholder="horas"></td>
+                      <td style="text-align:center"><input type="checkbox" id="slaUteis_baixa" title="Contar só seg–sex, 08h–18h"></td>
+                    </tr>
+                    <tr>
+                      <td>Média</td>
+                      <td><input class="field__input" type="number" min="0" step="0.5" id="slaAtend_media" placeholder="horas"></td>
+                      <td><input class="field__input" type="number" min="0" step="0.5" id="slaSol_media" placeholder="horas"></td>
+                      <td style="text-align:center"><input type="checkbox" id="slaUteis_media" title="Contar só seg–sex, 08h–18h"></td>
+                    </tr>
+                    <tr>
+                      <td>Alta</td>
+                      <td><input class="field__input" type="number" min="0" step="0.5" id="slaAtend_alta" placeholder="horas"></td>
+                      <td><input class="field__input" type="number" min="0" step="0.5" id="slaSol_alta" placeholder="horas"></td>
+                      <td style="text-align:center"><input type="checkbox" id="slaUteis_alta" title="Contar só seg–sex, 08h–18h"></td>
+                    </tr>
+                    <tr>
+                      <td>Urgente</td>
+                      <td><input class="field__input" type="number" min="0" step="0.5" id="slaAtend_urgente" placeholder="horas"></td>
+                      <td><input class="field__input" type="number" min="0" step="0.5" id="slaSol_urgente" placeholder="horas"></td>
+                      <td style="text-align:center"><input type="checkbox" id="slaUteis_urgente" title="Contar só seg–sex, 08h–18h"></td>
+                    </tr>
                   </tbody>
                 </table>
               </div>

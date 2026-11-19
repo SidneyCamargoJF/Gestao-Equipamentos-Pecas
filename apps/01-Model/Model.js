@@ -12,6 +12,17 @@ function ReadSheet(table, firstLine, columns) {
  
 }
 
+// Igual ReadSheet, mas devolve [] se a aba não existir ou não tiver dados --
+// usado nas abas novas (tbl_contratos_sla, tbl_chamado_checklist) pra que a
+// ausência delas não derrube telas que já funcionavam.
+function ReadSheetSeExistir(table, firstLine, columns) {
+  const aba = SpreadsheetApp.getActive().getSheetByName(table);
+  if (!aba) return [];
+  const lastLine = aba.getLastRow();
+  if (lastLine < firstLine) return [];
+  return aba.getRange(firstLine, 1, lastLine - firstLine + 1, columns).getValues();
+}
+
 function filterMultipleColumns(table, conditions = [], startLine = 3, numColumns = 2) {
   const tab = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(table);
   const numRows = tab.getLastRow() - startLine;

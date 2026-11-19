@@ -71,6 +71,7 @@
     checklist = [];
 
     limparChecklistUI();
+    preencherSlaContratoForm([]);
 
     renderizarEquipamentos();
     renderizarServicos();
@@ -191,6 +192,8 @@
       checklist = dados.checklist || [];
       checklist.forEach(function (item) { recriarChecklistItemVisual(item.descricao, item.periodo); });
       renderizarChecklist();
+
+      preencherSlaContratoForm(dados.sla || []);
     } catch (error) {
       console.error('Erro ao carregar contrato para edição:', error);
       alert('Erro ao carregar contrato para edição.');
@@ -1188,7 +1191,8 @@ async function salvarContrato() {
         };
       }),
       produtos: produtos,
-      checklist: checklist
+      checklist: checklist,
+      sla: lerSlaContratoForm()
     };
 
     if (typeof exibirModal === 'function') exibirModal('processando');
@@ -1219,6 +1223,32 @@ async function salvarContrato() {
     if (btnTopo) btnTopo.disabled = false;
     if (btnRodape) btnRodape.disabled = false;
   }
+}
+
+// ===== SLA (prazos por prioridade) =====
+const PRIORIDADES_SLA_CONTRATO = ['baixa', 'media', 'alta', 'urgente'];
+
+function preencherSlaContratoForm(sla) {
+  PRIORIDADES_SLA_CONTRATO.forEach(function (p) {
+    const item = (sla || []).find(function (s) { return s.prioridade === p; }) || {};
+    const atend = document.getElementById('slaAtend_' + p);
+    const sol = document.getElementById('slaSol_' + p);
+    const uteis = document.getElementById('slaUteis_' + p);
+    if (atend) atend.value = (item.prazoAtendimento === 0 || item.prazoAtendimento) ? item.prazoAtendimento : '';
+    if (sol) sol.value = (item.prazoSolucao === 0 || item.prazoSolucao) ? item.prazoSolucao : '';
+    if (uteis) uteis.checked = !!item.horasUteis;
+  });
+}
+
+function lerSlaContratoForm() {
+  return PRIORIDADES_SLA_CONTRATO.map(function (p) {
+    return {
+      prioridade: p,
+      prazoAtendimento: (document.getElementById('slaAtend_' + p) || {}).value || '',
+      prazoSolucao: (document.getElementById('slaSol_' + p) || {}).value || '',
+      horasUteis: !!(document.getElementById('slaUteis_' + p) || {}).checked
+    };
+  });
 }
 
 </script>

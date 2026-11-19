@@ -115,7 +115,8 @@ function buscarContratoParaEdicao(idInput) {
       equipamentos: equipamentos,
       servicos: servicos,
       produtos: produtos,
-      checklist: checklist
+      checklist: checklist,
+      sla: lerSlaContrato(idBuscado)
     };
   } catch (e) {
     console.error('Erro em buscarContratoParaEdicao: ' + e.message);
@@ -211,7 +212,79 @@ function salvarChecklistContrato(contratoId, lista) {
   });
 }
 
+// ===== SLA (tbl_contratos_sla) =====
+// Lista do SLA ativo do contrato, uma entrada por prioridade, na ordem de
+// PRIORIDADES_CHAMADO. Horas vêm como número (ou '' se não informadas).
+function lerSlaContrato(contratoId, linhasSla) {
+  const idBuscado = Number(contratoId);
+  const linhas = (linhasSla || ReadContractsSla()).filter(function (l) {
+    return Number(l[contractsSlaIdContratoCol]) === idBuscado && !l[contractsSlaDataExclusaoCol];
+  });
+  return PRIORIDADES_CHAMADO.map(function (prioridade) {
+    const l = linhas.find(function (x) { return String(x[contractsSlaPrioridadeCol]).trim().toLowerCase() === prioridade; });
+    return {
+      prioridade: prioridade,
+      prazoAtendimento: l && l[contractsSlaPrazoAtendimentoCol] !== '' ? Number(l[contractsSlaPrazoAtendimentoCol]) : '',
+      prazoSolucao: l && l[contractsSlaPrazoSolucaoCol] !== '' ? Number(l[contractsSlaPrazoSolucaoCol]) : '',
+      horasUteis: l ? String(l[contractsSlaHorasUteisCol]).trim().toUpperCase() === 'Y' : false
+    };
+  });
+}
+
+// Normaliza a lista que veio da tela: só prioridades conhecidas, horas
+// numéricas >= 0. Lança erro com mensagem amigável se algo vier inválido.
+function normalizarSlaContrato_(lista) {
+  const horas = function (v, rotulo) {
+    if (v === '' || v === null || v === undefined) return '';
+    const n = Number(String(v).replace(',', '.'));
+    if (isNaN(n) || n < 0) throw new Error('SLA: ' + rotulo + ' precisa ser um número de horas maior ou igual a zero.');
+    return n;
+  };
+  return (lista || [])
+    .filter(function (item) { return PRIORIDADES_CHAMADO.indexOf(String(item.prioridade || '').toLowerCase()) !== -1; })
+    .map(function (item) {
+      const p = String(item.prioridade).toLowerCase();
+      return {
+        prioridade: p,
+        prazoAtendimento: horas(item.prazoAtendimento, 'prazo de atendimento (' + p + ')'),
+        prazoSolucao: horas(item.prazoSolucao, 'prazo de solução (' + p + ')'),
+        horasUteis: !!item.horasUteis
+      };
+    })
+    // prioridade sem nenhum prazo informado não vira linha
+    .filter(function (item) { return item.prazoAtendimento !== '' || item.prazoSolucao !== ''; });
+}
+
+// Mesmo padrão de salvarServicosContrato: marca as linhas ativas do
+// contrato como excluídas e reinsere a lista inteira (em lote).
+function salvarSlaContrato(contratoId, listaNormalizada) {
+  const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(contractsSlaTableName);
+  if (!aba) return;
+  const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+
+  excluirAnterioresContrato(aba, ReadContractsSla(), firstLineContractsSla,
+    contractsSlaIdContratoCol, contractsSlaDataExclusaoCol, contratoId, dataAtual);
+
+  if (!listaNormalizada.length) return;
+  const pos = proximoIdTabela(aba, firstLineContractsSla);
+  // ordem das colunas: ID, CONTRATO_ID, PRIORIDADE, PRAZO_ATENDIMENTO_HORAS,
+  // PRAZO_SOLUCAO_HORAS, HORAS_UTEIS, DATA_CADASTRO, DATA_ALTERACAO, DATA_EXCLUSAO
+  const linhas = listaNormalizada.map(function (item, i) {
+    return [pos.novoId + i, contratoId, item.prioridade, item.prazoAtendimento, item.prazoSolucao,
+      item.horasUteis ? 'Y' : 'N', dataAtual, '', ''];
+  });
+  aba.getRange(pos.proximaLinha, 1, linhas.length, numColumnsContractsSla).setValues(linhas);
+}
+
 function salvarContratoBackend (dados) {
+  try {
+    return executarComLock(function () { return salvarContratoBackend_(dados); });
+  } catch (e) {
+    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+  }
+}
+
+function salvarContratoBackend_ (dados) {
   try {
     if (!dados) {
       return { sucesso: false, mensagem: 'Dados do contrato não informados.' };
@@ -238,6 +311,13 @@ function salvarContratoBackend (dados) {
     }
     if (!(dados.equipamentos || []).length) {
       return { sucesso: false, mensagem: 'Vincule pelo menos um equipamento (por patrimônio) antes de salvar o contrato.' };
+    }
+
+    let slaNormalizado;
+    try {
+      slaNormalizado = normalizarSlaContrato_(dados.sla);
+    } catch (erroSla) {
+      return { sucesso: false, mensagem: erroSla.message };
     }
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -294,6 +374,7 @@ function salvarContratoBackend (dados) {
       salvarServicosContrato(idEdicao, dados.servicos);
       salvarProdutosContrato(idEdicao, dados.produtos);
       salvarChecklistContrato(idEdicao, dados.checklist);
+      salvarSlaContrato(idEdicao, slaNormalizado);
 
       return {
         sucesso: true,
@@ -352,6 +433,7 @@ function salvarContratoBackend (dados) {
     salvarServicosContrato(novoId, dados.servicos);
     salvarProdutosContrato(novoId, dados.produtos);
     salvarChecklistContrato(novoId, dados.checklist);
+    salvarSlaContrato(novoId, slaNormalizado);
 
     return {
       sucesso: true,
