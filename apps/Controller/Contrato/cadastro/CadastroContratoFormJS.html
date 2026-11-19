@@ -22,6 +22,22 @@
     const seiField = document.getElementById('sei');
     if (seiField) mascaraSEI(seiField);
 
+    // Data base das preventivas acompanha a Data Inicial enquanto a pessoa
+    // não escolher outra (padrão = data inicial). Atribuição direta (e não
+    // addEventListener) pra não empilhar handlers a cada abertura do form.
+    const dataInicialField = document.getElementById('dataInicial');
+    const dataBaseField = document.getElementById('dataBasePreventiva');
+    if (dataInicialField && dataBaseField) {
+      let dataInicialAnterior = dataInicialField.value;
+      dataInicialField.onfocus = function () { dataInicialAnterior = dataInicialField.value; };
+      dataInicialField.onchange = function () {
+        if (!dataBaseField.value || dataBaseField.value === dataInicialAnterior) {
+          dataBaseField.value = dataInicialField.value;
+        }
+        dataInicialAnterior = dataInicialField.value;
+      };
+    }
+
     const patField = document.getElementById('eqBuscaPat');
     if (patField) {
       patField.addEventListener('keydown', function(e) {
@@ -40,7 +56,7 @@
     document.getElementById('formStatus').textContent = id ? 'Edição' : 'Rascunho';
 
     ['numero', 'contrato', 'sei', 'dataFechamento', 'empresaSearch', 'objeto',
-      'observacoes', 'dataEncerramento', 'dataInicial', 'dataFinal', 'contatoEmpresa',
+      'observacoes', 'dataEncerramento', 'dataInicial', 'dataFinal', 'dataBasePreventiva', 'contatoEmpresa',
       'telefone', 'email', 'gestor'].forEach(function (campoId) {
       const el = document.getElementById(campoId);
       if (el) el.value = '';
@@ -141,7 +157,7 @@
       document.getElementById('contratoId').value = dados.id || '';
 
       ['numero', 'contrato', 'sei', 'dataFechamento', 'objeto', 'observacoes',
-        'dataEncerramento', 'dataInicial', 'dataFinal', 'contatoEmpresa', 'telefone',
+        'dataEncerramento', 'dataInicial', 'dataFinal', 'dataBasePreventiva', 'contatoEmpresa', 'telefone',
         'email', 'gestor'].forEach(function (campoId) {
         const el = document.getElementById(campoId);
         if (el) el.value = dados[campoId] || '';
@@ -903,7 +919,7 @@ function encontrarCheckboxChecklist(descricao, periodo) {
   if (!container) return null;
   let encontrado = null;
   container.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
-    if (cb.getAttribute('data-item') === descricao) encontrado = cb;
+    if (cb.getAttribute('data-item') === descricao && cb.getAttribute('data-periodo') === periodo) encontrado = cb;
   });
   return encontrado;
 }
@@ -962,6 +978,12 @@ function recriarChecklistItemVisual(texto, periodo) {
 
   label.appendChild(checkbox);
   label.appendChild(document.createTextNode(' ' + texto));
+  if (periodo !== 'mensal') {
+    const tag = document.createElement('em');
+    tag.className = 'checklist-item-periodo';
+    tag.textContent = ' (' + formatarPeriodoChecklist(periodo) + ')';
+    label.appendChild(tag);
+  }
 
   const btnRemover = document.createElement('button');
   btnRemover.type = 'button';
@@ -982,6 +1004,11 @@ function recriarChecklistItemVisual(texto, periodo) {
 }
 
 function criarChecklistCustom(periodo) {
+  // Bloco "Outras periodicidades": a periodicidade vem do <select>.
+  if (periodo !== 'mensal') {
+    const sel = document.getElementById('checklistOutroPeriodo');
+    periodo = (sel && sel.value) ? sel.value : 'anual';
+  }
   const inputId = periodo === 'mensal' ? 'checklistOutroMensal' : 'checklistOutroAnual';
   const input = document.getElementById(inputId);
   const texto = input.value.trim();
@@ -1013,13 +1040,38 @@ function cancelarEdicaoChecklist() {
 function salvarEdicaoInline(idx) {
   const desc = document.getElementById('inlineEditDesc').value.trim();
   if (!desc) { alert('Informe a descrição.'); return; }
-  checklist[idx] = { descricao: desc, periodo: checklist[idx].periodo };
+  const selPeriodo = document.getElementById('inlineEditPeriodo');
+  const novoPeriodo = selPeriodo ? selPeriodo.value : checklist[idx].periodo;
+  const antigo = checklist[idx];
+  if (checklist.some(function (c, i) { return i !== idx && c.periodo === novoPeriodo && c.descricao.toLowerCase() === desc.toLowerCase(); })) {
+    alert('Essa etapa já está na lista com essa periodicidade.');
+    return;
+  }
+  // Recria o item visual (checkbox) no bloco certo com o texto/período novos.
+  const checkboxEl = encontrarCheckboxChecklist(antigo.descricao, antigo.periodo);
+  if (checkboxEl && (antigo.descricao !== desc || antigo.periodo !== novoPeriodo)) {
+    const wrapper = checkboxEl.closest('.checklist-item');
+    if (wrapper) wrapper.remove();
+    recriarChecklistItemVisual(desc, novoPeriodo);
+  }
+  checklist[idx] = { descricao: desc, periodo: novoPeriodo };
   checklistEditIdx = -1;
   renderizarChecklist();
 }
 
+const PERIODICIDADES_CHECKLIST = ['mensal', 'bimestral', 'trimestral', 'quadrimestral', 'semestral', 'anual'];
+
 function formatarPeriodoChecklist(p) {
-  return p === 'mensal' ? 'Mensal' : (p === 'anual' ? 'Anual' : (p || '—'));
+  if (!p) return '—';
+  return p.charAt(0).toUpperCase() + p.slice(1);
+}
+
+function selectPeriodoChecklist(atual) {
+  return '<select class="field__select inline-edit-input" id="inlineEditPeriodo">' +
+    PERIODICIDADES_CHECKLIST.map(function (p) {
+      return '<option value="' + p + '"' + (p === atual ? ' selected' : '') + '>' + formatarPeriodoChecklist(p) + '</option>';
+    }).join('') +
+  '</select>';
 }
 
 function renderizarChecklist() {
@@ -1032,7 +1084,7 @@ function renderizarChecklist() {
     if (checklistEditIdx === i) {
       return '<tr class="editing-row">' +
         '<td><input class="field__input inline-edit-input" type="text" id="inlineEditDesc" value="' + escapeHtml(item.descricao) + '"></td>' +
-        '<td>' + formatarPeriodoChecklist(item.periodo) + '</td>' +
+        '<td>' + selectPeriodoChecklist(item.periodo) + '</td>' +
         '<td class="acao-cell">' +
           '<button class="btn-acao" title="Salvar" style="color:#10b981" onclick="salvarEdicaoInline(' + i + ')">' +
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
@@ -1118,6 +1170,7 @@ async function salvarContrato() {
       dataEncerramento: document.getElementById('dataEncerramento').value,
       dataInicial: document.getElementById('dataInicial').value,
       dataFinal: document.getElementById('dataFinal').value,
+      dataBasePreventiva: document.getElementById('dataBasePreventiva').value,
       contatoEmpresa: document.getElementById('contatoEmpresa').value.trim(),
       telefone: document.getElementById('telefone').value.trim(),
       email: document.getElementById('email').value.trim(),

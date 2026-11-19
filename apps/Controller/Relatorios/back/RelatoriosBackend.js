@@ -26,12 +26,9 @@ function buscarRelatorioChecklist(contratoId) {
     const checklist = ReadContractsChecklist()
     .filter(linha => Number(linha[contractsChecklistIdContratoCol]) === idBuscado && !linha[contractsChecklistDataExclusaoCol])
     .map(linha => {
-        const bruto = String(linha[contractsChecklistNomeCol] || '');
-        const match = bruto.match(/^\[(Mensal|Anual)\]\s*(.*)$/);
-        return match
-            ? { descricao: match[2], periodo: match[1].toLowerCase() }
-            : { descricao: bruto, periodo: 'mensal' };
+        const item = lerItemChecklistContrato(linha);
+        return { descricao: item.descricao, periodo: item.periodo };
     });
 
-    return { servico: servicos[0] || null, checklist: checklist };
+    return { servico: servicos[0] || null, checklist: checklist, periodicidades: PERIODICIDADES_ORDEM };
 }

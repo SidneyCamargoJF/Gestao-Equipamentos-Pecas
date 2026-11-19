@@ -129,6 +129,11 @@
                 <input class="field__input" type="date" id="dataFinal">
               </div>
 
+              <div class="field">
+                <label class="field__label" for="dataBasePreventiva">Data base das preventivas <em>(padrão: data inicial)</em></label>
+                <input class="field__input" type="date" id="dataBasePreventiva">
+              </div>
+
             </div>
 
             <div class="form-grid-3">
@@ -385,14 +390,24 @@
                   </div>
 
                   <div class="checklist-periodo-bloco">
-                    <h4 class="sub-section-title">Checklist Anual</h4>
+                    <h4 class="sub-section-title">Checklist — Outras periodicidades</h4>
                     <div id="checklistAnual" class="checklist-lista"></div>
                     <div class="servico-outro-linha">
                       <div class="field">
-                        <label class="field__label" for="checklistOutroAnual">Outro (Anual)</label>
+                        <label class="field__label" for="checklistOutroAnual">Outro</label>
                         <input class="field__input" type="text" id="checklistOutroAnual" placeholder="Digite a etapa e clique em Adicionar...">
                       </div>
-                      <button type="button" class="btn-primary btn-servico-outro-add" onclick="criarChecklistCustom('anual')">Adicionar</button>
+                      <div class="field">
+                        <label class="field__label" for="checklistOutroPeriodo">Periodicidade</label>
+                        <select class="field__select" id="checklistOutroPeriodo">
+                          <option value="bimestral">Bimestral</option>
+                          <option value="trimestral">Trimestral</option>
+                          <option value="quadrimestral">Quadrimestral</option>
+                          <option value="semestral">Semestral</option>
+                          <option value="anual" selected>Anual</option>
+                        </select>
+                      </div>
+                      <button type="button" class="btn-primary btn-servico-outro-add" onclick="criarChecklistCustom('outro')">Adicionar</button>
                     </div>
                   </div>
                 </div>

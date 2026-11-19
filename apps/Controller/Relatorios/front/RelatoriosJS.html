@@ -48,13 +48,18 @@ function renderizarResultadoRelatorio(dados) {
     return;
     }
 
-    const mensal = dados.checklist.filter(function (c) { return c.periodo === 'mensal'; });
-    const anual = dados.checklist.filter(function (c) { return c.periodo === 'anual'; });
+    const ordem = dados.periodicidades || ['mensal', 'bimestral', 'trimestral', 'quadrimestral', 'semestral', 'anual'];
+    const rotulo = function (p) { return p.charAt(0).toUpperCase() + p.slice(1); };
+
+    const blocos = ordem.map(function (p) {
+    const itens = dados.checklist.filter(function (c) { return c.periodo === p; });
+    if (!itens.length) return '';
+    return '<h3>' + rotulo(p) + '</h3><ul>' + itens.map(function (c) { return '<li>' + escapeHtml(c.descricao) + '</li>'; }).join('') + '</ul>';
+    }).join('');
 
     container.innerHTML =
     '<p><strong>' + escapeHtml(dados.servico.tipoManutencao) + ' — ' + escapeHtml(dados.servico.categoria) + ' ' + escapeHtml(dados.servico.tipo) + ' ' + escapeHtml(dados.servico.capacidade) + '</strong> &mdash; ' + escapeHtml(dados.servico.periodicidade) + '</p>' +
-    '<h3>Mensal</h3><ul>' + (mensal.map(function (c) { return '<li>' + escapeHtml(c.descricao) + '</li>'; }).join('') || '<li>Nenhum item.</li>') + '</ul>' +
-    '<h3>Anual</h3><ul>' + (anual.map(function (c) { return '<li>' + escapeHtml(c.descricao) + '</li>'; }).join('') || '<li>Nenhum item.</li>') + '</ul>';
+    (blocos || '<p>Nenhum item de checklist.</p>');
 }
 
 function limparFiltrosRelatorio() {

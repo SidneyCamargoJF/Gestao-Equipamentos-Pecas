@@ -1,6 +1,6 @@
 let contractTableName = 'tbl_contratos'
 let firstLineContracts = 3
-let numColumnsContracts = 20
+let numColumnsContracts = 21
 
 let contractIdCol = 0
 let contractNumberCol = 1
@@ -22,6 +22,7 @@ let contractActiveCol = 16
 let contractSituacaoCol = 17
 let contractDataAletracaoCol = 18
 let contractDataExclusaoCol = 19
+let contractDataBasePreventivaCol = 20   // U -- início do ciclo das preventivas
 
 
 function ReadContracts() {
@@ -127,7 +128,7 @@ function ReadContractsProdutos() {
 // ===== tbl_contratos_Checklist =====
 let contractsChecklistTableName = 'tbl_contratos_Checklist'
 let firstLineContractsChecklist = 3
-let numColumnsContractsChecklist = 6
+let numColumnsContractsChecklist = 8
 
 let contractsChecklistIdCol = 0
 let contractsChecklistIdContratoCol = 1
@@ -135,6 +136,8 @@ let contractsChecklistNomeCol = 2
 let contractChecklistDataCadastroCol = 3
 let contractsChecklistDataExclusaoCol = 4
 let contractsChecklistDataAlteracaoCol = 5
+let contractsChecklistPeriodicidadeCol = 6   // G
+let contractsChecklistServicoIdCol = 7       // H
 
 function ReadContractsChecklist() {
   const objRows = ReadSheet(contractsChecklistTableName, firstLineContractsChecklist, numColumnsContractsChecklist)

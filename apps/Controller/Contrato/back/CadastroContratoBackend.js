@@ -83,19 +83,15 @@ function buscarContratoParaEdicao(idInput) {
       })
       .map(function (l) { return { nome: l[contractsProdutosNomeCol] }; });
 
-    // Período (mensal/anual) vai dentro do próprio texto salvo na coluna
-    // Nome, como prefixo "[Mensal] "/"[Anual] " -- não existe coluna própria
-    // pra isso em tbl_contratos_Checklist ainda. Desfaz o prefixo aqui.
+    // PERIODICIDADE em coluna própria; linhas antigas com prefixo
+    // "[Mensal] "/"[Anual] " no texto ainda são lidas (plano B).
     const checklist = ReadContractsChecklist()
       .filter(function (l) {
         return Number(l[contractsChecklistIdContratoCol]) === idBuscado && !l[contractsChecklistDataExclusaoCol];
       })
       .map(function (l) {
-        const bruto = String(l[contractsChecklistNomeCol] || '');
-        const match = bruto.match(/^\[(Mensal|Anual)\]\s*(.*)$/);
-        return match
-          ? { descricao: match[2], periodo: match[1].toLowerCase() }
-          : { descricao: bruto, periodo: 'mensal' };
+        const item = lerItemChecklistContrato(l);
+        return { descricao: item.descricao, periodo: item.periodo };
       });
 
     return {
@@ -115,6 +111,7 @@ function buscarContratoParaEdicao(idInput) {
       telefone: linha[contractTelefoneCol],
       email: linha[contractEmailCol],
       gestor: linha[contractGestorCol],
+      dataBasePreventiva: converterParaInputDate(linha[contractDataBasePreventivaCol]),
       equipamentos: equipamentos,
       servicos: servicos,
       produtos: produtos,
@@ -206,11 +203,10 @@ function salvarChecklistContrato(contratoId, lista) {
 
   (lista || []).forEach(function (item) {
     const pos = proximoIdTabela(aba, firstLineContractsChecklist);
-    // Período (mensal/anual) vira prefixo no texto -- não tem coluna
-    // própria pra isso em tbl_contratos_Checklist ainda.
-    const prefixo = item.periodo === 'anual' ? '[Anual] ' : '[Mensal] ';
-    // ordem das colunas: Id, IdContrato, Nome, DataCadastro, DataExclusao, DataAlteracao
-    const linha = [pos.novoId, contratoId, prefixo + item.descricao, dataAtual, '', ''];
+    // Periodicidade gravada na coluna PERIODICIDADE (G), sem prefixo no texto.
+    const periodo = normalizarPeriodicidade(item.periodo) || 'mensal';
+    // ordem das colunas: Id, IdContrato, Nome, DataCadastro, DataExclusao, DataAlteracao, Periodicidade, ContratoServicoId
+    const linha = [pos.novoId, contratoId, String(item.descricao || '').trim(), dataAtual, '', '', periodo, ''];
     aba.getRange(pos.proximaLinha, 1, 1, numColumnsContractsChecklist).setValues([linha]);
   });
 }
@@ -285,7 +281,8 @@ function salvarContratoBackend (dados) {
         linhaAtual[contractActiveCol],
         '', // Situação não é mais escolhida na tela -- é calculada na Consulta (data final/encerramento)
         dataAtual,
-        linhaAtual[contractDataExclusaoCol]
+        linhaAtual[contractDataExclusaoCol],
+        dados.dataBasePreventiva || dados.dataInicial
       ];
 
       abaContratos.getRange(linhaReal, 1, 1, numColumnsContracts).setValues([linhaAtualizada]);
@@ -342,7 +339,8 @@ function salvarContratoBackend (dados) {
       'Y',
       '', // Situação não é mais escolhida na tela -- é calculada na Consulta (data final/encerramento)
       '',
-      ''
+      '',
+      dados.dataBasePreventiva || dados.dataInicial
     ];
 
     abaContratos.getRange(ultimaLinha + 1, 1, 1, numColumnsContracts).setValues([novaLinha]);
