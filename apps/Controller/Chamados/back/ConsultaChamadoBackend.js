@@ -130,6 +130,7 @@ function desativarChamado(idInput) {
 
                 abaChamados.getRange(linhaReal, ticketsDtAlteracaoCol).setValue(dataAtual);
                 abaChamados.getRange(linhaReal, ticketsStatusCol).setValue("Cancelado");
+                abaChamados.getRange(linhaReal, ticketsDtExclusaoCol).setValue(dataAtual);
                 abaChamados.getRange(linhaReal, 1, 1, numColumnsTickets).setBackground("#F4CCCC");
                 adicionarHistoricoSistema(idBuscado, 'Chamado desativado');
                 return { sucesso: true, mensagem: "Chamado desativado com sucesso." };
@@ -224,6 +225,7 @@ function reativarChamado(idInput, motivo) {
                 abaChamados.getRange(linhaReal, ticketsDtAlteracaoCol).setValue(dataAtual);
                 const motivoLimpo = String(motivo || '').trim();
                 abaChamados.getRange(linhaReal, ticketsStatusCol).setValue("Aberto");
+                abaChamados.getRange(linhaReal, ticketsDtExclusaoCol).setValue('');
                 abaChamados.getRange(linhaReal, 1, 1, numColumnsTickets).setBackground(null);
                 adicionarHistoricoSistema(idBuscado, 'Chamado reativado'); 
                 return { sucesso: true, mensagem: "Chamado reativado com sucesso." };

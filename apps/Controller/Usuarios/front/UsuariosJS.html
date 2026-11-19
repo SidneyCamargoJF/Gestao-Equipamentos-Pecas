@@ -6,14 +6,14 @@ async function renderConfiguracoes() {
 
 async function consultarUsuarios() {
     const tbody = document.getElementById('usuariosTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
 
     try {
         const usuarios = await runServerFunction('filtrarUsuarios', {});
         renderTabelaUsuarios(usuarios);
     } catch (error) {
         console.error('Erro ao consultar usuários:', error);
-        if (tbody) tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Erro ao buscar usuários.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Erro ao buscar usuários.</td></tr>';
     }
 }
 
@@ -22,13 +22,14 @@ function renderTabelaUsuarios(lista) {
     if (!tbody) return;
 
     if (!Array.isArray(lista) || lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum usuário cadastrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum usuário cadastrado.</td></tr>';
         return;
     }
 
     tbody.innerHTML = lista.map(u => `
         <tr${u.desativado ? ' class="linha-desativada"' : ''}>
             <td>${escapeHtml(u.matricula)}</td>
+            <td>${escapeHtml(u.usuario)}</td>
             <td>${escapeHtml(u.nome)}</td>
             <td>${escapeHtml(u.lotacao)}</td>
             <td>${escapeHtml(u.setor)}</td>
@@ -43,26 +44,29 @@ function renderTabelaUsuarios(lista) {
 
 async function cadastrarUsuarioUI() {
     const matriculaEl = document.getElementById('usuarioMatriculaInput');
+    const loginEl = document.getElementById('usuarioLoginInput');
     const nomeEl = document.getElementById('usuarioNomeInput');
     const lotacaoEl = document.getElementById('usuarioLotacaoInput');
     const setorEl = document.getElementById('usuarioSetorInput');
     const matricula = matriculaEl ? matriculaEl.value.trim() : '';
+    const login = loginEl ? loginEl.value.trim() : '';
     const nome = nomeEl ? nomeEl.value.trim() : '';
     const lotacao = lotacaoEl ? lotacaoEl.value.trim() : '';
     const setor = setorEl ? setorEl.value.trim() : '';
 
-    if (!matricula || !nome || !lotacao || !setor) {
-        alert('Preencha matrícula, nome, lotação e setor.');
+    if (!matricula || !login || !nome || !lotacao || !setor) {
+        alert('Preencha matrícula, usuário, nome, lotação e setor.');
         return;
     }
 
     try {
-        const resposta = await runServerFunction('cadastrarUsuario', matricula, nome, lotacao, setor);
+        const resposta = await runServerFunction('cadastrarUsuario', matricula, login, nome, lotacao, setor);
         if (resposta && resposta.sucesso === false) {
             alert(resposta.mensagem);
             return;
         }
         if (matriculaEl) matriculaEl.value = '';
+        if (loginEl) loginEl.value = '';
         if (nomeEl) nomeEl.value = '';
         if (lotacaoEl) lotacaoEl.value = '';
         if (setorEl) setorEl.value = '';

@@ -53,17 +53,20 @@
 
     const statusEl = document.getElementById('chamadoPatrimonioStatus');
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'chamado-patrimonio-status'; }
+    ultimoPatrimonioVerificadoChamado = '';
+    exibirContratoChamado(null, '');
+    esconderEscolhaEquipamentoChamado();
 
     atualizarContadorDescricaoChamado();
 
     travarCampoCarregandoChamado('chamadoEquipLocalizacao', 'Resgatando localizações...');
     travarCampoCarregandoChamado('chamadoAtribuidoA', 'Resgatando prestadores de serviço...');
-    travarCampoCarregandoChamado('chamadoAbertoPor', 'Resgatando funcionários...');
+    travarCampoCarregandoChamado('chamadoAbertoPor', 'Identificando usuário...');
 
-    const [locais, fornecedoresPrestadores, funcionarios] = await Promise.all([
+    const [locais, fornecedoresPrestadores, usuarioLogado] = await Promise.all([
       carregarLocaisChamado(),
       carregarFornecedoresPrestadoresChamado(),
-      carregarFuncionariosChamado()
+      runServerFunction('buscarUsuarioLogado').catch(() => null)
     ]);
 
     destravarCampoCarregandoChamado('chamadoEquipLocalizacao', 'Selecione a localização...');
@@ -72,11 +75,21 @@
     destravarCampoCarregandoChamado('chamadoAtribuidoA', 'Técnico interno ou fornecedor prestador de serviço...');
     initSearchChamado('chamadoAtribuidoA', 'chamadoAtribuidoDropdown', 'chamadoAtribuidoWrapper', fornecedoresPrestadores);
 
-    destravarCampoCarregandoChamado('chamadoAbertoPor', 'Funcionário ou servidor...');
-    initSearchChamado('chamadoAbertoPor', 'chamadoAbertoPorDropdown', 'chamadoAbertoPorWrapper', funcionarios);
+    destravarCampoCarregandoChamado('chamadoAbertoPor', 'Usuário logado');
+    if (abertoPorEl) {
+      abertoPorEl.value = (usuarioLogado && usuarioLogado.nome) || '';
+      abertoPorEl.title = (usuarioLogado && usuarioLogado.encontrado === false)
+        ? 'Seu login (' + usuarioLogado.email + ') não está cadastrado em Configurações > Usuários'
+        : 'Preenchido com o usuário logado';
+    }
 
+    // Mesmas referências de função a cada abertura: addEventListener ignora
+    // duplicadas, então não empilha handlers.
     const patrimonioEl = document.getElementById('chamadoEquipPatrimonio');
-    if (patrimonioEl) patrimonioEl.addEventListener('blur', verificarPatrimonioAoSairChamado);
+    if (patrimonioEl) {
+      patrimonioEl.addEventListener('blur', verificarPatrimonioAoSairChamado);
+      patrimonioEl.addEventListener('input', verificarPatrimonioDigitandoChamado);
+    }
 
     if (id) {
       if (typeof exibirModal === 'function') exibirModal('processando');
@@ -150,6 +163,9 @@
 
       const capacidadeEl = document.getElementById('chamadoEquipCapacidade');
       if (capacidadeEl) capacidadeEl.value = dados.capacidade || '';
+
+      ultimoPatrimonioVerificadoChamado = String(dados.patrimonio || '').trim();
+      exibirContratoChamado(dados.contrato || null, '');
     } catch (error) {
       console.error('Erro ao carregar chamado para edição:', error);
       alert('Erro ao carregar chamado para edição.');
@@ -202,26 +218,102 @@
     if (!patrimonio) {
       statusEl.textContent = '';
       statusEl.className = 'chamado-patrimonio-status';
+      ultimoPatrimonioVerificadoChamado = '';
+      exibirContratoChamado(null, '');
       return;
     }
+
+    if (patrimonio === ultimoPatrimonioVerificadoChamado) return;
+    ultimoPatrimonioVerificadoChamado = patrimonio;
 
     statusEl.textContent = 'Buscando...';
     statusEl.className = 'chamado-patrimonio-status';
 
     try {
-      const resultado = await runServerFunction('verificarPatrimonioEquipamento', patrimonio);
-      if (resultado && resultado.existe) {
+      const resposta = await runServerFunction('verificarPatrimonioChamado', patrimonio);
+      // a pessoa continuou digitando enquanto a busca rodava: descarta
+      if (patrimonioEl.value.trim() !== patrimonio) return;
+      if (resposta && resposta.existe) {
+        const resultado = resposta.equipamento;
         const detalheEquipamento = (resultado.marca ? ' - ' + resultado.marca : '') + (resultado.modelo ? ' - ' + resultado.modelo : '');
         statusEl.textContent = 'Equipamento encontrado' + (resultado.nome ? ' (' + resultado.nome + detalheEquipamento + ')' : '');
         statusEl.className = 'chamado-patrimonio-status encontrado';
         preencherCamposEquipamentoChamado(resultado);
+        esconderEscolhaEquipamentoChamado();
+        exibirContratoChamado(resposta.contrato, resposta.aviso);
+        const atribuidoEl = document.getElementById('chamadoAtribuidoA');
+        if (resposta.contrato && atribuidoEl && !atribuidoEl.value.trim()) atribuidoEl.value = resposta.contrato.empresa;
       } else {
         statusEl.textContent = 'Patrimônio não encontrado -- pode continuar, o chamado ainda é salvo';
         statusEl.className = 'chamado-patrimonio-status nao-encontrado';
+        exibirContratoChamado(null, '');
       }
     } catch (error) {
+      ultimoPatrimonioVerificadoChamado = '';
       statusEl.textContent = '';
       statusEl.className = 'chamado-patrimonio-status';
+    }
+  }
+
+  let ultimoPatrimonioVerificadoChamado = '';
+  let timerPatrimonioChamado = null;
+
+  // Busca assim que a pessoa para de digitar (além do blur).
+  function verificarPatrimonioDigitandoChamado() {
+    clearTimeout(timerPatrimonioChamado);
+    timerPatrimonioChamado = setTimeout(verificarPatrimonioAoSairChamado, 700);
+  }
+
+  // Contrato/empresa encontrados pro equipamento -- só exibição.
+  function exibirContratoChamado(contrato, aviso) {
+    const numeroEl = document.getElementById('chamadoContratoNumero');
+    const empresaEl = document.getElementById('chamadoContratoEmpresa');
+    const avisoEl = document.getElementById('chamadoContratoAviso');
+    if (numeroEl) numeroEl.value = contrato ? (contrato.numero + (contrato.nome ? ' — ' + contrato.nome : '')) : '';
+    if (empresaEl) empresaEl.value = contrato ? contrato.empresa : '';
+    if (avisoEl) avisoEl.textContent = aviso || '';
+  }
+
+  // ===== MAIS DE UM EQUIPAMENTO NA LOCALIZAÇÃO =====
+  function mostrarEscolhaEquipamentoChamado(opcoes) {
+    const bloco = document.getElementById('chamadoEquipEscolhaBloco');
+    const select = document.getElementById('chamadoEquipEscolha');
+    if (!bloco || !select) return;
+    const rotulo = function (e) {
+      const partes = [];
+      if (e.patrimonio) partes.push('Patrimônio ' + e.patrimonio);
+      partes.push(e.nome + (e.modelo ? '/' + e.modelo : '') + (e.capacidade ? ' ' + e.capacidade : ''));
+      if (e.marca) partes.push(e.marca);
+      return partes.join(' - ');
+    };
+    select.innerHTML = '<option value="">Selecione...</option>' + (opcoes || []).map(function (e) {
+      return '<option value="' + escapeHtml(String(e.id)) + '" data-patrimonio="' + escapeHtml(String(e.patrimonio || '')) + '">' +
+        escapeHtml(rotulo(e)) + '</option>';
+    }).join('');
+    bloco.style.display = '';
+    select.focus();
+  }
+
+  function esconderEscolhaEquipamentoChamado() {
+    const bloco = document.getElementById('chamadoEquipEscolhaBloco');
+    const select = document.getElementById('chamadoEquipEscolha');
+    const idEl = document.getElementById('chamadoEquipamentoIdEscolhido');
+    if (bloco) bloco.style.display = 'none';
+    if (select) select.innerHTML = '';
+    if (idEl) idEl.value = '';
+  }
+
+  function escolherEquipamentoDaLocalizacaoChamado() {
+    const select = document.getElementById('chamadoEquipEscolha');
+    const idEl = document.getElementById('chamadoEquipamentoIdEscolhido');
+    if (!select || !idEl) return;
+    idEl.value = select.value;
+    const opcao = select.options[select.selectedIndex];
+    const patrimonio = opcao ? opcao.getAttribute('data-patrimonio') : '';
+    const patrimonioEl = document.getElementById('chamadoEquipPatrimonio');
+    if (patrimonio && patrimonioEl) {
+      patrimonioEl.value = patrimonio;
+      verificarPatrimonioAoSairChamado(); // preenche marca/modelo e contrato
     }
   }
 
@@ -413,6 +505,7 @@
         descricao: document.getElementById('chamadoDescricao')?.value.trim() || '',
         patrimonio: patrimonio,
         localizacao: localizacao,
+        equipamentoId: document.getElementById('chamadoEquipamentoIdEscolhido')?.value || '',
         marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
         modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
         capacidade: document.getElementById('chamadoEquipCapacidade')?.value.trim() || '',
@@ -424,6 +517,12 @@
 
       try {
         const resposta = await runServerFunction('salvarChamadoBackend', dadosChamado);
+
+        if (resposta && resposta.escolherEquipamento) {
+          alert(resposta.mensagem);
+          mostrarEscolhaEquipamentoChamado(resposta.opcoes);
+          return;
+        }
 
         if (resposta && resposta.sucesso === false) {
           alert(resposta.mensagem);

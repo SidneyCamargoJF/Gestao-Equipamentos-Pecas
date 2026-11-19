@@ -1,6 +1,6 @@
 let ticketsTableName = 'tbl_chamados'
 let firstLineTickets = 3
-let numColumnsTickets = 13
+let numColumnsTickets = 21
 
 let ticketsIdCol = 1
 let ticketsEquipamentoIdCol = 2
@@ -15,13 +15,36 @@ let ticketsDtFinalizacaoCol = 10
 let ticketsObservacaoCol = 11
 let ticketsStatusCol = 12
 let ticketsDtAlteracaoCol = 13
+// Colunas novas (criadas no fim da aba -- as 13 acima não mudaram de lugar)
+let ticketsContratoIdCol = 14
+let ticketsOrigemCol = 15             // 'manual' | 'automatica'
+let ticketsCompetenciaCol = 16        // 'AAAA-MM' (gravada como texto)
+let ticketsDataPrevistaCol = 17       // dd/MM/yyyy
+let ticketsPrazoAtendimentoCol = 18   // dd/MM/yyyy HH:mm
+let ticketsPrazoSolucaoCol = 19       // dd/MM/yyyy HH:mm
+let ticketsFornecedorIdCol = 20
+let ticketsDtExclusaoCol = 21
 
 function ReadTickets() {
   const objRows = ReadSheet(ticketsTableName, firstLineTickets, numColumnsTickets)
 
   return objRows.map(linha =>
-    linha.map(valor => (valor instanceof Date) ? dateToString(valor) : valor)
+    linha.map((valor, idx) => {
+      if (!(valor instanceof Date)) return valor
+      // Prazos têm hora; competência é só ano-mês (caso o Sheets tenha
+      // convertido o texto "2026-01" em data).
+      if (idx === ticketsPrazoAtendimentoCol - 1 || idx === ticketsPrazoSolucaoCol - 1) return dateTimeToString(valor)
+      if (idx === ticketsCompetenciaCol - 1) return Utilities.formatDate(valor, Session.getScriptTimeZone(), 'yyyy-MM')
+      return dateToString(valor)
+    })
   )
+}
+
+// Texto que o Sheets converteria sozinho (ex.: "2026-01" vira data) --
+// o apóstrofo força a célula a guardar texto e não aparece no valor lido.
+function textoLiteralPlanilha(valor) {
+  const s = String(valor === null || valor === undefined ? '' : valor)
+  return s ? "'" + s : ''
 }
 
 // ===== tbl_chamado_historico =====

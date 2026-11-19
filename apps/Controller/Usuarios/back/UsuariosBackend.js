@@ -12,6 +12,7 @@ function filtrarUsuarios(criterios) {
     res.push({
       id: dados[i][userIdCol],
       matricula: dados[i][userMatriculaCol] ? String(dados[i][userMatriculaCol]).trim() : "",
+      usuario: dados[i][userUsuarioCol] ? String(dados[i][userUsuarioCol]).trim() : "",
       nome: nome,
       lotacao: dados[i][userLotacao] ? String(dados[i][userLotacao]).trim() : "",
       setor: dados[i][userSetorCol] ? String(dados[i][userSetorCol]).trim() : "",
@@ -24,15 +25,29 @@ function filtrarUsuarios(criterios) {
   return res;
 }
 
-function cadastrarUsuario(matriculaInput, nomeInput, lotacaoInput, setorInput) {
+function cadastrarUsuario(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput) {
+  try {
+    return executarComLock(function () {
+      return cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput);
+    });
+  } catch (e) {
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
+}
+
+function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput) {
   try {
     const matricula = (matriculaInput || "").toString().trim();
+    const usuario = (usuarioInput || "").toString().trim().toLowerCase();
     const nome = (nomeInput || "").toString().trim();
     const lotacao = (lotacaoInput || "").toString().trim();
     const setor = (setorInput || "").toString().trim();
 
     if (matricula === "") {
       return { sucesso: false, mensagem: "Digite a matrícula." };
+    }
+    if (usuario === "") {
+      return { sucesso: false, mensagem: "Digite o usuário (e-mail de login)." };
     }
     if (nome === "") {
       return { sucesso: false, mensagem: "Digite o nome do usuário." };
@@ -51,17 +66,19 @@ function cadastrarUsuario(matriculaInput, nomeInput, lotacaoInput, setorInput) {
       return { sucesso: false, mensagem: "Aba '" + userTableName + "' não foi encontrada na planilha." };
     }
 
-    const ultimaLinha = aba.getLastRow();
-    const dataHoje = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
-
-    let id = 1;
-    if (ultimaLinha >= firstLineUsers) {
-      const ultimoId = aba.getRange(ultimaLinha, userIdCol + 1).getValue();
-      id = Number(ultimoId) + 1;
+    const jaExiste = ReadUsers().some(function (l) {
+      return !String(l[userDtExclusaoCol] || "").trim() && chaveUsuarioLogin_(l[userUsuarioCol]) === chaveUsuarioLogin_(usuario);
+    });
+    if (jaExiste) {
+      return { sucesso: false, mensagem: "Já existe um usuário ativo com esse login." };
     }
 
-    // [ID, Matrícula, Nome, Lotação, Setor, Data Cadastro, Data Exclusão]
-    aba.appendRow([id, matricula, nome, lotacao, setor, dataHoje, ""]);
+    const dataHoje = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+    const pos = proximoIdTabela(aba, firstLineUsers);
+
+    // [ID, Matrícula, Usuário, Nome, Lotação, Setor, Data Cadastro, Data Exclusão]
+    const linha = [pos.novoId, matricula, usuario, nome, lotacao, setor, dataHoje, ""];
+    aba.getRange(pos.proximaLinha, 1, 1, numColumnsUsers).setValues([linha]);
 
     return { sucesso: true, mensagem: "Usuário cadastrado com sucesso!" };
 
@@ -131,4 +148,42 @@ function reativarUsuario(idInput) {
   } catch (e) {
     return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
   }
+}
+
+// =====================================================
+// USUÁRIO LOGADO
+// O web app roda como USER_ACCESSING (domínio), então
+// Session.getActiveUser().getEmail() devolve o e-mail de quem está usando.
+// A coluna USUARIO de tbl_usuarios pode ter o e-mail completo ou só o
+// login (parte antes do @) -- os dois casam.
+// =====================================================
+function chaveUsuarioLogin_(valor) {
+  return String(valor || '').trim().toLowerCase().split('@')[0];
+}
+
+function emailUsuarioLogado_() {
+  try {
+    return String(Session.getActiveUser().getEmail() || '').trim().toLowerCase();
+  } catch (e) {
+    return '';
+  }
+}
+
+/** { email, nome, encontrado } do usuário logado. nome cai no e-mail se ele não estiver cadastrado. */
+function buscarUsuarioLogado() {
+  const email = emailUsuarioLogado_();
+  if (!email) return { email: '', nome: '', encontrado: false };
+
+  const chave = chaveUsuarioLogin_(email);
+  const linha = ReadUsers().find(function (l) {
+    return !String(l[userDtExclusaoCol] || '').trim() && chaveUsuarioLogin_(l[userUsuarioCol]) === chave;
+  });
+  return linha
+    ? { email: email, nome: String(linha[userNomeCol] || '').trim() || email, encontrado: true }
+    : { email: email, nome: email, encontrado: false };
+}
+
+/** Texto gravado em "Aberto por"/"Registrado por". */
+function nomeUsuarioLogado() {
+  return buscarUsuarioLogado().nome || 'Desconhecido';
 }

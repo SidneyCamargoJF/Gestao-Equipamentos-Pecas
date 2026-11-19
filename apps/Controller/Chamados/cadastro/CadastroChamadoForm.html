@@ -68,16 +68,8 @@
 
         <div class="form-grid-3">
           <div class="field field-full-3">
-            <label class="field__label">Aberto por</label>
-            <div class="search-wrapper" id="chamadoAbertoPorWrapper">
-              <span class="search-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </span>
-              <input class="search-input" type="text" id="chamadoAbertoPor" placeholder="Funcionário ou servidor..." autocomplete="off">
-              <div class="search-dropdown" id="chamadoAbertoPorDropdown"></div>
-            </div>
+            <label class="field__label" for="chamadoAbertoPor">Aberto por</label>
+            <input class="field__input" type="text" id="chamadoAbertoPor" readonly placeholder="Usuário logado" title="Preenchido com o usuário logado">
           </div>
         </div>
 
@@ -132,6 +124,28 @@
             <input class="field__input" type="text" id="chamadoEquipCapacidade" placeholder="Ex: 36.000 BTUs, 20 litros...">
           </div>
         </div>
+
+        <!-- Mais de um equipamento na localização: a pessoa escolhe qual -->
+        <input type="hidden" id="chamadoEquipamentoIdEscolhido" value="">
+        <div class="form-grid-3" id="chamadoEquipEscolhaBloco" style="display:none;">
+          <div class="field field-full-3">
+            <label class="field__label" for="chamadoEquipEscolha">Qual equipamento desta localização? *</label>
+            <select class="field__select" id="chamadoEquipEscolha" onchange="escolherEquipamentoDaLocalizacaoChamado()"></select>
+          </div>
+        </div>
+
+        <!-- Contrato vigente que cobre o equipamento (somente leitura) -->
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label" for="chamadoContratoNumero">Contrato</label>
+            <input class="field__input" type="text" id="chamadoContratoNumero" readonly placeholder="Preenchido pelo patrimônio">
+          </div>
+          <div class="field">
+            <label class="field__label" for="chamadoContratoEmpresa">Empresa do contrato</label>
+            <input class="field__input" type="text" id="chamadoContratoEmpresa" readonly placeholder="—">
+          </div>
+        </div>
+        <span class="chamado-patrimonio-status" id="chamadoContratoAviso"></span>
       </fieldset>
 
       <!-- ============================================= -->

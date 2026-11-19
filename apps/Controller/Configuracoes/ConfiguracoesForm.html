@@ -13,6 +13,10 @@
             <input class="field__input" type="text" id="usuarioMatriculaInput" placeholder="Matrícula...">
           </div>
           <div class="field" style="flex:2; min-width:12rem;">
+            <label class="field__label" for="usuarioLoginInput">Usuário (e-mail de login)</label>
+            <input class="field__input" type="text" id="usuarioLoginInput" placeholder="fulano@dominio...">
+          </div>
+          <div class="field" style="flex:2; min-width:12rem;">
             <label class="field__label" for="usuarioNomeInput">Nome</label>
             <input class="field__input" type="text" id="usuarioNomeInput" placeholder="Nome do usuário...">
           </div>
@@ -30,7 +34,7 @@
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
-              <tr><th>Matrícula</th><th>Nome</th><th>Lotação</th><th>Setor</th><th>Ações</th></tr>
+              <tr><th>Matrícula</th><th>Usuário</th><th>Nome</th><th>Lotação</th><th>Setor</th><th>Ações</th></tr>
             </thead>
             <tbody id="usuariosTableBody"></tbody>
           </table>

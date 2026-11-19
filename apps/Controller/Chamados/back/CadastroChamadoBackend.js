@@ -6,17 +6,29 @@
 /**
  * Salva um chamado em tbl_chamados -- cria um novo (dados.id vazio) ou
  * atualiza um existente (dados.id preenchido, modo edição), e registra a
- * ação em tbl_chamado_historico. Exige Patrimônio e/ou Localização
- * Equipamento é guardado só por ID (nunca duplica dado de
- * tbl_equipamentos):
- * - Equipamento: localizado em tbl_equipamentos pelo Patrimônio digitado;
- *   se não achar por Patrimônio, tenta pela Localização.
- *   
- * - No modo edição, campos que não fazem parte do formulário (ID_PECA,
- *   DATA_ABERTURA, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO, STATUS) são
- *   preservados como estavam
+ * ação em tbl_chamado_historico. Exige Patrimônio e/ou Localização.
+ * Equipamento é guardado só por ID (nunca duplica dado de tbl_equipamentos):
+ * - procurado pelo Patrimônio; se não achar, pela Localização -- mas só se
+ *   a localização tiver UM equipamento. Com mais de um, devolve
+ *   { escolherEquipamento: true, opcoes } pra tela pedir que a pessoa
+ *   escolha (e reenviar com dados.equipamentoId).
+ * - Achando o equipamento, procura o contrato vigente que o cobre e
+ *   preenche CONTRATO_ID, FORNECEDOR_ID, ATRIBUÍDO A (se vazio) e os
+ *   prazos de SLA da prioridade.
+ * "Aberto por" é sempre o usuário logado (na edição fica o original).
+ * No modo edição, campos que não fazem parte do formulário (DATA_ABERTURA,
+ * DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO, STATUS e as colunas de
+ * contrato/prazos já preenchidas) são preservados.
  */
 function salvarChamadoBackend(dados) {
+  try {
+    return executarComLock(function () { return salvarChamadoBackend_(dados); });
+  } catch (e) {
+    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+  }
+}
+
+function salvarChamadoBackend_(dados) {
   try {
     if (!dados || !String(dados.motivo || '').trim()) {
       return { sucesso: false, mensagem: 'Preencha o motivo do chamado.' };
@@ -25,7 +37,7 @@ function salvarChamadoBackend(dados) {
     const patrimonioDigitado = String(dados.patrimonio || '').trim();
     const localizacaoDigitada = String(dados.localizacao || '').trim();
 
-    if (!patrimonioDigitado && !localizacaoDigitada) {
+    if (!patrimonioDigitado && !localizacaoDigitada && !dados.equipamentoId) {
       return { sucesso: false, mensagem: 'Informe pelo menos o Patrimônio ou a Localização do equipamento.' };
     }
 
@@ -39,13 +51,34 @@ function salvarChamadoBackend(dados) {
     if (patrimonioDigitado) {
       equipamentoId = buscarEquipamentoIdPorPatrimonio(patrimonioDigitado);
     }
+    if (!equipamentoId && dados.equipamentoId) {
+      // escolhido pela pessoa na lista de equipamentos da localização
+      const escolhido = ReadEquipments().find(e => Number(e[0]) === Number(dados.equipamentoId));
+      if (escolhido) equipamentoId = escolhido[0];
+    }
     if (!equipamentoId && localizacaoDigitada) {
-      equipamentoId = buscarEquipamentoIdPorLocalizacao(localizacaoDigitada);
+      const naLocalizacao = listarEquipamentosPorLocalizacao(localizacaoDigitada);
+      if (naLocalizacao.length === 1) {
+        equipamentoId = naLocalizacao[0].id;
+      } else if (naLocalizacao.length > 1) {
+        return {
+          sucesso: false,
+          escolherEquipamento: true,
+          opcoes: naLocalizacao,
+          mensagem: 'Há ' + naLocalizacao.length + ' equipamentos em "' + localizacaoDigitada + '". Escolha qual é o do chamado.'
+        };
+      }
     }
     const equipamentoEncontrado = !!equipamentoId;
 
-    const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+    const agora = new Date();
+    const dataAtual = Utilities.formatDate(agora, 'GMT-3', 'dd/MM/yyyy');
     const idEdicao = dados.id ? Number(dados.id) : null;
+
+    const cacheContratos = equipamentoId ? carregarCacheContratos_() : null;
+    const vigente = equipamentoId ? buscarContratoVigentePorEquipamento(equipamentoId, agora, cacheContratos) : null;
+    const contrato = vigente ? vigente.contrato : null;
+    const atribuidoA = String(dados.atribuidoA || '').trim() || (contrato ? contrato.empresa : '');
 
     // ===== MODO EDIÇÃO =====
     if (idEdicao) {
@@ -58,6 +91,24 @@ function salvarChamadoBackend(dados) {
       const linhaReal = idx + firstLineTickets;
       // cópia do conteúdo da linha atual
       const linhaAtual = todasLinhas[idx];
+      const col = c => linhaAtual[c - 1];
+
+      // Contrato/prazos já gravados ficam; só preenche se ainda não tinha.
+      let contratoId = col(ticketsContratoIdCol);
+      let fornecedorId = col(ticketsFornecedorIdCol);
+      let prazoAtendimento = col(ticketsPrazoAtendimentoCol);
+      let prazoSolucao = col(ticketsPrazoSolucaoCol);
+      let vinculouAgora = false;
+      if (!contratoId && contrato) {
+        contratoId = contrato.id;
+        fornecedorId = contrato.fornecedorId;
+        vinculouAgora = true;
+        if (!prazoAtendimento && !prazoSolucao) {
+          const prazos = calcularPrazosChamado(contrato.id, dados.classificacao, agora, cacheContratos.sla);
+          prazoAtendimento = prazos.prazoAtendimento;
+          prazoSolucao = prazos.prazoSolucao;
+        }
+      }
 
       const linhaAtualizada = [
         idEdicao,
@@ -65,23 +116,34 @@ function salvarChamadoBackend(dados) {
         dados.motivo,
         dados.tipo || '',
         dados.classificacao || '',
-        linhaAtual[5],
-        dados.abertoPor || '',
-        dados.atribuidoA || '',
-        linhaAtual[8],
-        linhaAtual[9],
+        col(6),
+        col(7),             // Aberto por: mantém quem abriu
+        atribuidoA,
+        col(9),
+        col(10),
         dados.descricao || '',
-        linhaAtual[11],
-        dataAtual
+        col(12),
+        dataAtual,
+        contratoId || '',
+        col(ticketsOrigemCol) || 'manual',
+        textoLiteralPlanilha(col(ticketsCompetenciaCol)),
+        col(ticketsDataPrevistaCol),
+        prazoAtendimento || '',
+        prazoSolucao || '',
+        fornecedorId || '',
+        col(ticketsDtExclusaoCol)
       ];
 
       abaChamados.getRange(linhaReal, 1, 1, numColumnsTickets).setValues([linhaAtualizada]);
       adicionarHistoricoSistema(idEdicao, 'Chamado editado');
+      if (vinculouAgora) {
+        adicionarHistoricoSistema(idEdicao, 'Vinculado ao contrato ' + contrato.numero + ' (' + contrato.empresa + ')');
+      }
 
       //dados.relatorios é uma lista dos arquivos que vieram do front em forma de objeto {nome, tipo, base64
       // o || [] se estiver vazio troca para um alista vazia para nao quebrar o map
       //.map passa por cada item dessa lista, e a cada volta o item fica guardado no 'arquivo', map constrói uma lista nova
-      //chama a função de salvar anexo, passando o id, o texto do tipo e o arquivo 
+      //chama a função de salvar anexo, passando o id, o texto do tipo e o arquivo
       // e a variavel do começo guarda a lista nova com o resultado do upload específico
       const respostasRelatorios = (dados.relatorios || []).map(arquivo => adicionarAnexoChamado(idEdicao, 'Relatório', arquivo));
       const respostasNotasFiscais = (dados.notasFiscais || []).map(arquivo => adicionarAnexoChamado(idEdicao, 'Nota Fiscal', arquivo));
@@ -89,7 +151,7 @@ function salvarChamadoBackend(dados) {
 
       return {
         sucesso: true,
-        mensagem: 'Chamado atualizado com sucesso!',
+        mensagem: 'Chamado atualizado com sucesso!' + (vigente && vigente.aviso ? '\n' + vigente.aviso : ''),
         id: idEdicao,
         equipamentoEncontrado: equipamentoEncontrado,
         duplicado: existeAnexoDuplicado
@@ -97,21 +159,16 @@ function salvarChamadoBackend(dados) {
     }
 
     // ===== MODO CRIAÇÃO =====
-    const ultimaLinhaPlanilha = abaChamados.getLastRow();
-    const ultimaLinha = Math.max(ultimaLinhaPlanilha, firstLineTickets - 1);
-
-    let novoId;
-    if (ultimaLinha < firstLineTickets) {
-      novoId = 1;
-    } else {
-      let idAtual = abaChamados.getRange(ultimaLinha, 1).getValue();
-      if (idAtual === '' || isNaN(Number(idAtual))) idAtual = 0;
-      novoId = Number(idAtual) + 1;
-    }
+    const pos = proximoIdTabela(abaChamados, firstLineTickets);
+    const novoId = pos.novoId;
+    const prazos = contrato
+      ? calcularPrazosChamado(contrato.id, dados.classificacao, agora, cacheContratos.sla)
+      : { prazoAtendimento: '', prazoSolucao: '' };
 
     // Ordem: ID, ID_EQUIPAMENTO, DEFEITO, TIPO, PRIORIDADE, DATA_ABERTURA,
     // ABERTO_POR, ATRIBUIDO_A, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO,
-    // OBSERVACAO, STATUS, DATA_ALTERACAO (13 colunas -- RELATORIO/NOTA_FISCAL
+    // OBSERVACAO, STATUS, DATA_ALTERACAO, CONTRATO_ID, ORIGEM, COMPETENCIA,
+    // DATA_PREVISTA, PRAZO_ATENDIMENTO, PRAZO_SOLUCAO, FORNECEDOR_ID, DATA_EXCLUSAO
     const novaLinha = [
       novoId,
       equipamentoId,
@@ -119,32 +176,48 @@ function salvarChamadoBackend(dados) {
       dados.tipo || '',
       dados.classificacao || '',
       dataAtual,
-      dados.abertoPor || '',
-      dados.atribuidoA || '',
+      nomeUsuarioLogado(),
+      atribuidoA,
       '',
       '',
       dados.descricao || '',
       'Aberto',
+      '',
+      contrato ? contrato.id : '',
+      'manual',
+      '',
+      '',
+      prazos.prazoAtendimento,
+      prazos.prazoSolucao,
+      contrato ? contrato.fornecedorId : '',
       ''
     ];
 
-    abaChamados.getRange(ultimaLinha + 1, 1, 1, numColumnsTickets).setValues([novaLinha]);
+    abaChamados.getRange(pos.proximaLinha, 1, 1, numColumnsTickets).setValues([novaLinha]);
 
     adicionarHistoricoSistema(novoId, 'Chamado aberto');
+    if (contrato) {
+      adicionarHistoricoSistema(novoId, 'Vinculado ao contrato ' + contrato.numero + ' (' + contrato.empresa + ')' +
+        (vigente.aviso ? '. ' + vigente.aviso : ''));
+    }
 
     //map guarda o retorno de cada chamada numa lista nova
     const respostasRelatorios = (dados.relatorios || []).map(arquivo => adicionarAnexoChamado(novoId, 'Relatório', arquivo));
     const respostasNotasFiscais = (dados.notasFiscais || []).map(arquivo => adicionarAnexoChamado(novoId, 'Nota Fiscal', arquivo));
     const existeAnexoDuplicado = respostasRelatorios.concat(respostasNotasFiscais).some(r => r && r.duplicado);
 
+    let mensagem = equipamentoEncontrado
+      ? 'Chamado aberto com sucesso!'
+      : 'Chamado aberto com sucesso! (Não foi possível vincular a um equipamento. Confira o Patrimônio/Localização e edite o chamado posteriormente.)';
+    if (contrato) mensagem += '\nContrato ' + contrato.numero + ' — ' + contrato.empresa + '.';
+    if (vigente && vigente.aviso) mensagem += '\n' + vigente.aviso;
 
     return {
       sucesso: true,
-      mensagem: equipamentoEncontrado
-        ? 'Chamado aberto com sucesso!'
-        : 'Chamado aberto com sucesso! (Não foi possível vincular a um equipamento. Confira o Patrimônio/Localização e edite o chamado posteriormente.)',
+      mensagem: mensagem,
       id: novoId,
       equipamentoEncontrado: equipamentoEncontrado,
+      contrato: contrato,
       duplicado: existeAnexoDuplicado
     };
   } catch (e) {
@@ -177,8 +250,19 @@ function buscarChamadoParaEdicao(idInput) {
       }
     }
 
+    let contrato = null;
+    if (linha[ticketsContratoIdCol - 1]) {
+      const c = ReadContracts().find(l => Number(l[contractIdCol]) === Number(linha[ticketsContratoIdCol - 1]));
+      if (c) contrato = { id: c[contractIdCol], numero: String(c[contractNumberCol] || ''), empresa: String(c[contractEmpresaCol] || '') };
+    }
+
     return {
       id: linha[0],
+      equipamentoId: linha[1] || '',
+      contrato: contrato,
+      origem: linha[ticketsOrigemCol - 1] || '',
+      prazoAtendimento: linha[ticketsPrazoAtendimentoCol - 1] || '',
+      prazoSolucao: linha[ticketsPrazoSolucaoCol - 1] || '',
       motivo: linha[2],
       tipo: linha[3],
       classificacao: linha[4],
@@ -225,6 +309,10 @@ function adicionarAnexoChamado(chamadoId, tipo, arquivo) {
  * Adiciona uma entrada em tbl_chamado_historico pra um chamado.
  */
 function adicionarHistoricoChamado(chamadoId, texto) {
+  executarComLock(function () { adicionarHistoricoChamado_(chamadoId, texto); });
+}
+
+function adicionarHistoricoChamado_(chamadoId, texto) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const abaHistorico = ss.getSheetByName(ticketHistoricoTableName);
   if (!abaHistorico) return;
