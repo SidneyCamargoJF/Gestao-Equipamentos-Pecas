@@ -1,0 +1,29 @@
+// =====================================================
+// MODEL - tbl_contratos_servicos
+// Serviços especificados no contrato (tipo de manutenção + categoria/tipo/capacidade).
+// Constantes 0-based (índice direto no array do Read*(); use col + 1
+// em getRange).
+// =====================================================
+
+let contractsServicosTableName = 'tbl_contratos_servicos'
+let firstLineContractsServicos = 3
+let numColumnsContractsServicos = 10
+
+let contractsServicosIdCol = 0
+let contractsServicosIdContratoCol = 1
+let contractsServicosTipoManutencaoCol = 2
+let contractsServicosCategoriaCol = 3
+let contractsServicosTipoCol = 4
+let contractsServicosCapacidadeCol = 5
+let contractsServicosPeriodicidadeCol = 6
+let contractServicosDataCadastroCol = 7
+let contractsServicosDataExclusaoCol = 8
+let contractsServicosDataAlteracaoCol = 9
+
+function ReadContractsServicos() {
+  const objRows = ReadSheet(contractsServicosTableName, firstLineContractsServicos, numColumnsContractsServicos)
+
+  return objRows.map(linha =>
+    linha.map(valor => (valor instanceof Date) ? dateToString(valor) : valor)
+  )
+}
