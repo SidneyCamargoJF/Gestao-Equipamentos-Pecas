@@ -27,6 +27,15 @@ function alterarTipoRelatorio() {
     document.getElementById('relatorioResultado').innerHTML = '';
 }
 
+// Mensagem "Processando..." no meio da tela (modal genérico #processando,
+// apps/Modal/Modal.html) + botão travado enquanto o servidor responde.
+function processandoRelatorio(ativo) {
+    const btn = document.getElementById('btnGerarRelatorio');
+    if (btn) btn.disabled = ativo;
+    if (ativo) { if (typeof exibirModal === 'function') exibirModal('processando'); }
+    else if (typeof fecharModal === 'function') fecharModal('processando');
+}
+
 function gerarRelatorio() {
     if (document.getElementById('relatorioTipo').value === 'medicao') gerarRelatorioMedicao();
     else gerarRelatorioChecklist();
@@ -39,20 +48,21 @@ async function gerarRelatorioMedicao() {
     if (!contratoId) { alert('Selecione um contrato.'); return; }
     if (!competencia) { alert('Informe a competência.'); return; }
 
-    const btn = document.getElementById('btnGerarRelatorio');
-    btn.disabled = true;
+    processandoRelatorio(true);
+    let dados;
     try {
-        const dados = await runServerFunction('buscarRelatorioMedicaoPreventiva', contratoId, competencia);
-        if (!dados || !dados.sucesso) {
-            alert((dados && dados.mensagem) || 'Não foi possível gerar o relatório.');
-            return;
-        }
-        renderizarRelatorioMedicao(dados);
+        dados = await runServerFunction('buscarRelatorioMedicaoPreventiva', contratoId, competencia);
     } catch (erro) {
+        processandoRelatorio(false);
         alert('Erro ao gerar relatório: ' + (erro && erro.message ? erro.message : erro));
-    } finally {
-        btn.disabled = false;
+        return;
     }
+    processandoRelatorio(false);
+    if (!dados || !dados.sucesso) {
+        alert((dados && dados.mensagem) || 'Não foi possível gerar o relatório.');
+        return;
+    }
+    renderizarRelatorioMedicao(dados);
 }
 
 function formatarMoedaRelatorio(v) {
@@ -126,16 +136,15 @@ alert('Selecione um contrato.');
 return;
 }
 
-const btn = document.getElementById('btnGerarRelatorio');
-btn.disabled  = true;
+processandoRelatorio(true);
 
 google.script.run
 .withSuccessHandler(function (dados) {
-    btn.disabled  = false;
+    processandoRelatorio(false);
     renderizarResultadoRelatorio(dados);
 })
 .withFailureHandler(function (erro) {
-    btn.disabled = false;
+    processandoRelatorio(false);
     alert('Erro ao gerar relatório: ' + erro.message);
 })
 .buscarRelatorioChecklist(contratoId);
