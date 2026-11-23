@@ -1,19 +1,33 @@
 <script>
-    // 
+    //
     // ABAS
-    // 
+    // Botões .tab-btn[data-tab] dentro de um .tabs-nav; o painel de cada um
+    // é o #tab-<data-tab>. A troca vale só para o grupo do botão clicado
+    // (o pai do .tabs-nav), pra uma tela não desativar as abas de outra.
+    // Pode ser chamada várias vezes: cada botão só recebe o handler uma vez.
+    //
     function initTabs() {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+        if (btn.dataset.tabsInit) return;
+        btn.dataset.tabsInit = '1';
         btn.addEventListener('click', function(e) {
         e.preventDefault();
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        this.classList.add('active');
-        const tabId = 'tab-' + this.dataset.tab;
-        const panel = document.getElementById(tabId);
-        if (panel) panel.classList.add('active');
+        ativarAba(this.dataset.tab);
         });
     });
+    }
+
+    // Ativa a aba pelo nome (data-tab), só dentro do grupo dela.
+    function ativarAba(nome) {
+    const btn = document.querySelector('.tab-btn[data-tab="' + nome + '"]');
+    const panel = document.getElementById('tab-' + nome);
+    if (!btn) return;
+    const nav = btn.closest('.tabs-nav');
+    const grupo = (nav && nav.parentElement) || document;
+    grupo.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.remove('active'));
+    grupo.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    if (panel) panel.classList.add('active');
     }
 
 </script>
