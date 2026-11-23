@@ -187,7 +187,7 @@
               <h4 class="sub-section-title">Especificação do Serviço</h4>
               <p class="servico-spec-ajuda">Especifique o serviço deste contrato. Os equipamentos que baterem com essa especificação são adicionados automaticamente na aba Equipamentos.</p>
 
-              <div class="form-grid-2">
+              <div class="form-grid-3">
                 <div class="field">
                   <label class="field__label" for="servicoTipoManutencao">Tipo de Manutenção</label>
                   <select class="field__select" id="servicoTipoManutencao">
@@ -209,6 +209,12 @@
                     <option value="anual" selected>Anual</option>
                     <option value="sob-demanda">Sob Demanda</option>
                   </select>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="servicoValorUnitario">Valor unitário (R$)</label>
+                  <input class="field__input" type="text" id="servicoValorUnitario" placeholder="0,00" inputmode="numeric"
+                    title="Valor cobrado por equipamento atendido -- usado no relatório de medição"
+                    oninput="this.value = aplicarMascaraMoedaEquip(this.value)">
                 </div>
               </div>
 

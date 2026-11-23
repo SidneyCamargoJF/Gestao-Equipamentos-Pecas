@@ -73,7 +73,8 @@ function buscarContratoParaEdicao(idInput) {
           categoria: l[contractsServicosCategoriaCol] || '',
           tipo: l[contractsServicosTipoCol] || '',
           capacidade: l[contractsServicosCapacidadeCol] || '',
-          periodicidade: l[contractsServicosPeriodicidadeCol] || ''
+          periodicidade: l[contractsServicosPeriodicidadeCol] || '',
+          valorUnitario: lerValorUnitarioServico(l)
         };
       });
 
@@ -173,8 +174,10 @@ function salvarServicosContrato(contratoId, lista) {
 
   (lista || []).forEach(function (item) {
     const pos = proximoIdTabela(aba, firstLineContractsServicos);
-    // ordem das colunas: Id, IdContrato, TipoManutencao, Categoria, Tipo, Capacidade, Periodicidade, DataCadastro, DataExclusao, DataAlteracao
-    const linha = [pos.novoId, contratoId, item.tipoManutencao || '', item.categoria || '', item.tipo || '', item.capacidade || '', item.periodicidade || '', dataAtual, '', ''];
+    // ordem das colunas: Id, IdContrato, TipoManutencao, Categoria, Tipo, Capacidade, Periodicidade, DataCadastro, DataExclusao, DataAlteracao, ValorUnitario
+    const valor = Number(item.valorUnitario);
+    const valorUnitario = (item.valorUnitario === '' || item.valorUnitario === null || item.valorUnitario === undefined || isNaN(valor)) ? '' : valor;
+    const linha = [pos.novoId, contratoId, item.tipoManutencao || '', item.categoria || '', item.tipo || '', item.capacidade || '', item.periodicidade || '', dataAtual, '', '', valorUnitario];
     aba.getRange(pos.proximaLinha, 1, 1, numColumnsContractsServicos).setValues([linha]);
   });
 }

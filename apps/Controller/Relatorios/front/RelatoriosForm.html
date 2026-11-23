@@ -17,8 +17,9 @@
 
     <div class="field">
         <label class="field__label" for="relatorioTipo">Tipo de Relatório</label>
-        <select class="field__select" id="relatorioTipo">
+        <select class="field__select" id="relatorioTipo" onchange="alterarTipoRelatorio()">
             <option value="checklist">Checklist</option>
+            <option value="medicao">Medição das preventivas (conferência da NF)</option>
         </select>
     </div>
 
@@ -29,7 +30,12 @@
         </select>
     </div>
 
-    <button type="button" class="btn-primary" id="btnGerarRelatorio" onclick="gerarRelatorioChecklist()">
+    <div class="field" id="relatorioCompetenciaField" style="display:none;">
+        <label class="field__label" for="relatorioCompetencia">Competência</label>
+        <input class="field__input" type="month" id="relatorioCompetencia">
+    </div>
+
+    <button type="button" class="btn-primary" id="btnGerarRelatorio" onclick="gerarRelatorio()">
         Gerar Relatório
     </button>
 
