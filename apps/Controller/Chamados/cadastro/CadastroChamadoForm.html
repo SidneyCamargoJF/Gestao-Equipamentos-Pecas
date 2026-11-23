@@ -133,19 +133,61 @@
             <select class="field__select" id="chamadoEquipEscolha" onchange="escolherEquipamentoDaLocalizacaoChamado()"></select>
           </div>
         </div>
+      </fieldset>
 
-        <!-- Contrato vigente que cobre o equipamento (somente leitura) -->
+      <!-- ============================================= -->
+      <!-- PARTE 2B: VÍNCULO CONTRATUAL E PLANEJAMENTO   -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal">
+        <legend class="fieldset-legend">Vínculo Contratual e Planejamento</legend>
+
+        <!-- Contrato vinculado -- sugerido automaticamente pelo patrimônio,
+             mas pode ser buscado/trocado por número ou SEI, ou deixado vazio. -->
         <div class="form-grid-3">
           <div class="field">
-            <label class="field__label" for="chamadoContratoNumero">Contrato</label>
-            <input class="field__input" type="text" id="chamadoContratoNumero" readonly placeholder="Preenchido pelo patrimônio">
+            <label class="field__label">Contrato</label>
+            <input type="hidden" id="chamadoContratoIdSelecionado" value="">
+            <div class="search-wrapper" id="chamadoContratoWrapper">
+              <span class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
+              <input class="search-input" type="text" id="chamadoContratoSearch" placeholder="Busque por número ou SEI do contrato..." autocomplete="off">
+              <div class="search-dropdown" id="chamadoContratoDropdown"></div>
+            </div>
           </div>
           <div class="field">
-            <label class="field__label" for="chamadoContratoEmpresa">Empresa do contrato</label>
+            <label class="field__label" for="chamadoContratoNumeroExibicao">Número do contrato</label>
+            <input class="field__input" type="text" id="chamadoContratoNumeroExibicao" readonly placeholder="—">
+          </div>
+          <div class="field">
+            <label class="field__label" for="chamadoContratoEmpresa">Empresa</label>
             <input class="field__input" type="text" id="chamadoContratoEmpresa" readonly placeholder="—">
           </div>
         </div>
         <span class="chamado-patrimonio-status" id="chamadoContratoAviso"></span>
+
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label" for="chamadoCompetencia">Competência</label>
+            <input class="field__input" type="month" id="chamadoCompetencia">
+          </div>
+          <div class="field">
+            <label class="field__label" for="chamadoDataPrevista">Data prevista para execução</label>
+            <input class="field__input" type="date" id="chamadoDataPrevista">
+          </div>
+        </div>
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label" for="chamadoPrazoAtendimentoPreview">Prazo de atendimento (SLA)</label>
+            <input class="field__input" type="text" id="chamadoPrazoAtendimentoPreview" readonly placeholder="Calculado a partir do contrato e da classificação">
+          </div>
+          <div class="field">
+            <label class="field__label" for="chamadoPrazoSolucaoPreview">Prazo de solução (SLA)</label>
+            <input class="field__input" type="text" id="chamadoPrazoSolucaoPreview" readonly placeholder="Calculado a partir do contrato e da classificação">
+          </div>
+        </div>
       </fieldset>
 
       <!-- ============================================= -->

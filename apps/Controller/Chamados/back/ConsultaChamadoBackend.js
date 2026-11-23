@@ -118,6 +118,9 @@ function buscarChamadoDetalhado(idInput) {
             status: linha[11],
             dataAlteracao: linha[12],
             contrato: '',
+            contratoNumero: '',
+            contratoEmpresa: '',
+            contratoEmail: '',
             origem: linha[ticketsOrigemCol - 1] || '',
             competencia: linha[ticketsCompetenciaCol - 1] || '',
             dataPrevista: linha[ticketsDataPrevistaCol - 1] || '',
@@ -126,7 +129,18 @@ function buscarChamadoDetalhado(idInput) {
         };
         if (linha[ticketsContratoIdCol - 1]) {
             const c = ReadContracts().find(l => Number(l[contractIdCol]) === Number(linha[ticketsContratoIdCol - 1]));
-            chamado.contrato = c ? (c[contractNumberCol] + ' — ' + c[contractEmpresaCol]) : ('ID ' + linha[ticketsContratoIdCol - 1]);
+            if (c) {
+                chamado.contrato = c[contractNumberCol] + ' — ' + c[contractEmpresaCol];
+                chamado.contratoNumero = String(c[contractNumberCol] || '');
+                chamado.contratoEmpresa = String(c[contractEmpresaCol] || '');
+                chamado.contratoEmail = String(c[contractEmailCol] || '');
+                if (!chamado.contratoEmail && linha[ticketsFornecedorIdCol - 1]) {
+                    const f = ReadSuppliers().find(l => Number(l[supplierIdCol - 1]) === Number(linha[ticketsFornecedorIdCol - 1]));
+                    if (f) chamado.contratoEmail = String(f[supplierEmailCol - 1] || '');
+                }
+            } else {
+                chamado.contrato = 'ID ' + linha[ticketsContratoIdCol - 1];
+            }
         }
 
         return { sucesso: true, chamado: chamado };

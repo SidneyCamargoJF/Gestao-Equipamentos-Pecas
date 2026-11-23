@@ -54,6 +54,11 @@
     const statusEl = document.getElementById('chamadoPatrimonioStatus');
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'chamado-patrimonio-status'; }
     ultimoPatrimonioVerificadoChamado = '';
+    ['chamadoContratoSearch', 'chamadoContratoIdSelecionado', 'chamadoContratoEmpresa', 'chamadoContratoNumeroExibicao', 'chamadoCompetencia', 'chamadoDataPrevista', 'chamadoPrazoAtendimentoPreview', 'chamadoPrazoSolucaoPreview'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    contratoChamadoAutoValor = '';
     exibirContratoChamado(null, '');
     esconderEscolhaEquipamentoChamado();
 
@@ -66,7 +71,8 @@
     const [locais, fornecedoresPrestadores, usuarioLogado] = await Promise.all([
       carregarLocaisChamado(),
       carregarFornecedoresPrestadoresChamado(),
-      runServerFunction('buscarUsuarioLogado').catch(() => null)
+      runServerFunction('buscarUsuarioLogado').catch(() => null),
+      carregarContratosParaVinculoChamado()
     ]);
 
     destravarCampoCarregandoChamado('chamadoEquipLocalizacao', 'Selecione a localização...');
@@ -90,6 +96,15 @@
       patrimonioEl.addEventListener('blur', verificarPatrimonioAoSairChamado);
       patrimonioEl.addEventListener('input', verificarPatrimonioDigitandoChamado);
     }
+
+    const contratoSearchEl = document.getElementById('chamadoContratoSearch');
+    if (contratoSearchEl) {
+      contratoSearchEl.addEventListener('input', resolverContratoDigitadoChamado);
+      contratoSearchEl.addEventListener('blur', limparContratoChamadoSeNaoResolvido);
+    }
+
+    const classificacaoEl = document.getElementById('chamadoClassificacao');
+    if (classificacaoEl) classificacaoEl.addEventListener('change', atualizarPreviewPrazosChamado);
 
     if (id) {
       if (typeof exibirModal === 'function') exibirModal('processando');
@@ -166,6 +181,17 @@
 
       ultimoPatrimonioVerificadoChamado = String(dados.patrimonio || '').trim();
       exibirContratoChamado(dados.contrato || null, '');
+
+      const competenciaEl = document.getElementById('chamadoCompetencia');
+      if (competenciaEl) competenciaEl.value = dados.competencia || '';
+
+      const dataPrevistaEl = document.getElementById('chamadoDataPrevista');
+      if (dataPrevistaEl) dataPrevistaEl.value = dados.dataPrevista || '';
+
+      const atendPreviewEl = document.getElementById('chamadoPrazoAtendimentoPreview');
+      if (atendPreviewEl) atendPreviewEl.value = dados.prazoAtendimento || '';
+      const solPreviewEl = document.getElementById('chamadoPrazoSolucaoPreview');
+      if (solPreviewEl) solPreviewEl.value = dados.prazoSolucao || '';
     } catch (error) {
       console.error('Erro ao carregar chamado para edição:', error);
       alert('Erro ao carregar chamado para edição.');
@@ -264,14 +290,106 @@
     timerPatrimonioChamado = setTimeout(verificarPatrimonioAoSairChamado, 700);
   }
 
-  // Contrato/empresa encontrados pro equipamento -- só exibição.
+  //CONTRATO VINCULADO
+
+  function rotuloContratoChamado(c) {
+    return c.numero + (c.empresa ? ' — ' + c.empresa : '') + (c.sei ? ' (SEI ' + c.sei + ')' : '');
+  }
+
+  let contratosDisponiveisChamado = [];
+  let mapaContratoChamadoPorRotulo = {};
+
+  async function carregarContratosParaVinculoChamado() {
+    try {
+      contratosDisponiveisChamado = await runServerFunction('listarContratosParaFiltro');
+    } catch (e) {
+      contratosDisponiveisChamado = [];
+    }
+    mapaContratoChamadoPorRotulo = {};
+    const opcoes = (contratosDisponiveisChamado || []).map(c => {
+      const rotulo = rotuloContratoChamado(c);
+      mapaContratoChamadoPorRotulo[rotulo] = c;
+      return rotulo;
+    });
+    initSearchChamado('chamadoContratoSearch', 'chamadoContratoDropdown', 'chamadoContratoWrapper', opcoes);
+  }
+
+  let contratoChamadoAutoValor = '';
+
   function exibirContratoChamado(contrato, aviso) {
-    const numeroEl = document.getElementById('chamadoContratoNumero');
-    const empresaEl = document.getElementById('chamadoContratoEmpresa');
     const avisoEl = document.getElementById('chamadoContratoAviso');
-    if (numeroEl) numeroEl.value = contrato ? (contrato.numero + (contrato.nome ? ' — ' + contrato.nome : '')) : '';
-    if (empresaEl) empresaEl.value = contrato ? contrato.empresa : '';
     if (avisoEl) avisoEl.textContent = aviso || '';
+
+    const inputEl = document.getElementById('chamadoContratoSearch');
+    const idEl = document.getElementById('chamadoContratoIdSelecionado');
+    if (!inputEl || !idEl) return;
+
+    const intocado = !inputEl.value.trim() || inputEl.value === contratoChamadoAutoValor;
+    if (!intocado) return;
+
+    const empresaEl = document.getElementById('chamadoContratoEmpresa');
+    const numeroEl = document.getElementById('chamadoContratoNumeroExibicao');
+    const texto = contrato ? rotuloContratoChamado(contrato) : '';
+    inputEl.value = texto;
+    idEl.value = contrato ? contrato.id : '';
+    if (empresaEl) empresaEl.value = contrato ? contrato.empresa : '';
+    if (numeroEl) numeroEl.value = contrato ? contrato.numero : '';
+    contratoChamadoAutoValor = texto;
+    atualizarPreviewPrazosChamado();
+  }
+
+  function resolverContratoDigitadoChamado() {
+    const inputEl = document.getElementById('chamadoContratoSearch');
+    const idEl = document.getElementById('chamadoContratoIdSelecionado');
+    if (!inputEl || !idEl) return;
+    const texto = inputEl.value.trim();
+    const achado = texto ? mapaContratoChamadoPorRotulo[texto] : null;
+    idEl.value = achado ? achado.id : '';
+    const empresaEl = document.getElementById('chamadoContratoEmpresa');
+    if (empresaEl) empresaEl.value = achado ? achado.empresa : '';
+    const numeroEl = document.getElementById('chamadoContratoNumeroExibicao');
+    if (numeroEl) numeroEl.value = achado ? achado.numero : '';
+    atualizarPreviewPrazosChamado();
+  }
+
+  function limparContratoChamadoSeNaoResolvido() {
+    const inputEl = document.getElementById('chamadoContratoSearch');
+    const idEl = document.getElementById('chamadoContratoIdSelecionado');
+    if (!inputEl || !idEl) return;
+    if (inputEl.value.trim() && !idEl.value) {
+      inputEl.value = '';
+      const empresaEl = document.getElementById('chamadoContratoEmpresa');
+      if (empresaEl) empresaEl.value = '';
+      const numeroEl = document.getElementById('chamadoContratoNumeroExibicao');
+      if (numeroEl) numeroEl.value = '';
+      atualizarPreviewPrazosChamado();
+    }
+  }
+
+  //PREVIEW DO PRAZO DE SLA 
+  async function atualizarPreviewPrazosChamado() {
+    const idEl = document.getElementById('chamadoContratoIdSelecionado');
+    const prioridadeEl = document.getElementById('chamadoClassificacao');
+    const atendEl = document.getElementById('chamadoPrazoAtendimentoPreview');
+    const solEl = document.getElementById('chamadoPrazoSolucaoPreview');
+    if (!atendEl || !solEl) return;
+
+    const contratoId = idEl ? idEl.value : '';
+    const prioridade = prioridadeEl ? prioridadeEl.value : '';
+    if (!contratoId || !prioridade) {
+      atendEl.value = '';
+      solEl.value = '';
+      return;
+    }
+
+    try {
+      const prazos = await runServerFunction('previewPrazosChamado', contratoId, prioridade);
+      atendEl.value = (prazos && prazos.prazoAtendimento) || 'Sem prazo definido no SLA pra essa prioridade';
+      solEl.value = (prazos && prazos.prazoSolucao) || 'Sem prazo definido no SLA pra essa prioridade';
+    } catch (e) {
+      atendEl.value = '';
+      solEl.value = '';
+    }
   }
 
   // ===== MAIS DE UM EQUIPAMENTO NA LOCALIZAÇÃO =====
@@ -509,6 +627,9 @@
         marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
         modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
         capacidade: document.getElementById('chamadoEquipCapacidade')?.value.trim() || '',
+        contratoId: document.getElementById('chamadoContratoIdSelecionado')?.value || '',
+        competencia: document.getElementById('chamadoCompetencia')?.value || '',
+        dataPrevista: document.getElementById('chamadoDataPrevista')?.value || '',
         relatorios: relatorioArquivos,
         notasFiscais: notaFiscalArquivos
       };

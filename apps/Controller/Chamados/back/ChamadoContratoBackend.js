@@ -80,6 +80,7 @@ function montarContratoResumo_(linha, cache) {
     id: Number(linha[contractIdCol]),
     numero: String(linha[contractNumberCol] || ''),
     nome: String(linha[contractNameCol] || ''),
+    sei: String(linha[contractSEICol] || ''),
     empresa: empresa,
     fornecedorId: buscarFornecedorIdPorNome_(empresa, cache.fornecedores)
   };
@@ -114,6 +115,15 @@ function calcularPrazosChamado(contratoId, prioridade, inicio, linhasSla) {
     prazoAtendimento: sla.prazoAtendimento === '' ? '' : fmt(somarHorasPrazo(inicio, sla.prazoAtendimento, sla.horasUteis)),
     prazoSolucao: sla.prazoSolucao === '' ? '' : fmt(somarHorasPrazo(inicio, sla.prazoSolucao, sla.horasUteis))
   };
+}
+
+function previewPrazosChamado(contratoId, prioridade) {
+  try {
+    if (!contratoId || !prioridade) return { prazoAtendimento: '', prazoSolucao: '' };
+    return calcularPrazosChamado(Number(contratoId), prioridade, new Date());
+  } catch (e) {
+    return { prazoAtendimento: '', prazoSolucao: '' };
+  }
 }
 
 /** Equipamentos (ativos ou não) cadastrados numa localização exata. */
@@ -180,12 +190,16 @@ function avaliarAtrasoChamado(linha, agora) {
   return resultado;
 }
 
-/** Contratos para o filtro da consulta de chamados (não excluídos). */
 function listarContratosParaFiltro() {
   return ReadContracts()
     .filter(function (l) { return l[contractIdCol] && !l[contractDataExclusaoCol]; })
     .map(function (l) {
-      return { id: l[contractIdCol], numero: String(l[contractNumberCol] || ''), empresa: String(l[contractEmpresaCol] || '') };
+      return {
+        id: l[contractIdCol],
+        numero: String(l[contractNumberCol] || ''),
+        empresa: String(l[contractEmpresaCol] || ''),
+        sei: String(l[contractSEICol] || '')
+      };
     })
     .sort(function (a, b) { return a.numero.localeCompare(b.numero); });
 }

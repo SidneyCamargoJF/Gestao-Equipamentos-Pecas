@@ -20,6 +20,11 @@
  * DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO, STATUS e as colunas de
  * contrato/prazos já preenchidas) são preservados.
  */
+function dataPrevistaParaInputDate_(valor) {
+  const m = String(valor || '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return m ? (m[3] + '-' + m[2] + '-' + m[1]) : '';
+}
+
 function salvarChamadoBackend(dados) {
   try {
     return executarComLock(function () { return salvarChamadoBackend_(dados); });
@@ -28,9 +33,6 @@ function salvarChamadoBackend(dados) {
   }
 }
 
-// opcoes (uso interno, não vem da tela): { contratoId } força o contrato
-// em vez de procurar o vigente -- usado pela corretiva aberta a partir de
-// um item não conforme, que herda o contrato da OS de origem.
 function salvarChamadoBackend_(dados, opcoes) {
   try {
     if (!dados || !String(dados.motivo || '').trim()) {
@@ -79,11 +81,18 @@ function salvarChamadoBackend_(dados, opcoes) {
     const idEdicao = dados.id ? Number(dados.id) : null;
 
     const contratoForcado = opcoes && opcoes.contratoId ? Number(opcoes.contratoId) : 0;
-    const cacheContratos = (equipamentoId || contratoForcado) ? carregarCacheContratos_() : null;
+    const contratoManualInformado = Object.prototype.hasOwnProperty.call(dados, 'contratoId');
+    const contratoManualId = contratoManualInformado ? (Number(dados.contratoId) || 0) : 0;
+    const cacheContratos = (equipamentoId || contratoForcado || contratoManualId) ? carregarCacheContratos_() : null;
     let vigente = null;
     if (contratoForcado) {
       const linhaContrato = cacheContratos.contratos.find(l => Number(l[contractIdCol]) === contratoForcado);
       if (linhaContrato) vigente = { contrato: montarContratoResumo_(linhaContrato, cacheContratos), aviso: '' };
+    } else if (contratoManualInformado) {
+      if (contratoManualId) {
+        const linhaContrato = cacheContratos.contratos.find(l => Number(l[contractIdCol]) === contratoManualId);
+        if (linhaContrato) vigente = { contrato: montarContratoResumo_(linhaContrato, cacheContratos), aviso: '' };
+      }
     } else if (equipamentoId) {
       vigente = buscarContratoVigentePorEquipamento(equipamentoId, agora, cacheContratos);
     }
@@ -103,13 +112,30 @@ function salvarChamadoBackend_(dados, opcoes) {
       const linhaAtual = todasLinhas[idx];
       const col = c => linhaAtual[c - 1];
 
-      // Contrato/prazos já gravados ficam; só preenche se ainda não tinha.
       let contratoId = col(ticketsContratoIdCol);
       let fornecedorId = col(ticketsFornecedorIdCol);
       let prazoAtendimento = col(ticketsPrazoAtendimentoCol);
       let prazoSolucao = col(ticketsPrazoSolucaoCol);
+      let competencia = Object.prototype.hasOwnProperty.call(dados, 'competencia') ? String(dados.competencia || '').trim() : col(ticketsCompetenciaCol);
+      let dataPrevista = Object.prototype.hasOwnProperty.call(dados, 'dataPrevista') ? String(dados.dataPrevista || '').trim() : col(ticketsDataPrevistaCol);
       let vinculouAgora = false;
-      if (!contratoId && contrato) {
+      let desvinculouAgora = false;
+      if (contratoManualInformado) {
+        if (contrato && Number(contratoId) !== contrato.id) {
+          contratoId = contrato.id;
+          fornecedorId = contrato.fornecedorId;
+          vinculouAgora = true;
+          const prazos = calcularPrazosChamado(contrato.id, dados.classificacao, agora, cacheContratos.sla);
+          prazoAtendimento = prazos.prazoAtendimento;
+          prazoSolucao = prazos.prazoSolucao;
+        } else if (!contrato && contratoId) {
+          desvinculouAgora = true;
+          contratoId = '';
+          fornecedorId = '';
+          prazoAtendimento = '';
+          prazoSolucao = '';
+        }
+      } else if (!contratoId && contrato) {
         contratoId = contrato.id;
         fornecedorId = contrato.fornecedorId;
         vinculouAgora = true;
@@ -127,7 +153,7 @@ function salvarChamadoBackend_(dados, opcoes) {
         dados.tipo || '',
         dados.classificacao || '',
         col(6),
-        col(7),             // Aberto por: mantém quem abriu
+        col(7),
         atribuidoA,
         col(9),
         col(10),
@@ -136,8 +162,8 @@ function salvarChamadoBackend_(dados, opcoes) {
         dataAtual,
         contratoId || '',
         col(ticketsOrigemCol) || 'manual',
-        textoLiteralPlanilha(col(ticketsCompetenciaCol)),
-        col(ticketsDataPrevistaCol),
+        textoLiteralPlanilha(competencia),
+        dataPrevista,
         prazoAtendimento || '',
         prazoSolucao || '',
         fornecedorId || '',
@@ -148,6 +174,8 @@ function salvarChamadoBackend_(dados, opcoes) {
       adicionarHistoricoSistema(idEdicao, 'Chamado editado');
       if (vinculouAgora) {
         adicionarHistoricoSistema(idEdicao, 'Vinculado ao contrato ' + contrato.numero + ' (' + contrato.empresa + ')');
+      } else if (desvinculouAgora) {
+        adicionarHistoricoSistema(idEdicao, 'Removido o vínculo com contrato');
       }
 
       //dados.relatorios é uma lista dos arquivos que vieram do front em forma de objeto {nome, tipo, base64
@@ -195,8 +223,8 @@ function salvarChamadoBackend_(dados, opcoes) {
       '',
       contrato ? contrato.id : '',
       'manual',
-      '',
-      '',
+      textoLiteralPlanilha(String(dados.competencia || '').trim()),
+      String(dados.dataPrevista || '').trim(),
       prazos.prazoAtendimento,
       prazos.prazoSolucao,
       contrato ? contrato.fornecedorId : '',
@@ -263,7 +291,7 @@ function buscarChamadoParaEdicao(idInput) {
     let contrato = null;
     if (linha[ticketsContratoIdCol - 1]) {
       const c = ReadContracts().find(l => Number(l[contractIdCol]) === Number(linha[ticketsContratoIdCol - 1]));
-      if (c) contrato = { id: c[contractIdCol], numero: String(c[contractNumberCol] || ''), empresa: String(c[contractEmpresaCol] || '') };
+      if (c) contrato = { id: c[contractIdCol], numero: String(c[contractNumberCol] || ''), empresa: String(c[contractEmpresaCol] || ''), sei: String(c[contractSEICol] || '') };
     }
 
     return {
@@ -271,6 +299,8 @@ function buscarChamadoParaEdicao(idInput) {
       equipamentoId: linha[1] || '',
       contrato: contrato,
       origem: linha[ticketsOrigemCol - 1] || '',
+      competencia: linha[ticketsCompetenciaCol - 1] || '',
+      dataPrevista: dataPrevistaParaInputDate_(linha[ticketsDataPrevistaCol - 1]),
       prazoAtendimento: linha[ticketsPrazoAtendimentoCol - 1] || '',
       prazoSolucao: linha[ticketsPrazoSolucaoCol - 1] || '',
       motivo: linha[2],

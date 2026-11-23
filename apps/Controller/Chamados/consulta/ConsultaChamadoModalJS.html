@@ -6,6 +6,9 @@
 let chamadoIdAtualModal = null;
 let anotacaoEditandoId = null;
 let historicoChamadoAtual = [];
+// Guarda o último chamado carregado no modal (motivo, contrato, prazos...)
+// pra montar o e-mail sem precisar buscar tudo de novo no servidor.
+let chamadoDetalheAtualModal = null;
 
 async function abrirDetalhesChamado(chamadoId) {
     chamadoIdAtualModal = chamadoId;
@@ -32,6 +35,8 @@ async function abrirDetalhesChamado(chamadoId) {
             if (conteudo) conteudo.innerHTML = `<p>${escapeHtml(resposta ? resposta.mensagem : 'Chamado não encontrado.')}</p>`;
             return;
         }
+        chamadoDetalheAtualModal = resposta.chamado;
+
         const fixo = document.getElementById('detalheChamadoFixo');
         if (fixo) fixo.innerHTML = montarInfoFixaChamado(resposta.chamado);
 
@@ -368,11 +373,34 @@ function montarDetalheChamadoHtml(c) {
         ${linhaDetalheChamado('Status', c.status === 'Concluido' ? 'Concluído' : c.status)}
         ${linhaDetalheChamado('Aberto por', c.abertoPor)}
         ${linhaDetalheChamado('Atribuído a', c.atribuidoA)}
-        ${linhaDetalheChamado('Contrato', c.contrato)}
-        ${linhaDetalheChamado('Origem', c.origem === 'automatica' ? 'Automática' + (c.competencia ? ' (' + c.competencia + ')' : '') : (c.origem ? 'Manual' : ''))}
-        ${c.dataPrevista ? linhaDetalheChamado('Data prevista', c.dataPrevista) : ''}
+    `;
+
+    const temContrato = !!c.contratoNumero;
+    const temEmailContato = !!(c.contratoEmail && c.contratoEmail.trim());
+    const infoContrato = `
+        ${linhaDetalheChamado('Contrato', temContrato ? c.contratoNumero : 'Sem contrato vinculado')}
+        ${temContrato ? linhaDetalheChamado('Empresa', c.contratoEmpresa) : ''}
+        ${linhaDetalheChamado('Origem', c.origem === 'automatica' ? 'Automática' : (c.origem ? 'Manual' : ''))}
+        ${linhaDetalheChamado('Competência', c.competencia)}
+        ${linhaDetalheChamado('Data prevista', c.dataPrevista)}
         ${c.prazoAtendimento ? linhaDetalheChamado('Prazo de atendimento', c.prazoAtendimento) : ''}
         ${c.prazoSolucao ? linhaDetalheChamado('Prazo de solução', c.prazoSolucao) : ''}
+        <div class="chamado-email-area">
+            <button type="button" class="btn-secondary" style="width:auto;" id="btnAbrirEmailFornecedor"
+                ${temEmailContato ? '' : 'disabled'}
+                title="${temEmailContato ? 'Escolher o assunto do e-mail' : 'Sem contrato vinculado ou sem e-mail de contato cadastrado'}"
+                onclick="alternarEscolhaEmailChamado()">📧 Enviar e-mail ao fornecedor</button>
+            <div id="chamadoEmailEscolha" class="chamado-email-escolha" style="display:none;">
+                <select class="field__select" id="chamadoEmailTopico">
+                    <option value="solicitacao_atendimento">Solicitação de atendimento</option>
+                    <option value="cobranca_atendimento">Cobrança de prazo de atendimento</option>
+                    <option value="cobranca_solucao">Cobrança de prazo de solução</option>
+                    <option value="agendamento">Agendamento da execução do serviço</option>
+                    <option value="atualizacao">Solicitação de atualização sobre o chamado</option>
+                </select>
+                <button type="button" class="btn-primary" style="width:auto;" onclick="gerarEmailFornecedorChamado()">Gerar e-mail</button>
+            </div>
+        </div>
     `;
 
     const infoObservacao = `
@@ -390,9 +418,76 @@ function montarDetalheChamadoHtml(c) {
 
     return `
         ${secao('Informações do Chamado', infoChamado)}
+        ${secao('Vínculo Contratual e Planejamento', infoContrato)}
         ${secao('Observações', infoObservacao)}
         ${secao('Datas e Anexos', infoDatasAnexos)}
     `;
+}
+
+// ===== E-MAIL AO FORNECEDOR =====
+function alternarEscolhaEmailChamado() {
+    const bloco = document.getElementById('chamadoEmailEscolha');
+    if (bloco) bloco.style.display = (bloco.style.display === 'none' ? 'flex' : 'none');
+}
+
+// Assunto/corpo variam por tópico -- texto interpolado com os dados do
+// chamado carregado no modal (chamadoDetalheAtualModal).
+const TOPICOS_EMAIL_CHAMADO = {
+    solicitacao_atendimento: {
+        assunto: c => `Chamado #${c.id} — Solicitação de atendimento (Contrato ${c.contratoNumero})`,
+        corpo: c => `Prezados,\n\n` +
+            `Solicitamos atendimento referente ao chamado #${c.id}, aberto em ${c.dataAbertura}.\n\n` +
+            `Motivo: ${c.motivo}\n` +
+            `Equipamento: ${c.equipamento || 'não informado'}\n` +
+            `Contrato: ${c.contratoNumero} — ${c.contratoEmpresa}\n` +
+            (c.competencia ? `Competência: ${c.competencia}\n` : '') +
+            (c.prazoAtendimento ? `Prazo de atendimento: ${c.prazoAtendimento}\n` : '') +
+            `\nFicamos no aguardo do retorno.\n\nAtenciosamente.`
+    },
+    cobranca_atendimento: {
+        assunto: c => `Chamado #${c.id} — Cobrança de prazo de atendimento (Contrato ${c.contratoNumero})`,
+        corpo: c => `Prezados,\n\n` +
+            `O chamado #${c.id} (${c.motivo}), vinculado ao contrato ${c.contratoNumero} — ${c.contratoEmpresa}, ` +
+            (c.prazoAtendimento ? `tem prazo de atendimento até ${c.prazoAtendimento} conforme o SLA contratado` : `tem prazo de atendimento definido em contrato`) +
+            ` e ainda não identificamos retorno.\n\n` +
+            `Solicitamos posicionamento com urgência.\n\nAtenciosamente.`
+    },
+    cobranca_solucao: {
+        assunto: c => `Chamado #${c.id} — Cobrança de prazo de solução (Contrato ${c.contratoNumero})`,
+        corpo: c => `Prezados,\n\n` +
+            `O chamado #${c.id} (${c.motivo}), vinculado ao contrato ${c.contratoNumero} — ${c.contratoEmpresa}, ` +
+            (c.prazoSolucao ? `tem prazo de solução até ${c.prazoSolucao} conforme o SLA contratado` : `tem prazo de solução definido em contrato`) +
+            ` e o atendimento ainda não foi concluído.\n\n` +
+            `Solicitamos posicionamento sobre a solução definitiva.\n\nAtenciosamente.`
+    },
+    agendamento: {
+        assunto: c => `Chamado #${c.id} — Agendamento da execução do serviço (Contrato ${c.contratoNumero})`,
+        corpo: c => `Prezados,\n\n` +
+            `Gostaríamos de agendar a execução do serviço referente ao chamado #${c.id} (${c.motivo})` +
+            (c.equipamento ? `, equipamento ${c.equipamento}` : '') + `.\n` +
+            (c.dataPrevista ? `Data prevista: ${c.dataPrevista}\n` : '') +
+            `\nPor favor, indiquem data e horário disponíveis.\n\nAtenciosamente.`
+    },
+    atualizacao: {
+        assunto: c => `Chamado #${c.id} — Solicitação de atualização`,
+        corpo: c => `Prezados,\n\n` +
+            `Solicitamos uma atualização sobre o andamento do chamado #${c.id} (${c.motivo}), ` +
+            `vinculado ao contrato ${c.contratoNumero} — ${c.contratoEmpresa}.\n\nAtenciosamente.`
+    }
+};
+
+function gerarEmailFornecedorChamado() {
+    const c = chamadoDetalheAtualModal;
+    if (!c || !c.contratoEmail) {
+        alert('Sem e-mail de contato cadastrado pra esse contrato/fornecedor.');
+        return;
+    }
+    const topicoEl = document.getElementById('chamadoEmailTopico');
+    const topico = TOPICOS_EMAIL_CHAMADO[topicoEl ? topicoEl.value : ''] || TOPICOS_EMAIL_CHAMADO.solicitacao_atendimento;
+    const url = 'mailto:' + encodeURIComponent(c.contratoEmail) +
+        '?subject=' + encodeURIComponent(topico.assunto(c)) +
+        '&body=' + encodeURIComponent(topico.corpo(c));
+    window.location.href = url;
 }
 
 // ===== STATUS DO CHAMADO =====
