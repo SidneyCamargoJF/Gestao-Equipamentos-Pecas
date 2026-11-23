@@ -94,14 +94,13 @@ function buscarChamadoDetalhado(idInput) {
             return { sucesso: false, mensagem: 'Chamado não encontrado (ID ' + idBuscado + ').' };
         }
 
-        let equipamentoTexto = '';
-        if (linha[1]) {
-            const equipamentos = ReadEquipments();
-            const equip = equipamentos.find(e => Number(e[0]) === Number(linha[1]));
-            equipamentoTexto = equip
-                ? ('Patrimônio ' + equip[5] + ' - ' + equip[1] + (equip[4] ? '/' + equip[4] : '') + (equip[7] ? ' (' + equip[7] + ')' : ''))
-                : ('ID ' + linha[1]);
-        }
+        // Todos os equipamentos do chamado (tbl_chamado_equipamentos; sem
+        // lista, o da coluna B), separados por "; ".
+        const equipamentoTexto = listarEquipamentosChamado_(linha[0], linha[1])
+            .map(e => e.patrimonio
+                ? ('Patrimônio ' + e.patrimonio + ' - ' + e.nome + (e.modelo ? '/' + e.modelo : '') + (e.localizacao ? ' (' + e.localizacao + ')' : ''))
+                : e.nome)
+            .join('; ');
 
         const chamado = {
             id: linha[0],

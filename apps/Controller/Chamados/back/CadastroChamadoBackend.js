@@ -41,8 +41,13 @@ function salvarChamadoBackend_(dados, opcoes) {
 
     const patrimonioDigitado = String(dados.patrimonio || '').trim();
     const localizacaoDigitada = String(dados.localizacao || '').trim();
+    // Lista de equipamentos vinda da tela (vários por chamado). null quando
+    // a chamada não manda lista (uso interno) -- aí vale a regra antiga.
+    const idsInformados = Array.isArray(dados.equipamentoIds)
+      ? dados.equipamentoIds.map(Number).filter(function (v, i, arr) { return v && arr.indexOf(v) === i; })
+      : null;
 
-    if (!patrimonioDigitado && !localizacaoDigitada && !dados.equipamentoId) {
+    if (!patrimonioDigitado && !localizacaoDigitada && !dados.equipamentoId && !(idsInformados && idsInformados.length)) {
       return { sucesso: false, mensagem: 'Informe pelo menos o Patrimônio ou a Localização do equipamento.' };
     }
 
@@ -52,8 +57,12 @@ function salvarChamadoBackend_(dados, opcoes) {
       return { sucesso: false, mensagem: "Aba 'tbl_chamados' não foi encontrada na planilha." };
     }
 
-    let equipamentoId = '';
-    if (patrimonioDigitado) {
+    if (idsInformados && idsInformados.length > 1 && !abaEquipamentosChamadoExiste_()) {
+      return { sucesso: false, mensagem: "Aba '" + ticketEquipTableName + "' não foi encontrada na planilha (necessária para mais de um equipamento)." };
+    }
+
+    let equipamentoId = idsInformados && idsInformados.length ? idsInformados[0] : '';
+    if (!equipamentoId && patrimonioDigitado) {
       equipamentoId = buscarEquipamentoIdPorPatrimonio(patrimonioDigitado);
     }
     if (!equipamentoId && dados.equipamentoId) {
@@ -171,6 +180,7 @@ function salvarChamadoBackend_(dados, opcoes) {
       ];
 
       abaChamados.getRange(linhaReal, 1, 1, numColumnsTickets).setValues([linhaAtualizada]);
+      if (idsInformados) salvarEquipamentosChamado_(idEdicao, idsInformados.length ? idsInformados : (equipamentoId ? [equipamentoId] : []));
       adicionarHistoricoSistema(idEdicao, 'Chamado editado');
       if (vinculouAgora) {
         adicionarHistoricoSistema(idEdicao, 'Vinculado ao contrato ' + contrato.numero + ' (' + contrato.empresa + ')');
@@ -232,6 +242,7 @@ function salvarChamadoBackend_(dados, opcoes) {
     ];
 
     abaChamados.getRange(pos.proximaLinha, 1, 1, numColumnsTickets).setValues([novaLinha]);
+    salvarEquipamentosChamado_(novoId, idsInformados && idsInformados.length ? idsInformados : (equipamentoId ? [equipamentoId] : []));
 
     adicionarHistoricoSistema(novoId, 'Chamado aberto');
     if (contrato) {
@@ -313,7 +324,8 @@ function buscarChamadoParaEdicao(idInput) {
       localizacao: localizacao,
       marca: marca,
       modelo: modelo,
-      capacidade: capacidade
+      capacidade: capacidade,
+      equipamentos: listarEquipamentosChamado_(linha[0], linha[1])
     };
   } catch (e) {
     return null;
