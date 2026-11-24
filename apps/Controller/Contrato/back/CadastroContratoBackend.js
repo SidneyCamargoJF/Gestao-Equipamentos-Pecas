@@ -205,7 +205,20 @@ function salvarChecklistContrato(contratoId, lista) {
   excluirAnterioresContrato(aba, ReadContractsChecklist(), firstLineContractsChecklist,
     contractsChecklistIdContratoCol, contractsChecklistDataExclusaoCol, contratoId, dataAtual);
 
-  (lista || []).forEach(function (item) {
+  // Blindagem contra duplicidade: mesmo item (descrição + periodicidade)
+  // só entra uma vez por contrato, mesmo que a lista mandada pela tela
+  // tenha vindo com repetição por engano -- Sheets não tem restrição de
+  // unicidade de banco, então a garantia tem que ser aqui.
+  const vistos = {};
+  const listaUnica = (lista || []).filter(function (item) {
+    const periodo = normalizarPeriodicidade(item.periodo) || 'mensal';
+    const chave = String(item.descricao || '').trim().toLowerCase() + '|' + periodo;
+    if (vistos[chave]) return false;
+    vistos[chave] = true;
+    return true;
+  });
+
+  listaUnica.forEach(function (item) {
     const pos = proximoIdTabela(aba, firstLineContractsChecklist);
     // Periodicidade gravada na coluna PERIODICIDADE (G), sem prefixo no texto.
     const periodo = normalizarPeriodicidade(item.periodo) || 'mensal';
@@ -260,15 +273,23 @@ function normalizarSlaContrato_(lista) {
 
 // Mesmo padrão de salvarServicosContrato: marca as linhas ativas do
 // contrato como excluídas e reinsere a lista inteira (em lote).
+// Devolve { sucesso, mensagem } -- antes devolvia undefined e saía calado
+// quando a aba não existia (SLA digitado na tela desaparecia sem aviso).
 function salvarSlaContrato(contratoId, listaNormalizada) {
   const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(contractsSlaTableName);
-  if (!aba) return;
+  if (!aba) {
+    return {
+      sucesso: false,
+      mensagem: "Aba '" + contractsSlaTableName + "' não existe na planilha -- o SLA não foi salvo. " +
+        "Rode a função criarTabelasNovasSeNecessario() uma vez pelo editor do Apps Script (Extensões > Apps Script) pra criá-la."
+    };
+  }
   const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
 
   excluirAnterioresContrato(aba, ReadContractsSla(), firstLineContractsSla,
     contractsSlaIdContratoCol, contractsSlaDataExclusaoCol, contratoId, dataAtual);
 
-  if (!listaNormalizada.length) return;
+  if (!listaNormalizada.length) return { sucesso: true };
   const pos = proximoIdTabela(aba, firstLineContractsSla);
   // ordem das colunas: ID, CONTRATO_ID, PRIORIDADE, PRAZO_ATENDIMENTO_HORAS,
   // PRAZO_SOLUCAO_HORAS, HORAS_UTEIS, DATA_CADASTRO, DATA_ALTERACAO, DATA_EXCLUSAO
@@ -277,6 +298,7 @@ function salvarSlaContrato(contratoId, listaNormalizada) {
       item.horasUteis ? 'Y' : 'N', dataAtual, '', ''];
   });
   aba.getRange(pos.proximaLinha, 1, linhas.length, numColumnsContractsSla).setValues(linhas);
+  return { sucesso: true };
 }
 
 function salvarContratoBackend (dados) {
@@ -377,11 +399,11 @@ function salvarContratoBackend_ (dados) {
       salvarServicosContrato(idEdicao, dados.servicos);
       salvarProdutosContrato(idEdicao, dados.produtos);
       salvarChecklistContrato(idEdicao, dados.checklist);
-      salvarSlaContrato(idEdicao, slaNormalizado);
+      const resultadoSla = salvarSlaContrato(idEdicao, slaNormalizado);
 
       return {
         sucesso: true,
-        mensagem: 'Contrato atualizado com sucesso!',
+        mensagem: 'Contrato atualizado com sucesso!' + (resultadoSla && resultadoSla.sucesso === false ? '\n⚠️ ' + resultadoSla.mensagem : ''),
         id: idEdicao,
         duplicado: existeAnexoDuplicado
       };
@@ -436,11 +458,11 @@ function salvarContratoBackend_ (dados) {
     salvarServicosContrato(novoId, dados.servicos);
     salvarProdutosContrato(novoId, dados.produtos);
     salvarChecklistContrato(novoId, dados.checklist);
-    salvarSlaContrato(novoId, slaNormalizado);
+    const resultadoSla = salvarSlaContrato(novoId, slaNormalizado);
 
     return {
       sucesso: true,
-      mensagem: 'Contrato criado com sucesso.',
+      mensagem: 'Contrato criado com sucesso.' + (resultadoSla && resultadoSla.sucesso === false ? '\n⚠️ ' + resultadoSla.mensagem : ''),
       id: novoId,
       duplicado: existeAnexoDuplicado
     };

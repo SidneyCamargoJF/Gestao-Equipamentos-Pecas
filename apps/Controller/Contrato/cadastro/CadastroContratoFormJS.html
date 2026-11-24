@@ -676,12 +676,11 @@ async function confirmarServicoContrato() {
   renderizarServicos();
   atualizarChecklistParaServico();
 
-  // Reseta a especificação (categoria/tipo/capacidade em cascata) pra
-  // ficar pronta pra especificar o próximo serviço, sem carregar a
-  // seleção anterior.
-  document.getElementById('servicoCategoriaEquip').value = '';
-  document.getElementById('servicoValorUnitario').value = '';
-  atualizarSelectTipoServico();
+  // Não limpa nada -- tipo de manutenção, categoria/tipo/capacidade e
+  // valor ficam como estavam, de propósito: é comum lançar o mesmo
+  // serviço de novo só mudando a periodicidade. Quem quiser especificar
+  // outro equipamento troca a categoria manualmente (o resto da cascata
+  // já reage à troca sozinho).
 
   try {
     const encontrados = await runServerFunction('buscarEquipamentosPorEspecificacao', categoria, tipoEquip, capacidade);
@@ -709,6 +708,21 @@ async function confirmarServicoContrato() {
     console.error('Erro ao buscar equipamentos pela especificação do serviço:', error);
     alert('Serviço especificado, mas houve erro ao buscar os equipamentos automaticamente. Adicione manualmente na aba Equipamentos, se precisar.');
   }
+}
+
+// Limpa a especificação do serviço na mão -- desde que confirmarServicoContrato()
+// parou de limpar sozinho (pra dar pra repetir o mesmo serviço só trocando a
+// periodicidade), quem quiser especificar algo bem diferente usa este botão.
+function limparEspecificacaoServico() {
+  const tipoManutencaoEl = document.getElementById('servicoTipoManutencao');
+  if (tipoManutencaoEl) tipoManutencaoEl.selectedIndex = 0;
+
+  const periodicidadeEl = document.getElementById('servicoPeriodicidade');
+  if (periodicidadeEl) periodicidadeEl.value = 'anual';
+
+  document.getElementById('servicoValorUnitario').value = '';
+  document.getElementById('servicoCategoriaEquip').value = '';
+  atualizarSelectTipoServico();
 }
 
 function renderizarServicos() {

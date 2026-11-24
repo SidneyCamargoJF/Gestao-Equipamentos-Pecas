@@ -259,8 +259,15 @@
    arredondados, cabeçalho, linha vazia) vem das classes .gtable-*
    compartilhadas em css/tableCSS.html. */
 #tabelaContratos {
-  grid-template-columns: 3.5rem 1fr 2fr 1.3fr 1.6fr 1.1fr 0.9fr 0.9fr 1fr 5rem;
+  /* "Ver" saiu de coluna própria -- agora é mais um botão em Ações, que
+     por isso ficou mais larga. 3 ícones de 2rem + 2 espaços de 0.375rem +
+     padding da célula (1rem de cada lado) = ~8.75rem -- 7rem apertava. */
+  grid-template-columns: 1fr 2fr 1.3fr 1.6fr 1.1fr 0.9fr 0.9fr 1fr 9.5rem;
   min-width: 70rem;
+}
+
+#tabelaContratos .gtable-cell-end {
+  gap: 0.375rem;
 }
 
 /* "Encerrado" é um estado específico de Contrato (além do .linha-desativada
@@ -307,6 +314,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   width: 2rem;
   height: 2rem;
   border: 0.0625rem solid var(--color-slate-200);

@@ -126,7 +126,7 @@ function mostrarCarregandoChamados(carregando) {
     if (carregando) {
         const tbody = document.getElementById('chamadosTableBody');
         if (tbody) {
-            tbody.innerHTML = '<tr class="loading-row"><td colspan="11"><span class="spinner"></span>Buscando chamados...</td></tr>';
+            tbody.innerHTML = '<div class="gtable-row gtable-loading-row" role="row"><div class="gtable-cell gtable-cell-full" role="cell"><span class="spinner"></span>Buscando chamados...</div></div>';
         }
     }
 }
@@ -174,14 +174,14 @@ function ordenarChamado(coluna) {
 }
 
 function atualizarIndicadoresChamado() {
-    const ths = document.querySelectorAll('#page-chamado-view .data-table th');
+    const ths = document.querySelectorAll('#page-chamado-view .gtable-head .gtable-cell');
     ths.forEach(th => {
         th.classList.remove('sorted');
         const span = th.querySelector('.sort-arrow');
         if (span) span.textContent = '';
     });
 
-    const indices = { id: 1, equipamento: 2, localizacao: 3, motivo: 4, tipo: 5, prioridade: 6, status: 7, atribuidoA: 8, dataAbertura: 9 };
+    const indices = { id: 0, equipamento: 1, localizacao: 2, motivo: 3, tipo: 4, prioridade: 5, status: 6, atribuidoA: 7, dataAbertura: 8 };
     const idx = indices[sortStateChamado.coluna];
     if (idx !== undefined && ths[idx]) {
         ths[idx].classList.add('sorted');
@@ -237,12 +237,14 @@ function renderTabelaChamados(lista) {
     tbody.innerHTML = '';
 
     if(!lista || lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">Nenhum chamado encontrado.</td></tr>';
+        tbody.innerHTML = '<div class="gtable-row gtable-empty-row" role="row"><div class="gtable-cell gtable-cell-full" role="cell">Nenhum chamado encontrado.</div></div>';
         return;
     }
 
     lista.forEach(f => {
-        const tr = document.createElement('tr');
+        const tr = document.createElement('div');
+        tr.setAttribute('role', 'row');
+        tr.className = 'gtable-row';
         if (f.desativado) tr.classList.add('linha-desativada');
         if (f.concluido) tr.classList.add('linha-chamado-concluido');
 
@@ -261,24 +263,24 @@ function renderTabelaChamados(lista) {
             </span>`;
 
         tr.innerHTML = `
-        <td class="acao-cell">${btnVer}</td>
-        <td>#${f.id}</td>
-        <td>${f.equipamento ? escapeHtml(f.equipamento) : '--'}</td>
-        <td>${f.localizacao ? escapeHtml(f.localizacao) : '--'}</td>
-        <td>${escapeHtml(f.motivo)}${f.contrato
+        <div class="gtable-cell" role="cell">${f.id}</div>
+        <div class="gtable-cell" role="cell">${f.equipamento ? escapeHtml(f.equipamento) : '--'}</div>
+        <div class="gtable-cell" role="cell">${f.localizacao ? escapeHtml(f.localizacao) : '--'}</div>
+        <div class="gtable-cell" role="cell">${escapeHtml(f.motivo)}${f.contrato
             ? `<br><small class="chamado-contrato-tag" title="Contrato">📄 ${escapeHtml(f.contrato)}${f.origem === 'automatica' ? ' · automática' : ''}</small>`
-            : ''}</td>
-        <td>${escapeHtml(f.tipo)}</td>
-        <td>${montarBadgePrioridadeChamado(f.prioridade)}</td>
-        <td>${montarBadgeStatusChamado(f.status)}${f.atrasado
+            : ''}</div>
+        <div class="gtable-cell" role="cell">${escapeHtml(f.tipo)}</div>
+        <div class="gtable-cell" role="cell">${montarBadgePrioridadeChamado(f.prioridade)}</div>
+        <div class="gtable-cell" role="cell">${montarBadgeStatusChamado(f.status)}${f.atrasado
             ? ` <span class="status-badge atrasado" title="${escapeHtml(f.motivoAtraso)}">Atrasado</span>`
-            : ''}</td>
-        <td>${escapeHtml(f.atribuidoA)}</td>
-        <td>${escapeHtml(f.dataAbertura)}</td>
-        <td class="acao-cell">
+            : ''}</div>
+        <div class="gtable-cell" role="cell">${escapeHtml(f.atribuidoA)}</div>
+        <div class="gtable-cell" role="cell">${escapeHtml(f.dataAbertura)}</div>
+        <div class="gtable-cell gtable-cell-end" role="cell">
+            ${btnVer}
             ${btnEditar}
             ${btnExcluir}
-        </td>
+        </div>
         `;
         tbody.appendChild(tr);
     });

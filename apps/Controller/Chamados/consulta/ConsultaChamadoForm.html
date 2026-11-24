@@ -118,27 +118,24 @@
 
         <div id="resumoChamados" style="margin-bottom:0.75rem; font-size:0.875rem; font-weight:600; color:var(--color-slate-600,#475569);"></div>
 
-        <div class="table-wrapper">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Ver</th>
-                        <th onclick="ordenarChamado('id')">ID <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarChamado('equipamento')">Equipamento <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarChamado('localizacao')">Localização <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarChamado('motivo')">Motivo / Título <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarChamado('tipo')">Tipo <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarChamado('prioridade')">Prioridade <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarChamado('status')">Status <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarChamado('atribuidoA')">Atribuído a <span class="sort-arrow"></span></th>
-                        <th onclick="ordenarChamado('dataAbertura')">Abertura <span class="sort-arrow"></span></th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="chamadosTableBody">
-                    <!-- Linhas da tabela serão preenchidas dinamicamente via JavaScript -->
-                </tbody>
-            </table>
+        <div class="gtable-wrapper">
+            <div class="gtable" id="tabelaChamados" role="table">
+                <div class="gtable-row gtable-head" role="row">
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarChamado('id')">ID <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarChamado('equipamento')">Equipamento <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarChamado('localizacao')">Localização <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarChamado('motivo')">Motivo / Título <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarChamado('tipo')">Tipo <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarChamado('prioridade')">Prioridade <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarChamado('status')">Status <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarChamado('atribuidoA')">Atribuído a <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell" role="columnheader" onclick="ordenarChamado('dataAbertura')">Abertura <span class="sort-arrow"></span></div>
+                    <div class="gtable-cell gtable-cell-end" role="columnheader">Ações</div>
+                </div>
+                <div class="gtable-body" id="chamadosTableBody" role="rowgroup">
+                    <!-- Linhas serão preenchidas dinamicamente via JavaScript -->
+                </div>
+            </div>
         </div>
     </div>
 </section>

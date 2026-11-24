@@ -42,7 +42,10 @@ function findBrand(columnName, context) {
   return SearchContext(brandTableName, context, firstLineBrands, numColumnsBrands)
 }
 
-/*
+// Estava comentada (desativarMarca não existia de verdade -- ExcluirRegistro
+// quebrava ao tentar excluir uma marca). Corrigido: brandDtAlteracaoCol/
+// brandDtExclusaoCol são índices 0-based (pra ler array), getRange() pede
+// coluna 1-based -- por isso o "+1" abaixo, que faltava.
 function desativarMarca(idMarcaInput) {
   try {
     const idMarca = Number(idMarcaInput);
@@ -55,39 +58,67 @@ function desativarMarca(idMarcaInput) {
     const abaConsultaMarca = planilha.getSheetByName('tbl_marca');
 
     if (!abaConsultaMarca) {
-      Logger.log("Aba 'tbl_marca' não foi encontrada na planilha.");    
-      return;
+      return { sucesso: false, mensagem: "Aba 'tbl_marca' não foi encontrada na planilha." };
     }
 
     const dadosMarcas = ReadBrands();
     let linhaLocalizada = -1;
 
-    for (let i = 0; i <dadosMarcas.length; i ++) {
-      const idTabela = Number(dadosMarcas[i][0]);
-      const dataExclusaoTabela = dadosMarcas[i][3] ? dadosMarcas[i][3].toString().trim() : "";
+    for (let i = 0; i < dadosMarcas.length; i++) {
+      const idTabela = Number(dadosMarcas[i][brandIdCol]);
+      const dataExclusaoTabela = dadosMarcas[i][brandDtExclusaoCol] ? dadosMarcas[i][brandDtExclusaoCol].toString().trim() : "";
 
-      if(idTabela === idMarca && dataExclusaoTabela === "") {
+      if (idTabela === idMarca && dataExclusaoTabela === "") {
         linhaLocalizada = i + firstLineBrands;
-        break; 
+        break;
       }
     }
 
-    if (linhaLocalizada !== -1) {
-      const dataExclusao = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
-
-      abaConsultaMarca.getRange(linhaLocalizada, brandDtAlteracaoCol).setValue(dataExclusao);
-      abaConsultaMarca.getRange(linhaLocalizada, 1, 1, 4).setBackground("#F4CCCC");
-
-      return true
-
-    } else {
-      return false
-
+    if (linhaLocalizada === -1) {
+      return { sucesso: false, mensagem: "Marca não encontrada (ou já desativada)." };
     }
+
+    const dataExclusao = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+
+    abaConsultaMarca.getRange(linhaLocalizada, brandDtExclusaoCol + 1).setValue(dataExclusao);
+    abaConsultaMarca.getRange(linhaLocalizada, brandDtAlteracaoCol + 1).setValue(dataExclusao);
+    abaConsultaMarca.getRange(linhaLocalizada, 1, 1, numColumnsBrands).setBackground("#F4CCCC");
+
+    return { sucesso: true, mensagem: "Marca desativada com sucesso." };
   } catch (e) {
-    Logger.log("Erro no servidor ao desativar marca: " + e.message);
-    return false
-    
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
   }
 }
-  */
+
+/** Reativa uma marca desativada: limpa DT_EXCLUSAO, atualiza DT_ALTERACAO. */
+function reativarMarca(idMarcaInput) {
+  try {
+    const idMarca = Number(idMarcaInput);
+    if (!idMarca) {
+      return { sucesso: false, mensagem: "ID da marca inválido." };
+    }
+
+    const planilha = SpreadsheetApp.getActiveSpreadsheet();
+    const abaConsultaMarca = planilha.getSheetByName('tbl_marca');
+    if (!abaConsultaMarca) {
+      return { sucesso: false, mensagem: "Aba 'tbl_marca' não foi encontrada na planilha." };
+    }
+
+    const dadosMarcas = ReadBrands();
+    const idx = dadosMarcas.findIndex(l => Number(l[brandIdCol]) === idMarca);
+    if (idx === -1) {
+      return { sucesso: false, mensagem: "Marca não encontrada." };
+    }
+
+    const linhaReal = idx + firstLineBrands;
+    const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+
+    abaConsultaMarca.getRange(linhaReal, brandDtExclusaoCol + 1).clearContent();
+    abaConsultaMarca.getRange(linhaReal, brandDtAlteracaoCol + 1).setValue(dataAtual);
+    abaConsultaMarca.getRange(linhaReal, 1, 1, numColumnsBrands).setBackground("#FFFFFF");
+
+    return { sucesso: true, mensagem: "Marca reativada com sucesso." };
+  } catch (e) {
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
+}

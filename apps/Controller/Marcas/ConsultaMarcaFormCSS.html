@@ -4,4 +4,49 @@
     max-width: 80rem;
   }
 
+  /* Só a largura/espaçamento do conteúdo de cada aba -- as abas em si
+     (.tabs-nav/.tab-btn/.tab-panel) já são o padrão global de
+     css/crudCSS.html + js/TabsJS.html (mesmo usado no modal de detalhes
+     do Chamado). */
+  #page-marcas-view .ficha-actions-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 0.0625rem solid var(--color-slate-100);
+  }
+
+  #page-marcas-view .ficha-titulo {
+    font-size: 1.125rem;
+    margin: 0;
+  }
+
+  #page-marcas-view .ficha-botoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+  }
+
+  #page-marcas-view .ficha-botoes .btn-secondary,
+  #page-marcas-view .ficha-botoes .btn-success,
+  #page-marcas-view .ficha-botoes .btn-primary {
+    width: auto;
+  }
+
+  /* Transição discreta ao trocar de aba -- só nesta tela, não afeta as
+     abas do modal de detalhes do Chamado (que usam a mesma classe
+     .tab-panel, mas sem essa animação). */
+  #page-marcas-view .tab-panel.active {
+    animation: marcasLocalizacoesFadeIn 0.2s ease;
+  }
+
+  @keyframes marcasLocalizacoesFadeIn {
+    from { opacity: 0; transform: translateY(0.25rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
 </style>
+

@@ -60,3 +60,41 @@ function migrarPeriodicidadeChecklist() {
   Logger.log('Linhas convertidas: ' + alteradas);
   return alteradas;
 }
+
+/**
+ * Rodar UMA VEZ pelo editor do Apps Script: limpa duplicidades que já
+ * existem em tbl_contratos_Checklist (itens repetidos de antes da
+ * blindagem em salvarChecklistContrato -- ver CadastroContratoBackend.js).
+ * Pra cada grupo (mesmo contrato + mesma descrição + mesma periodicidade)
+ * com mais de uma linha ativa, mantém só a mais recente e marca
+ * DATA_EXCLUSAO nas outras. Não altera linhas já excluídas.
+ */
+function migrarDuplicadosChecklistContrato() {
+  const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(contractsChecklistTableName);
+  const dados = ReadSheet(contractsChecklistTableName, firstLineContractsChecklist, numColumnsContractsChecklist);
+  const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+
+  const grupos = {};
+  dados.forEach(function (linha, idx) {
+    if (linha[contractsChecklistDataExclusaoCol]) return; // já excluída, ignora
+    const item = lerItemChecklistContrato(linha);
+    const chave = linha[contractsChecklistIdContratoCol] + '|' + item.descricao.trim().toLowerCase() + '|' + item.periodo;
+    if (!grupos[chave]) grupos[chave] = [];
+    grupos[chave].push(idx);
+  });
+
+  let linhasExcluidas = 0;
+  Object.keys(grupos).forEach(function (chave) {
+    const idxs = grupos[chave];
+    if (idxs.length <= 1) return;
+    // mantém a última linha do grupo (a mais recente), exclui as anteriores
+    idxs.slice(0, -1).forEach(function (idx) {
+      const linhaReal = idx + firstLineContractsChecklist;
+      aba.getRange(linhaReal, contractsChecklistDataExclusaoCol + 1).setValue(dataAtual);
+      linhasExcluidas++;
+    });
+  });
+
+  Logger.log('Duplicidades removidas: ' + linhasExcluidas);
+  return { sucesso: true, linhasExcluidas: linhasExcluidas };
+}

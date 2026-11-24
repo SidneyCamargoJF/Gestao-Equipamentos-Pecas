@@ -2,63 +2,130 @@
 
         <div class="page-header">
           <div class="actions-bar">
-            <h1> 🏷️ Marcas</h1>
+            <h1>🏷️ Marcas e Localizações</h1>
           </div>
-
-          <!-- Botoes de limpar e adicionar -->
-
-          <div class="actions-bar">
-            <button type="button" class="btn-secondary" onclick="marcaController.limparFiltros()">Limpar</button>
-            <button type="button" class="btn-success" onclick="marcaController.abrirModalCadastroMarca()">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Adicionar
-            </button>
-            <button type="button" class="btn-primary" onclick="marcaController.consultar()"> <!-- filtrar() -->
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              Consultar
-            </button>
-          </div>   
         </div>
 
         <div class="panel">
 
-          <!-- FILTRO -->
-          <form autocomplete="off" onsubmit="return false;">
-            <div class="filters-primary">
-              <div class="field">
-                <label class="field__label">Marca</label>
-                <div class="search-wrapper" id="marcaWrapper">
-                  <span class="search-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                  </span>
-                  <input class="search-input" type="text" id="marcaSearch" placeholder="Selecione a marca..." autocomplete="off">
-                  <div class="search-dropdown" id="marcaDropdown"></div>
+          <!-- Abas segmentadas (padrão .tabs-nav/.tab-btn/.tab-panel já usado
+               no modal de detalhes do Chamado) -- só uma consulta visível por
+               vez, ocupando a largura toda. Ver initTabs()/ativarAba() em
+               js/TabsJS.html. -->
+          <div class="tabs-nav">
+            <button type="button" class="tab-btn active" data-tab="marcas">🏷️ Marcas</button>
+            <button type="button" class="tab-btn" data-tab="localizacoes">📍 Localizações</button>
+          </div>
+
+          <!-- ========== ABA: MARCAS ========== -->
+          <div class="tab-panel active" id="tab-marcas">
+
+            <div class="actions-bar ficha-actions-bar">
+              <h2 class="ficha-titulo">Marcas</h2>
+              <div class="ficha-botoes">
+                <button type="button" class="btn-secondary" onclick="marcaController.limparFiltros()">Limpar</button>
+                <button type="button" class="btn-success" onclick="marcaController.abrirModalCadastroMarca()">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Adicionar
+                </button>
+                <button type="button" class="btn-primary" onclick="marcaController.consultar()">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  Consultar
+                </button>
+              </div>
+            </div>
+
+            <form autocomplete="off" onsubmit="return false;">
+              <div class="filters-primary">
+                <div class="field">
+                  <label class="field__label">Marca</label>
+                  <div class="search-wrapper" id="marcaWrapper">
+                    <span class="search-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                      </svg>
+                    </span>
+                    <input class="search-input" type="text" id="marcaSearch" placeholder="Selecione a marca..." autocomplete="off">
+                    <div class="search-dropdown" id="marcaDropdown"></div>
+                  </div>
                 </div>
               </div>
-            </div> 
+            </form>
 
-          </form>
+            <div id="resumoMarcas" style="margin-bottom:0.75rem; font-size:0.875rem; font-weight:600; color:var(--color-slate-600,#475569);"></div>
 
-          <div id="resumoMarcas" style="margin-bottom:0.75rem; font-size:0.875rem; font-weight:600; color:var(--color-slate-600,#475569);"></div>
-
-          <!-- TABELA -->
-          <div class="table-wrapper">
-          <table class="data-table" id="tabelaMarcas">
-            <thead>
-              <tr>
-                <th onclick="marcaController.ordenar('marca')">MARCA <span class="sort-arrow"></span></th>
-                <th>AÇÕES</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaBodyMarca"></tbody>
-          </table>
+            <div class="table-wrapper">
+              <table class="data-table" id="tabelaMarcas">
+                <thead>
+                  <tr>
+                    <th onclick="marcaController.ordenar('marca')">MARCA <span class="sort-arrow"></span></th>
+                    <th>AÇÕES</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelaBodyMarca"></tbody>
+              </table>
+            </div>
           </div>
+
+          <!-- ========== ABA: LOCALIZAÇÕES ========== -->
+          <div class="tab-panel" id="tab-localizacoes">
+
+            <div class="actions-bar ficha-actions-bar">
+              <h2 class="ficha-titulo">Localizações</h2>
+              <div class="ficha-botoes">
+                <button type="button" class="btn-secondary" onclick="localizacaoController.limparFiltros()">Limpar</button>
+                <button type="button" class="btn-success" onclick="localizacaoController.abrirModalCadastro()">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Adicionar
+                </button>
+                <button type="button" class="btn-primary" onclick="localizacaoController.consultar()">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  Consultar
+                </button>
+              </div>
+            </div>
+
+            <form autocomplete="off" onsubmit="return false;">
+              <div class="filters-primary">
+                <div class="field">
+                  <label class="field__label">Localização</label>
+                  <div class="search-wrapper" id="localizacaoWrapper">
+                    <span class="search-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                      </svg>
+                    </span>
+                    <input class="search-input" type="text" id="localizacaoSearch" placeholder="Selecione a localização..." autocomplete="off">
+                    <div class="search-dropdown" id="localizacaoDropdown"></div>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            <div id="resumoLocalizacoes" style="margin-bottom:0.75rem; font-size:0.875rem; font-weight:600; color:var(--color-slate-600,#475569);"></div>
+
+            <div class="table-wrapper">
+              <table class="data-table" id="tabelaLocalizacoes">
+                <thead>
+                  <tr>
+                    <th onclick="localizacaoController.ordenar('nome')">NOME <span class="sort-arrow"></span></th>
+                    <th onclick="localizacaoController.ordenar('observacao')">OBSERVAÇÃO <span class="sort-arrow"></span></th>
+                    <th>AÇÕES</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelaBodyLocalizacao"></tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
 
       </section>

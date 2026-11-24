@@ -9,11 +9,10 @@
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroMarca')">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="marcaController.salvarNova(false)">Salvar</button>
-          <button type="button" class="btn-primary" onclick="marcaController.salvarNova(true)">Salvar e Sair</button>
+          <button type="button" class="btn-primary" onclick="marcaController.salvarNovaMarca()">Salvar</button>
         </div>
       </div>
-    </div> 
+    </div>
 
     <!-- MODAL DE EDIÇÃO -->
     <div class="modal-overlay" id="modalEdicaoMarca">
@@ -29,7 +28,7 @@
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroMarca')" style="width:auto;">Cancelar</button>
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalEdicaoMarca')" style="width:auto;">Cancelar</button>
           <button type="button" class="btn-primary" onclick="marcaController.executarEdicao()">Salvar</button>
         </div>
       </div>
@@ -41,8 +40,62 @@
         <h3>Confirmar Exclusão</h3>
         <p>Tem certeza que deseja fazer a exclusão? Esta ação não pode ser desfeita.</p>
         <div class="modal-actions">
-          <button class="btn-secondary" onclick="fecharModal('modalExclusao')" style="width:auto;">Cancelar</button>
+          <button class="btn-secondary" onclick="fecharModal('modalExclusaoMarca')" style="width:auto;">Cancelar</button>
           <button class="btn-danger" onclick="marcaController.executarExclusao()">Sim, Excluir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCALIZAÇÕES -->
+
+    <!-- MODAL DE CADASTRO -->
+    <div class="modal-overlay" id="modalCadastroLocalizacaoCompleto">
+      <div class="modal">
+        <h3>Nova Localização</h3>
+        <div class="form-group">
+          <label for="novaLocalizacaoCompletoNome" class="field__label">Nome da Localização *</label>
+          <input type="text" id="novaLocalizacaoCompletoNome" class="search-input" placeholder="Digite o nome da localização..."/>
+          <span class="field__error-msg">Informe o nome da localização.</span>
+        </div>
+        <div class="form-group">
+          <label for="novaLocalizacaoCompletoObservacao" class="field__label">Observação (opcional)</label>
+          <textarea id="novaLocalizacaoCompletoObservacao" class="field__input" rows="3" placeholder="Opcional..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroLocalizacaoCompleto')">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="localizacaoController.salvarNovaLocalizacao()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE EDIÇÃO -->
+    <div class="modal-overlay" id="modalEdicaoLocalizacao">
+      <div class="modal">
+        <h3>Editar Localização</h3>
+        <input type="hidden" id="editLocalizacaoId">
+        <div class="form-group">
+          <label for="editLocalizacaoNome" class="field__label">Nome da Localização:</label>
+          <input type="text" id="editLocalizacaoNome" class="search-input" placeholder="Digite o novo nome..."/>
+        </div>
+        <div class="form-group">
+          <label for="editLocalizacaoObservacao" class="field__label">Observação</label>
+          <textarea id="editLocalizacaoObservacao" class="field__input" rows="3" placeholder="Opcional..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalEdicaoLocalizacao')" style="width:auto;">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="localizacaoController.executarEdicao()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE EXCLUSÃO -->
+    <div class="modal-overlay" id="modalExclusaoLocalizacao">
+      <div class="modal">
+        <h3>Confirmar Exclusão</h3>
+        <p>Tem certeza que deseja fazer a exclusão? Esta ação não pode ser desfeita.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="fecharModal('modalExclusaoLocalizacao')" style="width:auto;">Cancelar</button>
+          <button class="btn-danger" onclick="localizacaoController.executarExclusao()">Sim, Excluir</button>
         </div>
       </div>
     </div>
