@@ -117,6 +117,8 @@ A tela tem o bloco **Dados do Chamado** e, abaixo, três abas: **Vínculo Contra
 - **Origem:** manual ou automática;
 - **Só atrasados**.
 
+Nas **preventivas**, as colunas Equipamento e Localização mostram **Diversos**, porque a OS cobre vários equipamentos. Mesmo assim, o filtro de equipamento encontra a preventiva quando o patrimônio digitado está na lista do chamado ou no checklist da OS.
+
 Os chamados atrasados recebem o selo **Atrasado**. Ao passar o mouse sobre ele, aparece o motivo do atraso.
 
 O botão **Gerar preventivas do mês** gera manualmente as OS da competência atual. Se a propriedade `ADMINS` estiver configurada, só os administradores podem usá-lo. Veja o documento [07](07-implantacao-e-operacao.md).
@@ -124,6 +126,9 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
 ### Detalhes do chamado (modal)
 
 - **Informações do Chamado:** dados, contrato, origem, competência, data prevista e prazos.
+- **Equipamento / Equipamentos:** aba logo depois de Informações do Chamado.
+  - **Preventiva:** a aba se chama "Equipamentos (N)" e traz a tabela com todos os equipamentos da OS (lista do chamado e checklist): patrimônio, equipamento, capacidade, localização, estado e, se houver, a observação de encerramento.
+  - **Demais tipos:** a aba se chama "Equipamento" e mostra só o equipamento do chamado (patrimônio, nome, marca, modelo, capacidade, localização e estado).
 - **Movimentações:**
   - histórico automático, com linhas prefixadas por `[SISTEMA]`;
   - anotações livres, que podem ser editadas e excluídas.
@@ -137,6 +142,10 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
 `Aberto` → `Em Andamento` (grava a data de início do andamento) → `Concluido` (grava a data de finalização).
 
 - Para concluir é obrigatório informar o motivo.
+- **Preventiva:** ao clicar em Resolver, aparece também a lista dos equipamentos da OS, com um campo de **observação por patrimônio** (opcional).
+  - Equipamentos da lista do chamado e do checklist entram na lista.
+  - As observações preenchidas ficam gravadas por equipamento e registradas no histórico.
+  - Se o chamado for reaberto e resolvido de novo, as observações anteriores voltam preenchidas para edição.
 - Se a OS ainda tiver itens de checklist pendentes, o motivo informado fica no histórico como justificativa das pendências.
 - **Desativar** marca o chamado como `Cancelado`. **Reativar** desfaz.
 

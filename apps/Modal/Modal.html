@@ -147,6 +147,7 @@
         <div class="tabs-nav">
           <button type="button" class="tab-btn active" id="tabBtnHistoricoChamado" onclick="trocarAbaModalChamado('historico')">Movimentações</button>
           <button type="button" class="tab-btn" id="tabBtnInfoChamado" onclick="trocarAbaModalChamado('info')">Informações do Chamado</button>
+          <button type="button" class="tab-btn" id="tabBtnEquipChamado" onclick="trocarAbaModalChamado('equipamentos')">Equipamento</button>
           <button type="button" class="tab-btn" id="tabBtnChecklistChamado" style="display:none;" onclick="trocarAbaModalChamado('checklist')">Checklist</button>
         </div>
 
@@ -162,6 +163,10 @@
           <div id="detalheChamadoConteudo"><!-- preenchido via JS: montarDetalheChamadoHtml() --></div>
         </div>
 
+        <div class="tab-panel" id="tabPanelEquipChamado" style="display:none;">
+          <div id="detalheChamadoEquipamentos" class="chamado-equip-detalhe"><!-- preenchido via JS: montarEquipamentosChamadoHtml() --></div>
+        </div>
+
         <div class="tab-panel active" id="tabPanelHistoricoChamado" style="display:flex; flex-direction:column;">
           <div class="chamado-acoes-fixas" id="chamadoAcoesFixas">
             <div id="chamadoAcaoStatus" class="chamado-acao-status"><!-- preenchido via JS: montarBotaoAcaoStatusChamado() --></div>
@@ -174,6 +179,11 @@
           <div class="chamado-caixa-texto" id="chamadoCaixaTexto">
             <span class="chamado-caixa-texto-rotulo" id="chamadoCaixaTextoRotulo">Nova anotação</span>
             <textarea class="field__input" id="novaAnotacaoChamado" rows="3" placeholder="Ex: &quot;Serviço no período da manhã&quot;..."></textarea>
+            <!-- Encerramento de preventiva: observação por patrimônio (opcional) -->
+            <div class="chamado-obs-equip" id="chamadoObsEquip" style="display:none;">
+              <span class="chamado-caixa-texto-rotulo">Observação por patrimônio (opcional)</span>
+              <div class="chamado-obs-equip-lista" id="chamadoObsEquipLista"></div>
+            </div>
             <div class="chamado-caixa-texto-botoes">
               <button type="button" class="btn-secondary" style="width:auto;" onclick="cancelarCaixaTextoChamado()">Cancelar</button>
               <button type="button" class="btn-primary" id="salvarAnotacao" style="width:auto;" onclick="confirmarCaixaTextoChamado()">
