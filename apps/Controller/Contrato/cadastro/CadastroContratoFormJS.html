@@ -350,6 +350,7 @@ async function buscarEquipamentoPorPatrimonio(pat) {
     } else {
       equipamentoSelecionado = null;
       document.getElementById('eqResultado').style.display = 'none';
+      definirTextoVazioBuscaEquip('');
       document.getElementById('eqVazio').style.display = 'block';
     }
   } catch (error) {
@@ -398,6 +399,10 @@ function montarListaResultadosBuscaNome(lista) {
 
   if (itensVisiveis.length === 0) {
     container.style.display = 'none';
+    // achou, mas todos já estão no contrato: não é "nenhum encontrado"
+    definirTextoVazioBuscaEquip((lista || []).length
+      ? 'Todos os equipamentos encontrados (' + lista.length + ') já estão vinculados a este contrato.'
+      : '');
     vazio.style.display = 'block';
     return;
   }
@@ -422,6 +427,12 @@ function montarListaResultadosBuscaNome(lista) {
       '</button>' +
     '</div>';
   }).join('');
+}
+
+// Texto do aviso de busca sem resultado ('' = o padrão "nenhum encontrado")
+function definirTextoVazioBuscaEquip(texto) {
+  const el = document.getElementById('eqVazioTexto');
+  if (el) el.textContent = texto || 'Nenhum equipamento encontrado com esses critérios.';
 }
 
 function adicionarEquipamentoDaListaBusca(indice) {
@@ -575,49 +586,55 @@ async function carregarOpcoesEspecificacaoServico() {
 
     const categorias = Array.from(new Set(especificacaoEquipamentoCombinacoes.map(function (c) { return c.categoria; })));
     preencherSelectEspecificacao('servicoCategoriaEquip', categorias, false);
-    atualizarSelectTipoServico();
+    atualizarSelectCapacidadeServico();
   } catch (error) {
     console.error('Erro ao carregar opções de especificação do serviço:', error);
   }
 }
 
-// Reage à troca de Categoria: refaz Tipo (só com os tipos daquela
-// categoria) e, em cadeia, Capacidade também.
-function atualizarSelectTipoServico() {
-  const categoria = document.getElementById('servicoCategoriaEquip').value;
-  const tipoSelect = document.getElementById('servicoTipoEquip');
+// Cascata Categoria -> Capacidade -> Tipo, sempre a partir dos equipamentos
+// cadastrados (especificacaoEquipamentoCombinacoes).
 
-  const tipos = categoria
+// Reage à troca de Categoria: refaz Capacidade (só as que existem para a
+// categoria, em ordem numérica) e, em cadeia, Tipo.
+function atualizarSelectCapacidadeServico() {
+  const categoria = document.getElementById('servicoCategoriaEquip').value;
+  const capSelect = document.getElementById('servicoCapacidadeEquip');
+
+  const numero = function (v) { const n = Number(String(v).replace(/\D/g, '')); return isNaN(n) ? 0 : n; };
+  const capacidades = categoria
     ? Array.from(new Set(
         especificacaoEquipamentoCombinacoes
           .filter(function (c) { return c.categoria === categoria; })
+          .map(function (c) { return c.capacidade; })
+      )).sort(function (a, b) { return numero(a) - numero(b) || String(a).localeCompare(String(b)); })
+    : [];
+
+  preencherSelectEspecificacao('servicoCapacidadeEquip', capacidades, true);
+  capSelect.disabled = !categoria;
+
+  atualizarSelectTipoServico();
+}
+
+// Reage à troca de Capacidade: refaz Tipo só com os tipos que têm
+// equipamento cadastrado nessa categoria + capacidade.
+function atualizarSelectTipoServico() {
+  const categoria = document.getElementById('servicoCategoriaEquip').value;
+  const capacidade = document.getElementById('servicoCapacidadeEquip').value;
+  const tipoSelect = document.getElementById('servicoTipoEquip');
+
+  const tipos = (categoria && capacidade)
+    ? Array.from(new Set(
+        especificacaoEquipamentoCombinacoes
+          .filter(function (c) { return c.categoria === categoria && c.capacidade === capacidade; })
           .map(function (c) { return c.tipo; })
       ))
     : [];
 
   preencherSelectEspecificacao('servicoTipoEquip', tipos, false);
-  tipoSelect.disabled = !categoria;
-
-  atualizarSelectCapacidadeServico();
-}
-
-// Reage à troca de Tipo: refaz Capacidade com só as que existem pra esse
-// par categoria+tipo.
-function atualizarSelectCapacidadeServico() {
-  const categoria = document.getElementById('servicoCategoriaEquip').value;
-  const tipo = document.getElementById('servicoTipoEquip').value;
-  const capSelect = document.getElementById('servicoCapacidadeEquip');
-
-  const capacidades = (categoria && tipo)
-    ? Array.from(new Set(
-        especificacaoEquipamentoCombinacoes
-          .filter(function (c) { return c.categoria === categoria && c.tipo === tipo; })
-          .map(function (c) { return c.capacidade; })
-      ))
-    : [];
-
-  preencherSelectEspecificacao('servicoCapacidadeEquip', capacidades, true);
-  capSelect.disabled = !(categoria && tipo);
+  tipoSelect.disabled = !(categoria && capacidade);
+  // um tipo só: já vem escolhido
+  if (tipos.length === 1) tipoSelect.value = tipos[0];
 }
 
 function preencherSelectEspecificacao(selectId, valores, formatarComoCapacidade) {
@@ -650,7 +667,7 @@ async function confirmarServicoContrato() {
   const valorUnitario = desmascararValorContrato(document.getElementById('servicoValorUnitario').value);
 
   if (!categoria || !tipoEquip || !capacidade) {
-    alert('Selecione categoria, tipo e capacidade do equipamento.');
+    alert('Selecione categoria, capacidade e tipo do equipamento.');
     return;
   }
 
@@ -682,11 +699,30 @@ async function confirmarServicoContrato() {
   // outro equipamento troca a categoria manualmente (o resto da cascata
   // já reage à troca sozinho).
 
+  // "Processando" no meio da tela enquanto o servidor busca os equipamentos
+  // (o automático do runServerFunction só pega funções de gravação)
+  let encontrados;
+  if (typeof exibirModal === 'function') exibirModal('processando');
   try {
-    const encontrados = await runServerFunction('buscarEquipamentosPorEspecificacao', categoria, tipoEquip, capacidade);
+    encontrados = await runServerFunction('buscarEquipamentosPorEspecificacao', categoria, tipoEquip, capacidade);
+  } catch (error) {
+    console.error('Erro ao buscar equipamentos pela especificação do serviço:', error);
+    alert('Serviço especificado, mas houve erro ao buscar os equipamentos automaticamente. Adicione manualmente na aba Equipamentos, se precisar.');
+    return;
+  } finally {
+    if (typeof fecharModal === 'function') fecharModal('processando');
+  }
+
+  {
+    // Separa os que entraram agora dos que já estavam no contrato: antes, se
+    // todos já estivessem vinculados (contrato em edição, ou o mesmo
+    // equipamento em outro serviço), a mensagem dizia que não havia
+    // equipamento cadastrado com a especificação.
+    const lista = encontrados || [];
     let adicionados = 0;
-    (encontrados || []).forEach(function (eq) {
-      if (equipamentos.some(function (e) { return e.patrimonio === eq.patrimonio; })) return;
+    let jaVinculados = 0;
+    lista.forEach(function (eq) {
+      if (equipamentos.some(function (e) { return e.patrimonio === eq.patrimonio; })) { jaVinculados++; return; }
       equipamentos.push({
         equipamento: eq.nome,
         capacidade: eq.capacidade,
@@ -700,13 +736,14 @@ async function confirmarServicoContrato() {
     renderizarEquipamentos();
 
     if (adicionados > 0) {
-      alert(adicionados + ' equipamento(s) adicionado(s) automaticamente na aba Equipamentos, com base no serviço especificado.');
+      mostrarMensagem(adicionados + ' equipamento(s) adicionado(s) automaticamente na aba Equipamentos, com base no serviço especificado.' +
+        (jaVinculados ? ' ' + jaVinculados + ' já estava(m) no contrato.' : ''), 'sucesso');
+    } else if (jaVinculados > 0) {
+      mostrarMensagem('Serviço incluído. ' + (jaVinculados === 1 ? 'O equipamento' : 'Os ' + jaVinculados + ' equipamentos') +
+        ' com essa especificação já ' + (jaVinculados === 1 ? 'está' : 'estão') + ' na aba Equipamentos do contrato.', 'sucesso');
     } else {
-      alert('Nenhum equipamento encontrado com essa especificação. Você pode adicionar manualmente na aba Equipamentos.');
+      mostrarMensagem('Serviço incluído, mas não há equipamento cadastrado com essa especificação. Você pode adicionar manualmente na aba Equipamentos.', 'aviso');
     }
-  } catch (error) {
-    console.error('Erro ao buscar equipamentos pela especificação do serviço:', error);
-    alert('Serviço especificado, mas houve erro ao buscar os equipamentos automaticamente. Adicione manualmente na aba Equipamentos, se precisar.');
   }
 }
 
@@ -722,7 +759,7 @@ function limparEspecificacaoServico() {
 
   document.getElementById('servicoValorUnitario').value = '';
   document.getElementById('servicoCategoriaEquip').value = '';
-  atualizarSelectTipoServico();
+  atualizarSelectCapacidadeServico();
 }
 
 function renderizarServicos() {

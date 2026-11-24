@@ -221,19 +221,19 @@
               <div class="form-grid-3">
                 <div class="field">
                   <label class="field__label" for="servicoCategoriaEquip">Categoria do Equipamento</label>
-                  <select class="field__select" id="servicoCategoriaEquip" onchange="atualizarSelectTipoServico()">
-                    <option value="">Selecione...</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label class="field__label" for="servicoTipoEquip">Tipo</label>
-                  <select class="field__select" id="servicoTipoEquip" onchange="atualizarSelectCapacidadeServico()" disabled>
+                  <select class="field__select" id="servicoCategoriaEquip" onchange="atualizarSelectCapacidadeServico()">
                     <option value="">Selecione...</option>
                   </select>
                 </div>
                 <div class="field">
                   <label class="field__label" for="servicoCapacidadeEquip">Capacidade</label>
-                  <select class="field__select" id="servicoCapacidadeEquip" disabled>
+                  <select class="field__select" id="servicoCapacidadeEquip" onchange="atualizarSelectTipoServico()" disabled>
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="servicoTipoEquip">Tipo</label>
+                  <select class="field__select" id="servicoTipoEquip" disabled>
                     <option value="">Selecione...</option>
                   </select>
                 </div>
@@ -304,7 +304,7 @@
               </div>
 
               <div id="eqVazio" class="equip-result" style="display:none;">
-                <p class="equip-result-empty">Nenhum equipamento encontrado com esses critérios.</p>
+                <p class="equip-result-empty" id="eqVazioTexto">Nenhum equipamento encontrado com esses critérios.</p>
               </div>
             </div>
 

@@ -62,7 +62,7 @@ Ao preencher a data inicial, a data base preventiva é sugerida com o mesmo valo
 | Aba | Conteúdo |
 |---|---|
 | 📋 Complementares | Observações e anexos (contrato, aditivos etc.) |
-| 🛠️ Serviços | Tipo de manutenção (Preventiva/Corretiva), categoria, tipo, capacidade, periodicidade e **valor unitário** (R$ por equipamento, editável também no card do serviço) |
+| 🛠️ Serviços | Tipo de manutenção (Preventiva/Corretiva), periodicidade, **valor unitário** (R$ por equipamento, editável também no card do serviço) e a especificação do equipamento em cascata: **categoria → capacidade → tipo**, só com o que existe em equipamentos cadastrados (com um tipo só, ele já vem escolhido). Ao confirmar, aparece "Processando" enquanto os equipamentos da especificação são buscados e incluídos na aba Equipamentos; a mensagem informa quantos entraram e quantos já estavam no contrato |
 | 🔧 Equipamentos | Equipamentos cobertos pelo contrato |
 | 📦 Produtos | Produtos ou peças previstos |
 | ✅ Checklist | Itens do checklist preventivo. Cada item tem uma **periodicidade**: mensal, bimestral, trimestral, quadrimestral, semestral ou anual |
