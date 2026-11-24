@@ -126,6 +126,9 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
 ### Detalhes do chamado (modal)
 
 - **Informações do Chamado:** dados, contrato, origem, competência, data prevista e prazos.
+- **Equipamento / Equipamentos:** aba logo depois de Informações do Chamado.
+  - **Preventiva:** a aba se chama "Equipamentos (N)" e traz a tabela com todos os equipamentos da OS (lista do chamado e checklist): patrimônio, equipamento, capacidade, localização, estado e, se houver, a observação de encerramento.
+  - **Demais tipos:** a aba se chama "Equipamento" e mostra só o equipamento do chamado (patrimônio, nome, marca, modelo, capacidade, localização e estado).
 - **Movimentações:**
   - histórico automático, com linhas prefixadas por `[SISTEMA]`;
   - anotações livres, que podem ser editadas e excluídas.

@@ -24,6 +24,10 @@ async function abrirDetalhesChamado(chamadoId) {
     chamadoStatusAtualModal = '';
     const btnAbaChecklist = document.getElementById('tabBtnChecklistChamado');
     if (btnAbaChecklist) btnAbaChecklist.style.display = 'none';
+    const conteudoEquip = document.getElementById('detalheChamadoEquipamentos');
+    if (conteudoEquip) conteudoEquip.innerHTML = '<p>Carregando...</p>';
+    const btnAbaEquip = document.getElementById('tabBtnEquipChamado');
+    if (btnAbaEquip) btnAbaEquip.textContent = 'Equipamento';
 
     ajustarTamanhoModalChamado();
     trocarAbaModalChamado('historico');
@@ -41,6 +45,8 @@ async function abrirDetalhesChamado(chamadoId) {
         if (fixo) fixo.innerHTML = montarInfoFixaChamado(resposta.chamado);
 
         if (conteudo) conteudo.innerHTML = montarDetalheChamadoHtml(resposta.chamado);
+        if (conteudoEquip) conteudoEquip.innerHTML = montarEquipamentosChamadoHtml(resposta.chamado);
+        if (btnAbaEquip) btnAbaEquip.textContent = rotuloAbaEquipamentosChamado(resposta.chamado);
         carregarAnexosChamadoUI(chamadoId);
 
         chamadoStatusAtualModal = String(resposta.chamado.status || '').trim();
@@ -66,18 +72,29 @@ function trocarAbaModalChamado(aba) {
     const painelInfo = document.getElementById('tabPanelInfoChamado');
     const painelHistorico = document.getElementById('tabPanelHistoricoChamado');
     const painelChecklist = document.getElementById('tabPanelChecklistChamado');
+    const btnEquip = document.getElementById('tabBtnEquipChamado');
+    const painelEquip = document.getElementById('tabPanelEquipChamado');
 
     const mostrarInfo = aba === 'info';
     const mostrarChecklist = aba === 'checklist';
-    const mostrarHistorico = !mostrarInfo && !mostrarChecklist;
+    const mostrarEquip = aba === 'equipamentos';
+    const mostrarHistorico = !mostrarInfo && !mostrarChecklist && !mostrarEquip;
 
     if (btnInfo) btnInfo.classList.toggle('active', mostrarInfo);
     if (btnHistorico) btnHistorico.classList.toggle('active', mostrarHistorico);
     if (btnChecklist) btnChecklist.classList.toggle('active', mostrarChecklist);
+    if (btnEquip) btnEquip.classList.toggle('active', mostrarEquip);
 
     aplicarEstiloPainelModalChamado(painelInfo, mostrarInfo);
     aplicarEstiloPainelModalChamado(painelHistorico, mostrarHistorico);
     aplicarEstiloPainelModalChamado(painelChecklist, mostrarChecklist);
+    aplicarEstiloPainelModalChamado(painelEquip, mostrarEquip);
+    const conteudoEquip = document.getElementById('detalheChamadoEquipamentos');
+    if (conteudoEquip) {
+        conteudoEquip.style.flex = '1 1 auto';
+        conteudoEquip.style.minHeight = '0';
+        conteudoEquip.style.overflowY = 'auto';
+    }
     const conteudoChecklist = document.getElementById('chamadoChecklistConteudo');
     if (conteudoChecklist) {
         conteudoChecklist.style.flex = '1 1 auto';
@@ -404,8 +421,60 @@ function montarInfoFixaChamado(c) {
         ${item('Motivo', valorOuPadrao(c.motivo))}
         ${item('Tipo', valorOuPadrao(c.tipo))}
         ${item('Prioridade', montarBadgePrioridadeChamado(c.prioridade))}
-        ${item('Equipamento', valorOuPadrao(c.equipamento))}
     `;
+}
+
+// ===== ABA EQUIPAMENTOS DO MODAL =====
+// Preventiva: tabela com todos os equipamentos da OS (lista + checklist).
+// Demais tipos: só o equipamento do chamado, em linhas de detalhe.
+function chamadoEhPreventiva(c) {
+    return String((c && c.tipo) || '').trim().toLowerCase() === 'preventiva';
+}
+
+function rotuloAbaEquipamentosChamado(c) {
+    if (!chamadoEhPreventiva(c)) return 'Equipamento';
+    return 'Equipamentos (' + ((c.equipamentos || []).length) + ')';
+}
+
+function montarEquipamentosChamadoHtml(c) {
+    const lista = (c && c.equipamentos) || [];
+    if (!lista.length) return '<p class="chamado-equip-vazio">Nenhum equipamento vinculado a este chamado.</p>';
+
+    if (!chamadoEhPreventiva(c)) {
+        const e = lista[0];
+        return `
+            <div class="detalhe-chamado-secao">
+                ${linhaDetalheChamado('Patrimônio', e.patrimonio)}
+                ${linhaDetalheChamado('Equipamento', e.nome)}
+                ${linhaDetalheChamado('Marca', e.marca)}
+                ${linhaDetalheChamado('Modelo', e.modelo)}
+                ${linhaDetalheChamado('Capacidade', e.capacidade)}
+                ${linhaDetalheChamado('Localização', e.localizacao)}
+                ${linhaDetalheChamado('Estado', e.estado)}
+            </div>`;
+    }
+
+    const celula = v => (v && String(v).trim()) ? escapeHtml(v) : '--';
+    const temObs = lista.some(e => e.observacao);
+    const linhas = lista.map(e => `
+        <tr>
+            <td>${celula(e.patrimonio)}</td>
+            <td>${celula(e.nome)}${e.modelo ? ' / ' + escapeHtml(e.modelo) : ''}</td>
+            <td>${celula(e.capacidade)}</td>
+            <td>${celula(e.localizacao)}</td>
+            <td>${celula(e.estado)}</td>
+            ${temObs ? `<td>${celula(e.observacao)}</td>` : ''}
+        </tr>`).join('');
+    return `
+        <table class="chamado-equip-tabela">
+            <thead>
+                <tr>
+                    <th>Patrimônio</th><th>Equipamento</th><th>Capacidade</th><th>Localização</th><th>Estado</th>
+                    ${temObs ? '<th>Observação no encerramento</th>' : ''}
+                </tr>
+            </thead>
+            <tbody>${linhas}</tbody>
+        </table>`;
 }
 
 function montarDetalheChamadoHtml(c) {

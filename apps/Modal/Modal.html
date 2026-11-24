@@ -147,6 +147,7 @@
         <div class="tabs-nav">
           <button type="button" class="tab-btn active" id="tabBtnHistoricoChamado" onclick="trocarAbaModalChamado('historico')">Movimentações</button>
           <button type="button" class="tab-btn" id="tabBtnInfoChamado" onclick="trocarAbaModalChamado('info')">Informações do Chamado</button>
+          <button type="button" class="tab-btn" id="tabBtnEquipChamado" onclick="trocarAbaModalChamado('equipamentos')">Equipamento</button>
           <button type="button" class="tab-btn" id="tabBtnChecklistChamado" style="display:none;" onclick="trocarAbaModalChamado('checklist')">Checklist</button>
         </div>
 
@@ -160,6 +161,10 @@
 
         <div class="tab-panel" id="tabPanelInfoChamado" style="display:none;">
           <div id="detalheChamadoConteudo"><!-- preenchido via JS: montarDetalheChamadoHtml() --></div>
+        </div>
+
+        <div class="tab-panel" id="tabPanelEquipChamado" style="display:none;">
+          <div id="detalheChamadoEquipamentos" class="chamado-equip-detalhe"><!-- preenchido via JS: montarEquipamentosChamadoHtml() --></div>
         </div>
 
         <div class="tab-panel active" id="tabPanelHistoricoChamado" style="display:flex; flex-direction:column;">

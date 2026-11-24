@@ -128,15 +128,26 @@ function buscarChamadoDetalhado(idInput) {
 
         // Todos os equipamentos do chamado (tbl_chamado_equipamentos; sem
         // lista, o da coluna B), separados por "; ".
-        const equipamentoTexto = listarEquipamentosChamado_(linha[0], linha[1])
+        const cadastroEquip = ReadEquipments();
+        const listaEquip = listarEquipamentosChamado_(linha[0], linha[1], cadastroEquip);
+        const equipamentoTexto = listaEquip
             .map(e => e.patrimonio
                 ? ('Patrimônio ' + e.patrimonio + ' - ' + e.nome + (e.modelo ? '/' + e.modelo : '') + (e.localizacao ? ' (' + e.localizacao + ')' : ''))
                 : e.nome)
             .join('; ');
 
+        // Aba Equipamentos do modal: na preventiva, todos os da OS (lista +
+        // checklist, com a observação de encerramento); nos demais tipos, só
+        // o equipamento do chamado.
+        const preventiva = String(linha[3] || '').trim().toLowerCase() === 'preventiva';
+        const equipamentos = preventiva
+            ? equipamentosOsComObservacao_(linha[0], linha[1], cadastroEquip)
+            : listaEquip.slice(0, 1);
+
         const chamado = {
             id: linha[0],
             equipamento: equipamentoTexto,
+            equipamentos: equipamentos,
             motivo: linha[2],
             tipo: linha[3],
             prioridade: linha[4],

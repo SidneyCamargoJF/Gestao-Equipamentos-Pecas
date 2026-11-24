@@ -107,35 +107,43 @@ function listarEquipamentosEncerramentoChamado(chamadoId) {
     const chamado = ReadTickets().find(function (l) { return Number(l[ticketsIdCol - 1]) === id; });
     if (!chamado) return { sucesso: false, mensagem: 'Chamado não encontrado.' };
 
-    const linhasEquip = ReadTicketEquipamentos();
-    const ids = idsEquipamentosDoChamado_(id, chamado[ticketsEquipamentoIdCol - 1], linhasEquip);
-    ReadTicketChecklist().forEach(function (l) {
-      if (Number(l[ticketChecklistChamadoIdCol - 1]) !== id || l[ticketChecklistDataExclusaoCol - 1]) return;
-      const idEquip = Number(l[ticketChecklistEquipamentoIdCol - 1]);
-      if (idEquip && ids.indexOf(idEquip) === -1) ids.push(idEquip);
-    });
-
-    const observacoes = {};
-    linhasEquip.forEach(function (l) {
-      if (Number(l[ticketEquipChamadoIdCol - 1]) === id && !l[ticketEquipDataExclusaoCol - 1]) {
-        observacoes[Number(l[ticketEquipEquipamentoIdCol - 1])] = String(l[ticketEquipObservacaoCol - 1] || '');
-      }
-    });
-
-    const porId = {};
-    ReadEquipments().forEach(function (e) { porId[Number(e[0])] = e; });
-    const equipamentos = ids.map(function (idEquip) {
-      const e = porId[idEquip];
-      const r = e ? resumoEquipamentoChamado_(e)
-        : { id: idEquip, nome: 'Equipamento #' + idEquip, marca: '', capacidade: '', modelo: '', patrimonio: '', localizacao: '', estado: '' };
-      r.observacao = observacoes[idEquip] || '';
-      return r;
-    }).sort(function (a, b) { return a.patrimonio.localeCompare(b.patrimonio, 'pt-BR', { numeric: true }); });
-
-    return { sucesso: true, equipamentos: equipamentos };
+    return { sucesso: true, equipamentos: equipamentosOsComObservacao_(id, chamado[ticketsEquipamentoIdCol - 1]) };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
   }
+}
+
+/**
+ * Todos os equipamentos da OS -- lista do chamado (ou coluna B) mais os do
+ * checklist --, cada um com a observação de encerramento gravada, em ordem
+ * de patrimônio. Usado no encerramento e na aba Equipamentos do detalhe.
+ */
+function equipamentosOsComObservacao_(chamadoId, equipamentoIdColunaB, equipamentos) {
+  const id = Number(chamadoId);
+  const linhasEquip = ReadTicketEquipamentos();
+  const ids = idsEquipamentosDoChamado_(id, equipamentoIdColunaB, linhasEquip);
+  ReadTicketChecklist().forEach(function (l) {
+    if (Number(l[ticketChecklistChamadoIdCol - 1]) !== id || l[ticketChecklistDataExclusaoCol - 1]) return;
+    const idEquip = Number(l[ticketChecklistEquipamentoIdCol - 1]);
+    if (idEquip && ids.indexOf(idEquip) === -1) ids.push(idEquip);
+  });
+
+  const observacoes = {};
+  linhasEquip.forEach(function (l) {
+    if (Number(l[ticketEquipChamadoIdCol - 1]) === id && !l[ticketEquipDataExclusaoCol - 1]) {
+      observacoes[Number(l[ticketEquipEquipamentoIdCol - 1])] = String(l[ticketEquipObservacaoCol - 1] || '');
+    }
+  });
+
+  const porId = {};
+  (equipamentos || ReadEquipments()).forEach(function (e) { porId[Number(e[0])] = e; });
+  return ids.map(function (idEquip) {
+    const e = porId[idEquip];
+    const r = e ? resumoEquipamentoChamado_(e)
+      : { id: idEquip, nome: 'Equipamento #' + idEquip, marca: '', capacidade: '', modelo: '', patrimonio: '', localizacao: '', estado: '' };
+    r.observacao = observacoes[idEquip] || '';
+    return r;
+  }).sort(function (a, b) { return a.patrimonio.localeCompare(b.patrimonio, 'pt-BR', { numeric: true }); });
 }
 
 /**
