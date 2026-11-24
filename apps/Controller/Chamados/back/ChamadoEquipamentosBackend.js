@@ -158,25 +158,37 @@ function salvarObservacoesEncerramentoChamado_(chamadoId, lista) {
   const itens = (lista || [])
     .map(function (o) { return { equipamentoId: Number(o && o.equipamentoId), observacao: String((o && o.observacao) || '').trim().slice(0, 500) }; })
     .filter(function (o) { return o.equipamentoId; });
-  if (!itens.some(function (o) { return o.observacao; })) return '';
+  const temObs = itens.some(function (o) { return o.observacao; });
 
   const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ticketEquipTableName);
-  if (!aba) throw new Error("Crie a aba '" + ticketEquipTableName + "' para gravar observação por equipamento.");
+  if (!aba) {
+    if (temObs) throw new Error("Crie a aba '" + ticketEquipTableName + "' para gravar observação por equipamento.");
+    return '';
+  }
+  if (!itens.length) return '';
 
   const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
   const linhas = ReadTicketEquipamentos();
   const linhaPorEquip = {};
+  const obsAtual = {};
   linhas.forEach(function (l, i) {
     if (Number(l[ticketEquipChamadoIdCol - 1]) === id && !l[ticketEquipDataExclusaoCol - 1]) {
-      linhaPorEquip[Number(l[ticketEquipEquipamentoIdCol - 1])] = i + firstLineTicketEquip;
+      const idEquip = Number(l[ticketEquipEquipamentoIdCol - 1]);
+      linhaPorEquip[idEquip] = i + firstLineTicketEquip;
+      obsAtual[idEquip] = String(l[ticketEquipObservacaoCol - 1] || '');
     }
   });
 
+  // grava só o que mudou: observação nova, alterada ou apagada (vazia =
+  // o usuário excluiu da lista na tela)
   const novas = [];
   itens.forEach(function (o) {
     const linha = linhaPorEquip[o.equipamentoId];
-    if (linha) aba.getRange(linha, ticketEquipObservacaoCol).setValue(o.observacao);
-    else if (o.observacao) novas.push(o);
+    if (linha) {
+      if (obsAtual[o.equipamentoId] !== o.observacao) aba.getRange(linha, ticketEquipObservacaoCol).setValue(o.observacao);
+    } else if (o.observacao) {
+      novas.push(o);
+    }
   });
   if (novas.length) {
     const pos = proximoIdTabela(aba, firstLineTicketEquip);

@@ -142,10 +142,15 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
 `Aberto` → `Em Andamento` (grava a data de início do andamento) → `Concluido` (grava a data de finalização).
 
 - Para concluir é obrigatório informar o motivo.
-- **Preventiva:** ao clicar em Resolver, aparece também a lista dos equipamentos da OS, com um campo de **observação por patrimônio** (opcional).
-  - Equipamentos da lista do chamado e do checklist entram na lista.
-  - As observações preenchidas ficam gravadas por equipamento e registradas no histórico.
-  - Se o chamado for reaberto e resolvido de novo, as observações anteriores voltam preenchidas para edição.
+- Ao clicar em Resolver, os botões Resolver e Adicionar anotação somem; o campo do motivo fica menor, com **Cancelar** e **Confirmar encerramento** à direita dele.
+- **Preventiva:** ao clicar em Resolver, aparece também a **observação por patrimônio** (opcional).
+  1. Digite o patrimônio. O sistema procura entre os equipamentos da OS (lista do chamado e checklist) e mostra, na frente do campo, a descrição do equipamento para conferência: nome/modelo, marca, capacidade, localização e estado. Patrimônio fora da OS não é aceito.
+  2. Digite a observação e clique em **Incluir** (ou tecle Enter).
+  3. Abaixo aparece a lista dos equipamentos incluídos com a observação de cada um. Em cada linha há os botões **Alterar** (carrega a observação para editar; o botão passa a ser "Salvar alteração") e **Excluir**.
+  - Um patrimônio só entra uma vez na lista; para mudar, use Alterar.
+  - Se houver patrimônio ou observação digitados e não incluídos, o encerramento pede para incluir ou limpar antes de confirmar.
+  - As observações ficam gravadas por equipamento e registradas no histórico. Excluir da lista uma observação já gravada apaga essa observação.
+  - Se o chamado for reaberto e resolvido de novo, as observações anteriores já aparecem na lista.
 - Se a OS ainda tiver itens de checklist pendentes, o motivo informado fica no histórico como justificativa das pendências.
 - **Desativar** marca o chamado como `Cancelado`. **Reativar** desfaz.
 

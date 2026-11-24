@@ -243,8 +243,22 @@ function abrirCaixaTextoChamado(modo) {
         if (textoBotaoEl) textoBotaoEl.textContent = 'Adicionar';
     }
 
+    aplicarModoResolverCaixaTexto(modo === 'resolver');
     if (caixa) caixa.style.display = 'flex';
     if (textoEl) textoEl.focus();
+}
+
+// Resolver: some com os botões de cima (Resolver / Adicionar anotação), o
+// motivo fica menor e Cancelar/Confirmar encerramento vão para a direita
+// dele -- assim os botões não ficam lá embaixo, depois da lista de
+// observações por patrimônio.
+function aplicarModoResolverCaixaTexto(ativo) {
+    const caixa = document.getElementById('chamadoCaixaTexto');
+    const acoesFixas = document.getElementById('chamadoAcoesFixas');
+    const textoEl = document.getElementById('novaAnotacaoChamado');
+    if (caixa) caixa.classList.toggle('chamado-caixa-texto--resolver', !!ativo);
+    if (acoesFixas) acoesFixas.style.display = ativo ? 'none' : '';
+    if (textoEl) textoEl.rows = ativo ? 2 : 3;
 }
 
 function cancelarCaixaTextoChamado() {
@@ -255,51 +269,252 @@ function cancelarCaixaTextoChamado() {
     const textoEl = document.getElementById('novaAnotacaoChamado');
     if (textoEl) textoEl.value = '';
     if (caixa) caixa.style.display = 'none';
+    aplicarModoResolverCaixaTexto(false);
     esconderObsEquipamentosEncerramento();
 }
 
 // ===== OBSERVAÇÃO POR PATRIMÔNIO NO ENCERRAMENTO (preventiva) =====
+// O usuário digita o patrimônio, confere os dados do equipamento, digita a
+// observação e clica em Incluir. Abaixo fica a lista do que foi incluído,
+// com Alterar e Excluir em cada linha. Só aceita equipamentos da OS.
+let obsEquipOs = [];             // equipamentos da OS (do servidor)
+let obsEquipIncluidas = [];      // [{ id, observacao }] na ordem de inclusão
+let obsEquipEditandoId = null;   // id em alteração (null = inclusão nova)
+let obsEquipConferido = null;    // equipamento encontrado pelo patrimônio digitado
+
 function esconderObsEquipamentosEncerramento() {
     const bloco = document.getElementById('chamadoObsEquip');
-    const lista = document.getElementById('chamadoObsEquipLista');
     if (bloco) bloco.style.display = 'none';
-    if (lista) lista.innerHTML = '';
+    obsEquipOs = [];
+    obsEquipIncluidas = [];
+    limparFormObsEquip();
+    renderizarListaObsEquip();
+}
+
+function obsEquipPorId(id) {
+    return obsEquipOs.find(e => Number(e.id) === Number(id)) || null;
+}
+
+function rotuloObsEquip(e) {
+    return (e.patrimonio ? 'Patrimônio ' + e.patrimonio : e.nome) +
+        (e.patrimonio && e.nome ? ' — ' + e.nome + (e.modelo ? '/' + e.modelo : '') : '') +
+        (e.localizacao ? ' (' + e.localizacao + ')' : '');
+}
+
+function definirStatusObsEquip(texto) {
+    const el = document.getElementById('chamadoObsEquipStatus');
+    if (!el) return;
+    el.innerHTML = texto || '';
+    el.style.display = texto ? '' : 'none';
 }
 
 async function carregarObsEquipamentosEncerramento(chamadoId) {
     const bloco = document.getElementById('chamadoObsEquip');
-    const lista = document.getElementById('chamadoObsEquipLista');
-    if (!bloco || !lista) return;
+    if (!bloco) return;
+    obsEquipOs = [];
+    obsEquipIncluidas = [];
+    limparFormObsEquip();
+    renderizarListaObsEquip();
     bloco.style.display = '';
-    lista.innerHTML = '<p class="chamado-obs-equip-vazio"><span class="spinner"></span>Carregando equipamentos...</p>';
+    habilitarFormObsEquip(false);
+    definirStatusObsEquip('<span class="spinner"></span>Carregando equipamentos da OS...');
     try {
         const resposta = await runServerFunction('listarEquipamentosEncerramentoChamado', chamadoId);
         if (chamadoCaixaTextoModo !== 'resolver' || chamadoIdAtualModal !== chamadoId) return; // fechou/trocou no meio
         const equipamentos = (resposta && resposta.equipamentos) || [];
         if (!resposta || resposta.sucesso === false || !equipamentos.length) {
-            lista.innerHTML = '<p class="chamado-obs-equip-vazio">' +
-                escapeHtml(resposta && resposta.sucesso === false ? resposta.mensagem : 'Nenhum equipamento nesta OS.') + '</p>';
+            definirStatusObsEquip(escapeHtml(resposta && resposta.sucesso === false ? resposta.mensagem : 'Nenhum equipamento nesta OS.'));
             return;
         }
-        lista.innerHTML = equipamentos.map(e => {
-            const rotulo = (e.patrimonio ? 'Patrimônio ' + e.patrimonio : e.nome) +
-                (e.patrimonio && e.nome ? ' — ' + e.nome : '') + (e.localizacao ? ' (' + e.localizacao + ')' : '');
-            return '<label class="chamado-obs-equip-item">' +
-                '<span class="chamado-obs-equip-rotulo">' + escapeHtml(rotulo) + '</span>' +
-                '<input type="text" class="field__input" maxlength="500" data-equipamento-id="' + Number(e.id) + '"' +
-                ' placeholder="Observação deste equipamento..." value="' + escapeHtml(e.observacao || '') + '">' +
-                '</label>';
-        }).join('');
+        obsEquipOs = equipamentos;
+        // observações já gravadas (chamado reaberto) entram na lista
+        obsEquipIncluidas = equipamentos.filter(e => e.observacao).map(e => ({ id: Number(e.id), observacao: e.observacao }));
+        definirStatusObsEquip('');
+        habilitarFormObsEquip(true);
+        renderizarListaObsEquip();
     } catch (error) {
         console.error('Erro ao carregar equipamentos para o encerramento:', error);
-        lista.innerHTML = '<p class="chamado-obs-equip-vazio">Não foi possível carregar os equipamentos.</p>';
+        definirStatusObsEquip('Não foi possível carregar os equipamentos.');
     }
 }
 
+function habilitarFormObsEquip(habilitar) {
+    const pat = document.getElementById('chamadoObsEquipPatrimonio');
+    if (pat) pat.disabled = !habilitar;
+    atualizarBotoesFormObsEquip();
+}
+
+function atualizarBotoesFormObsEquip() {
+    const texto = document.getElementById('chamadoObsEquipTexto');
+    const btn = document.getElementById('chamadoObsEquipBtnIncluir');
+    const btnCancelar = document.getElementById('chamadoObsEquipBtnCancelar');
+    if (texto) texto.disabled = !obsEquipConferido;
+    if (btn) {
+        btn.disabled = !obsEquipConferido;
+        btn.textContent = obsEquipEditandoId ? 'Salvar alteração' : 'Incluir';
+    }
+    if (btnCancelar) btnCancelar.style.display = obsEquipEditandoId ? '' : 'none';
+}
+
+function limparFormObsEquip() {
+    const pat = document.getElementById('chamadoObsEquipPatrimonio');
+    const texto = document.getElementById('chamadoObsEquipTexto');
+    if (pat) { pat.value = ''; pat.readOnly = false; }
+    if (texto) texto.value = '';
+    obsEquipEditandoId = null;
+    obsEquipConferido = null;
+    mostrarConferenciaObsEquip(null, '');
+    atualizarBotoesFormObsEquip();
+}
+
+// Busca o patrimônio digitado entre os equipamentos da OS e mostra os dados
+function conferirPatrimonioObsEquip() {
+    const pat = document.getElementById('chamadoObsEquipPatrimonio');
+    const digitado = String(pat ? pat.value : '').trim().toLowerCase();
+    obsEquipConferido = null;
+    if (!digitado) {
+        mostrarConferenciaObsEquip(null, '');
+    } else {
+        const achado = obsEquipOs.find(e => String(e.patrimonio || '').trim().toLowerCase() === digitado);
+        if (achado) {
+            obsEquipConferido = achado;
+            mostrarConferenciaObsEquip(achado, '');
+        } else {
+            mostrarConferenciaObsEquip(null, 'Patrimônio não encontrado entre os equipamentos desta OS.');
+        }
+    }
+    atualizarBotoesFormObsEquip();
+}
+
+function mostrarConferenciaObsEquip(e, aviso) {
+    const el = document.getElementById('chamadoObsEquipConferencia');
+    if (!el) return;
+    if (!e) {
+        el.title = '';
+        el.innerHTML = aviso ? '<span class="chamado-obs-equip-aviso">' + escapeHtml(aviso) + '</span>' : '';
+        el.style.display = aviso ? '' : 'none';
+        return;
+    }
+    // descrição numa linha, na frente do campo de patrimônio
+    const partes = [
+        (e.nome || '') + (e.modelo ? ' / ' + e.modelo : ''),
+        e.marca ? 'Marca ' + e.marca : '',
+        e.capacidade || '',
+        e.localizacao || '',
+        e.estado ? 'Estado ' + e.estado : ''
+    ].filter(p => String(p).trim());
+    el.innerHTML = '<span class="chamado-obs-equip-desc">' + escapeHtml(partes.join(' · ')) + '</span>';
+    el.title = partes.join(' · ');
+    el.style.display = '';
+}
+
+function teclaPatrimonioObsEquip(event) {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    conferirPatrimonioObsEquip();
+    const texto = document.getElementById('chamadoObsEquipTexto');
+    if (obsEquipConferido && texto) texto.focus();
+}
+
+function teclaTextoObsEquip(event) {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    incluirObsEquipUI();
+}
+
+function incluirObsEquipUI() {
+    const textoEl = document.getElementById('chamadoObsEquipTexto');
+    const observacao = String(textoEl ? textoEl.value : '').trim();
+    if (!obsEquipConferido) {
+        mostrarMensagem('Digite um patrimônio desta OS.', 'aviso');
+        return;
+    }
+    if (!observacao) {
+        mostrarMensagem('Digite a observação do equipamento.', 'aviso');
+        if (textoEl) textoEl.focus();
+        return;
+    }
+    const id = Number(obsEquipConferido.id);
+    const existente = obsEquipIncluidas.find(o => o.id === id);
+    if (existente && obsEquipEditandoId !== id) {
+        mostrarMensagem('Este patrimônio já foi incluído. Use o botão Alterar na lista.', 'aviso');
+        return;
+    }
+    if (existente) existente.observacao = observacao;
+    else obsEquipIncluidas.push({ id: id, observacao: observacao });
+    limparFormObsEquip();
+    renderizarListaObsEquip();
+    const pat = document.getElementById('chamadoObsEquipPatrimonio');
+    if (pat) pat.focus();
+}
+
+function alterarObsEquipUI(id) {
+    const item = obsEquipIncluidas.find(o => o.id === Number(id));
+    const e = obsEquipPorId(id);
+    if (!item || !e) return;
+    const pat = document.getElementById('chamadoObsEquipPatrimonio');
+    const texto = document.getElementById('chamadoObsEquipTexto');
+    if (pat) { pat.value = e.patrimonio || ''; pat.readOnly = true; }
+    obsEquipEditandoId = Number(id);
+    obsEquipConferido = e;
+    mostrarConferenciaObsEquip(e, '');
+    if (texto) { texto.value = item.observacao; }
+    atualizarBotoesFormObsEquip();
+    renderizarListaObsEquip();
+    if (texto) texto.focus();
+}
+
+function excluirObsEquipUI(id) {
+    obsEquipIncluidas = obsEquipIncluidas.filter(o => o.id !== Number(id));
+    if (obsEquipEditandoId === Number(id)) limparFormObsEquip();
+    renderizarListaObsEquip();
+}
+
+function cancelarAlteracaoObsEquipUI() {
+    limparFormObsEquip();
+    renderizarListaObsEquip();
+}
+
+function renderizarListaObsEquip() {
+    const lista = document.getElementById('chamadoObsEquipLista');
+    if (!lista) return;
+    if (!obsEquipIncluidas.length) {
+        lista.innerHTML = '';
+        lista.style.display = 'none';
+        return;
+    }
+    lista.style.display = '';
+    lista.innerHTML = obsEquipIncluidas.map(o => {
+        const e = obsEquipPorId(o.id) || { nome: 'Equipamento #' + o.id };
+        return '<div class="chamado-obs-equip-item' + (obsEquipEditandoId === o.id ? ' editando' : '') + '">' +
+            '<div class="chamado-obs-equip-item-texto">' +
+                '<span class="chamado-obs-equip-rotulo">' + escapeHtml(rotuloObsEquip(e)) + '</span>' +
+                '<span class="chamado-obs-equip-obs">' + escapeHtml(o.observacao) + '</span>' +
+            '</div>' +
+            '<div class="chamado-obs-equip-item-acoes">' +
+                '<button type="button" class="btn-mini" title="Alterar observação" onclick="alterarObsEquipUI(' + o.id + ')">✏️ Alterar</button>' +
+                '<button type="button" class="btn-mini btn-mini-perigo" title="Excluir observação" onclick="excluirObsEquipUI(' + o.id + ')">🗑️ Excluir</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+// Para o servidor vão todos os equipamentos da OS: os incluídos com a
+// observação e os demais vazios (assim uma observação excluída é apagada).
 function lerObsEquipamentosEncerramento() {
-    return Array.from(document.querySelectorAll('#chamadoObsEquipLista input[data-equipamento-id]'))
-        .map(el => ({ equipamentoId: Number(el.getAttribute('data-equipamento-id')), observacao: el.value.trim() }))
-        .filter(o => o.equipamentoId);
+    return obsEquipOs.map(e => {
+        const item = obsEquipIncluidas.find(o => o.id === Number(e.id));
+        return { equipamentoId: Number(e.id), observacao: item ? item.observacao : '' };
+    });
+}
+
+// Patrimônio/observação digitados mas não incluídos na lista
+function obsEquipPendenteSemIncluir() {
+    const bloco = document.getElementById('chamadoObsEquip');
+    if (!bloco || bloco.style.display === 'none') return false;
+    const pat = document.getElementById('chamadoObsEquipPatrimonio');
+    const texto = document.getElementById('chamadoObsEquipTexto');
+    return !!((pat && pat.value.trim()) || (texto && texto.value.trim()));
 }
 
 async function confirmarCaixaTextoChamado() {
@@ -308,6 +523,10 @@ async function confirmarCaixaTextoChamado() {
         const motivo = textoEl ? textoEl.value.trim() : '';
         if (!motivo) {
             alert('Informe o motivo do encerramento.');
+            return;
+        }
+        if (obsEquipPendenteSemIncluir()) {
+            mostrarMensagem('Há um patrimônio/observação digitado que não foi incluído na lista. Clique em Incluir (ou Salvar alteração) ou limpe os campos antes de confirmar.', 'aviso');
             return;
         }
         await alterarStatusChamadoUI('Concluido', motivo, lerObsEquipamentosEncerramento());
@@ -395,7 +614,9 @@ function iniciarEdicaoAnotacao(historicoId) {
     if (textoEl) textoEl.value = item.texto;
     if (rotuloEl) rotuloEl.textContent = 'Editar anotação';
     if (textoBotaoEl) textoBotaoEl.textContent = 'Salvar edição';
+    esconderObsEquipamentosEncerramento();
 
+    aplicarModoResolverCaixaTexto(false);
     if (caixa) caixa.style.display = 'flex';
     if (textoEl) textoEl.focus();
 }

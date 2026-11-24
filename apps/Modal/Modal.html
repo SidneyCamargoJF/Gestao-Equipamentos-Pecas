@@ -178,17 +178,38 @@
 
           <div class="chamado-caixa-texto" id="chamadoCaixaTexto">
             <span class="chamado-caixa-texto-rotulo" id="chamadoCaixaTextoRotulo">Nova anotação</span>
-            <textarea class="field__input" id="novaAnotacaoChamado" rows="3" placeholder="Ex: &quot;Serviço no período da manhã&quot;..."></textarea>
+            <!-- No Resolver o corpo vira linha: motivo à esquerda, botões à direita -->
+            <div class="chamado-caixa-texto-corpo">
+              <textarea class="field__input" id="novaAnotacaoChamado" rows="3" placeholder="Ex: &quot;Serviço no período da manhã&quot;..."></textarea>
+              <div class="chamado-caixa-texto-botoes">
+                <button type="button" class="btn-secondary" style="width:auto;" onclick="cancelarCaixaTextoChamado()">Cancelar</button>
+                <button type="button" class="btn-primary" id="salvarAnotacao" style="width:auto;" onclick="confirmarCaixaTextoChamado()">
+                  <span id="textoBotaoSalvarAnotacao">Adicionar</span>
+                </button>
+              </div>
+            </div>
             <!-- Encerramento de preventiva: observação por patrimônio (opcional) -->
             <div class="chamado-obs-equip" id="chamadoObsEquip" style="display:none;">
               <span class="chamado-caixa-texto-rotulo">Observação por patrimônio (opcional)</span>
-              <div class="chamado-obs-equip-lista" id="chamadoObsEquipLista"></div>
-            </div>
-            <div class="chamado-caixa-texto-botoes">
-              <button type="button" class="btn-secondary" style="width:auto;" onclick="cancelarCaixaTextoChamado()">Cancelar</button>
-              <button type="button" class="btn-primary" id="salvarAnotacao" style="width:auto;" onclick="confirmarCaixaTextoChamado()">
-                <span id="textoBotaoSalvarAnotacao">Adicionar</span>
-              </button>
+              <p class="chamado-obs-equip-status" id="chamadoObsEquipStatus" style="display:none;"></p>
+              <div class="chamado-obs-equip-form">
+                <!-- patrimônio e, na frente dele, a descrição do equipamento encontrado -->
+                <div class="chamado-obs-equip-pat-linha">
+                  <input type="text" class="field__input chamado-obs-equip-patrimonio" id="chamadoObsEquipPatrimonio"
+                    placeholder="Patrimônio" autocomplete="off"
+                    oninput="conferirPatrimonioObsEquip()" onkeydown="teclaPatrimonioObsEquip(event)">
+                  <div class="chamado-obs-equip-conferencia" id="chamadoObsEquipConferencia" style="display:none;"></div>
+                </div>
+                <div class="chamado-obs-equip-linha">
+                  <input type="text" class="field__input" id="chamadoObsEquipTexto" maxlength="500"
+                    placeholder="Observação deste equipamento..." disabled onkeydown="teclaTextoObsEquip(event)">
+                  <button type="button" class="btn-primary" id="chamadoObsEquipBtnIncluir" style="width:auto;" disabled
+                    onclick="incluirObsEquipUI()">Incluir</button>
+                  <button type="button" class="btn-secondary" id="chamadoObsEquipBtnCancelar" style="width:auto; display:none;"
+                    onclick="cancelarAlteracaoObsEquipUI()">Cancelar</button>
+                </div>
+              </div>
+              <div class="chamado-obs-equip-lista" id="chamadoObsEquipLista" style="display:none;"></div>
             </div>
           </div>
 
