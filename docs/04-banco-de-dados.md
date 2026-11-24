@@ -223,7 +223,7 @@ Ao salvar um contrato, as linhas filhas anteriores (equipamentos, serviços, pro
 | S | Data de exclusão |
 | T | Estado: `Novo`, `Bom`, `Ruim`, `Péssimo` ou `Velho`. O cabeçalho precisa ser **ESTADO**, porque a leitura pela classe `EquipmentsModel` usa o nome do cabeçalho |
 
-Os comentários das letras dentro de `EquipamentosModel.js` estão deslocados em uma posição. Valem os números das constantes, que são 0-based.
+As constantes de `EquipamentosModel.js` são 0-based (A = 0), e o model liga `colunasBaseZero` para a classe base `SheetModel` converter. A leitura `ReadEquipments()` usa os nomes do cabeçalho da linha 2 e descarta as linhas com data de exclusão (S).
 
 ## tbl_pecas — [PecasModel.js](../apps/01-Model/PecasModel.js) (0-based)
 

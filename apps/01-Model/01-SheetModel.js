@@ -17,6 +17,11 @@ class SheetModel {
     this.colDtCadastro = 4
     this.colDtAlteracao = 5
     this.colDtExclusao = 6
+    // Numeração das constantes de coluna (colId, colDtExclusao...):
+    // false = 1-based (A = 1, padrão desta classe); true = 0-based (A = 0),
+    // como o EquipmentsModel usa (a tela de equipamentos indexa os arrays
+    // direto com elas). Os métodos daqui convertem com colunaPlanilha().
+    this.colunasBaseZero = false
 
     Logger.log('Constructor - firstLine: ' + firstLine)
 
@@ -42,6 +47,11 @@ class SheetModel {
   }
   setDtExclusaoColumn(num) {
     this.colDtExclusao = num
+  }
+
+  /** Número da coluna na planilha (1-based) a partir de uma constante col*. */
+  colunaPlanilha(col) {
+    return Number(col) + (this.colunasBaseZero ? 1 : 0)
   }
 
   /**
@@ -88,7 +98,7 @@ class SheetModel {
 
       if (row.every(c => c === '')) continue;
 
-      if (!incluirExcluidos && String(row[this.colDtExclusao - 1]).trim() !== '') continue;
+      if (!incluirExcluidos && String(row[this.colunaPlanilha(this.colDtExclusao) - 1]).trim() !== '') continue;
 
       const objectRow = { line: String(i + 1) };
 
@@ -202,7 +212,7 @@ class SheetModel {
       const linha = Number(registro.line);
       const dataExclusao = Utilities.formatDate(new Date(), TZ, 'dd/MM/yyyy');
 
-      this.ss.getRange(linha, this.colDtExclusao).setValue(dataExclusao);
+      this.ss.getRange(linha, this.colunaPlanilha(this.colDtExclusao)).setValue(dataExclusao);
       this.ss.getRange(linha, 1, 1, this.numColumns).setBackground('#F4CCCC');
 
       Logger.log(`Registro ${id} excluído na linha ${linha}`);
