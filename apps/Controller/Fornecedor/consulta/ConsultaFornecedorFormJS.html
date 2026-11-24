@@ -53,7 +53,7 @@
     if (carregando) {
       const tbody = document.getElementById('bodyFornecedoresView');
       if (tbody) {
-        tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><span class="spinner"></span>Buscando fornecedores...</td></tr>';
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><span class="spinner"></span>Buscando fornecedores...</td></tr>';
       }
     }
   }
@@ -172,7 +172,7 @@
       if (span) span.textContent = '';
     });
 
-    const indices = { razaoSocial: 1, nomeFantasia: 2, cnpj: 3, telefone: 4, cidade: 5 };
+    const indices = { razaoSocial: 0, nomeFantasia: 1, cnpj: 2, telefone: 3, cidade: 4 };
     const idx = indices[sortStateFornecedor.coluna];
     if (idx !== undefined && ths[idx]) {
       ths[idx].classList.add('sorted');
@@ -202,7 +202,7 @@
     tbody.innerHTML = '';
 
     if (!lista || lista.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhum fornecedor encontrado com os filtros informados.</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhum fornecedor encontrado com os filtros informados.</td></tr>';
       return;
     }
 
@@ -226,7 +226,6 @@
       ].filter(Boolean).join(' / ');
 
       tr.innerHTML = `
-        <td class="acao-cell">${btnVer}</td>
         <td>${escapeHtml(f.razaoSocial)} ${f.desativado ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
         <td>${escapeHtml(f.nomeFantasia)}</td>
         <td>${escapeHtml(f.cnpj)}</td>
@@ -234,6 +233,7 @@
         <td>${escapeHtml(f.cidade)}${f.estado ? '/' + escapeHtml(f.estado) : ''}</td>
         <td>${escapeHtml(observacao)}</td>
         <td class="acao-cell">
+          ${btnVer}
           ${btnEditar}
           ${btnExcluir}
         </td>

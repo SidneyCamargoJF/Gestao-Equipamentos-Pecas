@@ -367,8 +367,34 @@
   }
 }
 
-.btn-confirmar-servico {
+.servico-acoes-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 1.25rem;
+}
+
+.btn-confirmar-servico {
+  margin: 0;
+}
+
+/* Botão discreto -- limpar a especificação é a exceção (normalmente a
+   pessoa quer manter tudo e só trocar a periodicidade pra lançar o mesmo
+   serviço de novo), por isso fica pequeno no canto, não como uma ação
+   de peso igual ao "Confirmar". */
+.btn-limpar-servico-spec {
+  background: none;
+  border: none;
+  color: var(--color-slate-400);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.15s ease;
+}
+
+.btn-limpar-servico-spec:hover {
+  color: var(--color-slate-600);
+  text-decoration: underline;
 }
 
 

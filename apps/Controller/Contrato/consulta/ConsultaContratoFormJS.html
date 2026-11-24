@@ -97,7 +97,7 @@ function atualizarIndicadoresContrato() {
         if (span) span.textContent = '';
     });
 
-    const indices = { numero: 1, contrato: 2, sei: 3, empresa: 4, valor: 5, dataInicial: 6, dataFinal: 7, situacao: 8 };
+    const indices = { numero: 0, contrato: 1, sei: 2, empresa: 3, valor: 4, dataInicial: 5, dataFinal: 6, situacao: 7 };
     const idx = indices[sortStateContrato.coluna];
     if (idx !== undefined && ths[idx]) {
         ths[idx].classList.add('sorted');
@@ -201,7 +201,6 @@ function renderTabelaContrato(lista) {
             </span>`;
 
         return `<div class="${classesLinha}" role="row">
-            <div class="gtable-cell gtable-cell-center" role="cell">${btnVer}</div>
             <div class="gtable-cell" role="cell">${escapeHtml(c.numero)}</div>
             <div class="gtable-cell" role="cell">${c.contrato ? escapeHtml(c.contrato) : '--'}</div>
             <div class="gtable-cell" role="cell">${c.sei ? escapeHtml(c.sei) : '--'}</div>
@@ -211,6 +210,7 @@ function renderTabelaContrato(lista) {
             <div class="gtable-cell" role="cell">${formatarDataContrato(c.dataFinal)}</div>
             <div class="gtable-cell" role="cell"><span class="situacao-badge ${c.situacao}">${formatarSituacaoContrato(c.situacao)}</span></div>
             <div class="gtable-cell gtable-cell-end" role="cell">
+                ${btnVer}
                 ${btnEditar}
                 ${btnExcluir}
             </div>
