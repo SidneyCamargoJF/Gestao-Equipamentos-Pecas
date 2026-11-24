@@ -117,6 +117,8 @@ A tela tem o bloco **Dados do Chamado** e, abaixo, três abas: **Vínculo Contra
 - **Origem:** manual ou automática;
 - **Só atrasados**.
 
+Nas **preventivas**, as colunas Equipamento e Localização mostram **Diversos**, porque a OS cobre vários equipamentos. Mesmo assim, o filtro de equipamento encontra a preventiva quando o patrimônio digitado está na lista do chamado ou no checklist da OS.
+
 Os chamados atrasados recebem o selo **Atrasado**. Ao passar o mouse sobre ele, aparece o motivo do atraso.
 
 O botão **Gerar preventivas do mês** gera manualmente as OS da competência atual. Se a propriedade `ADMINS` estiver configurada, só os administradores podem usá-lo. Veja o documento [07](07-implantacao-e-operacao.md).

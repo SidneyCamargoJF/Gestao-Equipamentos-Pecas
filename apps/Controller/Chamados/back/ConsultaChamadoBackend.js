@@ -27,15 +27,47 @@ function filtrarChamados(criterios) {
             .map(linha => Number(linha[1]))
     );
 
+    const textoEquip = e => e[5] + ' - ' + e[1] + (e[4] ? '/' + e[4] : '');
+    const equipPorId = {};
+    equipamentos.forEach(e => { equipPorId[Number(e[0])] = e; });
+
+    // Preventiva tem vários equipamentos (lista do chamado + checklist da OS):
+    // a tabela mostra "Diversos", mas o filtro por equipamento procura em todos.
+    let equipsPorChamado = null;
+    if (equipamentoBuscado !== "") {
+        equipsPorChamado = {};
+        const incluir = (chamadoId, idEquip) => {
+            chamadoId = Number(chamadoId); idEquip = Number(idEquip);
+            if (!chamadoId || !idEquip) return;
+            (equipsPorChamado[chamadoId] = equipsPorChamado[chamadoId] || new Set()).add(idEquip);
+        };
+        ReadTicketEquipamentos().forEach(l => {
+            if (!l[ticketEquipDataExclusaoCol - 1]) incluir(l[ticketEquipChamadoIdCol - 1], l[ticketEquipEquipamentoIdCol - 1]);
+        });
+        ReadTicketChecklist().forEach(l => {
+            if (!l[ticketChecklistDataExclusaoCol - 1]) incluir(l[ticketChecklistChamadoIdCol - 1], l[ticketChecklistEquipamentoIdCol - 1]);
+        });
+    }
+
     for (let i = 0; i < dados.length; i++) {
+        let colTipo = String(dados[i][3] || '').trim().toLowerCase();
+        let preventiva = (colTipo === 'preventiva');
+
         // ID_EQUIPAMENTO (dados[i][1]) é só o ID -- traduz pra "Patrimônio - Nome/Modelo"
         // pra mostrar na tabela e pra poder filtrar pelo patrimônio digitado de verdade.
-        let equip = equipamentos.find(e => Number(e[0]) === Number(dados[i][1]));
-        let equipamentoTexto = equip ? (equip[5] + ' - ' + equip[1] + (equip[4] ? '/' + equip[4] : '')) : '';
+        let equip = equipPorId[Number(dados[i][1])];
+        let equipamentoTexto = preventiva ? 'Diversos' : (equip ? textoEquip(equip) : '');
+        let localizacaoTexto = preventiva ? 'Diversos' : (equip ? equip[7] : '');
 
         let colEquipamento = equipamentoTexto.toLowerCase();
+        if (preventiva && equipsPorChamado) {
+            const ids = new Set(equipsPorChamado[Number(dados[i][0])] || []);
+            if (Number(dados[i][1])) ids.add(Number(dados[i][1]));
+            colEquipamento += ' ' + Array.from(ids)
+                .map(id => equipPorId[id] ? textoEquip(equipPorId[id]) : '')
+                .join(' ').toLowerCase();
+        }
         let colMotivo = String(dados[i][2] || '').trim().toLowerCase();
-        let colTipo = String(dados[i][3] || '').trim().toLowerCase();
         let colPrioridade = String(dados[i][4] || '').trim().toLowerCase();
         let colStatus = String(dados[i][11] || '').trim().toLowerCase();
         let desativado = (colStatus === 'cancelado' || colStatus === 'concluido');
@@ -58,7 +90,7 @@ function filtrarChamados(criterios) {
             res.push({
                 id: dados[i][0],
                 equipamento: equipamentoTexto,
-                localizacao: equip ? equip[7] : '',
+                localizacao: localizacaoTexto,
                 motivo: dados[i][2],
                 tipo: dados[i][3],
                 prioridade: dados[i][4],
