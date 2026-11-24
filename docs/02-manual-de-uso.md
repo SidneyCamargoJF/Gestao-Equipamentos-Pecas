@@ -13,12 +13,13 @@ Padrões das consultas:
 **Campos:**
 - nome, marca, capacidade e modelo;
 - patrimônio e sequência;
-- localização e fornecedor;
+- localização, fornecedor e **estado** (Novo, Bom, Ruim, Péssimo ou Velho);
 - data de entrada, nota fiscal, processo SEI, data de garantia, valor e observações.
 
 **Regras:**
 - O **patrimônio** identifica o equipamento na abertura de chamados.
 - A situação da garantia (vigente ou vencida) é calculada pela data de garantia.
+- O **estado** aparece numa coluna da consulta, que pode ser ordenada na sequência Novo → Velho, e nos detalhes do equipamento. Aparece também na lista de equipamentos do chamado.
 
 ## Peças
 

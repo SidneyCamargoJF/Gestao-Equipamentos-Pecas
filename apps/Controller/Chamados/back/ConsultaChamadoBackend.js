@@ -1,6 +1,6 @@
 function ReadEquipments() {
     return new EquipmentsModel().read().map(e => [
-        e.id, e.nome, e.marca, e.capacidade, e.modelo, e.patrimonio, e.sequencia, e.localizacao, e.active
+        e.id, e.nome, e.marca, e.capacidade, e.modelo, e.patrimonio, e.sequencia, e.localizacao, e.active, e.estado || ''
     ]);
 }
 

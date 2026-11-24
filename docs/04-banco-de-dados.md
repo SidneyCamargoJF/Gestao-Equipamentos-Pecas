@@ -221,6 +221,7 @@ Ao salvar um contrato, as linhas filhas anteriores (equipamentos, serviços, pro
 | Q | Data de cadastro |
 | R | Data de alteração |
 | S | Data de exclusão |
+| T | Estado: `Novo`, `Bom`, `Ruim`, `Péssimo` ou `Velho`. O cabeçalho precisa ser **ESTADO**, porque a leitura pela classe `EquipmentsModel` usa o nome do cabeçalho |
 
 Os comentários das letras dentro de `EquipamentosModel.js` estão deslocados em uma posição. Valem os números das constantes, que são 0-based.
 

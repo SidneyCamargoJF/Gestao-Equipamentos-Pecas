@@ -67,6 +67,7 @@ function filtrarEquipamentos(criterios) {
   const marcaBusca = String(criterios.marca || '').trim().toLowerCase();
   const localizacaoBusca = String(criterios.localizacao || '').trim().toLowerCase();
   const seiBusca = String(criterios.sei || '').trim().toLowerCase();
+  const estadoBusca = String(criterios.estado || '').trim().toLowerCase();
 
   const res = linhas
     .map(l => ({
@@ -81,6 +82,7 @@ function filtrarEquipamentos(criterios) {
       fornecedor: String(l[model.colFornecedor] || '').trim(),
       sei: String(l[model.colSei] || '').trim(),
       garantia: calcularStatusGarantiaEquip_(l[model.colDataGarantia]),
+      estado: String(l[model.colEstado] || '').trim(),
       desativada: !!(l[model.colDtExclusao] && String(l[model.colDtExclusao]).trim() !== '')
     }))
     .filter(eq => eq.nome || eq.patrimonio)
@@ -88,7 +90,8 @@ function filtrarEquipamentos(criterios) {
     .filter(eq => capacidadeBusca === '' || eq.capacidade.replace(/\D/g, '').includes(capacidadeBusca))
     .filter(eq => marcaBusca === '' || eq.marca.toLowerCase().includes(marcaBusca))
     .filter(eq => localizacaoBusca === '' || eq.localizacao.toLowerCase().includes(localizacaoBusca))
-    .filter(eq => seiBusca === '' || eq.sei.toLowerCase().includes(seiBusca));
+    .filter(eq => seiBusca === '' || eq.sei.toLowerCase().includes(seiBusca))
+    .filter(eq => estadoBusca === '' || eq.estado.toLowerCase() === estadoBusca);
 
   res.sort((a, b) => (a.desativada ? 1 : 0) - (b.desativada ? 1 : 0));
 
@@ -130,7 +133,8 @@ function buscarEquipamentoParaEdicao(idInput) {
             sei: String(l[model.colSei] || ''),
             dataGarantia: converterParaInputDateEquip_(l[model.colDataGarantia]),
             valorAquisicao: l[model.colValorAquisicao] || '',
-            observacoes: String(l[model.colObservacoes] || '')
+            observacoes: String(l[model.colObservacoes] || ''),
+            estado: String(l[model.colEstado] || '')
           }
         };
       }
@@ -170,6 +174,7 @@ function buscarEquipamentoDetalhado(idInput) {
             dataGarantia: formatarDataExibicaoEquip_(l[model.colDataGarantia]),
             valorAquisicao: l[model.colValorAquisicao] || '',
             observacoes: String(l[model.colObservacoes] || ''),
+            estado: String(l[model.colEstado] || ''),
             dtCadastro: formatarDataExibicaoEquip_(l[model.colDtCadastro]),
             dtAlteracao: formatarDataExibicaoEquip_(l[model.colDtAlteracao]),
             desativado: !!(l[model.colDtExclusao] && String(l[model.colDtExclusao]).trim() !== '')
@@ -193,6 +198,10 @@ function salvarEquipamento(dados) {
     if (!nome) return { sucesso: false, mensagem: "Informe o nome do equipamento." };
     if (!marca) return { sucesso: false, mensagem: "Informe a marca." };
     if (!patrimonio) return { sucesso: false, mensagem: "Informe o patrimônio." };
+    const estado = String(dados.estado || '').trim();
+    if (estado && ESTADOS_EQUIPAMENTO.indexOf(estado) === -1) {
+      return { sucesso: false, mensagem: "Estado inválido. Use: " + ESTADOS_EQUIPAMENTO.join(', ') + "." };
+    }
 
     const model = new EquipmentsModel();
     const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('tbl_equipamentos');
@@ -230,6 +239,7 @@ function salvarEquipamento(dados) {
           aba.getRange(linhaReal, model.colDataGarantia + 1).setValue(dados.dataGarantia || '');
           aba.getRange(linhaReal, model.colValorAquisicao + 1).setValue(dados.valorAquisicao || '');
           aba.getRange(linhaReal, model.colObservacoes + 1).setValue(dados.observacoes || '');
+          aba.getRange(linhaReal, model.colEstado + 1).setValue(estado);
           aba.getRange(linhaReal, model.colDtAlteracao + 1).setValue(dataHoje);
           return { sucesso: true, mensagem: "Equipamento atualizado com sucesso!", id: idEdicao };
         }
@@ -264,6 +274,7 @@ function salvarEquipamento(dados) {
     novaLinha[model.colDtCadastro] = dataHoje;
     novaLinha[model.colDtAlteracao] = '';
     novaLinha[model.colDtExclusao] = '';
+    novaLinha[model.colEstado] = estado;
 
     aba.appendRow(novaLinha);
     const novaUltimaLinha = aba.getLastRow();

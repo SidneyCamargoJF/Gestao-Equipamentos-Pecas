@@ -21,7 +21,8 @@ function verificarPatrimonioEquipamento(patrimonio) {
         capacidade: dados[i][3] || '',
         marca: dados[i][2] || '',
         modelo: dados[i][4] || '',
-        sequencia: dados[i][6] || ''
+        sequencia: dados[i][6] || '',
+        estado: dados[i][9] || ''
       };
     }
   }

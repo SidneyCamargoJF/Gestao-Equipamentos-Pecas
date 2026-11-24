@@ -449,6 +449,7 @@
       modelo: e.modelo || '',
       capacidade: e.capacidade || '',
       localizacao: e.localizacao || '',
+      estado: e.estado || '',
       doContrato: doContrato || ''
     });
     return true;
@@ -476,6 +477,7 @@
         '<td>' + escapeHtml(e.modelo) + '</td>' +
         '<td>' + escapeHtml(e.capacidade) + '</td>' +
         '<td>' + escapeHtml(e.localizacao) + '</td>' +
+        '<td>' + escapeHtml(e.estado || '—') + '</td>' +
         '<td class="chamado-equip-acoes">' +
           '<button type="button" class="btn-acao btn-excluir-linha" title="Remover do chamado" onclick="removerEquipamentoChamado(' + Number(e.id) + ')">' +
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +

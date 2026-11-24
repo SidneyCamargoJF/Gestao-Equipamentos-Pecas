@@ -121,12 +121,14 @@
     document.getElementById('cadEquipDataGarantia').value = eq.dataGarantia || '';
     document.getElementById('cadEquipValorAquisicao').value = eq.valorAquisicao || '';
     document.getElementById('cadEquipObservacoes').value = eq.observacoes || '';
+    selecionarOuAdicionarOpcaoEquip('cadEquipEstado', eq.estado);
+    if (!eq.estado) document.getElementById('cadEquipEstado').value = '';
     atualizarUnidadeCapacidadeEquip();
   }
 
   function limparFormularioEquipamento() {
     document.getElementById('cadEquipId').value = '0';
-    ['cadEquipPatrimonio', 'cadEquipNome', 'cadEquipMarca', 'cadEquipCapacidade', 'cadEquipModelo', 'cadEquipSequencia', 'cadEquipLocalizacao', 'cadEquipFornecedor', 'cadEquipDataEntrada', 'cadEquipNotaFiscal', 'cadEquipSei', 'cadEquipDataGarantia', 'cadEquipValorAquisicao', 'cadEquipObservacoes'].forEach(id => {
+    ['cadEquipPatrimonio', 'cadEquipNome', 'cadEquipMarca', 'cadEquipCapacidade', 'cadEquipModelo', 'cadEquipSequencia', 'cadEquipLocalizacao', 'cadEquipFornecedor', 'cadEquipDataEntrada', 'cadEquipNotaFiscal', 'cadEquipSei', 'cadEquipDataGarantia', 'cadEquipValorAquisicao', 'cadEquipObservacoes', 'cadEquipEstado'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.value = '';
@@ -179,7 +181,8 @@
       sei: document.getElementById('cadEquipSei')?.value.trim() || '',
       dataGarantia: document.getElementById('cadEquipDataGarantia')?.value || '',
       valorAquisicao: document.getElementById('cadEquipValorAquisicao')?.value.trim() || '',
-      observacoes: document.getElementById('cadEquipObservacoes')?.value.trim() || ''
+      observacoes: document.getElementById('cadEquipObservacoes')?.value.trim() || '',
+      estado: document.getElementById('cadEquipEstado')?.value || ''
     };
   }
 

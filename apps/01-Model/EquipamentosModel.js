@@ -4,6 +4,9 @@
 // Herda de SheetModel (classe base genérica de leitura).
 // =====================================================
 
+// Valores aceitos na coluna ESTADO (T) de tbl_equipamentos.
+const ESTADOS_EQUIPAMENTO = ['Novo', 'Bom', 'Ruim', 'Péssimo', 'Velho'];
+
 class EquipmentsModel extends SheetModel {
 
   constructor() {
@@ -20,7 +23,7 @@ class EquipmentsModel extends SheetModel {
     this.setDtAlteracaoColumn(17)  // Q - dt_alteracao
     this.setDtExclusaoColumn(18)   // R - dt_exclusao
 
-    this.setNumColumns(19)
+    this.setNumColumns(20)
 
     this.colNome           = 1;  // B - Nome
     this.colMarca          = 2;  // C - Marca
@@ -36,6 +39,7 @@ class EquipmentsModel extends SheetModel {
     this.colDataGarantia   = 12; // M - Data Garantia 
     this.colValorAquisicao = 13; // N - Valor
     this.colObservacoes    = 14; // O -
+    this.colEstado         = 19; // T - Estado de conservação (coluna nova, no fim da aba)
 
 
   }

@@ -133,7 +133,7 @@ function listarEquipamentosPorLocalizacao(localizacao) {
   return ReadEquipments()
     .filter(function (e) { return String(e[7] || '').trim().toLowerCase() === alvo; })
     .map(function (e) {
-      return { id: e[0], nome: e[1] || '', marca: e[2] || '', capacidade: e[3] || '', modelo: e[4] || '', patrimonio: e[5] || '', localizacao: e[7] || '' };
+      return { id: e[0], nome: e[1] || '', marca: e[2] || '', capacidade: e[3] || '', modelo: e[4] || '', patrimonio: e[5] || '', localizacao: e[7] || '', estado: e[9] || '' };
     });
 }
 

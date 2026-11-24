@@ -55,7 +55,7 @@
     if (!carregando) return;
     const tbody = document.getElementById('tabelaBodyEquipment');
     if (tbody) {
-      tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span>Buscando equipamentos...</td></tr>';
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="11"><span class="spinner"></span>Buscando equipamentos...</td></tr>';
     }
   }
 
@@ -84,7 +84,7 @@
       if (span) span.textContent = '';
     });
 
-    const indices = { patrimonio: 1, nome: 2, capacidade: 3, marca: 4, modelo: 5, localizacao: 6, sei: 7, garantia: 8 };
+    const indices = { patrimonio: 1, nome: 2, capacidade: 3, marca: 4, modelo: 5, localizacao: 6, sei: 7, estado: 8, garantia: 9 };
     const idx = indices[sortStateEquipamento.coluna];
     if (idx !== undefined && ths[idx]) {
       ths[idx].classList.add('sorted');
@@ -105,7 +105,14 @@
     // ordenação alfabética normal.
     const colunasNumericas = ['patrimonio', 'capacidade'];
 
+    // Estado segue a ordem da lista (Novo, Bom, Ruim, Péssimo, Velho); vazio por último.
+    const ordemEstado = ['novo', 'bom', 'ruim', 'péssimo', 'velho'];
+
     arr.sort((a, b) => {
+      if (col === 'estado') {
+        const pos = v => { const i = ordemEstado.indexOf(String(v || '').toLowerCase()); return i === -1 ? 99 : i; };
+        return (pos(a.estado) - pos(b.estado)) * dir;
+      }
       if (colunasNumericas.includes(col)) {
         const na = Number(String(a[col] || '').replace(/\D/g, '')) || 0;
         const nb = Number(String(b[col] || '').replace(/\D/g, '')) || 0;
@@ -126,7 +133,7 @@
     tbody.innerHTML = '';
 
     if (!lista || lista.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Nenhum equipamento encontrado.</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="11">Nenhum equipamento encontrado.</td></tr>';
       return;
     }
 
@@ -157,6 +164,7 @@
         <td>${escapeHtml(eq.modelo)}</td>
         <td>${escapeHtml(eq.localizacao)}</td>
         <td>${escapeHtml(eq.sei)}</td>
+        <td>${eq.estado ? escapeHtml(eq.estado) : '--'}</td>
         <td>${garantiaHtml}</td>
         <td class="acao-cell">
           ${btnEditar}
@@ -208,6 +216,7 @@
         ${linha('Sequência', eq.sequencia)}
         ${linha('Localização', eq.localizacao)}
         ${linha('Fornecedor', eq.fornecedor)}
+        ${linha('Estado', eq.estado)}
         <div class="detalhe-contrato-linha">
             <span class="detalhe-contrato-rotulo">Status</span>
             <span class="detalhe-contrato-valor">${eq.desativado ? '<span class="status-desativado">Desativado</span>' : 'Ativo'}</span>

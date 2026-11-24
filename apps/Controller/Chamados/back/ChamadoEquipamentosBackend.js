@@ -13,7 +13,8 @@ function resumoEquipamentoChamado_(e) {
     capacidade: String(e[3] || ''),
     modelo: String(e[4] || ''),
     patrimonio: String(e[5] || ''),
-    localizacao: String(e[7] || '')
+    localizacao: String(e[7] || ''),
+    estado: String(e[9] || '')
   };
 }
 
