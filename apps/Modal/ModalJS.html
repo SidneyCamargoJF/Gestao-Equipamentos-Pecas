@@ -1,12 +1,24 @@
 <script>
 
   // ===== GENÉRICO / SISTEMA =====
+  // O modal "processando" funciona com contador: cada exibirModal soma,
+  // cada fecharModal subtrai, e ele só fecha quando zera. Assim várias
+  // operações ao mesmo tempo (ou uma dentro da outra -- ex.: a tela abre o
+  // Processando e runServerFunction abre de novo numa gravação) não fecham
+  // o modal antes da hora.
+  let contadorProcessando = 0;
+
   function exibirModal(id) {
+    if (id === 'processando') contadorProcessando++;
     const modal = document.getElementById(id);
     if (modal) modal.classList.add('aberto');
   }
 
   function fecharModal(id) {
+    if (id === 'processando') {
+      contadorProcessando = Math.max(0, contadorProcessando - 1);
+      if (contadorProcessando > 0) return;
+    }
     const modal = document.getElementById(id);
     if (modal) modal.classList.remove('aberto');
   }

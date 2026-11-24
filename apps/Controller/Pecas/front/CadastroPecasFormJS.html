@@ -180,8 +180,10 @@
       telefoneFixo: campos.telefoneFixo.value.trim()
     };
 
+    if (typeof exibirModal === 'function') exibirModal('processando');
     google.script.run
       .withSuccessHandler(async (resposta) => {
+        if (typeof fecharModal === 'function') fecharModal('processando');
         if (resposta && resposta.sucesso) {
           fecharModalCadastroFornecedor();
           const selectId = (SELECTS_CADASTRO_RAPIDO.fornecedor[contextoCadastroRapido]) || 'fornecedorSelect';
@@ -194,6 +196,7 @@
         }
       })
       .withFailureHandler((err) => {
+        if (typeof fecharModal === 'function') fecharModal('processando');
         console.error('Erro ao cadastrar fornecedor:', err);
         alert('Ocorreu um erro no script: ' + (err.message || err));
       })
@@ -229,8 +232,10 @@
 
     if (input) input.classList.remove('is-invalid');
 
+    if (typeof exibirModal === 'function') exibirModal('processando');
     google.script.run
       .withSuccessHandler(async (resposta) => {
+        if (typeof fecharModal === 'function') fecharModal('processando');
         if (resposta && resposta.sucesso) {
           fecharModalCadastroLocalizacao();
           const selectId = (SELECTS_CADASTRO_RAPIDO.localizacao[contextoCadastroRapido]) || 'localSelect';
@@ -243,6 +248,7 @@
         }
       })
       .withFailureHandler((err) => {
+        if (typeof fecharModal === 'function') fecharModal('processando');
         console.error('Erro ao cadastrar localização:', err);
         alert('Ocorreu um erro no script: ' + (err.message || err));
       })
