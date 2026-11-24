@@ -55,7 +55,7 @@
     if (!carregando) return;
     const tbody = document.getElementById('tabelaBodyEquipment');
     if (tbody) {
-      tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span>Buscando equipamentos...</td></tr>';
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="11"><span class="spinner"></span>Buscando equipamentos...</td></tr>';
     }
   }
 
@@ -84,7 +84,7 @@
       if (span) span.textContent = '';
     });
 
-    const indices = { patrimonio: 0, nome: 1, capacidade: 2, marca: 3, modelo: 4, localizacao: 5, sei: 6, estado: 7, garantia: 8 };
+    const indices = { patrimonio: 0, patrimonioAnterior: 1, nome: 2, capacidade: 3, marca: 4, modelo: 5, localizacao: 6, sei: 7, estado: 8, garantia: 9 };
     const idx = indices[sortStateEquipamento.coluna];
     if (idx !== undefined && ths[idx]) {
       ths[idx].classList.add('sorted');
@@ -103,7 +103,7 @@
     // formatados, ex: "12.000") -- comparar como texto faz "10" vir antes de
     // "9". Pra essas colunas, compara pelo valor numérico; as demais seguem
     // ordenação alfabética normal.
-    const colunasNumericas = ['patrimonio', 'capacidade'];
+    const colunasNumericas = ['patrimonio', 'patrimonioAnterior', 'capacidade'];
 
     // Estado segue a ordem da lista (Novo, Bom, Ruim, Péssimo, Velho); vazio por último.
     const ordemEstado = ['novo', 'bom', 'ruim', 'péssimo', 'velho'];
@@ -133,7 +133,7 @@
     tbody.innerHTML = '';
 
     if (!lista || lista.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Nenhum equipamento encontrado.</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="11">Nenhum equipamento encontrado.</td></tr>';
       return;
     }
 
@@ -157,6 +157,7 @@
 
       tr.innerHTML = `
         <td>${escapeHtml(eq.patrimonio)} ${eq.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
+        <td>${eq.patrimonioAnterior ? escapeHtml(eq.patrimonioAnterior) : '--'}</td>
         <td>${escapeHtml(eq.nome)}</td>
         <td>${escapeHtml(eq.capacidade)}</td>
         <td>${escapeHtml(eq.marca)}</td>

@@ -247,12 +247,16 @@ async function abrirDetalhesContrato(contratoId, situacao) {
     exibirModal('modalDetalhesContrato');
 
     try {
-        const dados = await runServerFunction('buscarContratoParaEdicao', contratoId);
-        conteudo.innerHTML = montarDetalheContratoHtml(dados, situacao);
+        const resposta = await runServerFunction('buscarDetalhesContrato', contratoId);
+        if (!resposta || resposta.sucesso === false) {
+            if (conteudo) conteudo.innerHTML = '<p>' + escapeHtml((resposta && resposta.mensagem) || 'Não foi possível carregar os detalhes desse contrato.') + '</p>';
+            return;
+        }
+        conteudo.innerHTML = montarDetalheContratoHtml(resposta.contrato, situacao);
         trocarSecaoDetalheContrato('complementares');
         carregarAnexosContratoUI(contratoId);
     } catch (error) {
-        console.error('Erro em buscarContratoParaEdicao: ' + error.message);
+        console.error('Erro em buscarDetalhesContrato: ' + error.message);
         if (conteudo) conteudo.innerHTML = '<p>Erro ao carregar os detalhes do contrato.</p>';
     }
 }
@@ -352,15 +356,33 @@ function montarDetalheContratoHtml(c, situacao) {
 
     const produtosHtml = lista(c.produtos, 'Nenhum produto vinculado.', p => `<li>${escapeHtml(p.nome)}</li>`);
 
-    const checklistMensal = (c.checklist || []).filter(i => i.periodo === 'mensal');
-    const checklistAnual = (c.checklist || []).filter(i => i.periodo === 'anual');
+    // Antes só mostrava Mensal/Anual -- itens com as outras periodicidades
+    // (bimestral/trimestral/quadrimestral/semestral) existiam na planilha
+    // mas ficavam escondidos no modal. Agora mostra um grupo por
+    // periodicidade que existir de verdade em PERIODICIDADES_ORDEM.
     const itemChecklist = i => `<li>${escapeHtml(i.descricao)}</li>`;
-    const checklistHtml = `
-        <h5 class="detalhe-contrato-subtitulo">Mensal</h5>
-        ${lista(checklistMensal, 'Nenhum item mensal.', itemChecklist)}
-        <h5 class="detalhe-contrato-subtitulo">Anual</h5>
-        ${lista(checklistAnual, 'Nenhum item anual.', itemChecklist)}
-    `;
+    const checklistHtml = (typeof PERIODICIDADES_ORDEM !== 'undefined' ? PERIODICIDADES_ORDEM : ['mensal', 'bimestral', 'trimestral', 'quadrimestral', 'semestral', 'anual'])
+        .map(function (periodo) {
+            const itens = (c.checklist || []).filter(i => i.periodo === periodo);
+            const rotulo = typeof formatarPeriodoChecklist === 'function' ? formatarPeriodoChecklist(periodo) : periodo;
+            return `
+                <h5 class="detalhe-contrato-subtitulo">${escapeHtml(rotulo)}</h5>
+                ${lista(itens, 'Nenhum item ' + rotulo.toLowerCase() + '.', itemChecklist)}
+            `;
+        }).join('');
+
+    // SLA: só mostra prioridade que teve pelo menos um prazo preenchido
+    // (igual a tela de Cadastro -- prioridade sem nada não é "SLA zero",
+    // é "sem SLA definido" pra aquela prioridade).
+    const ROTULO_PRIORIDADE_SLA = { baixa: 'Baixa', media: 'Média', alta: 'Alta', urgente: 'Urgente' };
+    const slaDefinido = (c.sla || []).filter(s => s.prazoAtendimento !== '' || s.prazoSolucao !== '');
+    const slaHtml = lista(slaDefinido, 'Nenhum SLA definido para este contrato.', s => `
+        <li>
+            <strong>${escapeHtml(ROTULO_PRIORIDADE_SLA[s.prioridade] || s.prioridade)}</strong><br>
+            Atendimento: ${s.prazoAtendimento !== '' ? escapeHtml(String(s.prazoAtendimento)) + 'h' : '--'} ·
+            Solução: ${s.prazoSolucao !== '' ? escapeHtml(String(s.prazoSolucao)) + 'h' : '--'}
+            ${s.horasUteis ? ' · só horário útil' : ''}
+        </li>`);
 
     const infoComEditar = `
         <div class="detalhe-contrato-secao">
@@ -379,16 +401,18 @@ function montarDetalheContratoHtml(c, situacao) {
             '<button type="button" class="dock-detalhe-btn" data-secao="equipamentos" onclick="trocarSecaoDetalheContrato(\'equipamentos\')">Equipamentos</button>' +
             '<button type="button" class="dock-detalhe-btn" data-secao="produtos" onclick="trocarSecaoDetalheContrato(\'produtos\')">Produtos</button>' +
             '<button type="button" class="dock-detalhe-btn" data-secao="checklist" onclick="trocarSecaoDetalheContrato(\'checklist\')">Checklist</button>' +
+            '<button type="button" class="dock-detalhe-btn" data-secao="sla" onclick="trocarSecaoDetalheContrato(\'sla\')">SLA</button>' +
         '</div>' +
         `<div id="detalheSecao-complementares">${secao('Complementares', complementaresHtml)}</div>` +
         `<div id="detalheSecao-servicos">${secao('Serviço do Contrato', servicosHtml)}</div>` +
         `<div id="detalheSecao-equipamentos">${secao('Equipamentos Vinculados', equipamentosHtml)}</div>` +
         `<div id="detalheSecao-produtos">${secao('Produtos Vinculados', produtosHtml)}</div>` +
-        `<div id="detalheSecao-checklist">${secao('Checklist', checklistHtml)}</div>`
+        `<div id="detalheSecao-checklist">${secao('Checklist', checklistHtml)}</div>` +
+        `<div id="detalheSecao-sla">${secao('SLA', slaHtml)}</div>`
     );
 }
 
-const SECOES_DETALHE_CONTRATO = ['complementares', 'servicos', 'equipamentos', 'produtos', 'checklist'];
+const SECOES_DETALHE_CONTRATO = ['complementares', 'servicos', 'equipamentos', 'produtos', 'checklist', 'sla'];
 
 function trocarSecaoDetalheContrato(nome) {
     SECOES_DETALHE_CONTRATO.forEach(s => {

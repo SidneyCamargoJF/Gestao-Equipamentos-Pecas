@@ -38,6 +38,11 @@
             <label class="field__label" for="cadEquipPatrimonio">Patrimonio *</label>
             <input class="field__input" type="text" id="cadEquipPatrimonio" placeholder="patrimonio" required>
           </div>
+
+          <div class="field">
+            <label class="field__label" for="cadEquipPatrimonioAnterior">Patrimônio anterior</label>
+            <input class="field__input" type="text" id="cadEquipPatrimonioAnterior" placeholder="Ex: 12345" inputmode="numeric" title="Patrimônio da máquina antiga que estava no lugar deste equipamento" oninput="this.value = this.value.replace(/\D/g, '')">
+          </div>
         </div>
 
         <div class="form-grid-3">
