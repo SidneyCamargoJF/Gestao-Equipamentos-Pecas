@@ -118,6 +118,26 @@ function montarSecaoManutencao(s) {
             '</tbody></table>';
     }
 
+    // Observações feitas no chamado para cada equipamento (encerramento e
+    // itens do checklist)
+    const observacoes = s.observacoes || [];
+    if (observacoes.length) {
+        const variasOs = s.os.length > 1;
+        html += '<h4 class="rel-manutencao-subtitulo">Observações por equipamento</h4>' +
+            '<table class="rel-manutencao-tabela rel-manutencao-tabela--secundaria rel-manutencao-obs"><thead><tr><th>Patrimônio</th><th>Equipamento</th><th>Localização</th><th>Observações</th></tr></thead><tbody>' +
+            observacoes.map(function (e) {
+                const linhas = e.itens.map(function (o) {
+                    return '<li><span class="rel-manutencao-obs-origem">' + (variasOs ? 'OS #' + Number(o.os) + ' · ' : '') +
+                        escapeHtml(o.origem) + ':</span> ' + escapeHtml(o.texto) + '</li>';
+                }).join('');
+                return '<tr><td>' + escapeHtml(e.patrimonio || ('#' + e.id)) +
+                    (e.executado ? '' : ' <span class="rel-manutencao-tag">não executada</span>') + '</td>' +
+                    '<td>' + escapeHtml(e.nome) + '</td><td>' + escapeHtml(e.localizacao) + '</td>' +
+                    '<td><ul class="rel-manutencao-obs-lista">' + linhas + '</ul></td></tr>';
+            }).join('') +
+            '</tbody></table>';
+    }
+
     return html + '</section>';
 }
 </script>

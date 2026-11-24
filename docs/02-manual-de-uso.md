@@ -194,6 +194,7 @@ O menu **Relatórios** abre um submenu com um item por relatório: **Checklist**
 - **Tabela principal:** uma linha por serviço (categoria, tipo e capacidade), com quantidade de equipamentos atendidos, valor unitário e valor total, e uma linha de **Total** no fim.
 - **Equipamento atendido:** tem item do checklist marcado como OK ou Não conforme, ou está numa OS **concluída** (mesmo que o checklist não tenha sido marcado). Só fica de fora da OS concluída o equipamento com todos os itens marcados como N/A.
 - **Equipamentos sem preventiva executada:** ficam numa tabela separada, com a OS e o motivo, e não entram no valor.
+- **Observações por equipamento:** os equipamentos que receberam observação no chamado, com a observação do encerramento (por patrimônio) e as dos itens do checklist, cada uma indicando a origem. Quem não teve a preventiva executada aparece marcado.
 - **Total geral:** quando há mais de uma seção, um quadro no fim soma todas.
 - **Avisos:** a linha mostra "sem serviço no contrato" quando a especificação do equipamento não bate com nenhum serviço Preventiva, e "sem valor unitário" quando o serviço não tem valor. Essas linhas não entram no total.
 

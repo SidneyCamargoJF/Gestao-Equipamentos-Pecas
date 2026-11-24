@@ -70,13 +70,27 @@ function buscarRelatorioManutencaoPreventiva(contratoId, competencia) {
       if (!idEquip) return;
       const r = String(l[ticketChecklistResultadoCol - 1] || 'pendente').trim().toLowerCase();
       const porEquip = itensPorOs[idOs] || (itensPorOs[idOs] = {});
-      const s = porEquip[idEquip] || (porEquip[idEquip] = { executados: 0, pendentes: 0, naoAplicaveis: 0, total: 0 });
+      const s = porEquip[idEquip] || (porEquip[idEquip] = { executados: 0, pendentes: 0, naoAplicaveis: 0, total: 0, observacoes: [] });
       s.total++;
+      const obsItem = String(l[ticketChecklistObservacaoCol - 1] || '').trim();
+      if (obsItem) {
+        s.observacoes.push({ os: idOs, origem: String(l[ticketChecklistDescricaoCol - 1] || 'Item do checklist').trim(), texto: obsItem });
+      }
       if (RESULTADOS_EXECUTADOS_MANUTENCAO.indexOf(r) !== -1) s.executados++;
       else if (r === 'nao_aplicavel') s.naoAplicaveis++;
       else s.pendentes++;
     });
     const linhasEquipChamado = ReadTicketEquipamentos();
+
+    // observação de encerramento por equipamento (tbl_chamado_equipamentos, col. F)
+    const obsEncerramento = {};
+    linhasEquipChamado.forEach(function (l) {
+      const idOs = Number(l[ticketEquipChamadoIdCol - 1]);
+      if (!setOS.has(idOs) || l[ticketEquipDataExclusaoCol - 1]) return;
+      const texto = String(l[ticketEquipObservacaoCol - 1] || '').trim();
+      if (!texto) return;
+      (obsEncerramento[idOs] || (obsEncerramento[idOs] = {}))[Number(l[ticketEquipEquipamentoIdCol - 1])] = texto;
+    });
 
     const equipamentos = {};
     ReadEquipments().forEach(function (e) { equipamentos[Number(e[0])] = e; });
@@ -109,7 +123,7 @@ function buscarRelatorioManutencaoPreventiva(contratoId, competencia) {
       const status = String(l[ticketsStatusCol - 1] || '').trim();
       const concluida = status.toLowerCase() === 'concluido';
       const chaveSecao = idC + '|' + compOs;
-      const secao = secoes[chaveSecao] || (secoes[chaveSecao] = { idContrato: idC, competencia: compOs, os: [], equip: {} });
+      const secao = secoes[chaveSecao] || (secoes[chaveSecao] = { idContrato: idC, competencia: compOs, os: [], equip: {}, obs: {} });
       secao.os.push({ id: idOs, status: status });
 
       const itens = itensPorOs[idOs] || {};
@@ -117,7 +131,14 @@ function buscarRelatorioManutencaoPreventiva(contratoId, competencia) {
       Object.keys(itens).forEach(function (k) { if (ids.indexOf(Number(k)) === -1) ids.push(Number(k)); });
 
       ids.forEach(function (idEquip) {
-        const s = itens[idEquip] || { executados: 0, pendentes: 0, naoAplicaveis: 0, total: 0 };
+        const s = itens[idEquip] || { executados: 0, pendentes: 0, naoAplicaveis: 0, total: 0, observacoes: [] };
+
+        // observações do equipamento nesta OS: a do encerramento e as dos itens
+        const obsEquip = secao.obs[idEquip] || (secao.obs[idEquip] = []);
+        const textoEnc = (obsEncerramento[idOs] || {})[idEquip];
+        if (textoEnc) obsEquip.push({ os: idOs, origem: 'Encerramento', texto: textoEnc });
+        s.observacoes.forEach(function (o) { obsEquip.push(o); });
+
         let executado = false, motivo = '';
         if (s.executados) executado = true;
         else if (s.total && s.naoAplicaveis === s.total) motivo = 'Itens do checklist marcados como N/A';
@@ -187,7 +208,22 @@ function buscarRelatorioManutencaoPreventiva(contratoId, competencia) {
         return acc;
       }, { quantidade: 0, valor: 0, gruposSemValor: 0 });
 
+      // equipamentos com observação no chamado (encerramento e itens do checklist)
+      const observacoes = Object.keys(secao.obs).filter(function (id) { return secao.obs[id].length; }).map(function (id) {
+        const e = equipamentos[Number(id)];
+        const situacao = secao.equip[id] || {};
+        return {
+          id: Number(id),
+          patrimonio: e ? String(e[5] || '') : '',
+          nome: e ? String(e[1] || '') + (e[4] ? ' / ' + String(e[4]) : '') : 'Equipamento #' + id,
+          localizacao: e ? String(e[7] || '') : '',
+          executado: !!situacao.executado,
+          itens: secao.obs[id]
+        };
+      }).sort(function (a, b) { return a.patrimonio.localeCompare(b.patrimonio, 'pt-BR', { numeric: true }); });
+
       return {
+        observacoes: observacoes,
         contrato: c ? {
           id: secao.idContrato,
           numero: String(c[contractNumberCol] || ''),
