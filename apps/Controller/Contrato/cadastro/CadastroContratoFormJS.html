@@ -792,22 +792,20 @@ function renderizarServicos() {
 
 // Mostra/esconde o bloco de checklist conforme tem ou não serviço
 // especificado. O checklist é do contrato como um todo (não de um serviço
-// específico -- ver comentário no HTML), então o "título" aqui só lista os
-// nomes dos serviços já especificados, lado a lado.
+// específico -- ver comentário no HTML).
 function atualizarChecklistParaServico() {
   const aviso = document.getElementById('checklistSemServicoAviso');
   const conteudo = document.getElementById('checklistConteudo');
-  const titulo = document.getElementById('checklistServicoTitulo');
-  if (!aviso || !conteudo || !titulo) return;
+  if (!aviso || !conteudo) return;
 
+  // (a lista dos serviços acima do checklist foi retirada: já está na aba
+  // Serviços e, com muitos serviços, ocupava várias linhas)
   if (servicos.length > 0) {
     aviso.style.display = 'none';
     conteudo.classList.remove('checklist-grupo-oculto');
-    titulo.textContent = servicos.map(function (s) { return s.nomeCompleto; }).join(' + ');
   } else {
     aviso.style.display = 'block';
     conteudo.classList.add('checklist-grupo-oculto');
-    titulo.textContent = '';
   }
 }
 
