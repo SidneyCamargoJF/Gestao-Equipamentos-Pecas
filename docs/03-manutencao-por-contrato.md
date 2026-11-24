@@ -145,7 +145,9 @@ Relatório para conferir a nota fiscal da empresa. A função é `buscarRelatori
 - tem pelo menos um item de checklist com resultado `ok` ou `nao_conforme`; **ou**
 - a OS está **Concluída**, a não ser que todos os itens dele estejam `nao_aplicavel`. Isso cobre a OS fechada sem marcar o checklist e a preventiva manual sem checklist.
 
-**Observações por equipamento:** cada seção lista os equipamentos com observação no chamado: a de encerramento (`tbl_chamado_equipamentos`, coluna F) e as dos itens do checklist (`tbl_chamado_checklist`, coluna H), com a origem ("Encerramento" ou a descrição do item) e, se a seção tiver mais de uma OS, o número da OS.
+**Observações por equipamento:** cada seção lista os equipamentos com observação no chamado: a de encerramento (`tbl_chamado_equipamentos`, coluna F) e as dos itens do checklist (`tbl_chamado_checklist`, coluna H), A de encerramento sai sem rótulo; a de item leva a descrição do item. Se a seção tiver mais de uma OS, aparece o número da OS.
+
+**Resolução do chamado:** depois das observações, o motivo informado ao concluir cada OS. Não há coluna própria: o texto é lido do histórico (`tbl_chamado_historico`, entrada `[SISTEMA] Chamado encerrado… Motivo: …`), a mais recente de cada OS concluída.
 
 Os demais vão para a tabela "sem preventiva executada", com a OS e a situação: itens pendentes com a OS ainda aberta, ou todos os itens marcados como N/A.
 

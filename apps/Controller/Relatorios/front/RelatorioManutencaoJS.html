@@ -126,9 +126,14 @@ function montarSecaoManutencao(s) {
         html += '<h4 class="rel-manutencao-subtitulo">Observações por equipamento</h4>' +
             '<table class="rel-manutencao-tabela rel-manutencao-tabela--secundaria rel-manutencao-obs"><thead><tr><th>Patrimônio</th><th>Equipamento</th><th>Localização</th><th>Observações</th></tr></thead><tbody>' +
             observacoes.map(function (e) {
+                // observação do encerramento sai sem rótulo; a de item do
+                // checklist leva a descrição do item
                 const linhas = e.itens.map(function (o) {
-                    return '<li><span class="rel-manutencao-obs-origem">' + (variasOs ? 'OS #' + Number(o.os) + ' · ' : '') +
-                        escapeHtml(o.origem) + ':</span> ' + escapeHtml(o.texto) + '</li>';
+                    const partes = [];
+                    if (variasOs) partes.push('OS #' + Number(o.os));
+                    if (o.origem && o.origem !== 'Encerramento') partes.push(escapeHtml(o.origem));
+                    return '<li>' + (partes.length ? '<span class="rel-manutencao-obs-origem">' + partes.join(' · ') + ':</span> ' : '') +
+                        escapeHtml(o.texto) + '</li>';
                 }).join('');
                 return '<tr><td>' + escapeHtml(e.patrimonio || ('#' + e.id)) +
                     (e.executado ? '' : ' <span class="rel-manutencao-tag">não executada</span>') + '</td>' +
@@ -136,6 +141,19 @@ function montarSecaoManutencao(s) {
                     '<td><ul class="rel-manutencao-obs-lista">' + linhas + '</ul></td></tr>';
             }).join('') +
             '</tbody></table>';
+    }
+
+    // Observação da resolução do chamado (motivo informado ao concluir),
+    // depois das observações dos equipamentos
+    const resolucoes = s.os.filter(function (o) { return o.resolucao; });
+    if (resolucoes.length) {
+        html += '<h4 class="rel-manutencao-subtitulo">Resolução do chamado</h4>' +
+            '<div class="rel-manutencao-resolucao">' +
+            resolucoes.map(function (o) {
+                return '<p>' + (s.os.length > 1 ? '<span class="rel-manutencao-obs-origem">OS #' + Number(o.id) + ':</span> ' : '') +
+                    escapeHtml(o.resolucao) + '</p>';
+            }).join('') +
+            '</div>';
     }
 
     return html + '</section>';

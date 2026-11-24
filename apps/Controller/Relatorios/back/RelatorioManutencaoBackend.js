@@ -92,6 +92,17 @@ function buscarRelatorioManutencaoPreventiva(contratoId, competencia) {
       (obsEncerramento[idOs] || (obsEncerramento[idOs] = {}))[Number(l[ticketEquipEquipamentoIdCol - 1])] = texto;
     });
 
+    // observação da resolução: o motivo informado ao concluir, gravado no
+    // histórico ('[SISTEMA] Chamado encerrado[ com N item(ns)...]. Motivo: X').
+    // Vale a última de cada OS (reaberta e concluída de novo = a mais recente).
+    const resolucaoPorOs = {};
+    ReadTicketHistorico().forEach(function (l) {
+      const idOs = Number(l[ticketHistoricoChamadoIdCol - 1]);
+      if (!setOS.has(idOs)) return;
+      const m = String(l[ticketHistoricoTextoCol - 1] || '').match(/Chamado encerrado[^\n]*?\. Motivo: ([\s\S]*)$/);
+      if (m && m[1].trim()) resolucaoPorOs[idOs] = m[1].trim();
+    });
+
     const equipamentos = {};
     ReadEquipments().forEach(function (e) { equipamentos[Number(e[0])] = e; });
 
@@ -124,7 +135,7 @@ function buscarRelatorioManutencaoPreventiva(contratoId, competencia) {
       const concluida = status.toLowerCase() === 'concluido';
       const chaveSecao = idC + '|' + compOs;
       const secao = secoes[chaveSecao] || (secoes[chaveSecao] = { idContrato: idC, competencia: compOs, os: [], equip: {}, obs: {} });
-      secao.os.push({ id: idOs, status: status });
+      secao.os.push({ id: idOs, status: status, resolucao: concluida ? (resolucaoPorOs[idOs] || '') : '' });
 
       const itens = itensPorOs[idOs] || {};
       const ids = idsEquipamentosDoChamado_(idOs, l[ticketsEquipamentoIdCol - 1], linhasEquipChamado);
