@@ -210,6 +210,9 @@
     const periodo = document.getElementById('checklistPeriodo');
     if (etapa) etapa.value = '';
     if (periodo) periodo.value = 'mensal';
+    const categoria = document.getElementById('checklistCategoria');
+    if (categoria) categoria.value = '';
+    if (typeof atualizarSelectTipoChecklist === 'function' && document.getElementById('checklistTipo')) atualizarSelectTipoChecklist();
   }
 
   // Campo "Data Encerramento" fica opaco por padrão
@@ -577,6 +580,7 @@ async function carregarOpcoesEspecificacaoServico() {
     const categorias = Array.from(new Set(especificacaoEquipamentoCombinacoes.map(function (c) { return c.categoria; })));
     preencherSelectEspecificacao('servicoCategoriaEquip', categorias, false);
     atualizarSelectCapacidadeServico();
+    preencherCategoriasChecklist();
   } catch (error) {
     console.error('Erro ao carregar opções de especificação do serviço:', error);
   }
@@ -886,18 +890,59 @@ function renderizarProdutos() {
 // CHECKLIST
 // Um formulário só (Etapa + Periodicidade + Adicionar); os itens ficam na
 // tabela logo abaixo (renderizarChecklist), com editar e remover por linha.
+// Mesma regra para comparar itens: descrição + periodicidade + categoria/tipo
+function chaveItemChecklist_(c) {
+  return [c.descricao, c.periodo, c.categoria, c.tipo].map(function (v) { return String(v || '').trim().toLowerCase(); }).join('|');
+}
+
+// Cascata Categoria -> Tipo do checklist, a partir dos equipamentos
+// cadastrados (mesmas combinações do serviço). Tipo vazio = todos os tipos
+// da categoria.
+function preencherCategoriasChecklist() {
+  const sel = document.getElementById('checklistCategoria');
+  if (!sel) return;
+  const atual = sel.value;
+  const categorias = Array.from(new Set(especificacaoEquipamentoCombinacoes.map(function (c) { return c.categoria; })));
+  preencherSelectEspecificacao('checklistCategoria', categorias, false);
+  if (categorias.indexOf(atual) !== -1) sel.value = atual;
+  atualizarSelectTipoChecklist();
+}
+
+function tiposDaCategoriaChecklist_(categoria) {
+  return categoria ? Array.from(new Set(especificacaoEquipamentoCombinacoes
+    .filter(function (c) { return c.categoria === categoria; })
+    .map(function (c) { return c.tipo; }))) : [];
+}
+
+function atualizarSelectTipoChecklist() {
+  const categoria = document.getElementById('checklistCategoria').value;
+  const sel = document.getElementById('checklistTipo');
+  const atual = sel.value;
+  const tipos = tiposDaCategoriaChecklist_(categoria);
+  sel.innerHTML = '<option value="">Todos os tipos</option>' + tipos.map(function (v) {
+    return '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>';
+  }).join('');
+  if (tipos.indexOf(atual) !== -1) sel.value = atual;
+  sel.disabled = !categoria;
+}
+
 function adicionarEtapaChecklist() {
   const input = document.getElementById('checklistEtapa');
   const sel = document.getElementById('checklistPeriodo');
+  const categoria = document.getElementById('checklistCategoria').value.trim();
+  const tipo = document.getElementById('checklistTipo').value.trim();
   const texto = input ? input.value.trim() : '';
   const periodo = (sel && sel.value) ? sel.value : 'mensal';
+  if (!categoria) { alert('Selecione a categoria do equipamento.'); return; }
   if (!texto) { alert('Escreva a etapa antes de adicionar.'); return; }
-  if (checklist.some(function (c) { return c.periodo === periodo && c.descricao.toLowerCase() === texto.toLowerCase(); })) {
-    alert('Essa etapa já está na lista com essa periodicidade.');
+  const novo = { descricao: texto, periodo: periodo, categoria: categoria, tipo: tipo };
+  if (checklist.some(function (c) { return chaveItemChecklist_(c) === chaveItemChecklist_(novo); })) {
+    alert('Essa etapa já está na lista com essa periodicidade, categoria e tipo.');
     return;
   }
-  checklist.push({ descricao: texto, periodo: periodo });
+  checklist.push(novo);
   renderizarChecklist();
+  // categoria e tipo ficam: é comum lançar várias etapas para o mesmo equipamento
   input.value = '';
   input.focus();
 }
@@ -917,11 +962,17 @@ function salvarEdicaoInline(idx) {
   if (!desc) { alert('Informe a descrição.'); return; }
   const selPeriodo = document.getElementById('inlineEditPeriodo');
   const novoPeriodo = selPeriodo ? selPeriodo.value : checklist[idx].periodo;
-  if (checklist.some(function (c, i) { return i !== idx && c.periodo === novoPeriodo && c.descricao.toLowerCase() === desc.toLowerCase(); })) {
-    alert('Essa etapa já está na lista com essa periodicidade.');
+  const selCat = document.getElementById('inlineEditCategoria');
+  const selTipo = document.getElementById('inlineEditTipo');
+  const novaCategoria = selCat ? selCat.value : (checklist[idx].categoria || '');
+  const novoTipo = selTipo ? selTipo.value : (checklist[idx].tipo || '');
+  if (!novaCategoria) { alert('Selecione a categoria do equipamento.'); return; }
+  const novo = { descricao: desc, periodo: novoPeriodo, categoria: novaCategoria, tipo: novoTipo };
+  if (checklist.some(function (c, i) { return i !== idx && chaveItemChecklist_(c) === chaveItemChecklist_(novo); })) {
+    alert('Essa etapa já está na lista com essa periodicidade, categoria e tipo.');
     return;
   }
-  checklist[idx] = { descricao: desc, periodo: novoPeriodo };
+  checklist[idx] = novo;
   checklistEditIdx = -1;
   renderizarChecklist();
 }
@@ -941,15 +992,48 @@ function selectPeriodoChecklist(atual) {
   '</select>';
 }
 
+// Selects da edição na linha: categoria e tipo (o tipo acompanha a
+// categoria). Valor atual que não está mais nas combinações continua na lista.
+function selectCategoriaChecklistInline(atual) {
+  const categorias = Array.from(new Set(especificacaoEquipamentoCombinacoes.map(function (c) { return c.categoria; })));
+  if (atual && categorias.indexOf(atual) === -1) categorias.unshift(atual);
+  return '<select class="field__select inline-edit-input" id="inlineEditCategoria" onchange="atualizarTipoChecklistInline()">' +
+    '<option value="">Selecione...</option>' +
+    categorias.map(function (c) {
+      return '<option value="' + escapeHtml(c) + '"' + (c === atual ? ' selected' : '') + '>' + escapeHtml(c) + '</option>';
+    }).join('') +
+  '</select>';
+}
+
+function opcoesTipoChecklistInline_(categoria, atual) {
+  const tipos = tiposDaCategoriaChecklist_(categoria);
+  if (atual && tipos.indexOf(atual) === -1) tipos.unshift(atual);
+  return '<option value="">Todos os tipos</option>' + tipos.map(function (v) {
+    return '<option value="' + escapeHtml(v) + '"' + (v === atual ? ' selected' : '') + '>' + escapeHtml(v) + '</option>';
+  }).join('');
+}
+
+function selectTipoChecklistInline(categoria, atual) {
+  return '<select class="field__select inline-edit-input" id="inlineEditTipo">' + opcoesTipoChecklistInline_(categoria, atual) + '</select>';
+}
+
+function atualizarTipoChecklistInline() {
+  const cat = document.getElementById('inlineEditCategoria');
+  const tipo = document.getElementById('inlineEditTipo');
+  if (cat && tipo) tipo.innerHTML = opcoesTipoChecklistInline_(cat.value, '');
+}
+
 function renderizarChecklist() {
   const tbody = document.getElementById('bodyChecklist');
   if (checklist.length === 0) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Nenhum item vinculado ao contrato.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Nenhum item vinculado ao contrato.</td></tr>';
     return;
   }
   tbody.innerHTML = checklist.map((item, i) => {
     if (checklistEditIdx === i) {
       return '<tr class="editing-row">' +
+        '<td>' + selectCategoriaChecklistInline(item.categoria) + '</td>' +
+        '<td>' + selectTipoChecklistInline(item.categoria, item.tipo) + '</td>' +
         '<td><input class="field__input inline-edit-input" type="text" id="inlineEditDesc" value="' + escapeHtml(item.descricao) + '"></td>' +
         '<td>' + selectPeriodoChecklist(item.periodo) + '</td>' +
         '<td class="acao-cell">' +
@@ -963,6 +1047,8 @@ function renderizarChecklist() {
       '</tr>';
     }
     return '<tr>' +
+      '<td>' + (item.categoria ? escapeHtml(item.categoria) : '<em class="checklist-todos">Todos</em>') + '</td>' +
+      '<td>' + (item.tipo ? escapeHtml(item.tipo) : '<em class="checklist-todos">Todos</em>') + '</td>' +
       '<td>' + escapeHtml(item.descricao) + '</td>' +
       '<td>' + formatarPeriodoChecklist(item.periodo) + '</td>' +
       '<td class="acao-cell">' +

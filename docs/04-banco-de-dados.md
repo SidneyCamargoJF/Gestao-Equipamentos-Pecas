@@ -178,6 +178,8 @@ Itens a executar numa OS: uma linha para cada combinação de equipamento e item
 | F | Data de alteração |
 | G | Periodicidade (`mensal` … `anual`) |
 | H | ID do serviço (`tbl_contratos_servicos`) |
+| I | Categoria do equipamento a que o item se aplica (compara com o NOME do equipamento). Vazia = todos os equipamentos do contrato |
+| J | Tipo do equipamento (compara com o MODELO). Vazio = todos os tipos da categoria |
 
 **tbl_contratos_sla** — [ContratoSlaModel.js](../apps/01-Model/ContratoSlaModel.js)
 

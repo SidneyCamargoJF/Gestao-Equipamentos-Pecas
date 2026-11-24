@@ -85,7 +85,7 @@ Itens antigos sem a coluna de periodicidade são lidos pelo prefixo da descriç�
   - competência e data prevista (último dia do mês);
   - CONTRATO_ID e FORNECEDOR_ID.
   - Não recebe prazos de SLA: o prazo da preventiva é a data prevista.
-- **Itens em `tbl_chamado_checklist`:** um para cada equipamento ativo coberto pelo contrato e cada item devido, com resultado `pendente`.
+- **Itens em `tbl_chamado_checklist`:** um para cada equipamento ativo coberto pelo contrato e cada item devido **que vale para ele**, com resultado `pendente`. O item vale para o equipamento quando a categoria (coluna I) é igual ao NOME do equipamento e o tipo (coluna J) é igual ao MODELO, sem diferenciar maiúsculas. Categoria vazia vale para todos; tipo vazio vale para todos os tipos da categoria. Equipamento sem nenhum item devido fica fora da OS.
 - **Histórico:** "Preventiva gerada automaticamente".
 
 O retorno traz `osCriadas`, `itensCriados` e `detalhes`. Os detalhes explicam por que cada contrato foi pulado: antes da data base, nenhum item devido, já gerada ou sem equipamentos ativos.

@@ -35,7 +35,9 @@ function lerItemChecklistContrato(linha) {
     id: linha[contractsChecklistIdCol],
     descricao: descricao,
     periodo: periodoColuna || periodoPrefixo || 'mensal',
-    servicoId: linha[contractsChecklistServicoIdCol] || ''
+    servicoId: linha[contractsChecklistServicoIdCol] || '',
+    categoria: String(linha[contractsChecklistCategoriaCol] || '').trim(),
+    tipo: String(linha[contractsChecklistTipoCol] || '').trim()
   };
 }
 
@@ -65,7 +67,7 @@ function migrarPeriodicidadeChecklist() {
  * Rodar UMA VEZ pelo editor do Apps Script: limpa duplicidades que já
  * existem em tbl_contratos_Checklist (itens repetidos de antes da
  * blindagem em salvarChecklistContrato -- ver CadastroContratoBackend.js).
- * Pra cada grupo (mesmo contrato + mesma descrição + mesma periodicidade)
+ * Pra cada grupo (mesmo contrato + descrição + periodicidade + categoria/tipo)
  * com mais de uma linha ativa, mantém só a mais recente e marca
  * DATA_EXCLUSAO nas outras. Não altera linhas já excluídas.
  */
@@ -78,7 +80,8 @@ function migrarDuplicadosChecklistContrato() {
   dados.forEach(function (linha, idx) {
     if (linha[contractsChecklistDataExclusaoCol]) return; // já excluída, ignora
     const item = lerItemChecklistContrato(linha);
-    const chave = linha[contractsChecklistIdContratoCol] + '|' + item.descricao.trim().toLowerCase() + '|' + item.periodo;
+    const chave = linha[contractsChecklistIdContratoCol] + '|' + item.descricao.trim().toLowerCase() + '|' + item.periodo +
+      '|' + item.categoria.toLowerCase() + '|' + item.tipo.toLowerCase();
     if (!grupos[chave]) grupos[chave] = [];
     grupos[chave].push(idx);
   });

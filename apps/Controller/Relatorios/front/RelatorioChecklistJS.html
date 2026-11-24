@@ -36,14 +36,41 @@ function renderizarResultadoRelatorio(dados) {
     const ordem = dados.periodicidades || ['mensal', 'bimestral', 'trimestral', 'quadrimestral', 'semestral', 'anual'];
     const rotulo = function (p) { return p.charAt(0).toUpperCase() + p.slice(1); };
 
-    const blocos = ordem.map(function (p) {
-    const itens = dados.checklist.filter(function (c) { return c.periodo === p; });
-    if (!itens.length) return '';
-    return '<h3>' + rotulo(p) + '</h3><ul class="rel-checklist-lista">' + itens.map(function (c) { return '<li>' + escapeHtml(c.descricao) + '</li>'; }).join('') + '</ul>';
+    // Um grupo por categoria + tipo de equipamento (itens sem categoria =
+    // "Todos os equipamentos", primeiro). Na impressão cada grupo começa
+    // numa página nova (.rel-checklist-grupo, RelatorioChecklistCSS.html).
+    const grupos = {};
+    (dados.checklist || []).forEach(function (c) {
+        const chave = String(c.categoria || '').toLowerCase() + '|' + String(c.tipo || '').toLowerCase();
+        const g = grupos[chave] || (grupos[chave] = { categoria: c.categoria || '', tipo: c.tipo || '', itens: [] });
+        g.itens.push(c);
+    });
+    const listaGrupos = Object.keys(grupos).map(function (k) { return grupos[k]; }).sort(function (a, b) {
+        const geralA = !a.categoria && !a.tipo, geralB = !b.categoria && !b.tipo;
+        if (geralA !== geralB) return geralA ? -1 : 1;
+        return a.categoria.localeCompare(b.categoria, 'pt-BR') || a.tipo.localeCompare(b.tipo, 'pt-BR');
+    });
+
+    const selContrato = document.getElementById('relatorioContratoId');
+    const nomeContrato = selContrato && selContrato.selectedIndex > 0 ? selContrato.options[selContrato.selectedIndex].textContent : '';
+    const servicoTexto = escapeHtml(dados.servico.tipoManutencao) + ' — ' + escapeHtml(dados.servico.categoria) + ' ' + escapeHtml(dados.servico.tipo) + ' ' + escapeHtml(dados.servico.capacidade);
+
+    const blocos = listaGrupos.map(function (g) {
+        const titulo = (g.categoria || g.tipo) ? [g.categoria, g.tipo].filter(Boolean).join(' — ') : 'Todos os equipamentos';
+        const periodos = ordem.map(function (p) {
+            const itens = g.itens.filter(function (c) { return c.periodo === p; });
+            if (!itens.length) return '';
+            return '<h3>' + rotulo(p) + '</h3><ul class="rel-checklist-lista">' + itens.map(function (c) { return '<li>' + escapeHtml(c.descricao) + '</li>'; }).join('') + '</ul>';
+        }).join('');
+        return '<section class="rel-checklist-grupo">' +
+            '<div class="rel-checklist-grupo-cabecalho">' +
+                (nomeContrato ? '<span class="rel-checklist-grupo-contrato">Contrato ' + escapeHtml(nomeContrato) + '</span>' : '') +
+                '<h2 class="rel-checklist-grupo-titulo">' + escapeHtml(titulo) + '</h2>' +
+            '</div>' + periodos + '</section>';
     }).join('');
 
     container.innerHTML =
-    '<p><strong>' + escapeHtml(dados.servico.tipoManutencao) + ' — ' + escapeHtml(dados.servico.categoria) + ' ' + escapeHtml(dados.servico.tipo) + ' ' + escapeHtml(dados.servico.capacidade) + '</strong> &mdash; ' + escapeHtml(dados.servico.periodicidade) + '</p>' +
+    '<p><strong>' + servicoTexto + '</strong> &mdash; ' + escapeHtml(dados.servico.periodicidade) + '</p>' +
     (blocos || '<p>Nenhum item de checklist.</p>');
 }
 </script>

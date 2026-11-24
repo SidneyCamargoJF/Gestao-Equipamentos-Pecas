@@ -360,7 +360,8 @@ function montarDetalheContratoHtml(c, situacao) {
     // (bimestral/trimestral/quadrimestral/semestral) existiam na planilha
     // mas ficavam escondidos no modal. Agora mostra um grupo por
     // periodicidade que existir de verdade em PERIODICIDADES_ORDEM.
-    const itemChecklist = i => `<li>${escapeHtml(i.descricao)}</li>`;
+    const itemChecklist = i => `<li>${escapeHtml(i.descricao)}${(i.categoria || i.tipo)
+        ? ` <small>(${escapeHtml([i.categoria, i.tipo].filter(Boolean).join(" — "))})</small>` : ""}</li>`;
     const checklistHtml = (typeof PERIODICIDADES_ORDEM !== 'undefined' ? PERIODICIDADES_ORDEM : ['mensal', 'bimestral', 'trimestral', 'quadrimestral', 'semestral', 'anual'])
         .map(function (periodo) {
             const itens = (c.checklist || []).filter(i => i.periodo === periodo);

@@ -65,7 +65,7 @@ Ao preencher a data inicial, a data base preventiva é sugerida com o mesmo valo
 | 🛠️ Serviços | Tipo de manutenção (Preventiva/Corretiva), periodicidade, **valor unitário** (R$ por equipamento, editável também no card do serviço) e a especificação do equipamento em cascata: **categoria → capacidade → tipo**, só com o que existe em equipamentos cadastrados (com um tipo só, ele já vem escolhido). Ao confirmar, aparece "Processando" enquanto os equipamentos da especificação são buscados e incluídos na aba Equipamentos; a mensagem informa quantos entraram e quantos já estavam no contrato |
 | 🔧 Equipamentos | Equipamentos cobertos pelo contrato |
 | 📦 Produtos | Produtos ou peças previstos |
-| ✅ Checklist | Itens do checklist preventivo. Um formulário só: digite a **etapa**, escolha a **periodicidade** (mensal, bimestral, trimestral, quadrimestral, semestral ou anual) e clique em **Adicionar** (ou Enter). Os itens aparecem na lista logo abaixo, com editar e remover em cada linha |
+| ✅ Checklist | Itens do checklist preventivo, por equipamento. Um formulário só: escolha a **categoria** e o **tipo** do equipamento (em cascata, como no serviço; "Todos os tipos" vale para a categoria inteira), digite a **etapa**, escolha a **periodicidade** (mensal, bimestral, trimestral, quadrimestral, semestral ou anual) e clique em **Adicionar** (ou Enter). Categoria e tipo ficam escolhidos para lançar várias etapas seguidas. Os itens aparecem na lista logo abaixo (categoria, tipo, descrição, período), com editar e remover em cada linha. Na OS preventiva, cada equipamento recebe só os itens da sua categoria/tipo; itens antigos sem categoria valem para todos |
 | ⏱️ SLA | Para cada prioridade: prazo de atendimento (h), prazo de solução (h) e se conta só horas úteis |
 
 Um contrato só gera OS preventivas se tiver um serviço do tipo **Preventiva** e itens de checklist. Detalhes no documento [03](03-manutencao-por-contrato.md).
@@ -186,7 +186,7 @@ Chamados, Contratos (vigentes, vencendo em 30 dias, vencidos, encerrados), Equip
 
 O menu **Relatórios** abre um submenu com um item por relatório: **Checklist** e **Manutenção das preventivas**. O relatório escolhido aparece no título da página.
 
-**Checklist:** os serviços do contrato e os itens do checklist agrupados por periodicidade.
+**Checklist:** os itens do checklist do contrato agrupados por **categoria e tipo de equipamento** e, dentro, por periodicidade. Na impressão, cada categoria/tipo começa numa página nova, com o contrato no topo.
 
 **Manutenção das preventivas (conferência da NF):** escolha o contrato, a competência ou os dois. Sem contrato ("Todos os contratos"), saem todos os contratos daquela competência; sem competência, todas as competências do contrato.
 

@@ -1,6 +1,8 @@
 // =====================================================
 // RELATÓRIO DE CHECKLIST
-// Serviço do contrato e itens do checklist agrupados por periodicidade.
+// Serviço do contrato e itens do checklist, agrupados por categoria + tipo
+// de equipamento (uma página por grupo na impressão) e, dentro, por
+// periodicidade.
 // =====================================================
 
 function buscarRelatorioChecklist(contratoId) {
@@ -20,7 +22,7 @@ function buscarRelatorioChecklist(contratoId) {
     .filter(linha => Number(linha[contractsChecklistIdContratoCol]) === idBuscado && !linha[contractsChecklistDataExclusaoCol])
     .map(linha => {
         const item = lerItemChecklistContrato(linha);
-        return { descricao: item.descricao, periodo: item.periodo };
+        return { descricao: item.descricao, periodo: item.periodo, categoria: item.categoria, tipo: item.tipo };
     });
 
     return { servico: servicos[0] || null, checklist: checklist, periodicidades: PERIODICIDADES_ORDEM };

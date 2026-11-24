@@ -61,6 +61,19 @@ function gerarPreventivasDoMes(competencia) {
   }
 }
 
+/**
+ * O item do checklist do contrato vale para o equipamento? Item sem
+ * categoria/tipo vale para todos; com, compara CATEGORIA com o NOME e TIPO
+ * com o MODELO do equipamento (sem diferenciar maiúsculas) -- mesma regra
+ * do serviço do contrato.
+ */
+function itemChecklistValeParaEquipamento_(item, equip) {
+  const n = function (v) { return String(v || '').trim().toLowerCase(); };
+  if (n(item.categoria) && (!equip || n(item.categoria) !== n(equip[1]))) return false;
+  if (n(item.tipo) && (!equip || n(item.tipo) !== n(equip[4]))) return false;
+  return true;
+}
+
 function gerarPreventivasDoMes_(competenciaInformada) {
   const competencia = competenciaInformada ? String(competenciaInformada).trim() : competenciaAtual_();
   const comp = parseCompetencia_(competencia);
@@ -83,10 +96,11 @@ function gerarPreventivasDoMes_(competenciaInformada) {
   const vinculos = ReadContractsEquipaments();
   const fornecedores = ReadSuppliers();
   const chamados = ReadTickets();
+  const equipPorId = {};
   const equipamentosAtivos = new Set(
     ReadEquipments()
       .filter(function (e) { return String(e[8] || '').trim().toUpperCase() !== 'N'; })
-      .map(function (e) { return Number(e[0]); })
+      .map(function (e) { equipPorId[Number(e[0])] = e; return Number(e[0]); })
   );
 
   const jaGeradas = new Set(
@@ -150,6 +164,16 @@ function gerarPreventivasDoMes_(competenciaInformada) {
     });
     if (!equipamentos.length) { registrar('sem equipamentos ativos'); return; }
 
+    // itens devidos de cada equipamento, conforme a categoria/tipo do item
+    const itensPorEquip = {};
+    let totalItens = 0;
+    equipamentos.forEach(function (idEquip) {
+      const itens = devidos.filter(function (item) { return itemChecklistValeParaEquipamento_(item, equipPorId[idEquip]); });
+      if (itens.length) { itensPorEquip[idEquip] = itens; totalItens += itens.length; }
+    });
+    const equipComItens = equipamentos.filter(function (idEquip) { return itensPorEquip[idEquip]; });
+    if (!equipComItens.length) { registrar('nenhum item devido para a categoria/tipo dos equipamentos'); return; }
+
     const empresa = String(c[contractEmpresaCol] || '').trim();
     const chamadoId = posChamado.novoId + novasOS.length;
 
@@ -165,8 +189,8 @@ function gerarPreventivasDoMes_(competenciaInformada) {
     historico.push({ chamadoId: chamadoId, texto: 'Preventiva gerada automaticamente' });
     jaGeradas.add(contratoId + '|' + competencia);
 
-    equipamentos.forEach(function (idEquip) {
-      devidos.forEach(function (item) {
+    equipComItens.forEach(function (idEquip) {
+      itensPorEquip[idEquip].forEach(function (item) {
         // ID, CHAMADO_ID, EQUIPAMENTO_ID, CHECKLIST_ID, DESCRICAO, PERIODICIDADE,
         // RESULTADO, OBSERVACAO, EXECUTADO_EM, REGISTRADO_POR, DATA_CADASTRO,
         // DATA_ALTERACAO, DATA_EXCLUSAO
@@ -176,7 +200,7 @@ function gerarPreventivasDoMes_(competenciaInformada) {
         ]);
       });
     });
-    registrar('gerada: OS ' + chamadoId + ', ' + equipamentos.length + ' equipamento(s) x ' + devidos.length + ' item(ns)');
+    registrar('gerada: OS ' + chamadoId + ', ' + equipComItens.length + ' equipamento(s), ' + totalItens + ' item(ns)');
   });
 
   // ---- gravação em lote

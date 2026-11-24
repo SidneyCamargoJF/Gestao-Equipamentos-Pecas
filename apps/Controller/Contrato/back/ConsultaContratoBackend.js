@@ -164,7 +164,7 @@ function buscarDetalhesContrato(idInput) {
         .filter(function (l) { return Number(l[contractsChecklistIdContratoCol]) === idBuscado && !l[contractsChecklistDataExclusaoCol]; })
         .map(function (l) {
           const item = lerItemChecklistContrato(l);
-          return { descricao: String(item.descricao || ''), periodo: String(item.periodo || '') };
+          return { descricao: String(item.descricao || ''), periodo: String(item.periodo || ''), categoria: item.categoria, tipo: item.tipo };
         });
     } catch (e) {
       console.error('buscarDetalhesContrato: checklist (contrato ' + idBuscado + '): ' + e.message);

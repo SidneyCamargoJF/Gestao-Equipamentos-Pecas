@@ -384,8 +384,23 @@
               <p class="servico-spec-ajuda" id="checklistSemServicoAviso">Especifique um serviço na aba Serviços para habilitar o checklist.</p>
 
               <div id="checklistConteudo" class="checklist-grupo-oculto">
-                <!-- Um formulário só: etapa + periodicidade + Adicionar. Os itens
-                     incluídos aparecem na lista logo abaixo (tabela). -->
+                <!-- Um formulário só: categoria + tipo do equipamento (cascata,
+                     igual ao serviço), etapa + periodicidade + Adicionar. Os
+                     itens incluídos aparecem na lista logo abaixo (tabela). -->
+                <div class="servico-outro-linha checklist-form-linha">
+                  <div class="field">
+                    <label class="field__label" for="checklistCategoria">Categoria do Equipamento</label>
+                    <select class="field__select" id="checklistCategoria" onchange="atualizarSelectTipoChecklist()">
+                      <option value="">Selecione...</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="checklistTipo">Tipo</label>
+                    <select class="field__select" id="checklistTipo" disabled>
+                      <option value="">Todos os tipos</option>
+                    </select>
+                  </div>
+                </div>
                 <div class="servico-outro-linha checklist-form-linha">
                   <div class="field">
                     <label class="field__label" for="checklistEtapa">Etapa</label>
@@ -415,13 +430,15 @@
                 <table class="crud-table" id="tabelaChecklist">
                   <thead>
                     <tr>
+                      <th>CATEGORIA</th>
+                      <th>TIPO</th>
                       <th>DESCRIÇÃO</th>
                       <th>PERÍODO</th>
                       <th>AÇÕES</th>
                     </tr>
                   </thead>
                   <tbody id="bodyChecklist">
-                    <tr class="empty-row"><td colspan="3">Nenhum item vinculado ao contrato.</td></tr>
+                    <tr class="empty-row"><td colspan="5">Nenhum item vinculado ao contrato.</td></tr>
                   </tbody>
                 </table>
               </div>

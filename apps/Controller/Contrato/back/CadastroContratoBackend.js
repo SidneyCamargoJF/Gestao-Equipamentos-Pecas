@@ -118,7 +118,7 @@ function buscarContratoParaEdicao(idInput) {
         })
         .map(function (l) {
           const item = lerItemChecklistContrato(l);
-          return { descricao: item.descricao, periodo: item.periodo };
+          return { descricao: item.descricao, periodo: item.periodo, categoria: item.categoria, tipo: item.tipo };
         });
     });
 
@@ -234,14 +234,16 @@ function salvarChecklistContrato(contratoId, lista) {
   excluirAnterioresContrato(aba, ReadContractsChecklist(), firstLineContractsChecklist,
     contractsChecklistIdContratoCol, contractsChecklistDataExclusaoCol, contratoId, dataAtual);
 
-  // Blindagem contra duplicidade: mesmo item (descrição + periodicidade)
+  // Blindagem contra duplicidade: mesmo item (descrição + periodicidade +
+  // categoria/tipo do equipamento)
   // só entra uma vez por contrato, mesmo que a lista mandada pela tela
   // tenha vindo com repetição por engano -- Sheets não tem restrição de
   // unicidade de banco, então a garantia tem que ser aqui.
   const vistos = {};
   const listaUnica = (lista || []).filter(function (item) {
     const periodo = normalizarPeriodicidade(item.periodo) || 'mensal';
-    const chave = String(item.descricao || '').trim().toLowerCase() + '|' + periodo;
+    const chave = String(item.descricao || '').trim().toLowerCase() + '|' + periodo + '|' +
+      String(item.categoria || '').trim().toLowerCase() + '|' + String(item.tipo || '').trim().toLowerCase();
     if (vistos[chave]) return false;
     vistos[chave] = true;
     return true;
@@ -251,8 +253,10 @@ function salvarChecklistContrato(contratoId, lista) {
     const pos = proximoIdTabela(aba, firstLineContractsChecklist);
     // Periodicidade gravada na coluna PERIODICIDADE (G), sem prefixo no texto.
     const periodo = normalizarPeriodicidade(item.periodo) || 'mensal';
-    // ordem das colunas: Id, IdContrato, Nome, DataCadastro, DataExclusao, DataAlteracao, Periodicidade, ContratoServicoId
-    const linha = [pos.novoId, contratoId, String(item.descricao || '').trim(), dataAtual, '', '', periodo, ''];
+    // ordem das colunas: Id, IdContrato, Nome, DataCadastro, DataExclusao, DataAlteracao, Periodicidade,
+    // ContratoServicoId, Categoria, Tipo
+    const linha = [pos.novoId, contratoId, String(item.descricao || '').trim(), dataAtual, '', '', periodo, '',
+      String(item.categoria || '').trim(), String(item.tipo || '').trim()];
     aba.getRange(pos.proximaLinha, 1, 1, numColumnsContractsChecklist).setValues([linha]);
   });
 }

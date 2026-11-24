@@ -1,6 +1,44 @@
 <style>
 /* ===== Relatório de checklist ===== */
 
+/* Um grupo por categoria + tipo de equipamento */
+#page-relatorios .rel-checklist-grupo {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 0.0625rem solid var(--color-slate-200, #e2e8f0);
+}
+
+#page-relatorios .rel-checklist-grupo-cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+#page-relatorios .rel-checklist-grupo-contrato {
+  font-size: 0.75rem;
+  color: var(--color-slate-500, #64748b);
+}
+
+#page-relatorios .rel-checklist-grupo-titulo {
+  margin: 0;
+  font-size: 1.0625rem;
+  color: var(--color-slate-900, #0f172a);
+}
+
+/* Impressão: cada categoria + tipo começa numa página nova */
+@media print {
+  #page-relatorios .rel-checklist-grupo {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  #page-relatorios .rel-checklist-grupo + .rel-checklist-grupo {
+    break-before: page;
+    page-break-before: always;
+  }
+}
+
 #page-relatorios .rel-checklist-lista {
   display: flex;
   flex-direction: column;
