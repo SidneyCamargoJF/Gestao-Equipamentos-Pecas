@@ -6,15 +6,22 @@
           </div>
         </div>
 
-        <!-- Lado a lado -- as duas consultas são pequenas, não precisa de
-             select/troca de ficha pra caber as duas na tela. -->
-        <div class="ficha-split-wrapper">
+        <div class="panel">
 
-          <!-- ========== MARCAS ========== -->
-          <div class="ficha-cadastro" id="fichaMarca">
+          <!-- Abas segmentadas (padrão .tabs-nav/.tab-btn/.tab-panel já usado
+               no modal de detalhes do Chamado) -- só uma consulta visível por
+               vez, ocupando a largura toda. Ver initTabs()/ativarAba() em
+               js/TabsJS.html. -->
+          <div class="tabs-nav">
+            <button type="button" class="tab-btn active" data-tab="marcas">🏷️ Marcas</button>
+            <button type="button" class="tab-btn" data-tab="localizacoes">📍 Localizações</button>
+          </div>
+
+          <!-- ========== ABA: MARCAS ========== -->
+          <div class="tab-panel active" id="tab-marcas">
 
             <div class="actions-bar ficha-actions-bar">
-              <h2 class="ficha-titulo">🏷️ Marcas</h2>
+              <h2 class="ficha-titulo">Marcas</h2>
               <div class="ficha-botoes">
                 <button type="button" class="btn-secondary" onclick="marcaController.limparFiltros()">Limpar</button>
                 <button type="button" class="btn-success" onclick="marcaController.abrirModalCadastroMarca()">
@@ -64,11 +71,11 @@
             </div>
           </div>
 
-          <!-- ========== LOCALIZAÇÕES ========== -->
-          <div class="ficha-cadastro" id="fichaLocalizacao">
+          <!-- ========== ABA: LOCALIZAÇÕES ========== -->
+          <div class="tab-panel" id="tab-localizacoes">
 
             <div class="actions-bar ficha-actions-bar">
-              <h2 class="ficha-titulo">📍 Localizações</h2>
+              <h2 class="ficha-titulo">Localizações</h2>
               <div class="ficha-botoes">
                 <button type="button" class="btn-secondary" onclick="localizacaoController.limparFiltros()">Limpar</button>
                 <button type="button" class="btn-success" onclick="localizacaoController.abrirModalCadastro()">

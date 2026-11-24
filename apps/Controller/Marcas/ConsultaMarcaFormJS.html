@@ -659,6 +659,7 @@ const marcaController = new MarcaController();
 const localizacaoController = new LocalizacaoController();
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (typeof initTabs === 'function') initTabs();
   marcaController.init();
   localizacaoController.init();
 });

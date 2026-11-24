@@ -4,36 +4,10 @@
     max-width: 80rem;
   }
 
-  /* =====================================================
-     MARCAS E LOCALIZAÇÕES LADO A LADO -- as duas consultas são pequenas,
-     cabem em duas colunas (50/50) sem precisar de nenhuma troca/seleção.
-     Em telas estreitas, cada uma ocupa a largura toda, uma embaixo da
-     outra.
-     ===================================================== */
-  #page-marcas-view .ficha-split-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-    align-items: start;
-  }
-
-  #page-marcas-view .ficha-cadastro {
-    display: flex;
-    flex-direction: column;
-    max-height: 34rem;
-    background: #fff;
-    border-radius: 0.75rem;
-    border: 0.0625rem solid var(--color-slate-200);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    padding: 1.25rem;
-  }
-
-  #page-marcas-view .ficha-cadastro .table-wrapper {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    min-height: 0;
-  }
-
+  /* Só a largura/espaçamento do conteúdo de cada aba -- as abas em si
+     (.tabs-nav/.tab-btn/.tab-panel) já são o padrão global de
+     css/crudCSS.html + js/TabsJS.html (mesmo usado no modal de detalhes
+     do Chamado). */
   #page-marcas-view .ficha-actions-bar {
     display: flex;
     flex-wrap: wrap;
@@ -62,13 +36,17 @@
     width: auto;
   }
 
-  @media (max-width: 64rem) {
-    #page-marcas-view .ficha-split-wrapper {
-      grid-template-columns: 1fr;
-    }
-    #page-marcas-view .ficha-cadastro {
-      max-height: 26rem;
-    }
+  /* Transição discreta ao trocar de aba -- só nesta tela, não afeta as
+     abas do modal de detalhes do Chamado (que usam a mesma classe
+     .tab-panel, mas sem essa animação). */
+  #page-marcas-view .tab-panel.active {
+    animation: marcasLocalizacoesFadeIn 0.2s ease;
+  }
+
+  @keyframes marcasLocalizacoesFadeIn {
+    from { opacity: 0; transform: translateY(0.25rem); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
 </style>
+
