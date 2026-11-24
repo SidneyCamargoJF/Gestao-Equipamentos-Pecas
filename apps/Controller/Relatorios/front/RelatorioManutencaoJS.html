@@ -1,0 +1,123 @@
+<script>
+// ===== RELATÓRIO DE MANUTENÇÃO DAS PREVENTIVAS (conferência da nota fiscal) =====
+// Filtro: contrato, competência ou os dois. Uma seção por contrato +
+// competência e, havendo mais de uma, um quadro com o total geral.
+
+async function gerarRelatorioManutencao() {
+    const contratoId = document.getElementById('relatorioContratoId').value;
+    const competencia = document.getElementById('relatorioCompetencia').value;
+    if (!contratoId && !competencia) { mostrarMensagem('Escolha o contrato, a competência ou os dois.', 'aviso'); return; }
+
+    processandoRelatorio(true);
+    let dados;
+    try {
+        dados = await runServerFunction('buscarRelatorioManutencaoPreventiva', contratoId, competencia);
+    } catch (erro) {
+        processandoRelatorio(false);
+        alert('Erro ao gerar relatório: ' + (erro && erro.message ? erro.message : erro));
+        return;
+    }
+    processandoRelatorio(false);
+    if (!dados || !dados.sucesso) {
+        alert((dados && dados.mensagem) || 'Não foi possível gerar o relatório.');
+        return;
+    }
+    renderizarRelatorioManutencao(dados);
+}
+
+function formatarMoedaRelatorio(v) {
+    if (v === '' || v === null || v === undefined || isNaN(Number(v))) return '—';
+    return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatarCapacidadeRelatorio(v) {
+    const t = String(v || '').trim();
+    return /^\d+$/.test(t) ? t.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : t;
+}
+
+function formatarCompetenciaRelatorio(comp) {
+    const p = String(comp || '').split('-');
+    return p.length === 2 ? p[1] + '/' + p[0] : (comp || 'sem competência');
+}
+
+function rotuloContratoRelatorio(c) {
+    return c.numero ? c.numero + ' — ' + c.nome : c.nome;
+}
+
+function renderizarRelatorioManutencao(dados) {
+    const container = document.getElementById('relatorioResultado');
+    const filtro = [];
+    if (dados.filtro.contrato) filtro.push('Contrato ' + dados.filtro.contrato);
+    else filtro.push('Todos os contratos');
+    filtro.push(dados.filtro.competencia ? 'Competência ' + formatarCompetenciaRelatorio(dados.filtro.competencia) : 'Todas as competências');
+
+    let html = '<div class="rel-manutencao-titulo"><h2>Manutenção das preventivas</h2>' +
+        '<div>' + escapeHtml(filtro.join(' · ')) + '</div></div>';
+
+    if (!dados.secoes.length) {
+        container.innerHTML = html + '<p class="rel-manutencao-aviso">' + escapeHtml(dados.mensagem) + '</p>';
+        return;
+    }
+
+    html += dados.secoes.map(montarSecaoManutencao).join('');
+
+    if (dados.secoes.length > 1) {
+        html += '<section class="rel-manutencao-secao"><h3 class="rel-manutencao-secao-titulo">Total geral</h3>' +
+            '<table class="rel-manutencao-tabela"><thead><tr><th>Contrato</th><th>Competência</th><th class="num">Quantidade</th><th class="num">Valor total</th></tr></thead><tbody>' +
+            dados.secoes.map(function (s) {
+                return '<tr><td>' + escapeHtml(rotuloContratoRelatorio(s.contrato)) + '</td><td>' + escapeHtml(formatarCompetenciaRelatorio(s.competencia)) + '</td>' +
+                    '<td class="num">' + Number(s.total.quantidade) + '</td><td class="num">' + formatarMoedaRelatorio(s.total.valor) + '</td></tr>';
+            }).join('') +
+            '</tbody><tfoot><tr><td colspan="2">Total geral</td><td class="num">' + Number(dados.totalGeral.quantidade) + '</td>' +
+            '<td class="num">' + formatarMoedaRelatorio(dados.totalGeral.valor) + '</td></tr></tfoot></table></section>';
+    }
+
+    container.innerHTML = html;
+}
+
+function montarSecaoManutencao(s) {
+    const c = s.contrato;
+    let html = '<section class="rel-manutencao-secao">' +
+        '<h3 class="rel-manutencao-secao-titulo">' + escapeHtml(rotuloContratoRelatorio(c)) + ' — ' + escapeHtml(formatarCompetenciaRelatorio(s.competencia)) + '</h3>' +
+        '<div class="rel-manutencao-cabecalho">' +
+        (c.empresa ? '<div><strong>Empresa:</strong> ' + escapeHtml(c.empresa) + '</div>' : '') +
+        '<div><strong>OS consideradas:</strong> ' + s.os.map(function (o) {
+            return '#' + Number(o.id) + (o.status ? ' (' + escapeHtml(o.status === 'Concluido' ? 'Concluído' : o.status) + ')' : '');
+        }).join(', ') + '</div>' +
+        '</div>';
+
+    if (!s.grupos.length) {
+        html += '<p class="rel-manutencao-aviso">Nenhum equipamento com preventiva executada.</p>';
+    } else {
+        html += '<table class="rel-manutencao-tabela">' +
+            '<thead><tr><th>Serviço (categoria / tipo / capacidade)</th><th class="num">Quantidade</th><th class="num">Valor unitário</th><th class="num">Valor total</th></tr></thead><tbody>' +
+            s.grupos.map(function (g) {
+                const descricao = [g.categoria, g.tipo, formatarCapacidadeRelatorio(g.capacidade)].filter(Boolean).join(' ');
+                const aviso = g.semServico ? ' <span class="rel-manutencao-tag">sem serviço no contrato</span>'
+                    : (g.valorUnitario === '' ? ' <span class="rel-manutencao-tag">sem valor unitário</span>' : '');
+                return '<tr><td>' + escapeHtml(descricao) + aviso + '</td>' +
+                    '<td class="num">' + Number(g.quantidade) + '</td>' +
+                    '<td class="num">' + formatarMoedaRelatorio(g.valorUnitario) + '</td>' +
+                    '<td class="num">' + formatarMoedaRelatorio(g.valorTotal) + '</td></tr>';
+            }).join('') +
+            '</tbody><tfoot><tr><td>Total</td><td class="num">' + Number(s.total.quantidade) + '</td><td></td>' +
+            '<td class="num">' + formatarMoedaRelatorio(s.total.valor) + '</td></tr></tfoot></table>';
+        if (s.total.gruposSemValor) {
+            html += '<p class="rel-manutencao-aviso">' + Number(s.total.gruposSemValor) + ' linha(s) sem valor unitário não entram no total. ' +
+                'Informe o valor unitário na aba Serviços do contrato.</p>';
+        }
+    }
+
+    if (s.naoExecutados.length) {
+        html += '<h4 class="rel-manutencao-subtitulo">Equipamentos sem preventiva executada (não entram no total)</h4>' +
+            '<table class="rel-manutencao-tabela rel-manutencao-tabela--secundaria"><thead><tr><th>Patrimônio</th><th>Equipamento</th><th>Localização</th><th>OS</th><th>Situação</th></tr></thead><tbody>' +
+            s.naoExecutados.map(function (e) {
+                return '<tr><td>' + escapeHtml(e.patrimonio || ('#' + e.id)) + '</td><td>' + escapeHtml(e.nome) + '</td><td>' +
+                    escapeHtml(e.localizacao) + '</td><td>#' + Number(e.os) + '</td><td>' + escapeHtml(e.motivo) + '</td></tr>';
+            }).join('') +
+            '</tbody></table>';
+    }
+
+    return html + '</section>';
+}
+</script>

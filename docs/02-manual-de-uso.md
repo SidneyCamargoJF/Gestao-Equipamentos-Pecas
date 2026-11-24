@@ -186,13 +186,16 @@ Chamados, Contratos (vigentes, vencendo em 30 dias, vencidos, encerrados), Equip
 
 **Checklist:** os serviços do contrato e os itens do checklist agrupados por periodicidade.
 
-**Medição das preventivas (conferência da NF):** escolha o contrato e a competência.
+**Manutenção das preventivas (conferência da NF):** escolha o contrato, a competência ou os dois. Sem contrato ("Todos os contratos"), saem todos os contratos daquela competência; sem competência, todas as competências do contrato.
 
+- **Uma seção por contrato e competência**, com a empresa e as OS consideradas (com o status de cada uma).
 - **Tabela principal:** uma linha por serviço (categoria, tipo e capacidade), com quantidade de equipamentos atendidos, valor unitário e valor total, e uma linha de **Total** no fim.
-- **Equipamentos sem preventiva executada:** ficam numa tabela separada e não entram no valor.
+- **Equipamento atendido:** tem item do checklist marcado como OK ou Não conforme, ou está numa OS **concluída** (mesmo que o checklist não tenha sido marcado). Só fica de fora da OS concluída o equipamento com todos os itens marcados como N/A.
+- **Equipamentos sem preventiva executada:** ficam numa tabela separada, com a OS e o motivo, e não entram no valor.
+- **Total geral:** quando há mais de uma seção, um quadro no fim soma todas.
 - **Avisos:** a linha mostra "sem serviço no contrato" quando a especificação do equipamento não bate com nenhum serviço Preventiva, e "sem valor unitário" quando o serviço não tem valor. Essas linhas não entram no total.
 
-Use **Imprimir** para gerar a versão em papel ou PDF. As regras estão no documento [03](03-manutencao-por-contrato.md#7-medição-das-preventivas).
+Use **Imprimir** para gerar a versão em papel ou PDF. As regras estão no documento [03](03-manutencao-por-contrato.md#7-manutenção-das-preventivas).
 
 ## Configuração → Usuários
 

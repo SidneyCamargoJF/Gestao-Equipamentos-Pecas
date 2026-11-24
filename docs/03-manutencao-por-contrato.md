@@ -131,13 +131,21 @@ A função é `buscarIndicadoresManutencao()` em [DashboardBackend.js](../apps/C
 
 Os indicadores dependem das colunas novas de `tbl_chamados` (CONTRATO_ID em diante). Os chamados antigos ficam fora deles até rodar `preencherCamposNovosChamados()` (veja o documento [07](07-implantacao-e-operacao.md)).
 
-## 7. Medição das preventivas
+## 7. Manutenção das preventivas
 
-Relatório para conferir a nota fiscal da empresa. A função é `buscarRelatorioMedicaoPreventiva(contratoId, competencia)` em [RelatoriosBackend.js](../apps/Controller/Relatorios/back/RelatoriosBackend.js).
+Relatório para conferir a nota fiscal da empresa. A função é `buscarRelatorioManutencaoPreventiva(contratoId, competencia)` em [RelatorioManutencaoBackend.js](../apps/Controller/Relatorios/back/RelatorioManutencaoBackend.js). Cada relatório tem seus próprios arquivos (`Relatorio<Nome>Backend.js`, `Relatorio<Nome>JS.html`, `Relatorio<Nome>CSS.html`); `RelatoriosBackend.js`, `RelatoriosJS.html` e `RelatoriosCSS.html` guardam só a parte comum.
 
-**OS consideradas:** chamados do contrato com tipo `preventiva` e a competência escolhida, que não estejam cancelados nem excluídos. A OS não precisa estar concluída.
+**Filtro:** contrato, competência ou os dois; pelo menos um. O resultado sai em **seções, uma por contrato + competência** (cada uma corresponde a uma medição/NF). Com mais de uma seção, aparece no fim o quadro **Total geral**.
 
-**Equipamento medido:** tem pelo menos um item de checklist com resultado `ok` ou `nao_conforme`. Itens só `pendente` ou `nao_aplicavel` não contam, e o equipamento vai para a lista "sem preventiva executada".
+**OS consideradas:** chamados com tipo `preventiva` que não estejam cancelados nem excluídos. A competência é a gravada na OS; a preventiva manual que não tem competência usa o mês da data de finalização (ou, se ainda aberta, da abertura).
+
+**Equipamentos da OS:** os do checklist mais os da lista do chamado (`tbl_chamado_equipamentos`; sem lista, a coluna B). Se o equipamento aparece em mais de uma OS da mesma seção, conta uma vez.
+
+**Equipamento com preventiva feita:**
+- tem pelo menos um item de checklist com resultado `ok` ou `nao_conforme`; **ou**
+- a OS está **Concluída**, a não ser que todos os itens dele estejam `nao_aplicavel`. Isso cobre a OS fechada sem marcar o checklist e a preventiva manual sem checklist.
+
+Os demais vão para a tabela "sem preventiva executada", com a OS e a situação: itens pendentes com a OS ainda aberta, ou todos os itens marcados como N/A.
 
 **Agrupamento e valor:**
 - O equipamento é ligado ao serviço **Preventiva** do contrato com a mesma especificação. A comparação usa NOME = categoria, MODELO = tipo e CAPACIDADE = capacidade, sem diferenciar maiúsculas. É a mesma regra da aba Serviços do contrato.

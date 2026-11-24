@@ -1,0 +1,49 @@
+<script>
+// ===== RELATÓRIO DE CHECKLIST =====
+// Serviço do contrato e itens do checklist agrupados por periodicidade.
+
+function gerarRelatorioChecklist() {
+const select = document.getElementById('relatorioContratoId');
+const contratoId = select.value;
+
+if (!contratoId) {
+alert('Selecione um contrato.');
+return;
+}
+
+processandoRelatorio(true);
+
+google.script.run
+.withSuccessHandler(function (dados) {
+    processandoRelatorio(false);
+    renderizarResultadoRelatorio(dados);
+})
+.withFailureHandler(function (erro) {
+    processandoRelatorio(false);
+    alert('Erro ao gerar relatório: ' + erro.message);
+})
+.buscarRelatorioChecklist(contratoId);
+}
+
+function renderizarResultadoRelatorio(dados) {
+    const container = document.getElementById('relatorioResultado');
+
+    if (!dados || !dados.servico) {
+    container.innerHTML = '<p>Este contrato não tem serviço de checklist cadastrado.</p>';
+    return;
+    }
+
+    const ordem = dados.periodicidades || ['mensal', 'bimestral', 'trimestral', 'quadrimestral', 'semestral', 'anual'];
+    const rotulo = function (p) { return p.charAt(0).toUpperCase() + p.slice(1); };
+
+    const blocos = ordem.map(function (p) {
+    const itens = dados.checklist.filter(function (c) { return c.periodo === p; });
+    if (!itens.length) return '';
+    return '<h3>' + rotulo(p) + '</h3><ul class="rel-checklist-lista">' + itens.map(function (c) { return '<li>' + escapeHtml(c.descricao) + '</li>'; }).join('') + '</ul>';
+    }).join('');
+
+    container.innerHTML =
+    '<p><strong>' + escapeHtml(dados.servico.tipoManutencao) + ' — ' + escapeHtml(dados.servico.categoria) + ' ' + escapeHtml(dados.servico.tipo) + ' ' + escapeHtml(dados.servico.capacidade) + '</strong> &mdash; ' + escapeHtml(dados.servico.periodicidade) + '</p>' +
+    (blocos || '<p>Nenhum item de checklist.</p>');
+}
+</script>

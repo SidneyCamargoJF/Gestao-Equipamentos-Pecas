@@ -65,7 +65,7 @@ xOld-Apps/                                       código antigo, não usado
 | Usuários | `UsuariosBackend.js` | `filtrarUsuarios`, `cadastrarUsuario`, `buscarUsuarioLogado`, `nomeUsuarioLogado` |
 | Dashboard | `DashboardBackend.js` | `buscarIndicadores{Manutencao,Chamados,Contratos,Equipamentos,Pecas,Fornecedor}` |
 | Agenda | `apps/AgendaBackend.js` | `buscarEventosAgenda(ano, mes)` |
-| Relatórios | `RelatoriosBackend.js` | `fillContracts`, `buscarRelatorioChecklist` |
+| Relatórios | `RelatoriosBackend.js` (comum), `RelatorioChecklistBackend.js`, `RelatorioManutencaoBackend.js` | `fillContracts`, `buscarRelatorioChecklist`, `buscarRelatorioManutencaoPreventiva` |
 
 ## Helpers de servidor
 

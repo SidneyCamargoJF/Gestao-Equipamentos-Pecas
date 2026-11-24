@@ -1,4 +1,6 @@
 <style>
+/* Relatórios -- parte comum. Estilos de cada relatório:
+   RelatorioChecklistCSS.html e RelatorioManutencaoCSS.html */
 
 #page-relatorios .panel {
   display: flex;
@@ -23,7 +25,7 @@
 }
 
 #page-relatorios #relatorioResultado:empty::before {
-  content: 'Selecione um contrato e clique em "Gerar Relatório".';
+  content: 'Escolha os filtros e clique em "Gerar Relatório".';
   display: block;
   color: var(--color-slate-400);
   font-size: 0.9375rem;
@@ -44,102 +46,6 @@
   font-size: 0.8125rem;
   font-weight: 700;
   color: var(--color-slate-600, #475569);
-}
-
-#page-relatorios #relatorioResultado ul {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-#page-relatorios #relatorioResultado li {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.375rem 0;
-  background: none;
-  border: none;
-  font-size: 0.875rem;
-  color: var(--color-slate-700, #334155);
-}
-
-#page-relatorios #relatorioResultado li::before {
-  content: '';
-  flex: 0 0 auto;
-  width: 1rem;
-  height: 1rem;
-  border: 0.0938rem solid var(--color-slate-400, #94a3b8);
-  border-radius: 0.1875rem;
-}
-
-/* ===== Medição das preventivas ===== */
-#page-relatorios .rel-medicao-cabecalho {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  color: var(--color-slate-700, #334155);
-}
-
-#page-relatorios .rel-medicao-cabecalho h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.125rem;
-  color: var(--color-slate-900, #0f172a);
-}
-
-#page-relatorios .rel-medicao-tabela {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-}
-
-#page-relatorios .rel-medicao-tabela th,
-#page-relatorios .rel-medicao-tabela td {
-  padding: 0.5rem 0.75rem;
-  border: 0.0625rem solid var(--color-slate-200, #e2e8f0);
-  text-align: left;
-  vertical-align: top;
-}
-
-#page-relatorios .rel-medicao-tabela thead th {
-  background: var(--color-slate-50, #f8fafc);
-  font-weight: 700;
-  color: var(--color-slate-600, #475569);
-}
-
-#page-relatorios .rel-medicao-tabela .num {
-  text-align: right;
-  white-space: nowrap;
-}
-
-#page-relatorios .rel-medicao-tabela tfoot td {
-  font-weight: 700;
-  background: var(--color-slate-50, #f8fafc);
-}
-
-#page-relatorios .rel-medicao-tabela--secundaria {
-  font-size: 0.8125rem;
-}
-
-#page-relatorios .rel-medicao-tag {
-  display: inline-block;
-  margin-left: 0.375rem;
-  padding: 0 0.375rem;
-  border-radius: 0.25rem;
-  background: #fef3c7;
-  color: #92400e;
-  font-size: 0.6875rem;
-  font-weight: 600;
-}
-
-#page-relatorios .rel-medicao-aviso {
-  font-size: 0.8125rem;
-  color: #92400e;
 }
 
 @media print {

@@ -154,7 +154,7 @@ Itens a executar numa OS: uma linha para cada combinação de equipamento e item
 | H | Data de cadastro |
 | I | Data de exclusão |
 | J | Data de alteração |
-| K | Valor unitário (R$) por equipamento atendido. Usado no relatório de medição |
+| K | Valor unitário (R$) por equipamento atendido. Usado no relatório de manutenção das preventivas |
 
 **tbl_contratos_produtos** — [ContratoProdutosModel.js](../apps/01-Model/ContratoProdutosModel.js)
 

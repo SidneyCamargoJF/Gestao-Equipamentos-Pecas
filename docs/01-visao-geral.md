@@ -22,7 +22,7 @@ Centralizar, num só lugar, o controle de:
 | Fornecedores | `fornecedor-view` | Cadastro de fornecedores |
 | Chamados | `chamado-view` | Abertura, consulta e acompanhamento de chamados e OS |
 | Agenda | `agenda` | Calendário com chamados, preventivas, vencimentos de contrato e de garantias de peças |
-| Relatórios | `relatorios` | Relatório do checklist preventivo por contrato |
+| Relatórios | `relatorios` | Checklist preventivo por contrato e manutenção das preventivas (conferência da NF) |
 | Configuração | `configuracoes` | Usuários do sistema |
 
 ## Fluxo de trabalho típico
