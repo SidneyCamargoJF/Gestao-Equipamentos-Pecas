@@ -66,25 +66,24 @@
 
 
           <!-- TABELA -->
-          <div class="table-wrapper">
-          <table class="data-table" id="tabelaEquipamentos">
-            <thead>
-              <tr>
-                <th onclick="ordenarEquipamento('patrimonio')">PATRIMONIO <span class="sort-arrow"></span></th>
-                <th onclick="ordenarEquipamento('patrimonioAnterior')">PAT. ANTERIOR <span class="sort-arrow"></span></th>
-                <th onclick="ordenarEquipamento('nome')">EQUIPAMENTO <span class="sort-arrow"></span></th>
-                <th onclick="ordenarEquipamento('capacidade')">CAPACIDADE <span class="sort-arrow"></span></th>
-                <th onclick="ordenarEquipamento('marca')">MARCA <span class="sort-arrow"></span></th>
-                <th onclick="ordenarEquipamento('modelo')">MODELO <span class="sort-arrow"></span></th>
-                <th onclick="ordenarEquipamento('localizacao')">LOCALIZAÇÃO <span class="sort-arrow"></span></th>
-                <th onclick="ordenarEquipamento('sei')">SEI <span class="sort-arrow"></span></th>
-                <th onclick="ordenarEquipamento('estado')">ESTADO <span class="sort-arrow"></span></th>
-                <th onclick="ordenarEquipamento('garantia')">GARANTIA <span class="sort-arrow"></span></th>
-                <th style="cursor:default;">AÇÕES</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaBodyEquipment"></tbody>
-          </table>
+          <div class="gtable-wrapper">
+            <div class="gtable" id="tabelaEquipamentos" role="table">
+              <div class="gtable-row gtable-head" role="row">
+                <div class="gtable-cell" role="columnheader" onclick="ordenarEquipamento('patrimonio')">PATRIMONIO <span class="sort-arrow"></span></div>
+                <div class="gtable-cell" role="columnheader" onclick="ordenarEquipamento('nome')">EQUIPAMENTO <span class="sort-arrow"></span></div>
+                <div class="gtable-cell" role="columnheader" onclick="ordenarEquipamento('capacidade')">CAPACIDADE <span class="sort-arrow"></span></div>
+                <div class="gtable-cell" role="columnheader" onclick="ordenarEquipamento('marca')">MARCA <span class="sort-arrow"></span></div>
+                <div class="gtable-cell" role="columnheader" onclick="ordenarEquipamento('modelo')">MODELO <span class="sort-arrow"></span></div>
+                <div class="gtable-cell" role="columnheader" onclick="ordenarEquipamento('localizacao')">LOCALIZAÇÃO <span class="sort-arrow"></span></div>
+                <div class="gtable-cell" role="columnheader" onclick="ordenarEquipamento('sei')">SEI <span class="sort-arrow"></span></div>
+                <div class="gtable-cell" role="columnheader" onclick="ordenarEquipamento('estado')">ESTADO <span class="sort-arrow"></span></div>
+                <div class="gtable-cell" role="columnheader" onclick="ordenarEquipamento('garantia')">GARANTIA <span class="sort-arrow"></span></div>
+                <div class="gtable-cell gtable-cell-end" role="columnheader">AÇÕES</div>
+              </div>
+              <div class="gtable-body" id="tabelaBodyEquipment" role="rowgroup">
+                <!-- Linhas serão preenchidas dinamicamente via JavaScript -->
+              </div>
+            </div>
           </div>
         </div>
 
