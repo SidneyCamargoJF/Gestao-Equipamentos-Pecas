@@ -137,6 +137,10 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
 `Aberto` → `Em Andamento` (grava a data de início do andamento) → `Concluido` (grava a data de finalização).
 
 - Para concluir é obrigatório informar o motivo.
+- **Preventiva:** ao clicar em Resolver, aparece também a lista dos equipamentos da OS, com um campo de **observação por patrimônio** (opcional).
+  - Equipamentos da lista do chamado e do checklist entram na lista.
+  - As observações preenchidas ficam gravadas por equipamento e registradas no histórico.
+  - Se o chamado for reaberto e resolvido de novo, as observações anteriores voltam preenchidas para edição.
 - Se a OS ainda tiver itens de checklist pendentes, o motivo informado fica no histórico como justificativa das pendências.
 - **Desativar** marca o chamado como `Cancelado`. **Reativar** desfaz.
 

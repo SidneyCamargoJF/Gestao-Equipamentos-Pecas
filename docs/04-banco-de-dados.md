@@ -55,6 +55,7 @@ Equipamentos de cada chamado: um chamado pode ter vários. Chamados sem linhas n
 | C | ID do equipamento |
 | D | Data de cadastro |
 | E | Data de exclusão (equipamento retirado do chamado na edição) |
+| F | Observação de encerramento do equipamento (preventiva). Equipamento de OS automática ganha a linha quando recebe observação |
 
 ## tbl_chamado_historico (1-based)
 

@@ -133,13 +133,14 @@ function ReadTicketChecklist() {
 // Equipamentos do chamado (um chamado pode ter vários). 1-based.
 let ticketEquipTableName = 'tbl_chamado_equipamentos'
 let firstLineTicketEquip = 3
-let numColumnsTicketEquip = 5
+let numColumnsTicketEquip = 6
 
 let ticketEquipIdCol = 1
 let ticketEquipChamadoIdCol = 2
 let ticketEquipEquipamentoIdCol = 3
 let ticketEquipDataCadastroCol = 4
 let ticketEquipDataExclusaoCol = 5
+let ticketEquipObservacaoCol = 6     // F -- observação do equipamento no encerramento
 
 function ReadTicketEquipamentos() {
   const objRows = ReadSheetSeExistir(ticketEquipTableName, firstLineTicketEquip, numColumnsTicketEquip)

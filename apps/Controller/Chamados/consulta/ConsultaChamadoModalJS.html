@@ -210,6 +210,7 @@ function abrirCaixaTextoChamado(modo) {
     const textoBotaoEl = document.getElementById('textoBotaoSalvarAnotacao');
 
     if (textoEl) textoEl.value = '';
+    esconderObsEquipamentosEncerramento();
 
     if (modo === 'resolver') {
         if (rotuloEl) rotuloEl.textContent = 'Motivo do encerramento';
@@ -237,6 +238,51 @@ function cancelarCaixaTextoChamado() {
     const textoEl = document.getElementById('novaAnotacaoChamado');
     if (textoEl) textoEl.value = '';
     if (caixa) caixa.style.display = 'none';
+    esconderObsEquipamentosEncerramento();
+}
+
+// ===== OBSERVAÇÃO POR PATRIMÔNIO NO ENCERRAMENTO (preventiva) =====
+function esconderObsEquipamentosEncerramento() {
+    const bloco = document.getElementById('chamadoObsEquip');
+    const lista = document.getElementById('chamadoObsEquipLista');
+    if (bloco) bloco.style.display = 'none';
+    if (lista) lista.innerHTML = '';
+}
+
+async function carregarObsEquipamentosEncerramento(chamadoId) {
+    const bloco = document.getElementById('chamadoObsEquip');
+    const lista = document.getElementById('chamadoObsEquipLista');
+    if (!bloco || !lista) return;
+    bloco.style.display = '';
+    lista.innerHTML = '<p class="chamado-obs-equip-vazio"><span class="spinner"></span>Carregando equipamentos...</p>';
+    try {
+        const resposta = await runServerFunction('listarEquipamentosEncerramentoChamado', chamadoId);
+        if (chamadoCaixaTextoModo !== 'resolver' || chamadoIdAtualModal !== chamadoId) return; // fechou/trocou no meio
+        const equipamentos = (resposta && resposta.equipamentos) || [];
+        if (!resposta || resposta.sucesso === false || !equipamentos.length) {
+            lista.innerHTML = '<p class="chamado-obs-equip-vazio">' +
+                escapeHtml(resposta && resposta.sucesso === false ? resposta.mensagem : 'Nenhum equipamento nesta OS.') + '</p>';
+            return;
+        }
+        lista.innerHTML = equipamentos.map(e => {
+            const rotulo = (e.patrimonio ? 'Patrimônio ' + e.patrimonio : e.nome) +
+                (e.patrimonio && e.nome ? ' — ' + e.nome : '') + (e.localizacao ? ' (' + e.localizacao + ')' : '');
+            return '<label class="chamado-obs-equip-item">' +
+                '<span class="chamado-obs-equip-rotulo">' + escapeHtml(rotulo) + '</span>' +
+                '<input type="text" class="field__input" maxlength="500" data-equipamento-id="' + Number(e.id) + '"' +
+                ' placeholder="Observação deste equipamento..." value="' + escapeHtml(e.observacao || '') + '">' +
+                '</label>';
+        }).join('');
+    } catch (error) {
+        console.error('Erro ao carregar equipamentos para o encerramento:', error);
+        lista.innerHTML = '<p class="chamado-obs-equip-vazio">Não foi possível carregar os equipamentos.</p>';
+    }
+}
+
+function lerObsEquipamentosEncerramento() {
+    return Array.from(document.querySelectorAll('#chamadoObsEquipLista input[data-equipamento-id]'))
+        .map(el => ({ equipamentoId: Number(el.getAttribute('data-equipamento-id')), observacao: el.value.trim() }))
+        .filter(o => o.equipamentoId);
 }
 
 async function confirmarCaixaTextoChamado() {
@@ -247,7 +293,7 @@ async function confirmarCaixaTextoChamado() {
             alert('Informe o motivo do encerramento.');
             return;
         }
-        await alterarStatusChamadoUI('Concluido', motivo);
+        await alterarStatusChamadoUI('Concluido', motivo, lerObsEquipamentosEncerramento());
         return;
     }
 
@@ -548,11 +594,11 @@ function montarBotaoAcaoStatusChamado(statusAtual) {
     return '';
 }
 
-async function alterarStatusChamadoUI(novoStatus, motivo) {
+async function alterarStatusChamadoUI(novoStatus, motivo, observacoesEquip) {
     if (!chamadoIdAtualModal) return;
 
     try {
-        const resposta = await runServerFunction('alterarStatusChamado', chamadoIdAtualModal, novoStatus, motivo);
+        const resposta = await runServerFunction('alterarStatusChamado', chamadoIdAtualModal, novoStatus, motivo, observacoesEquip || []);
         if (resposta && resposta.sucesso === false) {
             alert(resposta.mensagem);
             return;
@@ -578,6 +624,8 @@ function resolverChamadoUI() {
         if (rotuloEl) rotuloEl.textContent = 'Motivo do encerramento — há ' + pendentes + ' item(ns) pendente(s) no checklist';
         if (textoEl) textoEl.placeholder = 'Explique por que a OS está sendo concluída com itens pendentes...';
     }
+    const tipo = String((chamadoDetalheAtualModal && chamadoDetalheAtualModal.tipo) || '').trim().toLowerCase();
+    if (tipo === 'preventiva') carregarObsEquipamentosEncerramento(chamadoIdAtualModal);
 }
 
 async function reabrirChamadoUI() {

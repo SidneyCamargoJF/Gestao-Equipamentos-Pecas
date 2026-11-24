@@ -188,7 +188,9 @@ function desativarChamado(idInput) {
  * DATA_FINALIZACAO quando faz sentido, e registra a troca no histórico.
  * Pra "Concluido" exige um motivo de encerramento, registrado no histórico.
  */
-function alterarStatusChamado(idInput, novoStatus, motivo) {
+// observacoesEquip (opcional, no encerramento): [{ equipamentoId, observacao }]
+// -- observação por patrimônio, usada nas preventivas.
+function alterarStatusChamado(idInput, novoStatus, motivo, observacoesEquip) {
     try {
         const idBuscado = Number(idInput);
         if (!idBuscado) {
@@ -221,6 +223,12 @@ function alterarStatusChamado(idInput, novoStatus, motivo) {
                 const linhaReal = i + firstLineTickets;
                 const dataAtual = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
 
+                // Observações por equipamento (encerramento) antes de mudar o
+                // status: se a gravação falhar, o chamado não fica concluído.
+                const textoObsEquip = novoStatus === 'Concluido'
+                    ? executarComLock(function () { return salvarObservacoesEncerramentoChamado_(idBuscado, observacoesEquip); })
+                    : '';
+
                 abaChamados.getRange(linhaReal, ticketsStatusCol).setValue(novoStatus);
                 abaChamados.getRange(linhaReal, ticketsDtAlteracaoCol).setValue(dataAtual);
 
@@ -235,6 +243,7 @@ function alterarStatusChamado(idInput, novoStatus, motivo) {
                     adicionarHistoricoSistema(idBuscado, pendentes
                         ? 'Chamado encerrado com ' + pendentes + ' item(ns) de checklist pendente(s). Motivo: ' + motivoLimpo
                         : 'Chamado encerrado. Motivo: ' + motivoLimpo);
+                    if (textoObsEquip) adicionarHistoricoSistema(idBuscado, 'Observações por equipamento no encerramento:\n' + textoObsEquip);
                 } else {
                     adicionarHistoricoSistema(idBuscado, 'Status alterado para "' + novoStatus + '".');
                 }

@@ -72,8 +72,8 @@ function salvarEquipamentosChamado_(chamadoId, ids) {
   const novos = desejados.filter(function (idEquip) { return !ativos[idEquip]; });
   if (!novos.length) return;
   const pos = proximoIdTabela(aba, firstLineTicketEquip);
-  // ID, CHAMADO_ID, EQUIPAMENTO_ID, DATA_CADASTRO, DATA_EXCLUSAO
-  const novasLinhas = novos.map(function (idEquip, i) { return [pos.novoId + i, id, idEquip, dataAtual, '']; });
+  // ID, CHAMADO_ID, EQUIPAMENTO_ID, DATA_CADASTRO, DATA_EXCLUSAO, OBSERVACAO_ENCERRAMENTO
+  const novasLinhas = novos.map(function (idEquip, i) { return [pos.novoId + i, id, idEquip, dataAtual, '', '']; });
   aba.getRange(pos.proximaLinha, 1, novasLinhas.length, numColumnsTicketEquip).setValues(novasLinhas);
 }
 
@@ -91,4 +91,97 @@ function listarEquipamentosDoContrato(contratoId) {
     .filter(function (e) { return idsVinculados[Number(e[0])] && String(e[8] || '').trim().toUpperCase() !== 'N'; })
     .map(resumoEquipamentoChamado_)
     .sort(function (a, b) { return a.patrimonio.localeCompare(b.patrimonio, 'pt-BR', { numeric: true }); });
+}
+
+// ===== OBSERVAÇÃO POR EQUIPAMENTO NO ENCERRAMENTO (preventiva) =====
+
+/**
+ * Equipamentos do chamado para o encerramento: a lista do chamado (ou a
+ * coluna B) mais os equipamentos do checklist da OS. Traz a observação de
+ * encerramento já gravada, se houver.
+ */
+function listarEquipamentosEncerramentoChamado(chamadoId) {
+  try {
+    const id = Number(chamadoId);
+    if (!id) return { sucesso: false, mensagem: 'ID do chamado inválido.' };
+    const chamado = ReadTickets().find(function (l) { return Number(l[ticketsIdCol - 1]) === id; });
+    if (!chamado) return { sucesso: false, mensagem: 'Chamado não encontrado.' };
+
+    const linhasEquip = ReadTicketEquipamentos();
+    const ids = idsEquipamentosDoChamado_(id, chamado[ticketsEquipamentoIdCol - 1], linhasEquip);
+    ReadTicketChecklist().forEach(function (l) {
+      if (Number(l[ticketChecklistChamadoIdCol - 1]) !== id || l[ticketChecklistDataExclusaoCol - 1]) return;
+      const idEquip = Number(l[ticketChecklistEquipamentoIdCol - 1]);
+      if (idEquip && ids.indexOf(idEquip) === -1) ids.push(idEquip);
+    });
+
+    const observacoes = {};
+    linhasEquip.forEach(function (l) {
+      if (Number(l[ticketEquipChamadoIdCol - 1]) === id && !l[ticketEquipDataExclusaoCol - 1]) {
+        observacoes[Number(l[ticketEquipEquipamentoIdCol - 1])] = String(l[ticketEquipObservacaoCol - 1] || '');
+      }
+    });
+
+    const porId = {};
+    ReadEquipments().forEach(function (e) { porId[Number(e[0])] = e; });
+    const equipamentos = ids.map(function (idEquip) {
+      const e = porId[idEquip];
+      const r = e ? resumoEquipamentoChamado_(e)
+        : { id: idEquip, nome: 'Equipamento #' + idEquip, marca: '', capacidade: '', modelo: '', patrimonio: '', localizacao: '', estado: '' };
+      r.observacao = observacoes[idEquip] || '';
+      return r;
+    }).sort(function (a, b) { return a.patrimonio.localeCompare(b.patrimonio, 'pt-BR', { numeric: true }); });
+
+    return { sucesso: true, equipamentos: equipamentos };
+  } catch (e) {
+    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+  }
+}
+
+/**
+ * Grava a observação de encerramento de cada equipamento na coluna
+ * OBSERVACAO_ENCERRAMENTO de tbl_chamado_equipamentos. Equipamento sem
+ * linha na aba (OS automática, que usa o checklist) ganha a linha.
+ * lista: [{ equipamentoId, observacao }]. Chamar dentro de executarComLock.
+ * Devolve o texto para o histórico ('' se não havia observação).
+ */
+function salvarObservacoesEncerramentoChamado_(chamadoId, lista) {
+  const id = Number(chamadoId);
+  const itens = (lista || [])
+    .map(function (o) { return { equipamentoId: Number(o && o.equipamentoId), observacao: String((o && o.observacao) || '').trim().slice(0, 500) }; })
+    .filter(function (o) { return o.equipamentoId; });
+  if (!itens.some(function (o) { return o.observacao; })) return '';
+
+  const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ticketEquipTableName);
+  if (!aba) throw new Error("Crie a aba '" + ticketEquipTableName + "' para gravar observação por equipamento.");
+
+  const dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+  const linhas = ReadTicketEquipamentos();
+  const linhaPorEquip = {};
+  linhas.forEach(function (l, i) {
+    if (Number(l[ticketEquipChamadoIdCol - 1]) === id && !l[ticketEquipDataExclusaoCol - 1]) {
+      linhaPorEquip[Number(l[ticketEquipEquipamentoIdCol - 1])] = i + firstLineTicketEquip;
+    }
+  });
+
+  const novas = [];
+  itens.forEach(function (o) {
+    const linha = linhaPorEquip[o.equipamentoId];
+    if (linha) aba.getRange(linha, ticketEquipObservacaoCol).setValue(o.observacao);
+    else if (o.observacao) novas.push(o);
+  });
+  if (novas.length) {
+    const pos = proximoIdTabela(aba, firstLineTicketEquip);
+    // ID, CHAMADO_ID, EQUIPAMENTO_ID, DATA_CADASTRO, DATA_EXCLUSAO, OBSERVACAO_ENCERRAMENTO
+    const valores = novas.map(function (o, i) { return [pos.novoId + i, id, o.equipamentoId, dataAtual, '', o.observacao]; });
+    aba.getRange(pos.proximaLinha, 1, valores.length, numColumnsTicketEquip).setValues(valores);
+  }
+
+  const porId = {};
+  ReadEquipments().forEach(function (e) { porId[Number(e[0])] = e; });
+  return itens.filter(function (o) { return o.observacao; }).map(function (o) {
+    const e = porId[o.equipamentoId];
+    const rotulo = e && e[5] ? 'Patrimônio ' + e[5] : 'Equipamento #' + o.equipamentoId;
+    return '- ' + rotulo + ': ' + o.observacao;
+  }).join('\n');
 }
