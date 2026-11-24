@@ -55,4 +55,56 @@
   .chamado-patrimonio-status.nao-encontrado {
     color: #92400e;
 }
+
+  /* ===== EQUIPAMENTOS DO CHAMADO (lista) ===== */
+  #page-chamado-form .chamado-equip-add-linha {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  #page-chamado-form .chamado-equip-add-linha .field__input,
+  #page-chamado-form .chamado-equip-add-linha .field__select {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  #page-chamado-form .chamado-equip-add-linha button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  #page-chamado-form .chamado-equip-lista-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-slate-600, #475569);
+  }
+
+  #page-chamado-form .chamado-equip-tabela-wrapper {
+    max-height: 22rem;
+    overflow: auto;
+  }
+
+  #page-chamado-form .chamado-equip-tabela td.chamado-equip-acoes {
+    width: 1%;
+    text-align: right;
+  }
+
+  /* contador de equipamentos no rótulo da aba */
+  #page-chamado-form .chamado-aba-contador {
+    font-weight: 700;
+    color: var(--color-indigo);
+  }
+
+  /* detalhamento bloqueado até escolher o Tipo */
+  #page-chamado-form .chamado-detalhamento-bloqueado .tabs-nav,
+  #page-chamado-form .chamado-detalhamento-bloqueado .tabs-content {
+    opacity: 0.45;
+    pointer-events: none;
+  }
 </style>

@@ -1,15 +1,106 @@
 <script>
 
   // ===== GENÉRICO / SISTEMA =====
+  // O modal "processando" funciona com contador: cada exibirModal soma,
+  // cada fecharModal subtrai, e ele só fecha quando zera. Assim várias
+  // operações ao mesmo tempo (ou uma dentro da outra -- ex.: a tela abre o
+  // Processando e runServerFunction abre de novo numa gravação) não fecham
+  // o modal antes da hora.
+  let contadorProcessando = 0;
+
   function exibirModal(id) {
+    if (id === 'processando') contadorProcessando++;
     const modal = document.getElementById(id);
     if (modal) modal.classList.add('aberto');
   }
 
   function fecharModal(id) {
+    if (id === 'processando') {
+      contadorProcessando = Math.max(0, contadorProcessando - 1);
+      if (contadorProcessando > 0) return;
+    }
     const modal = document.getElementById(id);
     if (modal) modal.classList.remove('aberto');
   }
+
+  // ===== MODAL DE MENSAGEM (substitui o alert do navegador) =====
+  // mostrarMensagem(texto, tipo) abre #modalMensagem; tipo: 'sucesso' |
+  // 'erro' | 'aviso' | 'info' (sem tipo, deduz pelo texto). Mensagens em
+  // sequência entram numa fila e aparecem uma de cada vez. Devolve uma
+  // Promise resolvida quando a pessoa fecha (pra quem quiser esperar com
+  // await). window.alert é redirecionado pra cá, então todas as telas
+  // passam a usar o modal sem mudar cada chamada; window.alertNativo
+  // guarda o original.
+  const TIPOS_MENSAGEM = {
+    sucesso: { titulo: 'Sucesso', icone: '✔' },
+    erro: { titulo: 'Erro', icone: '✖' },
+    aviso: { titulo: 'Atenção', icone: '!' },
+    info: { titulo: 'Informação', icone: 'i' }
+  };
+  const filaMensagens = [];
+  let mensagemAtual = null;
+  let mensagemAbertaEm = 0;
+
+  function deduzirTipoMensagem(texto) {
+    const t = String(texto || '').toLowerCase();
+    if (/erro|falh|não foi possível|nao foi possivel|inválid|invalid|não encontrad/.test(t)) return 'erro';
+    if (/sucesso|salv[oa] com|cadastrad[oa] com|atualizad[oa]|removid[oa] com|excluíd[oa] com|desativad[oa] com|reativad[oa] com|gerad[oa]s? com/.test(t)) return 'sucesso';
+    if (/informe|preencha|selecione|escolha|adicione|obrigat|já existe|já está/.test(t)) return 'aviso';
+    return 'info';
+  }
+
+  function mostrarMensagem(texto, tipo) {
+    return new Promise(resolve => {
+      filaMensagens.push({ texto: String(texto === undefined || texto === null ? '' : texto), tipo: tipo, resolve: resolve });
+      if (!mensagemAtual) exibirProximaMensagem_();
+    });
+  }
+
+  function exibirProximaMensagem_() {
+    mensagemAtual = filaMensagens.shift() || null;
+    const modal = document.getElementById('modalMensagem');
+    if (!mensagemAtual) { if (modal) modal.classList.remove('aberto'); return; }
+    if (!modal) { // sem o markup (não deveria acontecer): cai no alert original
+      window.alertNativo(mensagemAtual.texto);
+      const m = mensagemAtual; mensagemAtual = null; m.resolve(); exibirProximaMensagem_();
+      return;
+    }
+    const tipo = TIPOS_MENSAGEM[mensagemAtual.tipo] ? mensagemAtual.tipo : deduzirTipoMensagem(mensagemAtual.texto);
+    const cfg = TIPOS_MENSAGEM[tipo];
+    modal.querySelector('.modal-mensagem').className = 'modal modal-mensagem modal-mensagem--' + tipo;
+    document.getElementById('modalMensagemIcone').textContent = cfg.icone;
+    document.getElementById('modalMensagemTitulo').textContent = cfg.titulo;
+    document.getElementById('modalMensagemTexto').textContent = mensagemAtual.texto;
+    modal.classList.add('aberto');
+    mensagemAbertaEm = Date.now();
+    const btn = document.getElementById('modalMensagemOk');
+    if (btn) setTimeout(() => btn.focus(), 0);
+  }
+
+  function fecharMensagem() {
+    const m = mensagemAtual;
+    mensagemAtual = null;
+    if (m) m.resolve();
+    exibirProximaMensagem_();
+  }
+
+  window.alertNativo = window.alert.bind(window);
+  window.alert = function (texto) { mostrarMensagem(texto); };
+
+  // Fase de captura: com a mensagem aberta, Enter/Esc fecham e não chegam
+  // ao formulário por trás. Ignora a própria tecla que abriu a mensagem.
+  document.addEventListener('keydown', (e) => {
+    if (!mensagemAtual) return;
+    if (e.key === 'Escape' || e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (Date.now() - mensagemAbertaEm > 250) fecharMensagem();
+    }
+  }, true);
+  document.addEventListener('click', (e) => {
+    if (mensagemAtual && e.target && e.target.id === 'modalMensagem') fecharMensagem();
+  });
+
 
   function fecharModalCadastroLocalizacao() {
     const modal = document.getElementById('modalCadastroLocalizacao');

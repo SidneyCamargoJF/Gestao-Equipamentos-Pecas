@@ -16,6 +16,117 @@ function renderRelatorios() {
     document.getElementById('relatorioResultado').innerHTML = '';
 }
 
+function alterarTipoRelatorio() {
+    const medicao = document.getElementById('relatorioTipo').value === 'medicao';
+    document.getElementById('relatorioCompetenciaField').style.display = medicao ? '' : 'none';
+    const comp = document.getElementById('relatorioCompetencia');
+    if (medicao && !comp.value) {
+        const hoje = new Date();
+        comp.value = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+    }
+    document.getElementById('relatorioResultado').innerHTML = '';
+}
+
+// Mensagem "Processando..." no meio da tela (modal genérico #processando,
+// apps/Modal/Modal.html) + botão travado enquanto o servidor responde.
+function processandoRelatorio(ativo) {
+    const btn = document.getElementById('btnGerarRelatorio');
+    if (btn) btn.disabled = ativo;
+    if (ativo) { if (typeof exibirModal === 'function') exibirModal('processando'); }
+    else if (typeof fecharModal === 'function') fecharModal('processando');
+}
+
+function gerarRelatorio() {
+    if (document.getElementById('relatorioTipo').value === 'medicao') gerarRelatorioMedicao();
+    else gerarRelatorioChecklist();
+}
+
+// ===== MEDIÇÃO DAS PREVENTIVAS (conferência da nota fiscal) =====
+async function gerarRelatorioMedicao() {
+    const contratoId = document.getElementById('relatorioContratoId').value;
+    const competencia = document.getElementById('relatorioCompetencia').value;
+    if (!contratoId) { alert('Selecione um contrato.'); return; }
+    if (!competencia) { alert('Informe a competência.'); return; }
+
+    processandoRelatorio(true);
+    let dados;
+    try {
+        dados = await runServerFunction('buscarRelatorioMedicaoPreventiva', contratoId, competencia);
+    } catch (erro) {
+        processandoRelatorio(false);
+        alert('Erro ao gerar relatório: ' + (erro && erro.message ? erro.message : erro));
+        return;
+    }
+    processandoRelatorio(false);
+    if (!dados || !dados.sucesso) {
+        alert((dados && dados.mensagem) || 'Não foi possível gerar o relatório.');
+        return;
+    }
+    renderizarRelatorioMedicao(dados);
+}
+
+function formatarMoedaRelatorio(v) {
+    if (v === '' || v === null || v === undefined || isNaN(Number(v))) return '—';
+    return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatarCapacidadeRelatorio(v) {
+    const t = String(v || '').trim();
+    return /^\d+$/.test(t) ? t.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : t;
+}
+
+function renderizarRelatorioMedicao(dados) {
+    const container = document.getElementById('relatorioResultado');
+    const partes = String(dados.competencia).split('-');
+    const c = dados.contrato;
+
+    let html = '<div class="rel-medicao-cabecalho">' +
+        '<h2>Medição das preventivas — ' + escapeHtml(partes[1] + '/' + partes[0]) + '</h2>' +
+        '<div><strong>Contrato:</strong> ' + escapeHtml(c.numero) + ' — ' + escapeHtml(c.nome) + '</div>' +
+        '<div><strong>Empresa:</strong> ' + escapeHtml(c.empresa) + '</div>' +
+        '<div><strong>OS consideradas:</strong> ' + (dados.os.length ? dados.os.map(function (id) { return '#' + Number(id); }).join(', ') : 'nenhuma') + '</div>' +
+        '</div>';
+
+    if (!dados.os.length) {
+        container.innerHTML = html + '<p class="rel-medicao-aviso">' + escapeHtml(dados.mensagem) + '</p>';
+        return;
+    }
+
+    if (!dados.grupos.length) {
+        html += '<p class="rel-medicao-aviso">Nenhum equipamento com preventiva executada nesta competência.</p>';
+    } else {
+        html += '<table class="rel-medicao-tabela">' +
+            '<thead><tr><th>Serviço (categoria / tipo / capacidade)</th><th class="num">Quantidade</th><th class="num">Valor unitário</th><th class="num">Valor total</th></tr></thead><tbody>' +
+            dados.grupos.map(function (g) {
+                const descricao = [g.categoria, g.tipo, formatarCapacidadeRelatorio(g.capacidade)].filter(Boolean).join(' ');
+                const aviso = g.semServico ? ' <span class="rel-medicao-tag">sem serviço no contrato</span>'
+                    : (g.valorUnitario === '' ? ' <span class="rel-medicao-tag">sem valor unitário</span>' : '');
+                return '<tr><td>' + escapeHtml(descricao) + aviso + '</td>' +
+                    '<td class="num">' + Number(g.quantidade) + '</td>' +
+                    '<td class="num">' + formatarMoedaRelatorio(g.valorUnitario) + '</td>' +
+                    '<td class="num">' + formatarMoedaRelatorio(g.valorTotal) + '</td></tr>';
+            }).join('') +
+            '</tbody><tfoot><tr><td>Total</td><td class="num">' + Number(dados.total.quantidade) + '</td><td></td>' +
+            '<td class="num">' + formatarMoedaRelatorio(dados.total.valor) + '</td></tr></tfoot></table>';
+        if (dados.total.gruposSemValor) {
+            html += '<p class="rel-medicao-aviso">' + Number(dados.total.gruposSemValor) + ' linha(s) sem valor unitário não entram no total. ' +
+                'Informe o valor unitário na aba Serviços do contrato.</p>';
+        }
+    }
+
+    if (dados.naoExecutados.length) {
+        html += '<h3>Equipamentos da OS sem preventiva executada (não entram na medição)</h3>' +
+            '<table class="rel-medicao-tabela rel-medicao-tabela--secundaria"><thead><tr><th>Patrimônio</th><th>Equipamento</th><th>Localização</th><th class="num">Itens pendentes</th></tr></thead><tbody>' +
+            dados.naoExecutados.map(function (e) {
+                return '<tr><td>' + escapeHtml(e.patrimonio || ('#' + e.id)) + '</td><td>' + escapeHtml(e.nome) + '</td><td>' +
+                    escapeHtml(e.localizacao) + '</td><td class="num">' + Number(e.pendentes) + ' de ' + Number(e.itens) + '</td></tr>';
+            }).join('') +
+            '</tbody></table>';
+    }
+
+    container.innerHTML = html;
+}
+
 function gerarRelatorioChecklist() {
 const select = document.getElementById('relatorioContratoId');
 const contratoId = select.value;
@@ -25,16 +136,15 @@ alert('Selecione um contrato.');
 return;
 }
 
-const btn = document.getElementById('btnGerarRelatorio');
-btn.disabled  = true;
+processandoRelatorio(true);
 
 google.script.run
 .withSuccessHandler(function (dados) {
-    btn.disabled  = false;
+    processandoRelatorio(false);
     renderizarResultadoRelatorio(dados);
 })
 .withFailureHandler(function (erro) {
-    btn.disabled = false;
+    processandoRelatorio(false);
     alert('Erro ao gerar relatório: ' + erro.message);
 })
 .buscarRelatorioChecklist(contratoId);
@@ -64,7 +174,8 @@ function renderizarResultadoRelatorio(dados) {
 
 function limparFiltrosRelatorio() {
     document.getElementById('relatorioContratoId').value = '';
-    document.getElementById('relatorioResultado').innerHTML = '';
+    document.getElementById('relatorioCompetencia').value = '';
+    alterarTipoRelatorio();
 }
 
 </script>

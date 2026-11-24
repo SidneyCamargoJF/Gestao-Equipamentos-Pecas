@@ -453,8 +453,10 @@
     const btn = document.querySelector('.btn-primary');
     btn.disabled = true;
 
+    if (typeof exibirModal === 'function') exibirModal('processando');
     google.script.run
       .withSuccessHandler(function (resultado) {
+        if (typeof fecharModal === 'function') fecharModal('processando');
         btn.disabled = false;
         if (!resultado.sucesso) {
           alert(resultado.mensagem);
@@ -464,6 +466,7 @@
         limparFornecedor();
       })
       .withFailureHandler(function (erro) {
+        if (typeof fecharModal === 'function') fecharModal('processando');
         btn.disabled = false;
         alert('Erro ao salvar fornecedor: ' + erro.message);
       })

@@ -294,8 +294,23 @@
 
     <!-- MODAL DE PROCESSAMENTO -->
     <div class="modal-overlay" id="processando">
-      <div class="modal">
-        <h3>⏳ Processando...</h3>
+      <div class="modal modal-processando">
+        <span class="spinner spinner--grande" aria-hidden="true"></span>
+        <h3>Processando...</h3>
         <p>Aguarde a confirmação antes de sair ou clicar fora da tela.</p>
+      </div>
+    </div>
+
+    <!-- MODAL DE MENSAGEM (substitui o alert do navegador -- ver mostrarMensagem em ModalJS) -->
+    <div class="modal-overlay" id="modalMensagem" role="alertdialog" aria-modal="true" aria-labelledby="modalMensagemTitulo">
+      <div class="modal modal-mensagem">
+        <div class="modal-mensagem-cabecalho">
+          <span class="modal-mensagem-icone" id="modalMensagemIcone" aria-hidden="true"></span>
+          <h3 id="modalMensagemTitulo"></h3>
+        </div>
+        <p class="modal-mensagem-texto" id="modalMensagemTexto"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-primary" id="modalMensagemOk" onclick="fecharMensagem()">OK</button>
+        </div>
       </div>
     </div>

@@ -128,3 +128,23 @@ function ReadTicketChecklist() {
     })
   )
 }
+
+// ===== tbl_chamado_equipamentos =====
+// Equipamentos do chamado (um chamado pode ter vários). 1-based.
+let ticketEquipTableName = 'tbl_chamado_equipamentos'
+let firstLineTicketEquip = 3
+let numColumnsTicketEquip = 5
+
+let ticketEquipIdCol = 1
+let ticketEquipChamadoIdCol = 2
+let ticketEquipEquipamentoIdCol = 3
+let ticketEquipDataCadastroCol = 4
+let ticketEquipDataExclusaoCol = 5
+
+function ReadTicketEquipamentos() {
+  const objRows = ReadSheetSeExistir(ticketEquipTableName, firstLineTicketEquip, numColumnsTicketEquip)
+
+  return objRows.map(linha =>
+    linha.map(valor => (valor instanceof Date) ? dateToString(valor) : valor)
+  )
+}

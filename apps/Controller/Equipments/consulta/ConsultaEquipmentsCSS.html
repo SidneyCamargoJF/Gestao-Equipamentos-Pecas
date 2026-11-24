@@ -9,29 +9,33 @@
     word-break: normal;
   }
 
+  /* Colunas: 1 Ver | 2 Patrimônio | 3 Equipamento | 4 Capacidade | 5 Marca |
+     6 Modelo | 7 Localização | 8 SEI | 9 Estado | 10 Garantia | 11 Ações */
   #tabelaEquipamentos th:nth-child(1), #tabelaEquipamentos td:nth-child(1) {
     width: 3.5rem;
     text-align: center;
   }
-  #tabelaEquipamentos th:nth-child(9), #tabelaEquipamentos td:nth-child(9) {
+  #tabelaEquipamentos th:nth-child(10), #tabelaEquipamentos td:nth-child(10) {
     width: 7rem;
     text-align: center;
   }
-  #tabelaEquipamentos th:nth-child(10), #tabelaEquipamentos td:nth-child(10) {
+  #tabelaEquipamentos th:nth-child(11), #tabelaEquipamentos td:nth-child(11) {
     width: 6rem;
     text-align: center;
   }
   #tabelaEquipamentos td:nth-child(1).acao-cell,
-  #tabelaEquipamentos td:nth-child(10).acao-cell {
+  #tabelaEquipamentos td:nth-child(11).acao-cell {
     justify-content: center;
   }
 
-  #tabelaEquipamentos th:nth-child(2), #tabelaEquipamentos td:nth-child(2) { width: 11%; }
+  /* Patrimônio com metade do espaço de antes (era 11%) */
+  #tabelaEquipamentos th:nth-child(2), #tabelaEquipamentos td:nth-child(2) { width: 8%; }
   #tabelaEquipamentos th:nth-child(3), #tabelaEquipamentos td:nth-child(3) { width: 20%; }
   #tabelaEquipamentos th:nth-child(4), #tabelaEquipamentos td:nth-child(4) { width: 11%; }
   #tabelaEquipamentos th:nth-child(5), #tabelaEquipamentos td:nth-child(5) { width: 12%; }
   #tabelaEquipamentos th:nth-child(6), #tabelaEquipamentos td:nth-child(6) { width: 12%; }
-  #tabelaEquipamentos th:nth-child(7), #tabelaEquipamentos td:nth-child(7) { width: 14%; }
-  #tabelaEquipamentos th:nth-child(8), #tabelaEquipamentos td:nth-child(8) { width: 14%; }
+  #tabelaEquipamentos th:nth-child(7), #tabelaEquipamentos td:nth-child(7) { width: 13%; }
+  #tabelaEquipamentos th:nth-child(8), #tabelaEquipamentos td:nth-child(8) { width: 13%; }
+  #tabelaEquipamentos th:nth-child(9), #tabelaEquipamentos td:nth-child(9) { width: 8%; }
 
 </style>

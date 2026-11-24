@@ -1,10 +1,22 @@
 <script>
 
+  // Funções do servidor que gravam dados: enquanto rodam, a tela mostra o
+  // modal "Processando" (ver exibirModal/fecharModal em ModalJS). Leituras
+  // (buscar*, filtrar*, listar*, Read*...) não mostram.
+  const PADRAO_FUNCAO_GRAVACAO = /^(salvar|cadastrar|desativar|reativar|excluir|editar|adicionar|alterar|gerar|abrir|instalar|remover|atualizar|migrar|preencher)/i;
+
+  function funcaoGravaDados(nomeFuncao) {
+    return PADRAO_FUNCAO_GRAVACAO.test(String(nomeFuncao || ''));
+  }
+
   function runServerFunction(nomeFuncao, ...args) {
+    const mostrarProcessando = funcaoGravaDados(nomeFuncao) && typeof exibirModal === 'function';
+    if (mostrarProcessando) exibirModal('processando');
+    const terminar = () => { if (mostrarProcessando && typeof fecharModal === 'function') fecharModal('processando'); };
     return new Promise((resolve, reject) => {
       google.script.run
-        .withSuccessHandler(resolve) // Sucesso retorna o valor
-        .withFailureHandler(reject)  // Erro rejeita a Promise
+        .withSuccessHandler(valor => { terminar(); resolve(valor); }) // Sucesso retorna o valor
+        .withFailureHandler(erro => { terminar(); reject(erro); })    // Erro rejeita a Promise
         [nomeFuncao](...args);
     });
   }

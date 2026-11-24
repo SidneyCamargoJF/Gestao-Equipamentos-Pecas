@@ -233,8 +233,10 @@ class MarcaController {
       return;
     }
 
+    if (typeof exibirModal === 'function') exibirModal('processando');
     google.script.run
       .withSuccessHandler((resposta) => {
+        if (typeof fecharModal === 'function') fecharModal('processando');
         if (resposta && resposta.sucesso) {
           this.consultar();
           if (typeof fecharModal === 'function') fecharModal('modalCadastroMarca');
@@ -243,6 +245,7 @@ class MarcaController {
         }
       })
       .withFailureHandler((err) => {
+        if (typeof fecharModal === 'function') fecharModal('processando');
         console.error('Erro ao cadastrar marca:', err);
         alert('Ocorreu um erro no script: ' + (err.message || err));
       })
@@ -269,8 +272,10 @@ class MarcaController {
       return;
     }
 
+    if (typeof exibirModal === 'function') exibirModal('processando');
     google.script.run
       .withSuccessHandler((resposta) => {
+        if (typeof fecharModal === 'function') fecharModal('processando');
         if (resposta && resposta.sucesso) {
           if (typeof fecharModal === 'function') fecharModal('modalEdicaoMarca');
           this.consultar();
@@ -279,6 +284,7 @@ class MarcaController {
         }
       })
       .withFailureHandler((err) => {
+        if (typeof fecharModal === 'function') fecharModal('processando');
         console.error('Erro ao editar marca: ', err);
         alert('Erro de comunicação com o servidor.');
       })

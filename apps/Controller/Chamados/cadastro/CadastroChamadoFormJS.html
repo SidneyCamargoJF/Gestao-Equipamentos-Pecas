@@ -1,11 +1,10 @@
 <script>
   // =====================================================
   // CADASTRO DE CHAMADO
-  // Equipamento é obrigatório (Patrimônio e/ou Localização, achado em
-  // tbl_equipamentos -- ao achar pelo Patrimônio, preenche os demais campos
-  // sozinho). Peças são opcionais e podem ser várias -- por enquanto são
-  // texto livre (Nome + opcionais), já que peça ainda não tem identificador
-  // único; o servidor tenta linkar por Nome ao salvar.
+  // Pelo menos um equipamento é obrigatório. A lista aceita vários,
+  // adicionados pelo Patrimônio, pela Localização (um ou todos dela) ou
+  // automaticamente ao escolher o contrato (todos os equipamentos dele).
+  // Gravada em tbl_chamado_equipamentos; o 1º vai também em ID_EQUIPAMENTO.
   // =====================================================
 
 
@@ -16,6 +15,10 @@
 
     const idEl = document.getElementById('chamadoId');
     if (idEl) idEl.value = id || '';
+
+    // Abas (Vínculo / Equipamentos / Serviço): sempre abre na primeira.
+    if (typeof initTabs === 'function') initTabs();
+    if (typeof ativarAba === 'function') ativarAba('chamado-vinculo');
 
     const tituloEl = document.getElementById('chamadoFormTitulo');
     if (tituloEl) tituloEl.textContent = id ? '✏️ Editar Chamado' : '📩 Abrir Chamado';
@@ -39,11 +42,13 @@
     if (descricaoEl) descricaoEl.value = '';
     const tipoEl = document.getElementById('chamadoTipo');
     if (tipoEl) tipoEl.value = '';
+    atualizarHabilitacaoDetalhamentoChamado();
     const atribuidoEl = document.getElementById('chamadoAtribuidoA');
     if (atribuidoEl) atribuidoEl.value = '';
+    atribuidoAutoChamado = '';
         const abertoPorEl = document.getElementById('chamadoAbertoPor');
     if (abertoPorEl) abertoPorEl.value = '';
-    ['chamadoEquipPatrimonio', 'chamadoEquipLocalizacao', 'chamadoEquipMarca', 'chamadoEquipModelo', 'chamadoEquipCapacidade', 'chamadoRelatorioArquivo', 'chamadoNotaFiscalArquivo'].forEach(id => {
+    ['chamadoEquipPatrimonio', 'chamadoEquipLocalizacao', 'chamadoRelatorioArquivo', 'chamadoNotaFiscalArquivo'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -53,7 +58,14 @@
 
     const statusEl = document.getElementById('chamadoPatrimonioStatus');
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'chamado-patrimonio-status'; }
+    const statusLocalEl = document.getElementById('chamadoLocalizacaoStatus');
+    if (statusLocalEl) { statusLocalEl.textContent = ''; statusLocalEl.className = 'chamado-patrimonio-status'; }
     ultimoPatrimonioVerificadoChamado = '';
+    ultimaLocalizacaoBuscadaChamado = '';
+    equipamentosChamado = [];
+    contratoEquipIncluidoChamado = '';
+    definirPatrimonioEncontradoChamado(null);
+    renderizarEquipamentosChamado();
     ['chamadoContratoSearch', 'chamadoContratoIdSelecionado', 'chamadoContratoEmpresa', 'chamadoContratoNumeroExibicao', 'chamadoCompetencia', 'chamadoDataPrevista', 'chamadoPrazoAtendimentoPreview', 'chamadoPrazoSolucaoPreview'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
@@ -76,6 +88,7 @@
     ]);
 
     destravarCampoCarregandoChamado('chamadoEquipLocalizacao', 'Selecione a localização...');
+    locaisChamado = locais || [];
     initSearchChamado('chamadoEquipLocalizacao', 'chamadoEquipLocalizacaoDropdown', 'chamadoEquipLocalizacaoWrapper', locais);
 
     destravarCampoCarregandoChamado('chamadoAtribuidoA', 'Técnico interno ou fornecedor prestador de serviço...');
@@ -95,7 +108,10 @@
     if (patrimonioEl) {
       patrimonioEl.addEventListener('blur', verificarPatrimonioAoSairChamado);
       patrimonioEl.addEventListener('input', verificarPatrimonioDigitandoChamado);
+      patrimonioEl.addEventListener('keydown', teclaPatrimonioChamado);
     }
+    const localizacaoInputEl = document.getElementById('chamadoEquipLocalizacao');
+    if (localizacaoInputEl) localizacaoInputEl.addEventListener('input', verificarLocalizacaoDigitandoChamado);
 
     const contratoSearchEl = document.getElementById('chamadoContratoSearch');
     if (contratoSearchEl) {
@@ -150,6 +166,7 @@
 
       const tipoEl = document.getElementById('chamadoTipo');
       if (tipoEl) tipoEl.value = dados.tipo || '';
+      atualizarHabilitacaoDetalhamentoChamado();
 
       const classificacaoEl = document.getElementById('chamadoClassificacao');
       if (classificacaoEl) classificacaoEl.value = dados.classificacao || '';
@@ -164,23 +181,14 @@
       if (descricaoEl) descricaoEl.value = dados.descricao || '';
       atualizarContadorDescricaoChamado();
 
-      const patrimonioEl = document.getElementById('chamadoEquipPatrimonio');
-      if (patrimonioEl) patrimonioEl.value = dados.patrimonio || '';
+      equipamentosChamado = [];
+      (dados.equipamentos || []).forEach(e => adicionarEquipamentoNaListaChamado(e, ''));
+      renderizarEquipamentosChamado();
 
-      const localizacaoEl = document.getElementById('chamadoEquipLocalizacao');
-      if (localizacaoEl) localizacaoEl.value = dados.localizacao || '';
-
-      const marcaEl = document.getElementById('chamadoEquipMarca');
-      if (marcaEl) marcaEl.value = dados.marca || '';
-
-      const modeloEl = document.getElementById('chamadoEquipModelo');
-      if (modeloEl) modeloEl.value = dados.modelo || '';
-
-      const capacidadeEl = document.getElementById('chamadoEquipCapacidade');
-      if (capacidadeEl) capacidadeEl.value = dados.capacidade || '';
-
-      ultimoPatrimonioVerificadoChamado = String(dados.patrimonio || '').trim();
       exibirContratoChamado(dados.contrato || null, '');
+      atribuidoAutoChamado = (dados.contrato && dados.atribuidoA === dados.contrato.empresa) ? dados.atribuidoA : '';
+      // o contrato já gravado não reinclui os equipamentos dele ao abrir
+      contratoEquipIncluidoChamado = dados.contrato ? String(dados.contrato.id) : '';
 
       const competenciaEl = document.getElementById('chamadoCompetencia');
       if (competenciaEl) competenciaEl.value = dados.competencia || '';
@@ -245,7 +253,7 @@
       statusEl.textContent = '';
       statusEl.className = 'chamado-patrimonio-status';
       ultimoPatrimonioVerificadoChamado = '';
-      exibirContratoChamado(null, '');
+      definirPatrimonioEncontradoChamado(null);
       return;
     }
 
@@ -254,6 +262,7 @@
 
     statusEl.textContent = 'Buscando...';
     statusEl.className = 'chamado-patrimonio-status';
+    definirPatrimonioEncontradoChamado(null);
 
     try {
       const resposta = await runServerFunction('verificarPatrimonioChamado', patrimonio);
@@ -262,17 +271,16 @@
       if (resposta && resposta.existe) {
         const resultado = resposta.equipamento;
         const detalheEquipamento = (resultado.marca ? ' - ' + resultado.marca : '') + (resultado.modelo ? ' - ' + resultado.modelo : '');
-        statusEl.textContent = 'Equipamento encontrado' + (resultado.nome ? ' (' + resultado.nome + detalheEquipamento + ')' : '');
+        const jaNaLista = equipamentosChamado.some(e => Number(e.id) === Number(resultado.id));
+        statusEl.textContent = (jaNaLista ? 'Já está na lista' : 'Equipamento encontrado -- clique em Adicionar') +
+          (resultado.nome ? ' (' + resultado.nome + detalheEquipamento + ')' : '');
         statusEl.className = 'chamado-patrimonio-status encontrado';
-        preencherCamposEquipamentoChamado(resultado);
-        esconderEscolhaEquipamentoChamado();
+        definirPatrimonioEncontradoChamado(jaNaLista ? null : Object.assign({ patrimonio: patrimonio }, resultado));
+        // sugere o contrato do equipamento só se ainda não há contrato escolhido
         exibirContratoChamado(resposta.contrato, resposta.aviso);
-        const atribuidoEl = document.getElementById('chamadoAtribuidoA');
-        if (resposta.contrato && atribuidoEl && !atribuidoEl.value.trim()) atribuidoEl.value = resposta.contrato.empresa;
       } else {
-        statusEl.textContent = 'Patrimônio não encontrado -- pode continuar, o chamado ainda é salvo';
+        statusEl.textContent = 'Patrimônio não encontrado no cadastro de equipamentos';
         statusEl.className = 'chamado-patrimonio-status nao-encontrado';
-        exibirContratoChamado(null, '');
       }
     } catch (error) {
       ultimoPatrimonioVerificadoChamado = '';
@@ -335,7 +343,23 @@
     if (empresaEl) empresaEl.value = contrato ? contrato.empresa : '';
     if (numeroEl) numeroEl.value = contrato ? contrato.numero : '';
     contratoChamadoAutoValor = texto;
+    preencherAtribuidoComContratoChamado(contrato);
     atualizarPreviewPrazosChamado();
+  }
+
+  // "Atribuído a" recebe a empresa do contrato. Só substitui o que estiver
+  // vazio ou o que foi preenchido automaticamente por um contrato anterior
+  // -- o que a pessoa digitou à mão fica.
+  let atribuidoAutoChamado = '';
+
+  function preencherAtribuidoComContratoChamado(contrato) {
+    const atribuidoEl = document.getElementById('chamadoAtribuidoA');
+    if (!atribuidoEl) return;
+    const atual = atribuidoEl.value.trim();
+    if (atual && atual !== atribuidoAutoChamado) return;
+    const empresa = contrato ? String(contrato.empresa || '').trim() : '';
+    atribuidoEl.value = empresa;
+    atribuidoAutoChamado = empresa;
   }
 
   function resolverContratoDigitadoChamado() {
@@ -349,7 +373,9 @@
     if (empresaEl) empresaEl.value = achado ? achado.empresa : '';
     const numeroEl = document.getElementById('chamadoContratoNumeroExibicao');
     if (numeroEl) numeroEl.value = achado ? achado.numero : '';
+    preencherAtribuidoComContratoChamado(achado);
     atualizarPreviewPrazosChamado();
+    if (achado) incluirEquipamentosDoContratoChamado(achado);
   }
 
   function limparContratoChamadoSeNaoResolvido() {
@@ -362,6 +388,7 @@
       if (empresaEl) empresaEl.value = '';
       const numeroEl = document.getElementById('chamadoContratoNumeroExibicao');
       if (numeroEl) numeroEl.value = '';
+      preencherAtribuidoComContratoChamado(null);
       atualizarPreviewPrazosChamado();
     }
   }
@@ -392,46 +419,251 @@
     }
   }
 
-  // ===== MAIS DE UM EQUIPAMENTO NA LOCALIZAÇÃO =====
+  // ===== LISTA DE EQUIPAMENTOS DO CHAMADO (um ou mais) =====
+  // Cada item: { id, patrimonio, nome, marca, modelo, capacidade, localizacao,
+  // doContrato } -- doContrato = ID do contrato que incluiu o item
+  // automaticamente ('' quando a pessoa adicionou à mão).
+  let equipamentosChamado = [];
+  let equipamentoPatrimonioEncontradoChamado = null;
+  let contratoEquipIncluidoChamado = '';
+  let locaisChamado = [];
+  let equipamentosLocalizacaoChamado = [];
+
+  function rotuloEquipamentoChamado(e) {
+    const partes = [];
+    if (e.patrimonio) partes.push('Patrimônio ' + e.patrimonio);
+    partes.push(e.nome + (e.modelo ? '/' + e.modelo : '') + (e.capacidade ? ' ' + e.capacidade : ''));
+    if (e.marca) partes.push(e.marca);
+    return partes.join(' - ');
+  }
+
+  // Devolve true se entrou (false se já estava na lista).
+  function adicionarEquipamentoNaListaChamado(e, doContrato) {
+    if (!e || !e.id) return false;
+    if (equipamentosChamado.some(x => Number(x.id) === Number(e.id))) return false;
+    equipamentosChamado.push({
+      id: Number(e.id),
+      patrimonio: e.patrimonio || '',
+      nome: e.nome || '',
+      marca: e.marca || '',
+      modelo: e.modelo || '',
+      capacidade: e.capacidade || '',
+      localizacao: e.localizacao || '',
+      estado: e.estado || '',
+      doContrato: doContrato || ''
+    });
+    return true;
+  }
+
+  function renderizarEquipamentosChamado() {
+    const tbody = document.getElementById('chamadoEquipLista');
+    const wrapper = document.getElementById('chamadoEquipTabelaWrapper');
+    const contador = document.getElementById('chamadoEquipContador');
+    const btnLimpar = document.getElementById('chamadoEquipBtnLimpar');
+    if (!tbody) return;
+
+    const qtd = equipamentosChamado.length;
+    if (contador) contador.textContent = qtd ? qtd + ' equipamento(s) no chamado.' : 'Nenhum equipamento adicionado.';
+    const contadorAba = document.getElementById('chamadoEquipAbaContador');
+    if (contadorAba) contadorAba.textContent = qtd ? '(' + qtd + ')' : '';
+    if (wrapper) wrapper.style.display = qtd ? '' : 'none';
+    if (btnLimpar) btnLimpar.style.display = qtd > 1 ? '' : 'none';
+
+    tbody.innerHTML = equipamentosChamado.map(e =>
+      '<tr>' +
+        '<td>' + escapeHtml(e.patrimonio || '—') + '</td>' +
+        '<td>' + escapeHtml(e.nome) + '</td>' +
+        '<td>' + escapeHtml(e.marca) + '</td>' +
+        '<td>' + escapeHtml(e.modelo) + '</td>' +
+        '<td>' + escapeHtml(e.capacidade) + '</td>' +
+        '<td>' + escapeHtml(e.localizacao) + '</td>' +
+        '<td>' + escapeHtml(e.estado || '—') + '</td>' +
+        '<td class="chamado-equip-acoes">' +
+          '<button type="button" class="btn-acao btn-excluir-linha" title="Remover do chamado" onclick="removerEquipamentoChamado(' + Number(e.id) + ')">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
+            '</svg>' +
+          '</button>' +
+        '</td>' +
+      '</tr>'
+    ).join('');
+  }
+
+  function removerEquipamentoChamado(id) {
+    equipamentosChamado = equipamentosChamado.filter(e => Number(e.id) !== Number(id));
+    renderizarEquipamentosChamado();
+  }
+
+  function removerTodosEquipamentosChamado() {
+    if (!equipamentosChamado.length) return;
+    if (!confirm('Remover todos os ' + equipamentosChamado.length + ' equipamentos do chamado?')) return;
+    equipamentosChamado = [];
+    renderizarEquipamentosChamado();
+  }
+
+  // Patrimônio: o botão "Adicionar" só habilita quando a busca achou.
+  function adicionarEquipamentoPorPatrimonioChamado() {
+    const statusEl = document.getElementById('chamadoPatrimonioStatus');
+    const patrimonioEl = document.getElementById('chamadoEquipPatrimonio');
+    const e = equipamentoPatrimonioEncontradoChamado;
+    if (!e) return;
+    const entrou = adicionarEquipamentoNaListaChamado(e, '');
+    renderizarEquipamentosChamado();
+    if (statusEl) {
+      statusEl.textContent = entrou ? 'Patrimônio ' + e.patrimonio + ' adicionado.' : 'Patrimônio ' + e.patrimonio + ' já está na lista.';
+      statusEl.className = 'chamado-patrimonio-status ' + (entrou ? 'encontrado' : 'nao-encontrado');
+    }
+    if (patrimonioEl) { patrimonioEl.value = ''; patrimonioEl.focus(); }
+    ultimoPatrimonioVerificadoChamado = '';
+    definirPatrimonioEncontradoChamado(null);
+  }
+
+  function definirPatrimonioEncontradoChamado(e) {
+    equipamentoPatrimonioEncontradoChamado = e;
+    const btn = document.getElementById('chamadoEquipBtnAdicionarPatrimonio');
+    if (btn) btn.disabled = !e;
+  }
+
+  function teclaPatrimonioChamado(ev) {
+    if (ev.key === 'Enter' && equipamentoPatrimonioEncontradoChamado) {
+      ev.preventDefault();
+      adicionarEquipamentoPorPatrimonioChamado();
+    }
+  }
+
+  // Localização: ao escolher uma localização da lista, mostra os
+  // equipamentos dela pra adicionar um ou todos.
+  let timerLocalizacaoChamado = null;
+  let ultimaLocalizacaoBuscadaChamado = '';
+
+  function verificarLocalizacaoDigitandoChamado() {
+    clearTimeout(timerLocalizacaoChamado);
+    timerLocalizacaoChamado = setTimeout(buscarEquipamentosDaLocalizacaoChamado, 400);
+  }
+
+  async function buscarEquipamentosDaLocalizacaoChamado() {
+    const localEl = document.getElementById('chamadoEquipLocalizacao');
+    const statusEl = document.getElementById('chamadoLocalizacaoStatus');
+    if (!localEl) return;
+    const local = localEl.value.trim();
+    const valido = local && locaisChamado.some(l => String(l).trim().toLowerCase() === local.toLowerCase());
+    if (!valido) {
+      ultimaLocalizacaoBuscadaChamado = '';
+      esconderEscolhaEquipamentoChamado();
+      if (statusEl) statusEl.textContent = '';
+      return;
+    }
+    if (local === ultimaLocalizacaoBuscadaChamado) return;
+    ultimaLocalizacaoBuscadaChamado = local;
+    if (statusEl) { statusEl.textContent = 'Buscando equipamentos...'; statusEl.className = 'chamado-patrimonio-status'; }
+    try {
+      const lista = await runServerFunction('listarEquipamentosPorLocalizacao', local);
+      if (localEl.value.trim() !== local) return;
+      equipamentosLocalizacaoChamado = lista || [];
+      if (!equipamentosLocalizacaoChamado.length) {
+        esconderEscolhaEquipamentoChamado();
+        if (statusEl) { statusEl.textContent = 'Nenhum equipamento cadastrado nesta localização.'; statusEl.className = 'chamado-patrimonio-status nao-encontrado'; }
+        return;
+      }
+      if (statusEl) { statusEl.textContent = equipamentosLocalizacaoChamado.length + ' equipamento(s) nesta localização.'; statusEl.className = 'chamado-patrimonio-status encontrado'; }
+      mostrarEscolhaEquipamentoChamado(equipamentosLocalizacaoChamado);
+    } catch (e) {
+      ultimaLocalizacaoBuscadaChamado = '';
+      if (statusEl) statusEl.textContent = '';
+    }
+  }
+
   function mostrarEscolhaEquipamentoChamado(opcoes) {
     const bloco = document.getElementById('chamadoEquipEscolhaBloco');
     const select = document.getElementById('chamadoEquipEscolha');
     if (!bloco || !select) return;
-    const rotulo = function (e) {
-      const partes = [];
-      if (e.patrimonio) partes.push('Patrimônio ' + e.patrimonio);
-      partes.push(e.nome + (e.modelo ? '/' + e.modelo : '') + (e.capacidade ? ' ' + e.capacidade : ''));
-      if (e.marca) partes.push(e.marca);
-      return partes.join(' - ');
-    };
-    select.innerHTML = '<option value="">Selecione...</option>' + (opcoes || []).map(function (e) {
-      return '<option value="' + escapeHtml(String(e.id)) + '" data-patrimonio="' + escapeHtml(String(e.patrimonio || '')) + '">' +
-        escapeHtml(rotulo(e)) + '</option>';
-    }).join('');
+    select.innerHTML = (opcoes || []).map(e =>
+      '<option value="' + escapeHtml(String(e.id)) + '">' + escapeHtml(rotuloEquipamentoChamado(e)) + '</option>'
+    ).join('');
     bloco.style.display = '';
-    select.focus();
   }
 
   function esconderEscolhaEquipamentoChamado() {
     const bloco = document.getElementById('chamadoEquipEscolhaBloco');
     const select = document.getElementById('chamadoEquipEscolha');
-    const idEl = document.getElementById('chamadoEquipamentoIdEscolhido');
     if (bloco) bloco.style.display = 'none';
     if (select) select.innerHTML = '';
-    if (idEl) idEl.value = '';
+    equipamentosLocalizacaoChamado = [];
   }
 
-  function escolherEquipamentoDaLocalizacaoChamado() {
+  function adicionarEquipamentoEscolhidoChamado() {
     const select = document.getElementById('chamadoEquipEscolha');
-    const idEl = document.getElementById('chamadoEquipamentoIdEscolhido');
-    if (!select || !idEl) return;
-    idEl.value = select.value;
-    const opcao = select.options[select.selectedIndex];
-    const patrimonio = opcao ? opcao.getAttribute('data-patrimonio') : '';
-    const patrimonioEl = document.getElementById('chamadoEquipPatrimonio');
-    if (patrimonio && patrimonioEl) {
-      patrimonioEl.value = patrimonio;
-      verificarPatrimonioAoSairChamado(); // preenche marca/modelo e contrato
+    if (!select || !select.value) return;
+    const e = equipamentosLocalizacaoChamado.find(x => String(x.id) === select.value);
+    if (!adicionarEquipamentoNaListaChamado(e, '')) alert('Esse equipamento já está na lista.');
+    renderizarEquipamentosChamado();
+  }
+
+  function adicionarTodosDaLocalizacaoChamado() {
+    let qtd = 0;
+    equipamentosLocalizacaoChamado.forEach(e => { if (adicionarEquipamentoNaListaChamado(e, '')) qtd++; });
+    renderizarEquipamentosChamado();
+    if (!qtd) alert('Todos os equipamentos desta localização já estão na lista.');
+  }
+
+  // Contrato escolhido pela pessoa: inclui todos os equipamentos dele. Ao
+  // trocar de contrato, os itens que o contrato anterior incluiu sozinho
+  // saem (os adicionados à mão ficam).
+  async function incluirEquipamentosDoContratoChamado(contrato) {
+    if (!ehPreventivaChamado()) return;
+    if (!contrato || String(contrato.id) === String(contratoEquipIncluidoChamado)) return;
+    const anterior = contratoEquipIncluidoChamado;
+    contratoEquipIncluidoChamado = String(contrato.id);
+    if (anterior) equipamentosChamado = equipamentosChamado.filter(e => !e.doContrato || String(e.doContrato) !== String(anterior));
+
+    const contador = document.getElementById('chamadoEquipContador');
+    if (contador) contador.textContent = 'Incluindo os equipamentos do contrato ' + contrato.numero + '...';
+    try {
+      const lista = await runServerFunction('listarEquipamentosDoContrato', contrato.id);
+      if (contratoEquipIncluidoChamado !== String(contrato.id)) return; // trocou de novo no meio
+      let qtd = 0;
+      (lista || []).forEach(e => { if (adicionarEquipamentoNaListaChamado(e, contrato.id)) qtd++; });
+      renderizarEquipamentosChamado();
+      if (!(lista || []).length && contador) contador.textContent = 'O contrato ' + contrato.numero + ' não tem equipamentos vinculados. ' + contador.textContent;
+    } catch (e) {
+      contratoEquipIncluidoChamado = anterior;
+      renderizarEquipamentosChamado();
+      alert('Não foi possível incluir os equipamentos do contrato.');
+    }
+  }
+
+  // ===== TIPO DO CHAMADO =====
+  // Sem tipo, o bloco Detalhamento (Vínculo / Equipamentos / Serviço) fica
+  // desabilitado. Só a preventiva recebe automaticamente todos os
+  // equipamentos do contrato; ao sair de preventiva, esses saem da lista.
+  function ehPreventivaChamado() {
+    const tipoEl = document.getElementById('chamadoTipo');
+    return !!tipoEl && tipoEl.value === 'preventiva';
+  }
+
+  function atualizarHabilitacaoDetalhamentoChamado() {
+    const tipoEl = document.getElementById('chamadoTipo');
+    const bloco = document.getElementById('chamadoDetalhamento');
+    const aviso = document.getElementById('chamadoDetalhamentoAviso');
+    const liberado = !!(tipoEl && tipoEl.value);
+    if (bloco) {
+      bloco.disabled = !liberado;
+      bloco.classList.toggle('chamado-detalhamento-bloqueado', !liberado);
+    }
+    if (aviso) aviso.style.display = liberado ? 'none' : '';
+  }
+
+  function alterarTipoChamado() {
+    atualizarHabilitacaoDetalhamentoChamado();
+    if (ehPreventivaChamado()) {
+      const idContrato = document.getElementById('chamadoContratoIdSelecionado')?.value || '';
+      const contrato = idContrato ? (contratosDisponiveisChamado || []).find(c => String(c.id) === String(idContrato)) : null;
+      if (contrato) incluirEquipamentosDoContratoChamado(contrato);
+    } else if (contratoEquipIncluidoChamado) {
+      const anterior = contratoEquipIncluidoChamado;
+      equipamentosChamado = equipamentosChamado.filter(e => !e.doContrato || String(e.doContrato) !== String(anterior));
+      contratoEquipIncluidoChamado = '';
+      renderizarEquipamentosChamado();
     }
   }
 
@@ -446,22 +678,6 @@
     if (mostrarCampo) {
         campoOutro.focus();
     }
-  }
-
-  // Preenche os demais campos do equipamento de acordo com o que está
-  // cadastrado em tbl_equipamentos, quando o Patrimônio bate com um real.
-  function preencherCamposEquipamentoChamado(dados) {
-    const localizacaoEl = document.getElementById('chamadoEquipLocalizacao');
-    if (localizacaoEl && dados.localizacao) localizacaoEl.value = dados.localizacao;
-
-    const marcaEl = document.getElementById('chamadoEquipMarca');
-    if (marcaEl && dados.marca) marcaEl.value = dados.marca;
-
-    const modeloEl = document.getElementById('chamadoEquipModelo');
-    if (modeloEl && dados.modelo) modeloEl.value = dados.modelo;
-
-    const capacidadeEl = document.getElementById('chamadoEquipCapacidade');
-    if (capacidadeEl && dados.capacidade) capacidadeEl.value = dados.capacidade;
   }
 
   // ===== LOCALIZAÇÃO: BUSCA REAL EM tbl_localizacao =====
@@ -596,11 +812,9 @@
         return;
       }
 
-      const patrimonio = document.getElementById('chamadoEquipPatrimonio')?.value.trim() || '';
-      const localizacao = document.getElementById('chamadoEquipLocalizacao')?.value.trim() || '';
-
-      if (!patrimonio && !localizacao) {
-        alert('Informe pelo menos o Patrimônio ou a Localização do equipamento -- é o mínimo pra saber sobre qual equipamento é o chamado.');
+      if (!equipamentosChamado.length) {
+        if (typeof ativarAba === 'function') ativarAba('chamado-equipamentos');
+        alert('Adicione pelo menos um equipamento ao chamado (pelo Patrimônio, pela Localização ou escolhendo o contrato).');
         return;
       }
 
@@ -621,12 +835,7 @@
         abertoPor: document.getElementById('chamadoAbertoPor')?.value.trim() || '',
         atribuidoA: document.getElementById('chamadoAtribuidoA')?.value.trim() || '',
         descricao: document.getElementById('chamadoDescricao')?.value.trim() || '',
-        patrimonio: patrimonio,
-        localizacao: localizacao,
-        equipamentoId: document.getElementById('chamadoEquipamentoIdEscolhido')?.value || '',
-        marcaEquipamento: document.getElementById('chamadoEquipMarca')?.value.trim() || '',
-        modelo: document.getElementById('chamadoEquipModelo')?.value.trim() || '',
-        capacidade: document.getElementById('chamadoEquipCapacidade')?.value.trim() || '',
+        equipamentoIds: equipamentosChamado.map(e => e.id),
         contratoId: document.getElementById('chamadoContratoIdSelecionado')?.value || '',
         competencia: document.getElementById('chamadoCompetencia')?.value || '',
         dataPrevista: document.getElementById('chamadoDataPrevista')?.value || '',
@@ -638,12 +847,6 @@
 
       try {
         const resposta = await runServerFunction('salvarChamadoBackend', dadosChamado);
-
-        if (resposta && resposta.escolherEquipamento) {
-          alert(resposta.mensagem);
-          mostrarEscolhaEquipamentoChamado(resposta.opcoes);
-          return;
-        }
 
         if (resposta && resposta.sucesso === false) {
           alert(resposta.mensagem);

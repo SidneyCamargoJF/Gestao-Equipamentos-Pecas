@@ -28,7 +28,7 @@
         <div class="form-grid-3">
           <div class="field">
             <label class="field__label" for="chamadoTipo">Tipo *</label>
-            <select class="field__select" id="chamadoTipo">
+            <select class="field__select" id="chamadoTipo" onchange="alterarTipoChamado()">
               <option value="">Selecione...</option>
               <option value="corretiva">Corretiva</option>
               <option value="preventiva">Preventiva</option>
@@ -83,150 +83,181 @@
       </fieldset>
 
       <!-- ============================================= -->
-      <!-- PARTE 2: EQUIPAMENTO (opcional, no máximo 1)  -->
+      <!-- PARTE 2: ABAS (vínculo, equipamentos, serviço) -->
       <!-- ============================================= -->
-      <fieldset class="fieldset-principal">
-        <legend class="fieldset-legend">Equipamento</legend>
-        <p class="chamado-itens-ajuda">
-          Obrigatório informar pelo menos o Patrimônio ou a Localização.
-        </p>
+      <fieldset class="fieldset-abas" id="chamadoDetalhamento">
+        <legend class="fieldset-legend">Detalhamento</legend>
+        <p class="chamado-itens-ajuda" id="chamadoDetalhamentoAviso">Escolha o Tipo do chamado para liberar o detalhamento.</p>
 
-        <div class="form-grid-3">
-          <div class="field">
-            <label class="field__label" for="chamadoEquipPatrimonio">Patrimônio</label>
-            <input class="field__input" type="text" id="chamadoEquipPatrimonio" placeholder="Ex: 21384">
-            <span class="chamado-patrimonio-status" id="chamadoPatrimonioStatus"></span>
-          </div>
-          <div class="field">
-            <label class="field__label">Localização</label>
-            <div class="search-wrapper" id="chamadoEquipLocalizacaoWrapper">
-              <span class="search-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </span>
-              <input class="search-input" type="text" id="chamadoEquipLocalizacao" placeholder="Selecione a localização..." autocomplete="off">
-              <div class="search-dropdown" id="chamadoEquipLocalizacaoDropdown"></div>
+        <div class="tabs-nav">
+          <button type="button" class="tab-btn active" data-tab="chamado-vinculo">📄 Vínculo Contratual e Planejamento</button>
+          <button type="button" class="tab-btn" data-tab="chamado-equipamentos">🔧 Equipamentos <span class="chamado-aba-contador" id="chamadoEquipAbaContador"></span></button>
+          <button type="button" class="tab-btn" data-tab="chamado-servico">🛠️ Serviço</button>
+        </div>
+
+        <div class="tabs-content">
+          <!-- ======================== -->
+          <!-- ABA: VÍNCULO CONTRATUAL E PLANEJAMENTO -->
+          <!-- ======================== -->
+          <div class="tab-panel active" id="tab-chamado-vinculo">
+
+            <!-- Contrato vinculado -- sugerido automaticamente pelo 1º equipamento,
+                 mas pode ser buscado/trocado por número ou SEI, ou deixado vazio. Escolher o contrato inclui
+                 os equipamentos dele na aba Equipamentos. -->
+            <div class="form-grid-3">
+              <div class="field">
+                <label class="field__label">Contrato</label>
+                <input type="hidden" id="chamadoContratoIdSelecionado" value="">
+                <div class="search-wrapper" id="chamadoContratoWrapper">
+                  <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                  </span>
+                  <input class="search-input" type="text" id="chamadoContratoSearch" placeholder="Busque por número ou SEI do contrato..." autocomplete="off">
+                  <div class="search-dropdown" id="chamadoContratoDropdown"></div>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field__label" for="chamadoContratoNumeroExibicao">Número do contrato</label>
+                <input class="field__input" type="text" id="chamadoContratoNumeroExibicao" readonly placeholder="—">
+              </div>
+              <div class="field">
+                <label class="field__label" for="chamadoContratoEmpresa">Empresa</label>
+                <input class="field__input" type="text" id="chamadoContratoEmpresa" readonly placeholder="—">
+              </div>
+            </div>
+            <span class="chamado-patrimonio-status" id="chamadoContratoAviso"></span>
+
+            <div class="form-grid-3">
+              <div class="field">
+                <label class="field__label" for="chamadoCompetencia">Competência</label>
+                <input class="field__input" type="month" id="chamadoCompetencia">
+              </div>
+              <div class="field">
+                <label class="field__label" for="chamadoDataPrevista">Data prevista para execução</label>
+                <input class="field__input" type="date" id="chamadoDataPrevista">
+              </div>
+            </div>
+            <div class="form-grid-3">
+              <div class="field">
+                <label class="field__label" for="chamadoPrazoAtendimentoPreview">Prazo de atendimento (SLA)</label>
+                <input class="field__input" type="text" id="chamadoPrazoAtendimentoPreview" readonly placeholder="Calculado a partir do contrato e da classificação">
+              </div>
+              <div class="field">
+                <label class="field__label" for="chamadoPrazoSolucaoPreview">Prazo de solução (SLA)</label>
+                <input class="field__input" type="text" id="chamadoPrazoSolucaoPreview" readonly placeholder="Calculado a partir do contrato e da classificação">
+              </div>
             </div>
           </div>
-          <div class="field">
-            <label class="field__label" for="chamadoEquipMarca">Marca</label>
-            <input class="field__input" type="text" id="chamadoEquipMarca" placeholder="Ex: Gree">
-          </div>
-        </div>
-        <div class="form-grid-3">
-          <div class="field">
-            <label class="field__label" for="chamadoEquipModelo">Modelo</label>
-            <input class="field__input" type="text" id="chamadoEquipModelo" placeholder="Ex: Split Hi-Wall">
-          </div>
-          <div class="field">
-            <label class="field__label" for="chamadoEquipCapacidade">Capacidade</label>
-            <input class="field__input" type="text" id="chamadoEquipCapacidade" placeholder="Ex: 36.000 BTUs, 20 litros...">
-          </div>
-        </div>
 
-        <!-- Mais de um equipamento na localização: a pessoa escolhe qual -->
-        <input type="hidden" id="chamadoEquipamentoIdEscolhido" value="">
-        <div class="form-grid-3" id="chamadoEquipEscolhaBloco" style="display:none;">
-          <div class="field field-full-3">
-            <label class="field__label" for="chamadoEquipEscolha">Qual equipamento desta localização? *</label>
-            <select class="field__select" id="chamadoEquipEscolha" onchange="escolherEquipamentoDaLocalizacaoChamado()"></select>
+          <!-- ======================== -->
+          <!-- ABA: EQUIPAMENTOS (um ou mais) -->
+          <!-- ======================== -->
+          <div class="tab-panel" id="tab-chamado-equipamentos">
+            <p class="chamado-itens-ajuda">
+              Adicione um ou mais equipamentos pelo Patrimônio ou pela Localização. Em chamado do tipo Preventiva,
+              ao escolher o contrato na aba Vínculo Contratual e Planejamento, todos os equipamentos vinculados a ele entram na lista automaticamente.
+            </p>
+
+            <div class="form-grid-3">
+              <div class="field">
+                <label class="field__label" for="chamadoEquipPatrimonio">Patrimônio</label>
+                <div class="chamado-equip-add-linha">
+                  <input class="field__input" type="text" id="chamadoEquipPatrimonio" placeholder="Ex: 21384">
+                  <button type="button" class="btn-primary" id="chamadoEquipBtnAdicionarPatrimonio" onclick="adicionarEquipamentoPorPatrimonioChamado()" disabled>Adicionar</button>
+                </div>
+                <span class="chamado-patrimonio-status" id="chamadoPatrimonioStatus"></span>
+              </div>
+              <div class="field">
+                <label class="field__label">Localização</label>
+                <div class="search-wrapper" id="chamadoEquipLocalizacaoWrapper">
+                  <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                  </span>
+                  <input class="search-input" type="text" id="chamadoEquipLocalizacao" placeholder="Selecione a localização..." autocomplete="off">
+                  <div class="search-dropdown" id="chamadoEquipLocalizacaoDropdown"></div>
+                </div>
+                <span class="chamado-patrimonio-status" id="chamadoLocalizacaoStatus"></span>
+              </div>
+            </div>
+
+            <!-- Equipamentos da localização escolhida -->
+            <div class="form-grid-3" id="chamadoEquipEscolhaBloco" style="display:none;">
+              <div class="field field-full-3">
+                <label class="field__label" for="chamadoEquipEscolha">Equipamentos desta localização</label>
+                <div class="chamado-equip-add-linha">
+                  <select class="field__select" id="chamadoEquipEscolha"></select>
+                  <button type="button" class="btn-primary" onclick="adicionarEquipamentoEscolhidoChamado()">Adicionar</button>
+                  <button type="button" class="btn-secondary" onclick="adicionarTodosDaLocalizacaoChamado()">Adicionar todos</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="chamado-equip-lista-topo">
+              <span id="chamadoEquipContador">Nenhum equipamento adicionado.</span>
+              <button type="button" class="btn-secondary" id="chamadoEquipBtnLimpar" onclick="removerTodosEquipamentosChamado()" style="display:none;">Remover todos</button>
+            </div>
+            <div class="table-wrapper chamado-equip-tabela-wrapper" id="chamadoEquipTabelaWrapper" style="display:none;">
+              <table class="data-table chamado-equip-tabela">
+                <thead>
+                  <tr>
+                    <th>Patrimônio</th>
+                    <th>Equipamento</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>Capacidade</th>
+                    <th>Localização</th>
+                    <th>Estado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="chamadoEquipLista"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- ABA: SERVIÇO (quem atende + anexos) -->
+          <!-- ======================== -->
+          <div class="tab-panel" id="tab-chamado-servico">
+
+            <div class="form-grid-3">
+              <div class="field field-full-3">
+                <label class="field__label">Atribuído a</label>
+                <div class="search-wrapper" id="chamadoAtribuidoWrapper">
+                  <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                  </span>
+                  <input class="search-input" type="text" id="chamadoAtribuidoA" placeholder="Técnico interno ou fornecedor prestador de serviço..." autocomplete="off">
+                  <div class="search-dropdown" id="chamadoAtribuidoDropdown"></div>
+                </div>
+              </div>
+            </div>
+            <div class="form-grid-3">
+              <div class="field">
+                <label class="field__label">Relatório(s)</label>
+                <div id="chamadoRelatorioLista"></div>
+                <input type="file" id="chamadoRelatorioArquivo" accept="application/pdf,image/*" multiple style="display:none;" onchange="onArquivosCadastroSelecionados('chamadoRelatorioArquivo')">
+              </div>
+              <div class="field">
+                <label class="field__label">Nota(s) Fiscal(is)</label>
+                <div id="chamadoNotaFiscalLista"></div>
+                <input type="file" id="chamadoNotaFiscalArquivo" accept="application/pdf,image/*" multiple style="display:none;" onchange="onArquivosCadastroSelecionados('chamadoNotaFiscalArquivo')">
+              </div>
+            </div>
+            <p class="chamado-itens-ajuda">
+              Anexos opcionais, PDF ou foto, até 3MB cada.
+              <span id="chamadoEditandoAnexosAviso" style="display:none;">Pra excluir anexos já enviados, use a tela de Consulta (botão de detalhes do chamado).</span>
+            </p>
           </div>
         </div>
       </fieldset>
 
-      <!-- ============================================= -->
-      <!-- PARTE 2B: VÍNCULO CONTRATUAL E PLANEJAMENTO   -->
-      <!-- ============================================= -->
-      <fieldset class="fieldset-principal">
-        <legend class="fieldset-legend">Vínculo Contratual e Planejamento</legend>
-
-        <!-- Contrato vinculado -- sugerido automaticamente pelo patrimônio,
-             mas pode ser buscado/trocado por número ou SEI, ou deixado vazio. -->
-        <div class="form-grid-3">
-          <div class="field">
-            <label class="field__label">Contrato</label>
-            <input type="hidden" id="chamadoContratoIdSelecionado" value="">
-            <div class="search-wrapper" id="chamadoContratoWrapper">
-              <span class="search-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </span>
-              <input class="search-input" type="text" id="chamadoContratoSearch" placeholder="Busque por número ou SEI do contrato..." autocomplete="off">
-              <div class="search-dropdown" id="chamadoContratoDropdown"></div>
-            </div>
-          </div>
-          <div class="field">
-            <label class="field__label" for="chamadoContratoNumeroExibicao">Número do contrato</label>
-            <input class="field__input" type="text" id="chamadoContratoNumeroExibicao" readonly placeholder="—">
-          </div>
-          <div class="field">
-            <label class="field__label" for="chamadoContratoEmpresa">Empresa</label>
-            <input class="field__input" type="text" id="chamadoContratoEmpresa" readonly placeholder="—">
-          </div>
-        </div>
-        <span class="chamado-patrimonio-status" id="chamadoContratoAviso"></span>
-
-        <div class="form-grid-3">
-          <div class="field">
-            <label class="field__label" for="chamadoCompetencia">Competência</label>
-            <input class="field__input" type="month" id="chamadoCompetencia">
-          </div>
-          <div class="field">
-            <label class="field__label" for="chamadoDataPrevista">Data prevista para execução</label>
-            <input class="field__input" type="date" id="chamadoDataPrevista">
-          </div>
-        </div>
-        <div class="form-grid-3">
-          <div class="field">
-            <label class="field__label" for="chamadoPrazoAtendimentoPreview">Prazo de atendimento (SLA)</label>
-            <input class="field__input" type="text" id="chamadoPrazoAtendimentoPreview" readonly placeholder="Calculado a partir do contrato e da classificação">
-          </div>
-          <div class="field">
-            <label class="field__label" for="chamadoPrazoSolucaoPreview">Prazo de solução (SLA)</label>
-            <input class="field__input" type="text" id="chamadoPrazoSolucaoPreview" readonly placeholder="Calculado a partir do contrato e da classificação">
-          </div>
-        </div>
-      </fieldset>
-
-      <!-- ============================================= -->
-      <!-- PARTE 3: SERVIÇO (quem atende + anexos do atendimento)  -->
-      <!-- ============================================= -->
-      <fieldset class="fieldset-principal">
-        <legend class="fieldset-legend">Serviço</legend>
-
-        <div class="form-grid-3">
-          <div class="field field-full-3">
-            <label class="field__label">Atribuído a</label>
-            <div class="search-wrapper" id="chamadoAtribuidoWrapper">
-              <span class="search-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </span>
-              <input class="search-input" type="text" id="chamadoAtribuidoA" placeholder="Técnico interno ou fornecedor prestador de serviço..." autocomplete="off">
-              <div class="search-dropdown" id="chamadoAtribuidoDropdown"></div>
-            </div>
-          </div>
-        </div>
-        <div class="form-grid-3">
-          <div class="field">
-            <label class="field__label">Relatório(s)</label>
-            <div id="chamadoRelatorioLista"></div>
-            <input type="file" id="chamadoRelatorioArquivo" accept="application/pdf,image/*" multiple style="display:none;" onchange="onArquivosCadastroSelecionados('chamadoRelatorioArquivo')">
-          </div>
-          <div class="field">
-            <label class="field__label">Nota(s) Fiscal(is)</label>
-            <div id="chamadoNotaFiscalLista"></div>
-            <input type="file" id="chamadoNotaFiscalArquivo" accept="application/pdf,image/*" multiple style="display:none;" onchange="onArquivosCadastroSelecionados('chamadoNotaFiscalArquivo')">
-          </div>
-        </div>
-        <p class="chamado-itens-ajuda">
-          Anexos opcionais, PDF ou foto, até 3MB cada.
-          <span id="chamadoEditandoAnexosAviso" style="display:none;">Pra excluir anexos já enviados, use a tela de Consulta (botão de detalhes do chamado).</span>
-        </p>
-      </fieldset>
       <!-- ============================================= -->
       <!-- BOTÕES DE AÇÃO                                -->
       <!-- ============================================= -->
