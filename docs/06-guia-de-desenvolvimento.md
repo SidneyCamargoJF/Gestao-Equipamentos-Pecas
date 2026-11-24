@@ -18,6 +18,9 @@ Regras que todo código novo deve seguir. Antes de mudar qualquer coisa, leia o 
 - **Sem `Date` no retorno:** o `google.script.run` devolve `null` em silêncio quando o objeto contém um `Date`. Converta com `dateToString` ou `dateTimeToString`. Os `Read*()` já fazem isso.
 - **Chamadas no cliente:** use `await runServerFunction('fn', ...args)`.
 - **HTML dinâmico:** passe por `escapeHtml()` todo texto interpolado em `innerHTML`.
+- **Mensagens:** use `mostrarMensagem(texto, tipo)` (`apps/Modal/ModalJS.html`); `tipo` é `sucesso`, `erro`, `aviso` ou `info`. Abre o modal `#modalMensagem`, enfileira mensagens seguidas e devolve uma Promise resolvida quando a pessoa fecha.
+  - `alert()` é redirecionado para esse modal, com o tipo deduzido do texto. Diferente do alert do navegador, ele **não bloqueia**: o código depois dele continua rodando.
+  - O alert original fica em `window.alertNativo`. O `confirm()` continua sendo o do navegador.
 - **Arquivos de template:** os `*JS.html` envolvem o código em `<script>`. Os `*CSS.html` contêm CSS puro, sem `<style>`.
 
 ## Planilha
