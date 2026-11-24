@@ -7,7 +7,6 @@
     registrarCampoAnexoCadastro('contratoAnexoArquivo', 'contratoAnexoLista');
     limparAnexosCadastroSelecionados(['contratoAnexoArquivo']);
     initDataEncerramentoOpacidade();
-    registrarEventosChecklist();
 
     const telField = document.getElementById('telefone');
     if (telField) mascaraTelefone(telField);
@@ -193,7 +192,6 @@
       atualizarChecklistParaServico();
 
       checklist = dados.checklist || [];
-      checklist.forEach(function (item) { recriarChecklistItemVisual(item.descricao, item.periodo); });
       renderizarChecklist();
 
       preencherSlaContratoForm(dados.sla || []);
@@ -203,14 +201,15 @@
     }
   }
 
-  // Limpa as listas de checklist (Mensal/Anual) na tela -- chamado ao
-  // abrir um "Novo Contrato", pra não sobrar item de uma edição anterior
-  // (o DOM é reaproveitado pela SPA, nunca é recriado do zero).
+  // Limpa o formulário do checklist (etapa/periodicidade) -- chamado ao
+  // abrir o form, pra não sobrar texto de uma edição anterior (o DOM é
+  // reaproveitado pela SPA, nunca é recriado do zero). A lista em si é o
+  // array checklist, redesenhado por renderizarChecklist().
   function limparChecklistUI() {
-    const mensal = document.getElementById('checklistMensal');
-    const anual = document.getElementById('checklistAnual');
-    if (mensal) mensal.innerHTML = '';
-    if (anual) anual.innerHTML = '';
+    const etapa = document.getElementById('checklistEtapa');
+    const periodo = document.getElementById('checklistPeriodo');
+    if (etapa) etapa.value = '';
+    if (periodo) periodo.value = 'mensal';
   }
 
   // Campo "Data Encerramento" fica opaco por padrão
@@ -533,19 +532,10 @@ function executarRemocaoItemContrato() {
     else if (produtoEditIdx > idx) produtoEditIdx--;
     renderizarProdutos();
   } else if (tipo === 'checklist') {
-    const itemRemovido = checklist[idx] || null;
     checklist.splice(idx, 1);
     if (checklistEditIdx === idx) checklistEditIdx = -1;
     else if (checklistEditIdx > idx) checklistEditIdx--;
     renderizarChecklist();
-
-    if (itemRemovido) {
-      const checkboxEl = encontrarCheckboxChecklist(itemRemovido.descricao, itemRemovido.periodo);
-      if (checkboxEl) {
-        const wrapper = checkboxEl.closest('.checklist-item');
-        if (wrapper) wrapper.remove();
-      }
-    }
   }
 
   remocaoItemContratoPendente = null;
@@ -893,198 +883,21 @@ function renderizarProdutos() {
   }).join('');
 }
 
-// CHECKLIST 
-let checklistItemArrastado = null;
-
-function registrarEventosContainerChecklist(container) {
-  if (!container) return;
-
-  container.addEventListener('change', function (event) {
-    if (!event.target.matches('input[type="checkbox"]')) return;
-    onToggleChecklistItem(event.target);
-  });
-
-  // Começou a arrastar: guarda qual item é, e deixa ele meio transparente
-  container.addEventListener('dragstart', function (event) {
-    const item = event.target.closest('.checklist-item');
-    if (!item) return;
-    checklistItemArrastado = item;
-    item.classList.add('checklist-item-arrastando');
-  });
-
-  // Passando por cima de outro item: mostra uma linha indicando onde vai
-  // cair. precisa do preventDefault, senão o navegador nem deixa soltar.
-  container.addEventListener('dragover', function (event) {
-    if (!checklistItemArrastado || !container.contains(checklistItemArrastado)) return;
-    const alvo = event.target.closest('.checklist-item');
-    if (!alvo || alvo === checklistItemArrastado) return;
-    event.preventDefault();
-
-    container.querySelectorAll('.checklist-item-sobre').forEach(function (el) {
-      el.classList.remove('checklist-item-sobre');
-    });
-    alvo.classList.add('checklist-item-sobre');
-  });
-
-  // Soltou: move de verdade o item arrastado pra antes ou depois do alvo,
-  // dependendo de em qual metade do alvo o mouse estava.
-  container.addEventListener('drop', function (event) {
-    if (!checklistItemArrastado || !container.contains(checklistItemArrastado)) return;
-    const alvo = event.target.closest('.checklist-item');
-    if (!alvo || alvo === checklistItemArrastado) return;
-    event.preventDefault();
-
-    const rect = alvo.getBoundingClientRect();
-    const depoisDoAlvo = (event.clientY - rect.top) > (rect.height / 2);
-    const pai = alvo.parentNode;
-    pai.insertBefore(checklistItemArrastado, depoisDoAlvo ? alvo.nextSibling : alvo);
-
-    alvo.classList.remove('checklist-item-sobre');
-  });
-
-  // Terminou o arrasto (soltou ou cancelou) -- limpa os visuais
-  container.addEventListener('dragend', function () {
-    if (checklistItemArrastado) checklistItemArrastado.classList.remove('checklist-item-arrastando');
-    container.querySelectorAll('.checklist-item-sobre').forEach(function (el) {
-      el.classList.remove('checklist-item-sobre');
-    });
-    checklistItemArrastado = null;
-  });
-}
-
-function registrarEventosChecklist() {
-  registrarEventosContainerChecklist(document.getElementById('checklistMensal'));
-  registrarEventosContainerChecklist(document.getElementById('checklistAnual'));
-}
-
-function onToggleChecklistItem(checkboxEl) {
-  const texto = checkboxEl.getAttribute('data-item');
-  const periodo = checkboxEl.getAttribute('data-periodo');
-  if (!texto || !periodo) return;
-
-  if (checkboxEl.checked) {
-    if (checklist.some(function (c) { return c.periodo === periodo && c.descricao === texto; })) return;
-    checklist.push({ descricao: texto, periodo: periodo });
-  } else {
-    const idx = checklist.findIndex(function (c) { return c.periodo === periodo && c.descricao === texto; });
-    if (idx !== -1) checklist.splice(idx, 1);
-  }
-  renderizarChecklist();
-}
-
-// Procura dentro da lista certa (Mensal ou Anual) -- o mesmo texto não é
-// mais garantidamente único entre as duas listas, por isso o periodo
-// importa aqui.
-function encontrarCheckboxChecklist(descricao, periodo) {
-  const containerId = periodo === 'mensal' ? 'checklistMensal' : 'checklistAnual';
-  const container = document.getElementById(containerId);
-  if (!container) return null;
-  let encontrado = null;
-  container.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
-    if (cb.getAttribute('data-item') === descricao && cb.getAttribute('data-periodo') === periodo) encontrado = cb;
-  });
-  return encontrado;
-}
-
-
-function removerItemChecklist(botaoEl) {
-  const item = botaoEl.closest('.checklist-item');
-  if (!item) return;
-
-  const checkbox = item.querySelector('input[type="checkbox"]');
-  const texto = checkbox ? checkbox.getAttribute('data-item') : null;
-  const periodo = checkbox ? checkbox.getAttribute('data-periodo') : null;
-
-  if (texto) {
-    const idx = checklist.findIndex(function (c) { return c.periodo === periodo && c.descricao === texto; });
-    if (idx !== -1) {
-      checklist.splice(idx, 1);
-      if (checklistEditIdx === idx) checklistEditIdx = -1;
-      else if (checklistEditIdx > idx) checklistEditIdx--;
-      renderizarChecklist();
-    }
-  }
-
-  item.remove();
-}
-
-let checklistCustomContador = 0;
-
-// Monta só o elemento visual (checkbox + alça + remover) e encaixa no
-// container certo (Mensal ou Anual) -- não mexe no array checklist, quem
-// chama decide se precisa adicionar/pular isso (criarChecklistCustom
-// adiciona; o carregamento pra edição só recria o visual porque o item já
-// veio do servidor).
-function recriarChecklistItemVisual(texto, periodo) {
-  checklistCustomContador++;
-  const idCheckbox = 'checklistItem' + checklistCustomContador;
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'checklist-item';
-  wrapper.id = idCheckbox + '-wrapper';
-  wrapper.draggable = true;
-
-  const alca = document.createElement('span');
-  alca.className = 'checklist-item-alca';
-  alca.textContent = '⠿';
-
-  const label = document.createElement('label');
-  label.className = 'checklist-item-label';
-
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.id = idCheckbox;
-  checkbox.checked = true;
-  checkbox.setAttribute('data-item', texto);
-  checkbox.setAttribute('data-periodo', periodo);
-
-  label.appendChild(checkbox);
-  label.appendChild(document.createTextNode(' ' + texto));
-  if (periodo !== 'mensal') {
-    const tag = document.createElement('em');
-    tag.className = 'checklist-item-periodo';
-    tag.textContent = ' (' + formatarPeriodoChecklist(periodo) + ')';
-    label.appendChild(tag);
-  }
-
-  const btnRemover = document.createElement('button');
-  btnRemover.type = 'button';
-  btnRemover.className = 'btn-remover-checkbox-custom';
-  btnRemover.title = 'Remover essa etapa';
-  btnRemover.textContent = '✕';
-  btnRemover.addEventListener('click', function () {
-    removerItemChecklist(btnRemover);
-  });
-
-  wrapper.appendChild(alca);
-  wrapper.appendChild(label);
-  wrapper.appendChild(btnRemover);
-
-  const containerId = periodo === 'mensal' ? 'checklistMensal' : 'checklistAnual';
-  const container = document.getElementById(containerId);
-  if (container) container.appendChild(wrapper);
-}
-
-function criarChecklistCustom(periodo) {
-  // Bloco "Outras periodicidades": a periodicidade vem do <select>.
-  if (periodo !== 'mensal') {
-    const sel = document.getElementById('checklistOutroPeriodo');
-    periodo = (sel && sel.value) ? sel.value : 'anual';
-  }
-  const inputId = periodo === 'mensal' ? 'checklistOutroMensal' : 'checklistOutroAnual';
-  const input = document.getElementById(inputId);
-  const texto = input.value.trim();
+// CHECKLIST
+// Um formulário só (Etapa + Periodicidade + Adicionar); os itens ficam na
+// tabela logo abaixo (renderizarChecklist), com editar e remover por linha.
+function adicionarEtapaChecklist() {
+  const input = document.getElementById('checklistEtapa');
+  const sel = document.getElementById('checklistPeriodo');
+  const texto = input ? input.value.trim() : '';
+  const periodo = (sel && sel.value) ? sel.value : 'mensal';
   if (!texto) { alert('Escreva a etapa antes de adicionar.'); return; }
   if (checklist.some(function (c) { return c.periodo === periodo && c.descricao.toLowerCase() === texto.toLowerCase(); })) {
-    alert('Essa etapa já está na lista.');
+    alert('Essa etapa já está na lista com essa periodicidade.');
     return;
   }
-
-  recriarChecklistItemVisual(texto, periodo);
-
   checklist.push({ descricao: texto, periodo: periodo });
   renderizarChecklist();
-
   input.value = '';
   input.focus();
 }
@@ -1104,17 +917,9 @@ function salvarEdicaoInline(idx) {
   if (!desc) { alert('Informe a descrição.'); return; }
   const selPeriodo = document.getElementById('inlineEditPeriodo');
   const novoPeriodo = selPeriodo ? selPeriodo.value : checklist[idx].periodo;
-  const antigo = checklist[idx];
   if (checklist.some(function (c, i) { return i !== idx && c.periodo === novoPeriodo && c.descricao.toLowerCase() === desc.toLowerCase(); })) {
     alert('Essa etapa já está na lista com essa periodicidade.');
     return;
-  }
-  // Recria o item visual (checkbox) no bloco certo com o texto/período novos.
-  const checkboxEl = encontrarCheckboxChecklist(antigo.descricao, antigo.periodo);
-  if (checkboxEl && (antigo.descricao !== desc || antigo.periodo !== novoPeriodo)) {
-    const wrapper = checkboxEl.closest('.checklist-item');
-    if (wrapper) wrapper.remove();
-    recriarChecklistItemVisual(desc, novoPeriodo);
   }
   checklist[idx] = { descricao: desc, periodo: novoPeriodo };
   checklistEditIdx = -1;

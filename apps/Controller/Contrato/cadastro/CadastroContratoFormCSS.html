@@ -247,117 +247,20 @@
   display: none !important;
 }
 
-.checklist-lista {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  margin-bottom: 1rem;
+/* Formulário único do checklist: Etapa | Periodicidade | Adicionar */
+.checklist-form-linha {
+  width: 100%;
 }
 
-.checklist-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: #fff;
-  border: 0.0625rem solid var(--color-slate-200);
-  border-radius: 0.5rem;
-  cursor: grab;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+.checklist-form-linha .checklist-form-periodo {
+  flex: 0 0 12rem;
 }
 
-.checklist-item:active {
-  cursor: grabbing;
-}
-
-/* Classes que o JS vai ligar/desligar durante o arrasto (passo seguinte) */
-.checklist-item-arrastando {
-  opacity: 0.4;
-}
-
-.checklist-item-sobre {
-  border-top: 0.1875rem solid var(--color-indigo);
-}
-
-.checklist-item-alca {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  color: var(--color-slate-400);
-  font-size: 1rem;
-  line-height: 1;
-  cursor: grab;
-  user-select: none;
-}
-
-.checklist-item-label {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  flex: 1;
-  min-width: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-slate-700);
-  cursor: pointer;
-  user-select: none;
-}
-
-.checklist-item-label input[type="checkbox"] {
-  flex-shrink: 0;
-  width: 1.125rem;
-  height: 1.125rem;
-  cursor: pointer;
-  accent-color: var(--color-indigo);
-}
-
-.checklist-item-custom {
-  background: var(--color-indigo-50);
-  border-color: var(--color-indigo);
-}
-
-/* ===== SERVIÇO (especificação única do contrato) e CHECKLIST por período ===== */
+/* ===== SERVIÇO (especificação única do contrato) ===== */
 .servico-spec-ajuda {
   font-size: 0.8125rem;
   color: var(--color-slate-500);
   margin: -0.25rem 0 1rem;
-}
-
-.checklist-periodos-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-.checklist-periodo-bloco {
-  margin-bottom: 1.5rem;
-}
-
-.checklist-periodo-bloco:last-child {
-  margin-bottom: 0;
-}
-
-
-@media (min-width: 36rem) {
-  .checklist-periodos-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-  }
-
-  .checklist-periodos-grid .checklist-periodo-bloco {
-    margin-bottom: 0;
-  }
-
-  .checklist-periodos-grid .checklist-periodo-bloco:first-child {
-    padding-right: 1.5rem;
-    border-right: 0.0625rem solid var(--color-slate-200);
-  }
-
-  .checklist-periodos-grid .checklist-periodo-bloco:last-child {
-    padding-left: 1.5rem;
-  }
 }
 
 .servico-acoes-row {
