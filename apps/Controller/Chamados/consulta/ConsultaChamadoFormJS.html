@@ -264,11 +264,11 @@ function renderTabelaChamados(lista) {
 
         tr.innerHTML = `
         <div class="gtable-cell" role="cell">${f.id}</div>
-        <div class="gtable-cell" role="cell">${f.equipamento ? escapeHtml(f.equipamento) : '--'}</div>
-        <div class="gtable-cell" role="cell">${f.localizacao ? escapeHtml(f.localizacao) : '--'}</div>
         <div class="gtable-cell" role="cell">${escapeHtml(f.motivo)}${f.contrato
             ? `<br><small class="chamado-contrato-tag" title="Contrato">📄 ${escapeHtml(f.contrato)}${f.origem === 'automatica' ? ' · automática' : ''}</small>`
             : ''}</div>
+        <div class="gtable-cell" role="cell">${f.equipamento ? escapeHtml(f.equipamento) : '--'}</div>
+        <div class="gtable-cell" role="cell">${f.localizacao ? escapeHtml(f.localizacao) : '--'}</div>
         <div class="gtable-cell" role="cell">${escapeHtml(f.tipo)}</div>
         <div class="gtable-cell" role="cell">${montarBadgePrioridadeChamado(f.prioridade)}</div>
         <div class="gtable-cell" role="cell">${montarBadgeStatusChamado(f.status)}${f.atrasado
