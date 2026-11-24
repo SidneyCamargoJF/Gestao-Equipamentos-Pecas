@@ -82,7 +82,7 @@ A tela tem o bloco **Dados do Chamado** e, abaixo, três abas: **Vínculo Contra
 - Se faltar equipamento ao salvar, a tela vai direto para essa aba.
 
 **Dados do Chamado:**
-- **Tipo, Motivo e Classificação (prioridade).** A prioridade pode ser baixa, média, alta ou urgente.
+- **Tipo, Assunto e Classificação (prioridade).** A prioridade pode ser baixa, média, alta ou urgente.
 - **Aberto por:** preenchido automaticamente com o usuário logado, sem edição.
 - **Descrição.**
 
@@ -112,7 +112,7 @@ A tela tem o bloco **Dados do Chamado** e, abaixo, três abas: **Vínculo Contra
 ### Consultar
 
 **Filtros:**
-- ID, tipo, motivo, status e período;
+- ID, tipo, assunto, status e período;
 - **Contrato**;
 - **Origem:** manual ou automática;
 - **Só atrasados**.

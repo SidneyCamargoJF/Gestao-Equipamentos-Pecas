@@ -639,7 +639,7 @@ function montarInfoFixaChamado(c) {
     const valorOuPadrao = valor => valor && String(valor).trim() ? escapeHtml(valor) : '--';
 
     return `
-        ${item('Motivo', valorOuPadrao(c.motivo))}
+        ${item('Assunto', valorOuPadrao(c.motivo))}
         ${item('Tipo', valorOuPadrao(c.tipo))}
         ${item('Prioridade', montarBadgePrioridadeChamado(c.prioridade))}
     `;
@@ -773,7 +773,7 @@ const TOPICOS_EMAIL_CHAMADO = {
         assunto: c => `Chamado #${c.id} — Solicitação de atendimento (Contrato ${c.contratoNumero})`,
         corpo: c => `Prezados,\n\n` +
             `Solicitamos atendimento referente ao chamado #${c.id}, aberto em ${c.dataAbertura}.\n\n` +
-            `Motivo: ${c.motivo}\n` +
+            `Assunto: ${c.motivo}\n` +
             `Equipamento: ${c.equipamento || 'não informado'}\n` +
             `Contrato: ${c.contratoNumero} — ${c.contratoEmpresa}\n` +
             (c.competencia ? `Competência: ${c.competencia}\n` : '') +

@@ -222,7 +222,7 @@ async function renderDashboardManutencao() {
         '</ul>' + (dados.corretivasForaPrazo > dados.corretivasForaPrazoLista.length
           ? '<p class="dash-vazio">e mais ' + (dados.corretivasForaPrazo - dados.corretivasForaPrazoLista.length) + '…</p>' : '');
     }
-    registrarExportDash('dashManutCorretivas', ['Chamado', 'Motivo', 'Atribuído a', 'Situação'],
+    registrarExportDash('dashManutCorretivas', ['Chamado', 'Assunto', 'Atribuído a', 'Situação'],
       dados.corretivasForaPrazoLista.map(c => [c.id, c.motivo, c.atribuidoA, c.situacao]));
 
     document.getElementById('dashManutRanking').innerHTML = desenharRankingBarras(

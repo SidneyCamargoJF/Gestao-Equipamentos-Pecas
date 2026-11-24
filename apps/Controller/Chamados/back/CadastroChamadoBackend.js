@@ -36,7 +36,7 @@ function salvarChamadoBackend(dados) {
 function salvarChamadoBackend_(dados, opcoes) {
   try {
     if (!dados || !String(dados.motivo || '').trim()) {
-      return { sucesso: false, mensagem: 'Preencha o motivo do chamado.' };
+      return { sucesso: false, mensagem: 'Preencha o assunto do chamado.' };
     }
 
     const patrimonioDigitado = String(dados.patrimonio || '').trim();
