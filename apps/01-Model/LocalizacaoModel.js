@@ -1,12 +1,13 @@
 let LocalTableName = 'tbl_localizacao'
 let firstLineLocal  = 3
-let numColumnsLocal = 5
+let numColumnsLocal = 6
 
 let localIdCol = 1
 let localNameCol = 2
-let localDtCadastroCol = 3
-let LocalDtExclusaoCol = 4
-let LocalDtAlteracao = 5
+let localObservacaoCol = 3
+let localDtCadastroCol = 4
+let LocalDtExclusaoCol = 5
+let LocalDtAlteracao = 6
 
 function ReadLocations() {
 

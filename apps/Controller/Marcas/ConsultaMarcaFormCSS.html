@@ -4,4 +4,71 @@
     max-width: 80rem;
   }
 
+  /* =====================================================
+     MARCAS E LOCALIZAÇÕES LADO A LADO -- as duas consultas são pequenas,
+     cabem em duas colunas (50/50) sem precisar de nenhuma troca/seleção.
+     Em telas estreitas, cada uma ocupa a largura toda, uma embaixo da
+     outra.
+     ===================================================== */
+  #page-marcas-view .ficha-split-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  #page-marcas-view .ficha-cadastro {
+    display: flex;
+    flex-direction: column;
+    max-height: 34rem;
+    background: #fff;
+    border-radius: 0.75rem;
+    border: 0.0625rem solid var(--color-slate-200);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    padding: 1.25rem;
+  }
+
+  #page-marcas-view .ficha-cadastro .table-wrapper {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  #page-marcas-view .ficha-actions-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 0.0625rem solid var(--color-slate-100);
+  }
+
+  #page-marcas-view .ficha-titulo {
+    font-size: 1.125rem;
+    margin: 0;
+  }
+
+  #page-marcas-view .ficha-botoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+  }
+
+  #page-marcas-view .ficha-botoes .btn-secondary,
+  #page-marcas-view .ficha-botoes .btn-success,
+  #page-marcas-view .ficha-botoes .btn-primary {
+    width: auto;
+  }
+
+  @media (max-width: 64rem) {
+    #page-marcas-view .ficha-split-wrapper {
+      grid-template-columns: 1fr;
+    }
+    #page-marcas-view .ficha-cadastro {
+      max-height: 26rem;
+    }
+  }
+
 </style>
