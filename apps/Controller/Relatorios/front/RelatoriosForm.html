@@ -2,7 +2,7 @@
 
 <div class="page-header">
 <div class="actions-bar">
-    <h1>📊 Relatórios</h1>
+    <h1>📊 <span id="relatorioTitulo">Relatórios</span></h1>
 </div>
 <div class="actions-bar">
     <button type="button" class="btn-secondary" onclick="limparFiltrosRelatorio()">Limpar</button>
@@ -15,13 +15,8 @@
 
 <div class="panel">
 
-    <div class="field">
-        <label class="field__label" for="relatorioTipo">Tipo de Relatório</label>
-        <select class="field__select" id="relatorioTipo" onchange="alterarTipoRelatorio()">
-            <option value="checklist">Checklist</option>
-            <option value="manutencao">Manutenção das preventivas (conferência da NF)</option>
-        </select>
-    </div>
+    <!-- Tipo de relatório: escolhido no submenu Relatórios do menu superior -->
+    <input type="hidden" id="relatorioTipo" value="checklist">
 
     <div class="field">
         <label class="field__label" for="relatorioContratoId">Contrato</label>

@@ -6,7 +6,28 @@
 //   RelatorioManutencaoJS.html -> gerarRelatorioManutencao
 // =====================================================
 
-function renderRelatorios() {
+// Tipos de relatório do submenu Relatórios (MainMenu.html): valor -> título
+const TIPOS_RELATORIO = {
+    checklist: 'Relatório de checklist',
+    manutencao: 'Manutenção das preventivas (conferência da NF)'
+};
+
+// tipo vem do submenu (trocarPagina('relatorios', tipo)); sem tipo (ex.:
+// botão Voltar) mantém o último escolhido.
+function renderRelatorios(tipo) {
+    const tipoEl = document.getElementById('relatorioTipo');
+    if (tipo && TIPOS_RELATORIO[tipo]) tipoEl.value = tipo;
+    if (!TIPOS_RELATORIO[tipoEl.value]) tipoEl.value = 'checklist';
+    const titulo = document.getElementById('relatorioTitulo');
+    if (titulo) titulo.textContent = TIPOS_RELATORIO[tipoEl.value];
+    const itemMenu = document.getElementById('nav-relatorios-' + tipoEl.value);
+    if (itemMenu) {
+        itemMenu.classList.add('active');
+        const pai = itemMenu.closest('.menu-dropdown');
+        if (pai) pai.classList.add('active-parent');
+    }
+    alterarTipoRelatorio();
+
     google.script.run
         .withSuccessHandler(function(contratos){
             const select = document.getElementById('relatorioContratoId');

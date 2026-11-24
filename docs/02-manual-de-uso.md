@@ -184,6 +184,8 @@ Chamados, Contratos (vigentes, vencendo em 30 dias, vencidos, encerrados), Equip
 
 ## Relatórios
 
+O menu **Relatórios** abre um submenu com um item por relatório: **Checklist** e **Manutenção das preventivas**. O relatório escolhido aparece no título da página.
+
 **Checklist:** os serviços do contrato e os itens do checklist agrupados por periodicidade.
 
 **Manutenção das preventivas (conferência da NF):** escolha o contrato, a competência ou os dois. Sem contrato ("Todos os contratos"), saem todos os contratos daquela competência; sem competência, todas as competências do contrato.

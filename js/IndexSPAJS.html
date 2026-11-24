@@ -43,11 +43,14 @@
     }
 
     // Highlight active menu item
-    const navItem = document.getElementById(`nav-${paginaId}`);
+    // Submenu com parâmetro (ex.: Relatórios > Manutenção): nav-<página>-<param>
+    const navItem = (param && typeof param === 'string' && document.getElementById(`nav-${paginaId}-${param}`)) ||
+      document.getElementById(`nav-${paginaId}`);
     if (navItem) {
       navItem.classList.add('active');
       if (navItem.classList.contains('dropdown-item')) {
-        document.getElementById('nav-cadastros').classList.add('active-parent');
+        const pai = navItem.closest('.menu-dropdown');
+        if (pai) pai.classList.add('active-parent');
       }
     }
 
@@ -74,7 +77,7 @@
 
     if (paginaId === 'ordens') renderOrdens();
     if (paginaId === 'agenda') renderAgenda();
-    if (paginaId === 'relatorios') renderRelatorios();
+    if (paginaId === 'relatorios') renderRelatorios(param);
     if (paginaId === 'configuracoes') renderConfiguracoes();
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
