@@ -1,41 +1,29 @@
 <style>
+  /* Reconstruída em grid (igual Chamados/Contrato) -- a versão anterior
+     usava table-layout:fixed com largura por nth-child, calculada pra uma
+     ordem de colunas antiga (quando "Ver" ainda era a 1ª coluna). Depois
+     que "Ver" virou botão dentro de Ações e "Pat. Anterior" entrou, as
+     colunas deslocaram e os nth-child passaram a mirar a coluna errada --
+     daí o espremido/estourado. Com .gtable-* a largura é só uma lista na
+     ordem de verdade, sem index mágico pra manter sincronizado.
+     Larguras de coluna -- o resto (grid, hover, cantos arredondados,
+     cabeçalho, linha vazia) vem das classes .gtable-* compartilhadas em
+     css/tableCSS.html. */
   #tabelaEquipamentos {
-    table-layout: fixed;
+    /* Patrimônio anterior saiu daqui -- só aparece no "Ver detalhes" agora. */
+    grid-template-columns: 6rem 1.5fr 0.8fr 0.9fr 1fr 1.1fr 1.1fr 0.8fr 0.9fr 10rem;
+    min-width: 74rem;
   }
 
-  #tabelaEquipamentos th,
-  #tabelaEquipamentos td {
-    overflow-wrap: break-word;
-    word-break: normal;
+  #tabelaEquipamentos .gtable-cell-end {
+    gap: 0.5rem;
   }
 
-  /* Colunas: 1 Ver | 2 Patrimônio | 3 Equipamento | 4 Capacidade | 5 Marca |
-     6 Modelo | 7 Localização | 8 SEI | 9 Estado | 10 Garantia | 11 Ações */
-  #tabelaEquipamentos th:nth-child(1), #tabelaEquipamentos td:nth-child(1) {
-    width: 3.5rem;
-    text-align: center;
-  }
-  #tabelaEquipamentos th:nth-child(10), #tabelaEquipamentos td:nth-child(10) {
-    width: 7rem;
-    text-align: center;
-  }
-  #tabelaEquipamentos th:nth-child(11), #tabelaEquipamentos td:nth-child(11) {
-    width: 6rem;
-    text-align: center;
-  }
-  #tabelaEquipamentos td:nth-child(1).acao-cell,
-  #tabelaEquipamentos td:nth-child(11).acao-cell {
+  /* Estado/Garantia são badges -- centraliza pra ficar alinhado com o
+     cabeçalho em vez de grudado na esquerda da coluna estreita. */
+  #tabelaEquipamentos .gtable-row > .gtable-cell:nth-child(8),
+  #tabelaEquipamentos .gtable-row > .gtable-cell:nth-child(9) {
     justify-content: center;
+    text-align: center;
   }
-
-  /* Patrimônio com metade do espaço de antes (era 11%) */
-  #tabelaEquipamentos th:nth-child(2), #tabelaEquipamentos td:nth-child(2) { width: 8%; }
-  #tabelaEquipamentos th:nth-child(3), #tabelaEquipamentos td:nth-child(3) { width: 20%; }
-  #tabelaEquipamentos th:nth-child(4), #tabelaEquipamentos td:nth-child(4) { width: 11%; }
-  #tabelaEquipamentos th:nth-child(5), #tabelaEquipamentos td:nth-child(5) { width: 12%; }
-  #tabelaEquipamentos th:nth-child(6), #tabelaEquipamentos td:nth-child(6) { width: 12%; }
-  #tabelaEquipamentos th:nth-child(7), #tabelaEquipamentos td:nth-child(7) { width: 13%; }
-  #tabelaEquipamentos th:nth-child(8), #tabelaEquipamentos td:nth-child(8) { width: 13%; }
-  #tabelaEquipamentos th:nth-child(9), #tabelaEquipamentos td:nth-child(9) { width: 8%; }
-
 </style>

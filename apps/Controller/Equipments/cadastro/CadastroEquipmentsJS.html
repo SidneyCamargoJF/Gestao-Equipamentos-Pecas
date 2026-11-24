@@ -108,6 +108,7 @@
   function preencherFormularioEquipamento(eq) {
     document.getElementById('cadEquipId').value = eq.id || '0';
     document.getElementById('cadEquipPatrimonio').value = eq.patrimonio || '';
+    document.getElementById('cadEquipPatrimonioAnterior').value = eq.patrimonioAnterior || '';
     document.getElementById('cadEquipNome').value = eq.nome || '';
     selecionarOuAdicionarOpcaoEquip('cadEquipMarca', eq.marca);
     document.getElementById('cadEquipCapacidade').value = aplicarMascaraMilharEquip(eq.capacidade || '');
@@ -128,7 +129,7 @@
 
   function limparFormularioEquipamento() {
     document.getElementById('cadEquipId').value = '0';
-    ['cadEquipPatrimonio', 'cadEquipNome', 'cadEquipMarca', 'cadEquipCapacidade', 'cadEquipModelo', 'cadEquipSequencia', 'cadEquipLocalizacao', 'cadEquipFornecedor', 'cadEquipDataEntrada', 'cadEquipNotaFiscal', 'cadEquipSei', 'cadEquipDataGarantia', 'cadEquipValorAquisicao', 'cadEquipObservacoes', 'cadEquipEstado'].forEach(id => {
+    ['cadEquipPatrimonio', 'cadEquipPatrimonioAnterior', 'cadEquipNome', 'cadEquipMarca', 'cadEquipCapacidade', 'cadEquipModelo', 'cadEquipSequencia', 'cadEquipLocalizacao', 'cadEquipFornecedor', 'cadEquipDataEntrada', 'cadEquipNotaFiscal', 'cadEquipSei', 'cadEquipDataGarantia', 'cadEquipValorAquisicao', 'cadEquipObservacoes', 'cadEquipEstado'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.value = '';
@@ -169,6 +170,7 @@
     return {
       id: document.getElementById('cadEquipId')?.value || '0',
       patrimonio: document.getElementById('cadEquipPatrimonio')?.value.trim() || '',
+      patrimonioAnterior: document.getElementById('cadEquipPatrimonioAnterior')?.value.trim() || '',
       nome: document.getElementById('cadEquipNome')?.value.trim() || '',
       marca: document.getElementById('cadEquipMarca')?.value.trim() || '',
       capacidade: (document.getElementById('cadEquipCapacidade')?.value || '').replace(/\D/g, ''),

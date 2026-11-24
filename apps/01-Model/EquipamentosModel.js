@@ -29,7 +29,7 @@ class EquipmentsModel extends SheetModel {
     this.setDtAlteracaoColumn(17)  // R - dt_alteracao
     this.setDtExclusaoColumn(18)   // S - dt_exclusao
 
-    this.setNumColumns(20)
+    this.setNumColumns(21)
 
     this.colNome           = 1;  // B - Nome
     this.colMarca          = 2;  // C - Marca
@@ -46,6 +46,7 @@ class EquipmentsModel extends SheetModel {
     this.colValorAquisicao = 13; // N - Valor
     this.colObservacoes    = 14; // O - Observações
     this.colEstado         = 19; // T - Estado de conservação (coluna nova, no fim da aba)
+    this.colPatrimonioAnterior = 20; // U - Patrimônio da máquina antiga que estava no lugar (só número, opcional)
 
 
   }

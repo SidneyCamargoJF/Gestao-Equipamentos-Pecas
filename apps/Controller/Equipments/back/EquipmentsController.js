@@ -83,6 +83,7 @@ function filtrarEquipamentos(criterios) {
       sei: String(l[model.colSei] || '').trim(),
       garantia: calcularStatusGarantiaEquip_(l[model.colDataGarantia]),
       estado: String(l[model.colEstado] || '').trim(),
+      patrimonioAnterior: String(l[model.colPatrimonioAnterior] || '').trim(),
       desativada: !!(l[model.colDtExclusao] && String(l[model.colDtExclusao]).trim() !== '')
     }))
     .filter(eq => eq.nome || eq.patrimonio)
@@ -134,7 +135,8 @@ function buscarEquipamentoParaEdicao(idInput) {
             dataGarantia: converterParaInputDateEquip_(l[model.colDataGarantia]),
             valorAquisicao: l[model.colValorAquisicao] || '',
             observacoes: String(l[model.colObservacoes] || ''),
-            estado: String(l[model.colEstado] || '')
+            estado: String(l[model.colEstado] || ''),
+            patrimonioAnterior: String(l[model.colPatrimonioAnterior] || '')
           }
         };
       }
@@ -175,6 +177,7 @@ function buscarEquipamentoDetalhado(idInput) {
             valorAquisicao: l[model.colValorAquisicao] || '',
             observacoes: String(l[model.colObservacoes] || ''),
             estado: String(l[model.colEstado] || ''),
+            patrimonioAnterior: String(l[model.colPatrimonioAnterior] || ''),
             dtCadastro: formatarDataExibicaoEquip_(l[model.colDtCadastro]),
             dtAlteracao: formatarDataExibicaoEquip_(l[model.colDtAlteracao]),
             desativado: !!(l[model.colDtExclusao] && String(l[model.colDtExclusao]).trim() !== '')
@@ -201,6 +204,13 @@ function salvarEquipamento(dados) {
     const estado = String(dados.estado || '').trim();
     if (estado && ESTADOS_EQUIPAMENTO.indexOf(estado) === -1) {
       return { sucesso: false, mensagem: "Estado inválido. Use: " + ESTADOS_EQUIPAMENTO.join(', ') + "." };
+    }
+
+    // Patrimônio anterior: opcional, mas se vier, só número (o patrimônio
+    // da máquina antiga que estava no lugar -- ex: ar-condicionado trocado).
+    const patrimonioAnteriorBruto = String(dados.patrimonioAnterior || '').trim();
+    if (patrimonioAnteriorBruto && !/^\d+$/.test(patrimonioAnteriorBruto)) {
+      return { sucesso: false, mensagem: "Patrimônio anterior deve conter só números." };
     }
 
     const model = new EquipmentsModel();
@@ -240,6 +250,7 @@ function salvarEquipamento(dados) {
           aba.getRange(linhaReal, model.colValorAquisicao + 1).setValue(dados.valorAquisicao || '');
           aba.getRange(linhaReal, model.colObservacoes + 1).setValue(dados.observacoes || '');
           aba.getRange(linhaReal, model.colEstado + 1).setValue(estado);
+          aba.getRange(linhaReal, model.colPatrimonioAnterior + 1).setValue(patrimonioAnteriorBruto);
           aba.getRange(linhaReal, model.colDtAlteracao + 1).setValue(dataHoje);
           return { sucesso: true, mensagem: "Equipamento atualizado com sucesso!", id: idEdicao };
         }
@@ -275,6 +286,7 @@ function salvarEquipamento(dados) {
     novaLinha[model.colDtAlteracao] = '';
     novaLinha[model.colDtExclusao] = '';
     novaLinha[model.colEstado] = estado;
+    novaLinha[model.colPatrimonioAnterior] = patrimonioAnteriorBruto;
 
     aba.appendRow(novaLinha);
     const novaUltimaLinha = aba.getLastRow();

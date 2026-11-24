@@ -55,7 +55,7 @@
     if (!carregando) return;
     const tbody = document.getElementById('tabelaBodyEquipment');
     if (tbody) {
-      tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span>Buscando equipamentos...</td></tr>';
+      tbody.innerHTML = '<div class="gtable-row gtable-loading-row" role="row"><div class="gtable-cell gtable-cell-full" role="cell"><span class="spinner"></span>Buscando equipamentos...</div></div>';
     }
   }
 
@@ -77,7 +77,7 @@
   }
 
   function atualizarIndicadoresEquipamento() {
-    const ths = document.querySelectorAll('#page-equipments-view .data-table th');
+    const ths = document.querySelectorAll('#page-equipments-view .gtable-head .gtable-cell');
     ths.forEach(th => {
       th.classList.remove('sorted');
       const span = th.querySelector('.sort-arrow');
@@ -133,12 +133,14 @@
     tbody.innerHTML = '';
 
     if (!lista || lista.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Nenhum equipamento encontrado.</td></tr>';
+      tbody.innerHTML = '<div class="gtable-row gtable-empty-row" role="row"><div class="gtable-cell gtable-cell-full" role="cell">Nenhum equipamento encontrado.</div></div>';
       return;
     }
 
     lista.forEach(eq => {
-      const tr = document.createElement('tr');
+      const tr = document.createElement('div');
+      tr.setAttribute('role', 'row');
+      tr.className = 'gtable-row';
       if (eq.desativada) tr.classList.add('linha-desativada');
 
       const btnEditar = eq.desativada
@@ -156,20 +158,20 @@
         : '--';
 
       tr.innerHTML = `
-        <td>${escapeHtml(eq.patrimonio)} ${eq.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
-        <td>${escapeHtml(eq.nome)}</td>
-        <td>${escapeHtml(eq.capacidade)}</td>
-        <td>${escapeHtml(eq.marca)}</td>
-        <td>${escapeHtml(eq.modelo)}</td>
-        <td>${escapeHtml(eq.localizacao)}</td>
-        <td>${escapeHtml(eq.sei)}</td>
-        <td>${eq.estado ? escapeHtml(eq.estado) : '--'}</td>
-        <td>${garantiaHtml}</td>
-        <td class="acao-cell">
+        <div class="gtable-cell" role="cell">${escapeHtml(eq.patrimonio)} ${eq.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</div>
+        <div class="gtable-cell" role="cell">${escapeHtml(eq.nome)}</div>
+        <div class="gtable-cell" role="cell">${escapeHtml(eq.capacidade)}</div>
+        <div class="gtable-cell" role="cell">${escapeHtml(eq.marca)}</div>
+        <div class="gtable-cell" role="cell">${escapeHtml(eq.modelo)}</div>
+        <div class="gtable-cell" role="cell">${escapeHtml(eq.localizacao)}</div>
+        <div class="gtable-cell" role="cell">${escapeHtml(eq.sei)}</div>
+        <div class="gtable-cell" role="cell">${eq.estado ? escapeHtml(eq.estado) : '--'}</div>
+        <div class="gtable-cell" role="cell">${garantiaHtml}</div>
+        <div class="gtable-cell gtable-cell-end" role="cell">
           ${btnVer}
           ${btnEditar}
           ${btnExcluir}
-        </td>
+        </div>
       `;
       tbody.appendChild(tr);
     });
@@ -209,6 +211,7 @@
 
     const principaisHtml = `
         ${linha('Patrimônio', eq.patrimonio)}
+        ${linha('Patrimônio anterior', eq.patrimonioAnterior)}
         ${linha('Nome', eq.nome)}
         ${linha('Marca', eq.marca)}
         ${linha('Capacidade', eq.capacidade)}

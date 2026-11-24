@@ -387,7 +387,10 @@
 /* ===== DETALHES DO CONTRATO  */
 .modal.modal-detalhes-contrato {
   width: 90%;
-  max-width: 40rem;
+  /* Alargado (era 40rem) -- com a aba de SLA o dock ficou com 6 botões e
+     estava espremendo tudo; 60rem bate com os outros modais de detalhes
+     (Fornecedor/Equipamento). */
+  max-width: 60rem;
   height: 80%;
   max-height: 100rem;
 }

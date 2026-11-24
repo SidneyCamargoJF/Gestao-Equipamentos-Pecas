@@ -36,64 +36,93 @@ function buscarFornecedoresParaEmpresa() {
     .filter(function (f) { return f.nome; });
 }
 
+// Roda fn() e devolve o resultado; se der erro, loga qual bloco/contrato
+// falhou e devolve [] em vez de derrubar buscarContratoParaEdicao inteiro.
+function tentarListaContrato_(nomeBloco, contratoId, fn) {
+  try {
+    return fn();
+  } catch (e) {
+    console.error('buscarContratoParaEdicao: bloco "' + nomeBloco + '" falhou pro contrato ID ' + contratoId + ': ' + e.message);
+    return [];
+  }
+}
+
 // Busca um contrato completo
 function buscarContratoParaEdicao(idInput) {
   try {
     const idBuscado = Number(idInput);
-    const linha = ReadContracts().find(function (l) { return Number(l[contractIdCol]) === idBuscado; });
-    if (!linha) return null;
+    const todasLinhas = ReadContracts();
+    const linha = todasLinhas.find(function (l) { return Number(l[contractIdCol]) === idBuscado; });
+    if (!linha) {
+      // Log pra diferenciar "ID realmente não existe" de "tem um ID
+      // parecido/duplicado" -- aparece no console do navegador (espelhado
+      // pelo HtmlService) e também nas Execuções do Apps Script.
+      console.error('buscarContratoParaEdicao: ID buscado=' + idBuscado + ' (recebido="' + idInput + '") não bateu com nenhuma linha. IDs existentes em tbl_contratos: [' +
+        todasLinhas.map(function (l) { return l[contractIdCol]; }).join(', ') + ']');
+      return null;
+    }
 
-    const equipamentosTodos = ReadEquipments();
-    const equipamentos = ReadContractsEquipaments()
-      .filter(function (l) {
-        return Number(l[contractsEquipamentsIdContratoCol]) === idBuscado && !l[contractsEquipamentsDataExclusaoCol];
-      })
-      .map(function (l) {
-        const idEquip = Number(l[contractEquipamentsIdEquipamentCol]);
-        const equip = equipamentosTodos.find(function (e) { return Number(e[0]) === idEquip; });
-        if (!equip) return null;
-        return {
-          equipamento: equip[1] || '',
-          marca: equip[2] || '',
-          capacidade: equip[3] || '',
-          modelo: equip[4] || '',
-          patrimonio: equip[5] || '',
-          localizacao: equip[7] || ''
-        };
-      })
-      .filter(function (e) { return e !== null; });
+    const equipamentos = tentarListaContrato_('equipamentos', idBuscado, function () {
+      const equipamentosTodos = ReadEquipments();
+      return ReadContractsEquipaments()
+        .filter(function (l) {
+          return Number(l[contractsEquipamentsIdContratoCol]) === idBuscado && !l[contractsEquipamentsDataExclusaoCol];
+        })
+        .map(function (l) {
+          const idEquip = Number(l[contractEquipamentsIdEquipamentCol]);
+          const equip = equipamentosTodos.find(function (e) { return Number(e[0]) === idEquip; });
+          if (!equip) return null;
+          return {
+            equipamento: equip[1] || '',
+            marca: equip[2] || '',
+            capacidade: equip[3] || '',
+            modelo: equip[4] || '',
+            patrimonio: equip[5] || '',
+            localizacao: equip[7] || ''
+          };
+        })
+        .filter(function (e) { return e !== null; });
+    });
 
-    const servicos = ReadContractsServicos()
-      .filter(function (l) {
-        return Number(l[contractsServicosIdContratoCol]) === idBuscado && !l[contractsServicosDataExclusaoCol];
-      })
-      .map(function (l) {
-        return {
-          tipoManutencao: l[contractsServicosTipoManutencaoCol] || '',
-          categoria: l[contractsServicosCategoriaCol] || '',
-          tipo: l[contractsServicosTipoCol] || '',
-          capacidade: l[contractsServicosCapacidadeCol] || '',
-          periodicidade: l[contractsServicosPeriodicidadeCol] || '',
-          valorUnitario: lerValorUnitarioServico(l)
-        };
-      });
+    const servicos = tentarListaContrato_('servicos', idBuscado, function () {
+      return ReadContractsServicos()
+        .filter(function (l) {
+          return Number(l[contractsServicosIdContratoCol]) === idBuscado && !l[contractsServicosDataExclusaoCol];
+        })
+        .map(function (l) {
+          return {
+            tipoManutencao: l[contractsServicosTipoManutencaoCol] || '',
+            categoria: l[contractsServicosCategoriaCol] || '',
+            tipo: l[contractsServicosTipoCol] || '',
+            capacidade: l[contractsServicosCapacidadeCol] || '',
+            periodicidade: l[contractsServicosPeriodicidadeCol] || '',
+            valorUnitario: lerValorUnitarioServico(l)
+          };
+        });
+    });
 
-    const produtos = ReadContractsProdutos()
-      .filter(function (l) {
-        return Number(l[contractsProdutosIdContratoCol]) === idBuscado && !l[contractsProdutosDataExclusaoCol];
-      })
-      .map(function (l) { return { nome: l[contractsProdutosNomeCol] }; });
+    const produtos = tentarListaContrato_('produtos', idBuscado, function () {
+      return ReadContractsProdutos()
+        .filter(function (l) {
+          return Number(l[contractsProdutosIdContratoCol]) === idBuscado && !l[contractsProdutosDataExclusaoCol];
+        })
+        .map(function (l) { return { nome: l[contractsProdutosNomeCol] }; });
+    });
 
     // PERIODICIDADE em coluna própria; linhas antigas com prefixo
     // "[Mensal] "/"[Anual] " no texto ainda são lidas (plano B).
-    const checklist = ReadContractsChecklist()
-      .filter(function (l) {
-        return Number(l[contractsChecklistIdContratoCol]) === idBuscado && !l[contractsChecklistDataExclusaoCol];
-      })
-      .map(function (l) {
-        const item = lerItemChecklistContrato(l);
-        return { descricao: item.descricao, periodo: item.periodo };
-      });
+    const checklist = tentarListaContrato_('checklist', idBuscado, function () {
+      return ReadContractsChecklist()
+        .filter(function (l) {
+          return Number(l[contractsChecklistIdContratoCol]) === idBuscado && !l[contractsChecklistDataExclusaoCol];
+        })
+        .map(function (l) {
+          const item = lerItemChecklistContrato(l);
+          return { descricao: item.descricao, periodo: item.periodo };
+        });
+    });
+
+    const sla = tentarListaContrato_('sla', idBuscado, function () { return lerSlaContrato(idBuscado); });
 
     return {
       id: linha[contractIdCol],
@@ -117,7 +146,7 @@ function buscarContratoParaEdicao(idInput) {
       servicos: servicos,
       produtos: produtos,
       checklist: checklist,
-      sla: lerSlaContrato(idBuscado)
+      sla: sla
     };
   } catch (e) {
     console.error('Erro em buscarContratoParaEdicao: ' + e.message);

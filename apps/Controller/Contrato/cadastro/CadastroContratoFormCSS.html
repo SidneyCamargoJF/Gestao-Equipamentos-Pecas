@@ -21,6 +21,20 @@
   color: #64748b;
 }
 
+/* Aviso fixo ao lado do rótulo de Telefone/E-mail -- esses dois campos
+   vêm preenchidos sozinhos a partir do fornecedor escolhido, então fica
+   sempre esse lembrete de conferir, independente de ter sido editado
+   ou não (diferente do .campo-contrato-auto-preenchido, que marca só
+   o valor ainda-não-tocado). */
+.aviso-conferir-dado {
+  color: #dc2626;
+  opacity: 0.65;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 0.6875rem;
+  text-transform: none;
+}
+
 
 /* Larguras de coluna dessa tabela -- o resto (grid, hover, cantos
    arredondados, linha vazia) vem das classes .gtable-* compartilhadas em
