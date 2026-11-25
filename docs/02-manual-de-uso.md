@@ -263,11 +263,12 @@ Lista os modelos usados no [e-mail para a empresa](#e-mail-para-a-empresa) e no 
 
 - Cada modelo tem nome (não pode repetir), **Usado em** (Chamado ou Garantia), assunto e mensagem. A tela de envio mostra só os modelos do seu tipo.
 - Os botões de **Campos** inserem, onde está o cursor, marcadores como `{{numero_chamado}}` e `{{empresa}}` (chamado) ou `{{numero_garantia}}`, `{{item}}` e `{{numero_serie}}` (garantia). No envio, eles viram os dados do registro.
+- Campos do **remetente** (quem envia), nos dois tipos: `{{usuario}}` (nome), `{{usuario_email}}` (e-mail do cadastro em Usuários ou, vazio, o da conta Google), `{{usuario_telefone}}` (telefone / ramal) e `{{usuario_setor}}`. Vêm do cadastro em **Configuração → Usuários**; se estiverem vazios lá, saem em branco.
 - Na primeira vez, o sistema cria cinco modelos de chamado (solicitação de atendimento, cobrança de prazo de atendimento, cobrança de prazo de solução, agendamento e solicitação de atualização) e dois de garantia (acionamento de garantia e cobrança de resposta).
 
 ### Configuração → Usuários
 
-**Campos:** matrícula, **usuário** (login Google, a parte antes do `@`), nome, lotação, setor e **e-mail** (opcional, para contato).
+**Campos:** matrícula, **usuário** (login Google, a parte antes do `@`), nome, lotação, setor, **e-mail** e **telefone / ramal** (os dois opcionais, para contato; aparecem nos e-mails pelos campos do remetente).
 
 - Na lista, o ✏️ carrega o usuário no formulário de cima; o botão passa a ser **Salvar alteração** (e **Cancelar** desfaz). Usuário desativado precisa ser reativado antes de alterar.
 

@@ -33,6 +33,10 @@
             <label class="field__label" for="usuarioEmailInput">E-mail</label>
             <input class="field__input" type="email" id="usuarioEmailInput" placeholder="nome@dominio...">
           </div>
+          <div class="field" style="flex:1; min-width:9rem;">
+            <label class="field__label" for="usuarioTelefoneInput">Telefone / ramal</label>
+            <input class="field__input" type="text" id="usuarioTelefoneInput" placeholder="(41) 3210-0000 / 1234">
+          </div>
           <button type="button" class="btn-primary" style="width:auto;" id="usuarioBtnSalvar" onclick="cadastrarUsuarioUI()">Adicionar</button>
           <button type="button" class="btn-secondary" style="width:auto; display:none;" id="usuarioBtnCancelar" onclick="cancelarEdicaoUsuarioUI()">Cancelar</button>
         </form>
@@ -40,7 +44,7 @@
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
-              <tr><th>Matrícula</th><th>Usuário</th><th>Nome</th><th>Lotação</th><th>Setor</th><th>E-mail</th><th>Ações</th></tr>
+              <tr><th>Matrícula</th><th>Usuário</th><th>Nome</th><th>Lotação</th><th>Setor</th><th>E-mail</th><th>Telefone / ramal</th><th>Ações</th></tr>
             </thead>
             <tbody id="usuariosTableBody"></tbody>
           </table>

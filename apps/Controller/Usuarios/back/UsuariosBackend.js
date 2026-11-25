@@ -17,6 +17,7 @@ function filtrarUsuarios(criterios) {
       lotacao: dados[i][userLotacao] ? String(dados[i][userLotacao]).trim() : "",
       setor: dados[i][userSetorCol] ? String(dados[i][userSetorCol]).trim() : "",
       email: dados[i][userEmailCol] ? String(dados[i][userEmailCol]).trim() : "",
+      telefone: dados[i][userTelefoneCol] ? String(dados[i][userTelefoneCol]).trim() : "",
       desativado: String(dados[i][userDtExclusaoCol] || "").trim() !== ""
     });
   }
@@ -26,10 +27,10 @@ function filtrarUsuarios(criterios) {
   return res;
 }
 
-function cadastrarUsuario(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput) {
+function cadastrarUsuario(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput) {
   try {
     return executarComLock(function () {
-      return cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput);
+      return cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput);
     });
   } catch (e) {
     return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
@@ -38,16 +39,18 @@ function cadastrarUsuario(matriculaInput, usuarioInput, nomeInput, lotacaoInput,
 
 /**
  * Confere os campos do usuário. { mensagem } se algo estiver errado, ou
- * { dados } com os valores limpos. E-mail é opcional, mas validado.
+ * { dados } com os valores limpos. E-mail e telefone/ramal são opcionais
+ * (o e-mail é validado).
  */
-function validarCamposUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput) {
+function validarCamposUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput) {
   const d = {
     matricula: (matriculaInput || "").toString().trim(),
     usuario: (usuarioInput || "").toString().trim().toLowerCase(),
     nome: (nomeInput || "").toString().trim(),
     lotacao: (lotacaoInput || "").toString().trim(),
     setor: (setorInput || "").toString().trim(),
-    email: (emailInput || "").toString().trim().toLowerCase()
+    email: (emailInput || "").toString().trim().toLowerCase(),
+    telefone: (telefoneInput || "").toString().trim()
   };
   if (d.matricula === "") return { mensagem: "Digite a matrícula." };
   if (d.usuario === "") return { mensagem: "Digite o usuário (login Google)." };
@@ -68,7 +71,7 @@ function alterarUsuario(idInput, dadosInput) {
       const id = Number(idInput);
       if (!id) return { sucesso: false, mensagem: "ID do usuário inválido." };
       const d0 = dadosInput || {};
-      const v = validarCamposUsuario_(d0.matricula, d0.usuario, d0.nome, d0.lotacao, d0.setor, d0.email);
+      const v = validarCamposUsuario_(d0.matricula, d0.usuario, d0.nome, d0.lotacao, d0.setor, d0.email, d0.telefone);
       if (v.mensagem) return { sucesso: false, mensagem: v.mensagem };
       const d = v.dados;
 
@@ -88,7 +91,7 @@ function alterarUsuario(idInput, dadosInput) {
 
       const linha = idx + firstLineUsers;
       aba.getRange(linha, userMatriculaCol + 1, 1, 5).setValues([[d.matricula, d.usuario, d.nome, d.lotacao, d.setor]]);
-      aba.getRange(linha, userEmailCol + 1).setValue(d.email);
+      aba.getRange(linha, userEmailCol + 1, 1, 2).setValues([[d.email, d.telefone]]);
       return { sucesso: true, mensagem: "Usuário alterado com sucesso!" };
     });
   } catch (e) {
@@ -96,12 +99,12 @@ function alterarUsuario(idInput, dadosInput) {
   }
 }
 
-function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput) {
+function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput) {
   try {
-    const v = validarCamposUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput);
+    const v = validarCamposUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput);
     if (v.mensagem) return { sucesso: false, mensagem: v.mensagem };
     const matricula = v.dados.matricula, usuario = v.dados.usuario, nome = v.dados.nome,
-      lotacao = v.dados.lotacao, setor = v.dados.setor, email = v.dados.email;
+      lotacao = v.dados.lotacao, setor = v.dados.setor, email = v.dados.email, telefone = v.dados.telefone;
 
     const planilha = SpreadsheetApp.getActiveSpreadsheet();
     const aba = planilha.getSheetByName(userTableName);
@@ -120,8 +123,8 @@ function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput
     const dataHoje = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
     const pos = proximoIdTabela(aba, firstLineUsers);
 
-    // [ID, Matrícula, Usuário, Nome, Lotação, Setor, Data Cadastro, Data Exclusão, E-mail]
-    const linha = [pos.novoId, matricula, usuario, nome, lotacao, setor, dataHoje, "", email];
+    // [ID, Matrícula, Usuário, Nome, Lotação, Setor, Data Cadastro, Data Exclusão, E-mail, Telefone/ramal]
+    const linha = [pos.novoId, matricula, usuario, nome, lotacao, setor, dataHoje, "", email, telefone];
     aba.getRange(pos.proximaLinha, 1, 1, numColumnsUsers).setValues([linha]);
 
     return { sucesso: true, mensagem: "Usuário cadastrado com sucesso!" };
@@ -213,10 +216,14 @@ function emailUsuarioLogado_() {
   }
 }
 
-/** { email, nome, encontrado, setor, lotacao } do usuário logado. nome cai no e-mail se ele não estiver cadastrado. */
+/**
+ * { email, nome, encontrado, setor, lotacao, emailContato, telefone } do
+ * usuário logado. nome cai no e-mail se ele não estiver cadastrado;
+ * emailContato é o e-mail do cadastro ou, vazio, o da conta Google.
+ */
 function buscarUsuarioLogado() {
   const email = emailUsuarioLogado_();
-  if (!email) return { email: '', nome: '', encontrado: false, setor: '', lotacao: '' };
+  if (!email) return { email: '', nome: '', encontrado: false, setor: '', lotacao: '', emailContato: '', telefone: '' };
 
   const chave = chaveUsuarioLogin_(email);
   const linha = ReadUsers().find(function (l) {
@@ -225,9 +232,10 @@ function buscarUsuarioLogado() {
   return linha
     ? {
       email: email, nome: String(linha[userNomeCol] || '').trim() || email, encontrado: true,
-      setor: String(linha[userSetorCol] || '').trim(), lotacao: String(linha[userLotacao] || '').trim()
+      setor: String(linha[userSetorCol] || '').trim(), lotacao: String(linha[userLotacao] || '').trim(),
+      emailContato: String(linha[userEmailCol] || '').trim() || email, telefone: String(linha[userTelefoneCol] || '').trim()
     }
-    : { email: email, nome: email, encontrado: false, setor: '', lotacao: '' };
+    : { email: email, nome: email, encontrado: false, setor: '', lotacao: '', emailContato: email, telefone: '' };
 }
 
 /** Texto gravado em "Aberto por"/"Registrado por". */

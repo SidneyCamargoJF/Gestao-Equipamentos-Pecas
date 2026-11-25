@@ -34,10 +34,8 @@ function camposModeloEmail_(contexto) {
       { chave: 'defeito', rotulo: 'Defeito' },
       { chave: 'data_abertura', rotulo: 'Data de abertura' },
       { chave: 'protocolo', rotulo: 'Protocolo do fornecedor' },
-      { chave: 'prazo_resposta', rotulo: 'Prazo de resposta' },
-      { chave: 'usuario', rotulo: 'Seu nome' },
-      { chave: 'data_hoje', rotulo: 'Data de hoje' }
-    ];
+      { chave: 'prazo_resposta', rotulo: 'Prazo de resposta' }
+    ].concat(camposRemetenteEmail_());
   }
   return [
     { chave: 'numero_chamado', rotulo: 'Nº do chamado' },
@@ -55,10 +53,34 @@ function camposModeloEmail_(contexto) {
     { chave: 'competencia', rotulo: 'Competência' },
     { chave: 'data_prevista', rotulo: 'Data prevista' },
     { chave: 'prazo_atendimento', rotulo: 'Prazo de atendimento' },
-    { chave: 'prazo_solucao', rotulo: 'Prazo de solução' },
+    { chave: 'prazo_solucao', rotulo: 'Prazo de solução' }
+  ].concat(camposRemetenteEmail_());
+}
+
+// Campos de quem envia (cadastro em Configuração > Usuários), iguais no
+// chamado e na garantia. Valores: valoresRemetenteEmail_.
+function camposRemetenteEmail_() {
+  return [
     { chave: 'usuario', rotulo: 'Seu nome' },
+    { chave: 'usuario_email', rotulo: 'Seu e-mail' },
+    { chave: 'usuario_telefone', rotulo: 'Seu telefone / ramal' },
+    { chave: 'usuario_setor', rotulo: 'Seu setor' },
     { chave: 'data_hoje', rotulo: 'Data de hoje' }
   ];
+}
+
+/**
+ * Dados de quem envia: nome, e-mail (do cadastro ou, vazio, o da conta
+ * Google), telefone/ramal e setor.
+ */
+function valoresRemetenteEmail_() {
+  const u = buscarUsuarioLogado();
+  return {
+    usuario: u.nome || 'Desconhecido',
+    usuario_email: u.emailContato || u.email || '',
+    usuario_telefone: u.telefone || '',
+    usuario_setor: u.setor || ''
+  };
 }
 
 // Modelos gravados na primeira vez que a aba é criada (os mesmos assuntos
@@ -257,7 +279,7 @@ function excluirModeloEmail(idInput) {
 
 function valoresCamposEmailChamado_(c) {
   const texto = function (v) { return String(v === undefined || v === null ? '' : v).trim(); };
-  return {
+  return Object.assign({
     numero_chamado: texto(c.id),
     assunto: texto(c.motivo),
     tipo: texto(c.tipo),
@@ -274,9 +296,8 @@ function valoresCamposEmailChamado_(c) {
     data_prevista: texto(c.dataPrevista),
     prazo_atendimento: texto(c.prazoAtendimento),
     prazo_solucao: texto(c.prazoSolucao),
-    usuario: nomeUsuarioLogado(),
     data_hoje: Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy')
-  };
+  }, valoresRemetenteEmail_());   // usuario, usuario_email, usuario_telefone, usuario_setor
 }
 
 /** Último e-mail enviado pelo sistema para o chamado (ou null). */

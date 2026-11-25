@@ -1,6 +1,6 @@
 let userTableName = 'tbl_usuarios'
 let firstLineUsers = 3
-let numColumnsUsers = 9
+let numColumnsUsers = 10
 
 // Ordem real da aba: ID, MATRICULA, USUARIO, NOME, LOTACAO, SETOR,
 // DATA_CADASTRO, DATA_EXCLUSAO. USUARIO = login Google (e-mail) usado pra
@@ -14,6 +14,7 @@ let userSetorCol = 5
 let userDtCadastroCol = 6
 let userDtExclusaoCol = 7
 let userEmailCol = 8          // I -- e-mail de contato (coluna nova, no fim da aba)
+let userTelefoneCol = 9       // J -- telefone / ramal (coluna nova, no fim da aba)
 
 function ReadUsers() {
 

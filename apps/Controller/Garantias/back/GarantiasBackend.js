@@ -424,7 +424,7 @@ function excluirAnexoGarantia(anexoId) {
 
 function valoresCamposEmailGarantia_(g) {
   const it = g.item || {};
-  return {
+  return Object.assign({
     numero_garantia: String(g.id),
     item: it.nome || '',
     tipo_item: it.tipoTexto || '',
@@ -439,9 +439,8 @@ function valoresCamposEmailGarantia_(g) {
     data_abertura: g.dataAbertura || '',
     protocolo: g.protocolo || '',
     prazo_resposta: g.prazoResposta || '',
-    usuario: nomeUsuarioLogado(),
     data_hoje: hojeGarantia_()
-  };
+  }, valoresRemetenteEmail_());   // usuario, usuario_email, usuario_telefone, usuario_setor
 }
 
 function prepararEmailGarantia(garantiaId) {

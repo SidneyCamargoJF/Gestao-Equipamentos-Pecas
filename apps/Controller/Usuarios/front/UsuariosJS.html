@@ -15,12 +15,13 @@ let usuarioEditandoId = null;     // preenchido quando o formulário está alter
 
 const CAMPOS_USUARIO_FORM = {
     matricula: 'usuarioMatriculaInput', usuario: 'usuarioLoginInput', nome: 'usuarioNomeInput',
-    lotacao: 'usuarioLotacaoInput', setor: 'usuarioSetorInput', email: 'usuarioEmailInput'
+    lotacao: 'usuarioLotacaoInput', setor: 'usuarioSetorInput', email: 'usuarioEmailInput',
+    telefone: 'usuarioTelefoneInput'
 };
 
 async function consultarUsuarios() {
     const tbody = document.getElementById('usuariosTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
 
     try {
         const usuarios = await runServerFunction('filtrarUsuarios', {});
@@ -28,7 +29,7 @@ async function consultarUsuarios() {
         renderTabelaUsuarios(usuarios);
     } catch (error) {
         console.error('Erro ao consultar usuários:', error);
-        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Erro ao buscar usuários.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Erro ao buscar usuários.</td></tr>';
     }
 }
 
@@ -37,7 +38,7 @@ function renderTabelaUsuarios(lista) {
     if (!tbody) return;
 
     if (!Array.isArray(lista) || lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum usuário cadastrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Nenhum usuário cadastrado.</td></tr>';
         return;
     }
 
@@ -49,6 +50,7 @@ function renderTabelaUsuarios(lista) {
             <td>${escapeHtml(u.lotacao)}</td>
             <td>${escapeHtml(u.setor)}</td>
             <td>${escapeHtml(u.email || '')}</td>
+            <td>${escapeHtml(u.telefone || '')}</td>
             <td class="acao-cell">
                 ${u.desativado ? '' : `<button class="btn-acao" title="Editar" onclick="editarUsuarioUI('${u.id}')">✏️</button>`}
                 ${u.desativado
@@ -96,7 +98,7 @@ async function cadastrarUsuarioUI() {
     try {
         const resposta = usuarioEditandoId
             ? await runServerFunction('alterarUsuario', usuarioEditandoId, d)
-            : await runServerFunction('cadastrarUsuario', d.matricula, d.usuario, d.nome, d.lotacao, d.setor, d.email);
+            : await runServerFunction('cadastrarUsuario', d.matricula, d.usuario, d.nome, d.lotacao, d.setor, d.email, d.telefone);
         if (resposta && resposta.sucesso === false) {
             alert(resposta.mensagem);
             return;
