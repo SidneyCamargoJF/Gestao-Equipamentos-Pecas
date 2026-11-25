@@ -453,6 +453,11 @@
           <h3 id="modeloEmailTitulo">📝 Modelo de e-mail</h3>
           <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModeloEmailEditor()">✕</button>
         </div>
+        <!-- botões no começo, logo abaixo do título -->
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModeloEmailEditor()">Cancelar</button>
+          <button type="button" class="btn-success" style="width:auto;" onclick="salvarModeloEmailUI()">Salvar</button>
+        </div>
         <form autocomplete="off" onsubmit="return false;">
           <div class="field">
             <label class="field__label" for="modeloEmailNome">Nome do modelo *</label>
@@ -478,10 +483,6 @@
             <div class="modelo-email-campos" id="modeloEmailCampos"></div>
           </div>
         </form>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModeloEmailEditor()">Cancelar</button>
-          <button type="button" class="btn-success" style="width:auto;" onclick="salvarModeloEmailUI()">Salvar</button>
-        </div>
       </div>
     </div>
 
