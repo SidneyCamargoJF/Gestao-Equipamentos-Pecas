@@ -212,9 +212,16 @@ Abre pelo botão **Enviar e-mail para a empresa**, na confirmação depois de sa
 
 ## Agenda
 
-Calendário mensal com os eventos abaixo.
+Calendário com os eventos abaixo.
 
-Os botões **Calendário** e **Lista por dia** trocam a visão. A lista mostra os eventos do mês em sequência, separados por dia (data, dia da semana e quantidade); dias sem evento não aparecem. Clicar num evento abre o registro. O sistema lembra a última visão escolhida.
+- **Período:** os botões **Dia**, **Semana**, **Mês** e **Ano** escolhem o que aparece; só o período escolhido é mostrado.
+  - **Dia:** os eventos do dia, um embaixo do outro.
+  - **Semana:** domingo a sábado, com os eventos escritos em cada dia.
+  - **Mês:** a grade do mês, com um ponto colorido por tipo de evento (clique no dia para ver a lista).
+  - **Ano:** os 12 meses com a quantidade de eventos por tipo; clicar num mês abre esse mês.
+- As setas **‹ ›** andam um período (dia, semana, mês ou ano) e **Hoje** volta para a data de hoje no mesmo período.
+- Os botões **Calendário** e **Lista por dia** trocam a visão. A lista mostra os eventos do período em sequência, separados por dia (data, dia da semana e quantidade); dias sem evento não aparecem.
+- Clicar num evento abre o registro. O sistema lembra o último período e a última visão escolhidos.
 
 | Evento | Data usada |
 |---|---|

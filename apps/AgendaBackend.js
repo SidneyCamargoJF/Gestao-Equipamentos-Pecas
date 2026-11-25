@@ -13,9 +13,23 @@ function paraDataAgenda_(raw) {
 }
 
 function buscarEventosAgenda(ano, mes) {
-  const inicio = new Date(ano, mes - 1, 1);
-  const fim = new Date(ano, mes, 0, 23, 59, 59);
+  return eventosAgendaEntre_(new Date(ano, mes - 1, 1), new Date(ano, mes, 0, 23, 59, 59));
+}
 
+/**
+ * Eventos de qualquer período (visões Dia, Semana e Ano da Agenda).
+ * inicio/fim: 'yyyy-MM-dd' (inclusive). Até ~1 ano por chamada.
+ */
+function buscarEventosAgendaPeriodo(inicioTexto, fimTexto) {
+  const inicio = parseDataFlex(inicioTexto);
+  const fimDia = parseDataFlex(fimTexto);
+  if (!inicio || !fimDia || fimDia < inicio) return [];
+  if ((fimDia - inicio) / 86400000 > 370) throw new Error('Período da agenda muito longo.');
+  const fim = new Date(fimDia.getFullYear(), fimDia.getMonth(), fimDia.getDate(), 23, 59, 59);
+  return eventosAgendaEntre_(inicio, fim);
+}
+
+function eventosAgendaEntre_(inicio, fim) {
   const eventos = [];
 
   ReadTickets().forEach(l => {

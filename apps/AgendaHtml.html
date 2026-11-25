@@ -7,12 +7,19 @@
       <div class="panel agenda-painel">
         <div class="agenda-controles">
           <div class="agenda-controles-nav">
-            <button type="button" class="btn-secondary agenda-btn-nav" onclick="mudarMesAgenda(-1)">‹</button>
+            <button type="button" class="btn-secondary agenda-btn-nav" title="Período anterior" onclick="navegarAgenda(-1)">‹</button>
             <span id="agendaMesRotulo" class="agenda-mes-rotulo"></span>
             <select id="agendaAnoSelect" class="field__select agenda-ano-select" onchange="mudarAnoAgenda()"></select>
-            <button type="button" class="btn-secondary agenda-btn-nav" onclick="mudarMesAgenda(1)">›</button>
+            <button type="button" class="btn-secondary agenda-btn-nav" title="Próximo período" onclick="navegarAgenda(1)">›</button>
           </div>
           <div class="agenda-controles-acoes">
+            <!-- Período mostrado: só o dia, a semana, o mês ou o ano -->
+            <div class="tabs-nav agenda-modo agenda-periodo">
+              <button type="button" class="tab-btn" id="agendaPeriodo-dia" onclick="mudarPeriodoAgenda('dia')">Dia</button>
+              <button type="button" class="tab-btn" id="agendaPeriodo-semana" onclick="mudarPeriodoAgenda('semana')">Semana</button>
+              <button type="button" class="tab-btn active" id="agendaPeriodo-mes" onclick="mudarPeriodoAgenda('mes')">Mês</button>
+              <button type="button" class="tab-btn" id="agendaPeriodo-ano" onclick="mudarPeriodoAgenda('ano')">Ano</button>
+            </div>
             <div class="tabs-nav agenda-modo">
               <button type="button" class="tab-btn active" id="agendaModoCalendario" onclick="mudarModoAgenda('calendario')">📅 Calendário</button>
               <button type="button" class="tab-btn" id="agendaModoLista" onclick="mudarModoAgenda('lista')">📋 Lista por dia</button>
@@ -30,14 +37,14 @@
         </div>
 
         <div id="agendaVisaoCalendario">
-        <div class="agenda-dias-semana">
+        <div class="agenda-dias-semana" id="agendaDiasSemana">
           <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
         </div>
 
         <div id="agendaGrid" class="agenda-grid"><!-- preenchido via JS: desenharGradeAgenda() --></div>
         </div>
 
-        <!-- Listagem corrida do mês, quebrada por dia: desenharListaAgenda() -->
+        <!-- Listagem corrida do período, quebrada por dia: desenharListaAgenda() -->
         <div id="agendaLista" class="agenda-lista" style="display:none;"></div>
       </div>
     </section>
