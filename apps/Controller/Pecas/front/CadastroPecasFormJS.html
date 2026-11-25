@@ -274,7 +274,7 @@
 
     const tituloForm = document.getElementById('formTituloPeca');
     if (tituloForm) {
-      tituloForm.textContent = id ? 'Editar Peça' : 'Nova Peça';
+      tituloForm.textContent = id ? 'Editar Peça / Produto' : 'Nova Peça / Produto';
     }
 
     try {
@@ -303,6 +303,8 @@
         const el = document.getElementById(elId);
         if (el) el.value = '';
       });
+      const tipoEl = document.getElementById('tipoItemPeca');
+      if (tipoEl) tipoEl.value = 'peca';
 
       const nomeInput = document.getElementById('nomePeca');
       if (nomeInput) nomeInput.focus();
@@ -330,7 +332,8 @@
             garantia: peca.garantia,
             dtGarantia: peca.dtGarantia,
             modalidade: peca.modalidade,
-            seiNum: peca.seiNum
+            seiNum: peca.seiNum,
+            tipoItemPeca: peca.tipo || 'peca'
           };
 
           Object.keys(campos).forEach(elId => {
@@ -378,12 +381,13 @@
       dtGarantia: document.getElementById('dtGarantia')?.value || '',
       modalidade: document.getElementById('modalidade')?.value || '',
       valor: desmascararValorMonetario(document.getElementById('valor')?.value),
-      seiNum: document.getElementById('seiNum')?.value.trim() || ''
+      seiNum: document.getElementById('seiNum')?.value.trim() || '',
+      tipo: document.getElementById('tipoItemPeca')?.value || 'peca'
     };
 
     // Validações no cliente
     if (!dadosPeca.nome) {
-      alert('Por favor, informe o Nome da Peça.');
+      alert('Por favor, informe o Nome.');
       document.getElementById('nomePeca')?.focus();
       return;
     }

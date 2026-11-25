@@ -334,6 +334,62 @@
       </div>
     </div>
 
+    <!-- ABERTURA DE GARANTIA (GarantiasJS) -->
+    <div class="modal-overlay" id="modalAbrirGarantia">
+      <div class="modal modal-garantia">
+        <div class="detalhe-chamado-cabecalho">
+          <h3>🛡️ Abrir garantia</h3>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalAbrirGarantia')">✕</button>
+        </div>
+        <div id="garantiaBuscaArea">
+          <div class="field">
+            <label class="field__label" for="garantiaBuscaItem">Peça ou produto</label>
+            <input class="field__input" type="text" id="garantiaBuscaItem" placeholder="Digite o nome, modelo ou número de série..." oninput="buscarItemGarantiaUI()">
+          </div>
+          <div class="garantia-busca-resultados" id="garantiaBuscaResultados"></div>
+        </div>
+        <div class="garantia-item-resumo" id="garantiaItemResumo" style="display:none;"></div>
+        <div class="garantia-aviso" id="garantiaAbrirAviso" style="display:none;"></div>
+        <form autocomplete="off" onsubmit="return false;">
+          <div class="field">
+            <label class="field__label" for="garantiaAbrirDefeito">Defeito *</label>
+            <textarea class="field__input" id="garantiaAbrirDefeito" rows="4" placeholder="Descreva o defeito apresentado..." disabled></textarea>
+          </div>
+          <div class="field">
+            <label class="field__label" for="garantiaAbrirPrazo">Prazo de resposta do fornecedor (opcional)</label>
+            <input class="field__input" type="date" id="garantiaAbrirPrazo" disabled>
+          </div>
+        </form>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalAbrirGarantia')">Cancelar</button>
+          <button type="button" class="btn-success" style="width:auto;" id="btnConfirmarAbrirGarantia" onclick="confirmarAbrirGarantiaUI()" disabled>Abrir garantia</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GARANTIA ABERTA: oferece o e-mail ao fornecedor -->
+    <div class="modal-overlay" id="modalGarantiaAberta">
+      <div class="modal">
+        <h3>✅ Garantia aberta</h3>
+        <p id="garantiaAbertaMensagem" style="white-space:pre-line;"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="garantiaAbertaAcao('detalhes')">Ver a garantia</button>
+          <button type="button" class="btn-primary" style="width:auto;" onclick="garantiaAbertaAcao('email')">📧 Enviar e-mail ao fornecedor</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETALHE / CONTROLE DA GARANTIA (GarantiasJS) -->
+    <div class="modal-overlay" id="modalDetalheGarantia">
+      <div class="modal modal-garantia-detalhe">
+        <div class="detalhe-chamado-cabecalho">
+          <h3 id="garantiaDetalheTitulo">🛡️ Garantia</h3>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalDetalheGarantia')">✕</button>
+        </div>
+        <div id="garantiaDetalheCorpo"></div>
+      </div>
+    </div>
+
     <!-- CHAMADO SALVO: oferece o envio de e-mail para a empresa (ModelosEmailJS) -->
     <div class="modal-overlay" id="modalChamadoSalvo">
       <div class="modal">
@@ -376,6 +432,10 @@
             <label class="field__label" for="emailChamadoCorpo">Mensagem *</label>
             <textarea class="field__input modal-email-texto" id="emailChamadoCorpo" rows="12"></textarea>
           </div>
+          <label class="modal-email-opcao">
+            <input type="checkbox" id="emailChamadoConfirmacaoLeitura" checked>
+            Solicitar confirmação de leitura <small>(chega na sua caixa de entrada, se o destinatário aceitar)</small>
+          </label>
         </form>
         <div class="modal-actions modal-email-acoes">
           <button type="button" class="btn-secondary" style="width:auto;" onclick="salvarEmailComoModeloUI()">💾 Salvar como modelo</button>
@@ -399,6 +459,13 @@
             <input class="field__input" type="text" id="modeloEmailNome" placeholder="Ex.: Solicitação de atendimento">
           </div>
           <div class="field">
+            <label class="field__label" for="modeloEmailContexto">Usado em</label>
+            <select class="field__select" id="modeloEmailContexto" onchange="renderCamposModeloEmail()">
+              <option value="chamado">Chamado (e-mail para a empresa do contrato)</option>
+              <option value="garantia">Garantia (e-mail ao fornecedor da peça/produto)</option>
+            </select>
+          </div>
+          <div class="field">
             <label class="field__label" for="modeloEmailAssunto">Assunto *</label>
             <input class="field__input" type="text" id="modeloEmailAssunto" onfocus="focoCampoModeloEmail('modeloEmailAssunto')">
           </div>
@@ -407,13 +474,9 @@
             <textarea class="field__input modal-email-texto" id="modeloEmailCorpo" rows="10" onfocus="focoCampoModeloEmail('modeloEmailCorpo')"></textarea>
           </div>
           <div class="field">
-            <span class="field__label">Campos do chamado <small>(clique para inserir onde está o cursor; no envio, viram os dados do chamado)</small></span>
+            <span class="field__label">Campos <small>(clique para inserir onde está o cursor; no envio, viram os dados do chamado ou da garantia)</small></span>
             <div class="modelo-email-campos" id="modeloEmailCampos"></div>
           </div>
-          <label class="modal-email-opcao">
-            <input type="checkbox" id="emailChamadoConfirmacaoLeitura" checked>
-            Solicitar confirmação de leitura <small>(chega na sua caixa de entrada, se o destinatário aceitar)</small>
-          </label>
         </form>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModeloEmailEditor()">Cancelar</button>

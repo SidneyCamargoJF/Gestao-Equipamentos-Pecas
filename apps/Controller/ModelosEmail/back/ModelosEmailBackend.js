@@ -7,9 +7,38 @@
 // registrado no histórico do chamado.
 // =====================================================
 
+// Contextos de modelo: e-mail do chamado (para a empresa do contrato) ou
+// da garantia (para o fornecedor da peça/produto).
+const CONTEXTOS_MODELO_EMAIL = ['chamado', 'garantia'];
+
+function contextoModeloEmail_(valor) {
+  return String(valor || '').toLowerCase() === 'garantia' ? 'garantia' : 'chamado';
+}
+
 // Campos disponíveis nos modelos: { chave, rotulo }. A chave é o que vai
-// entre {{ }}; o valor sai de valoresCamposEmailChamado_.
-function camposModeloEmail_() {
+// entre {{ }}; o valor sai de valoresCamposEmailChamado_ /
+// valoresCamposEmailGarantia_.
+function camposModeloEmail_(contexto) {
+  if (contextoModeloEmail_(contexto) === 'garantia') {
+    return [
+      { chave: 'numero_garantia', rotulo: 'Nº da garantia' },
+      { chave: 'item', rotulo: 'Peça/produto' },
+      { chave: 'tipo_item', rotulo: 'Tipo (peça ou produto)' },
+      { chave: 'marca', rotulo: 'Marca' },
+      { chave: 'modelo', rotulo: 'Modelo' },
+      { chave: 'numero_serie', rotulo: 'Número de série' },
+      { chave: 'nota_fiscal', rotulo: 'Nota fiscal' },
+      { chave: 'data_nota', rotulo: 'Data da nota' },
+      { chave: 'garantia_ate', rotulo: 'Garantia até' },
+      { chave: 'fornecedor', rotulo: 'Fornecedor' },
+      { chave: 'defeito', rotulo: 'Defeito' },
+      { chave: 'data_abertura', rotulo: 'Data de abertura' },
+      { chave: 'protocolo', rotulo: 'Protocolo do fornecedor' },
+      { chave: 'prazo_resposta', rotulo: 'Prazo de resposta' },
+      { chave: 'usuario', rotulo: 'Seu nome' },
+      { chave: 'data_hoje', rotulo: 'Data de hoje' }
+    ];
+  }
   return [
     { chave: 'numero_chamado', rotulo: 'Nº do chamado' },
     { chave: 'assunto', rotulo: 'Assunto do chamado' },
@@ -70,23 +99,60 @@ function modelosEmailIniciais_() {
       corpo: 'Prezados,\n\nSolicitamos uma atualização sobre o andamento do chamado #{{numero_chamado}} ({{assunto}}), ' +
         'vinculado ao contrato {{contrato}} — {{empresa}}.' + rodape
     }
-  ];
+  ].map(function (m) { m.contexto = 'chamado'; return m; }).concat(modelosEmailIniciaisGarantia_());
 }
 
-/** Cria a aba de modelos (com os modelos iniciais) se ainda não existir. */
+function modelosEmailIniciaisGarantia_() {
+  const rodape = '\n\nAtenciosamente,\n{{usuario}}';
+  return [
+    {
+      nome: 'Acionamento de garantia',
+      assunto: 'Acionamento de garantia nº {{numero_garantia}} — {{item}}',
+      corpo: 'Prezados,\n\nSolicitamos o atendimento em garantia do item abaixo, que apresentou defeito.\n\n' +
+        '{{tipo_item}}: {{item}}\nMarca/modelo: {{marca}} {{modelo}}\nNúmero de série: {{numero_serie}}\n' +
+        'Nota fiscal: {{nota_fiscal}} de {{data_nota}}\nGarantia até: {{garantia_ate}}\n\nDefeito: {{defeito}}\n\n' +
+        'Pedimos que informem o número de protocolo e os próximos passos (troca, reparo ou reembolso).' + rodape
+    },
+    {
+      nome: 'Cobrança de resposta da garantia',
+      assunto: 'Garantia nº {{numero_garantia}} — Cobrança de resposta (protocolo {{protocolo}})',
+      corpo: 'Prezados,\n\nO acionamento de garantia nº {{numero_garantia}} ({{item}}, NS {{numero_serie}}), protocolo {{protocolo}}, ' +
+        'tinha resposta prevista até {{prazo_resposta}} e ainda não recebemos retorno.\n\nSolicitamos posicionamento com urgência.' + rodape
+    }
+  ].map(function (m) { m.contexto = 'garantia'; return m; });
+}
+
+/**
+ * Cria a aba de modelos (com os modelos iniciais) se ainda não existir. Em
+ * aba antiga, sem a coluna CONTEXTO, cria o cabeçalho e inclui os modelos
+ * de garantia (uma vez só).
+ */
 function garantirAbaModelosEmail_() {
   const r = criarAbaSeNaoExistir_(modelosEmailTableName, CABECALHO_MODELOS_EMAIL);
-  if (!r.criada) return r;
   const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(modelosEmailTableName);
   const hoje = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
-  const linhas = modelosEmailIniciais_().map(function (m, i) {
-    return [i + 1, m.nome, m.assunto, m.corpo, hoje, '', ''];
-  });
-  aba.getRange(firstLineModelosEmail, 1, linhas.length, numColumnsModelosEmail).setValues(linhas);
+  const linhaModelo = function (m, id) { return [id, m.nome, m.assunto, m.corpo, hoje, '', '', m.contexto]; };
+  if (r.criada) {
+    const linhas = modelosEmailIniciais_().map(function (m, i) { return linhaModelo(m, i + 1); });
+    aba.getRange(firstLineModelosEmail, 1, linhas.length, numColumnsModelosEmail).setValues(linhas);
+    return r;
+  }
+  if (String(aba.getRange(firstLineModelosEmail - 1, modeloEmailContextoCol + 1).getValue() || '').trim() === '') {
+    aba.getRange(firstLineModelosEmail - 1, modeloEmailContextoCol + 1).setValue('CONTEXTO');
+    const pos = proximoIdTabela(aba, firstLineModelosEmail);
+    const linhas = modelosEmailIniciaisGarantia_().map(function (m, i) { return linhaModelo(m, pos.novoId + i); });
+    aba.getRange(pos.proximaLinha, 1, linhas.length, numColumnsModelosEmail).setValues(linhas);
+    return { sucesso: true, criada: false, mensagem: "Aba '" + modelosEmailTableName + "': coluna CONTEXTO e modelos de garantia incluídos." };
+  }
   return r;
 }
 
-function modelosEmailAtivos_() {
+function modelosEmailPrecisaSetup_() {
+  const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(modelosEmailTableName);
+  return !aba || String(aba.getRange(firstLineModelosEmail - 1, modeloEmailContextoCol + 1).getValue() || '').trim() === '';
+}
+
+function modelosEmailAtivos_(contexto) {
   return ReadModelosEmail()
     .filter(function (l) { return String(l[modeloEmailIdCol] || '').trim() !== '' && !String(l[modeloEmailDtExclusaoCol] || '').trim(); })
     .map(function (l) {
@@ -94,25 +160,32 @@ function modelosEmailAtivos_() {
         id: Number(l[modeloEmailIdCol]),
         nome: String(l[modeloEmailNomeCol] || '').trim(),
         assunto: String(l[modeloEmailAssuntoCol] || ''),
-        corpo: String(l[modeloEmailCorpoCol] || '')
+        corpo: String(l[modeloEmailCorpoCol] || ''),
+        contexto: contextoModeloEmail_(l[modeloEmailContextoCol])
       };
     })
+    .filter(function (m) { return !contexto || m.contexto === contextoModeloEmail_(contexto); })
     .sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
 }
 
-/** { sucesso, modelos: [{ id, nome, assunto, corpo }], campos: [{ chave, rotulo }] } */
-function listarModelosEmail() {
+/**
+ * { sucesso, modelos: [{ id, nome, assunto, corpo, contexto }], campos, camposPorContexto }
+ * contexto ('chamado' | 'garantia'): só os modelos dele; sem contexto, todos.
+ */
+function listarModelosEmail(contexto) {
+  const camposPorContexto = { chamado: camposModeloEmail_('chamado'), garantia: camposModeloEmail_('garantia') };
   try {
-    if (!SpreadsheetApp.getActiveSpreadsheet().getSheetByName(modelosEmailTableName)) {
-      executarComLock(garantirAbaModelosEmail_);
-    }
-    return { sucesso: true, modelos: modelosEmailAtivos_(), campos: camposModeloEmail_() };
+    if (modelosEmailPrecisaSetup_()) executarComLock(garantirAbaModelosEmail_);
+    return {
+      sucesso: true, modelos: modelosEmailAtivos_(contexto),
+      campos: camposModeloEmail_(contexto), camposPorContexto: camposPorContexto
+    };
   } catch (e) {
-    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message, modelos: [], campos: camposModeloEmail_() };
+    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message, modelos: [], campos: camposModeloEmail_(contexto), camposPorContexto: camposPorContexto };
   }
 }
 
-/** Inclui (sem id) ou altera (com id) um modelo. dados: { id, nome, assunto, corpo } */
+/** Inclui (sem id) ou altera (com id) um modelo. dados: { id, nome, assunto, corpo, contexto } */
 function salvarModeloEmail(dados) {
   try {
     return executarComLock(function () { return salvarModeloEmail_(dados); });
@@ -126,6 +199,7 @@ function salvarModeloEmail_(dados) {
   const nome = String((dados && dados.nome) || '').trim();
   const assunto = String((dados && dados.assunto) || '').trim();
   const corpo = String((dados && dados.corpo) || '').replace(/\r\n/g, '\n').replace(/\s+$/, '');
+  const contexto = contextoModeloEmail_(dados && dados.contexto);
 
   if (!nome) return { sucesso: false, mensagem: 'Digite o nome do modelo.' };
   if (!assunto) return { sucesso: false, mensagem: 'Digite o assunto do e-mail.' };
@@ -151,11 +225,12 @@ function salvarModeloEmail_(dados) {
     const linha = idx + firstLineModelosEmail;
     aba.getRange(linha, modeloEmailNomeCol + 1, 1, 3).setValues([[nome, assunto, corpo]]);
     aba.getRange(linha, modeloEmailDtAlteracaoCol + 1).setValue(hoje);
+    aba.getRange(linha, modeloEmailContextoCol + 1).setValue(contexto);
     return { sucesso: true, mensagem: 'Modelo alterado com sucesso!', id: id };
   }
 
   const pos = proximoIdTabela(aba, firstLineModelosEmail);
-  aba.getRange(pos.proximaLinha, 1, 1, numColumnsModelosEmail).setValues([[pos.novoId, nome, assunto, corpo, hoje, '', '']]);
+  aba.getRange(pos.proximaLinha, 1, 1, numColumnsModelosEmail).setValues([[pos.novoId, nome, assunto, corpo, hoje, '', '', contexto]]);
   return { sucesso: true, mensagem: 'Modelo salvo com sucesso!', id: pos.novoId };
 }
 
@@ -244,15 +319,17 @@ function prepararEmailChamado(chamadoId) {
     const det = buscarChamadoDetalhado(chamadoId);
     if (!det || !det.sucesso) return { sucesso: false, mensagem: (det && det.mensagem) || 'Chamado não encontrado.' };
     const c = det.chamado;
-    const lista = listarModelosEmail();
+    const lista = listarModelosEmail('chamado');
     return {
       sucesso: true,
+      contexto: 'chamado',
+      registroId: c.id,
       chamadoId: c.id,
       para: String(c.contratoEmail || '').trim(),
       empresa: String(c.contratoEmpresa || '').trim(),
       valores: valoresCamposEmailChamado_(c),
       modelos: lista.modelos || [],
-      campos: lista.campos || camposModeloEmail_(),
+      campos: lista.campos || camposModeloEmail_('chamado'),
       ultimoEmail: ultimoEmailChamado_(c.id)
     };
   } catch (e) {
@@ -266,6 +343,27 @@ function listaEmails_(texto) {
   const valido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const invalidos = itens.filter(function (s) { return !valido.test(s); });
   return { itens: itens, invalidos: invalidos };
+}
+
+/**
+ * Confere o e-mail digitado na tela (destinatários, assunto, texto, campos
+ * de modelo sem preencher). { sucesso, mensagem } ou { sucesso, para, cc,
+ * assunto, corpo }. Usado pelo chamado e pela garantia.
+ */
+function validarEmailDigitado_(dados) {
+  const para = listaEmails_(dados && dados.para);
+  const cc = listaEmails_(dados && dados.cc);
+  if (!para.itens.length) return { sucesso: false, mensagem: 'Informe o e-mail do destinatário.' };
+  const invalidos = para.invalidos.concat(cc.invalidos);
+  if (invalidos.length) return { sucesso: false, mensagem: 'E-mail inválido: ' + invalidos.join(', ') };
+  const assunto = String((dados && dados.assunto) || '').trim();
+  const corpo = String((dados && dados.corpo) || '').replace(/\r\n/g, '\n');
+  if (!assunto) return { sucesso: false, mensagem: 'Digite o assunto do e-mail.' };
+  if (!corpo.trim()) return { sucesso: false, mensagem: 'Digite o texto do e-mail.' };
+  if (/\{\{\s*\w+\s*\}\}/.test(assunto + corpo)) {
+    return { sucesso: false, mensagem: 'O e-mail ainda tem campos do modelo sem preencher ({{...}}). Revise o texto antes de enviar.' };
+  }
+  return { sucesso: true, para: para.itens, cc: cc.itens, assunto: assunto, corpo: corpo };
 }
 
 // ===== CONFIRMAÇÃO DE LEITURA =====
@@ -335,19 +433,9 @@ function enviarEmailChamado(dados) {
       return { sucesso: false, mensagem: 'Chamado não encontrado (ID ' + chamadoId + ').' };
     }
 
-    const para = listaEmails_(dados.para);
-    const cc = listaEmails_(dados.cc);
-    if (!para.itens.length) return { sucesso: false, mensagem: 'Informe o e-mail do destinatário.' };
-    const invalidos = para.invalidos.concat(cc.invalidos);
-    if (invalidos.length) return { sucesso: false, mensagem: 'E-mail inválido: ' + invalidos.join(', ') };
-
-    const assunto = String(dados.assunto || '').trim();
-    const corpo = String(dados.corpo || '').replace(/\r\n/g, '\n');
-    if (!assunto) return { sucesso: false, mensagem: 'Digite o assunto do e-mail.' };
-    if (!corpo.trim()) return { sucesso: false, mensagem: 'Digite o texto do e-mail.' };
-    if (/\{\{\s*\w+\s*\}\}/.test(assunto + corpo)) {
-      return { sucesso: false, mensagem: 'O e-mail ainda tem campos do modelo sem preencher ({{...}}). Revise o texto antes de enviar.' };
-    }
+    const v = validarEmailDigitado_(dados);
+    if (!v.sucesso) return v;
+    const para = { itens: v.para }, cc = { itens: v.cc }, assunto = v.assunto, corpo = v.corpo;
 
     // confirmação de leitura: pedida, a não ser que venha desmarcada
     const envio = enviarEmailComConfirmacao_(para.itens, cc.itens, assunto, corpo, dados.confirmacaoLeitura !== false);

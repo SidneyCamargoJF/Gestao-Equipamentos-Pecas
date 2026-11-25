@@ -71,6 +71,15 @@
             </div>
 
             <div class="field">
+              <label class="field__label" for="filtro-tipo">Tipo</label>
+              <select class="field__select" id="filtro-tipo">
+                <option value="">Peças e produtos</option>
+                <option value="peca">Peças</option>
+                <option value="produto">Produtos</option>
+              </select>
+            </div>
+
+            <div class="field">
               <label class="field__label" for="filtro-garantia">Garantia</label>
               <select class="field__select" id="filtro-garantia">
                 <option value="">Todas</option>
@@ -91,6 +100,7 @@
             <thead>
               <tr>
                 <th onclick="ordenar('nome')">NOME <span class="sort-arrow"></span></th>
+                <th style="cursor:default;">TIPO</th>
                 <th onclick="ordenar('marca')">MARCA <span class="sort-arrow"></span></th>
                 <th onclick="ordenar('modelo')">MODELO <span class="sort-arrow"></span></th>
                 <th onclick="ordenar('fornecedor')">FORNECEDOR <span class="sort-arrow"></span></th>

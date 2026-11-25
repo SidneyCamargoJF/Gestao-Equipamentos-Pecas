@@ -1,0 +1,67 @@
+    <!-- GARANTIAS: consulta dos acionamentos de garantia (GarantiasJS) -->
+    <section id="page-garantias-view" class="spa-page">
+      <div class="page-header">
+        <div class="actions-bar">
+          <h1>🛡️ Garantias</h1>
+          <div class="ficha-botoes">
+            <button type="button" class="btn-secondary" onclick="limparFiltrosGarantia()">Limpar</button>
+            <button type="button" class="btn-success" onclick="abrirGarantiaItemUI()">+ Abrir garantia</button>
+            <button type="button" class="btn-primary" onclick="consultarGarantias()">Consultar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <form autocomplete="off" onsubmit="consultarGarantias(); return false;" class="garantia-filtros">
+          <div class="field">
+            <label class="field__label" for="garantiaFiltroTexto">Busca</label>
+            <input class="field__input" type="text" id="garantiaFiltroTexto" placeholder="Nº, item, nº de série, defeito, protocolo...">
+          </div>
+          <div class="field">
+            <label class="field__label" for="garantiaFiltroSituacao">Situação</label>
+            <select class="field__select" id="garantiaFiltroSituacao">
+              <option value="andamento">Em andamento</option>
+              <option value="atrasadas">Com prazo de resposta vencido</option>
+              <option value="encerradas">Encerradas</option>
+              <option value="todas">Todas</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="garantiaFiltroStatus">Status</label>
+            <select class="field__select" id="garantiaFiltroStatus">
+              <option value="">Todos</option>
+              <option>Aberta</option>
+              <option>Enviada ao fornecedor</option>
+              <option>Em análise</option>
+              <option>Atendida</option>
+              <option>Negada</option>
+              <option>Cancelada</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="garantiaFiltroTipo">Tipo</label>
+            <select class="field__select" id="garantiaFiltroTipo">
+              <option value="">Peças e produtos</option>
+              <option value="peca">Peças</option>
+              <option value="produto">Produtos</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="garantiaFiltroFornecedor">Fornecedor</label>
+            <input class="field__input" type="text" id="garantiaFiltroFornecedor" placeholder="Nome do fornecedor...">
+          </div>
+          <button type="submit" style="display:none;"></button>
+        </form>
+
+        <div id="garantiasResumo" class="garantia-resumo"></div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr><th>Nº</th><th>Item</th><th>Tipo</th><th>Fornecedor</th><th>Abertura</th><th>Status</th><th>Prazo de resposta</th><th>Protocolo</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="garantiasTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>

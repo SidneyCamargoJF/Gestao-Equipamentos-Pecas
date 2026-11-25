@@ -115,7 +115,9 @@ function buscarIndicadoresPecas() {
     garantia: { ativa: garantiaAtiva, vencendo: garantiaVencendo, vencida: garantiaVencida },
     porMarca: paraRankingOrdenado_(porMarca).slice(0, 8),
     porLocalizacao: paraRankingOrdenado_(porLocalizacao).slice(0, 8),
-    vencendoLista: vencendoLista.sort((a, b) => a.dias - b.dias).slice(0, 8)
+    vencendoLista: vencendoLista.sort((a, b) => a.dias - b.dias).slice(0, 8),
+    // acionamentos de garantia em andamento (GarantiasBackend)
+    acionamentos: indicadoresGarantias_()
   };
 }
 

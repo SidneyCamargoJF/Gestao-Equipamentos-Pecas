@@ -29,7 +29,10 @@ function criarTabelasNovasSeNecessario() {
     garantirAbaModelosEmail_(),
     // e-mails enviados por chamado (Reenviar e-mail)
     criarAbaSeNaoExistir_(ticketEmailsTableName, CABECALHO_CHAMADO_EMAILS)
-  ];
+  ].concat(
+    // garantias de peças/produtos: acionamentos, histórico e anexos
+    garantirAbasGarantias_()
+  );
 
   resultado.forEach(function (r) { Logger.log(r.mensagem); });
   return resultado;

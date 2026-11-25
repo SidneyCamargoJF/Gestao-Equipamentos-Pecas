@@ -104,6 +104,17 @@ async function renderDashboardPecas() {
         '</ul>';
     }
     registrarExportDash('dashPecasVencendo', ['Peça', 'Dias até vencer'], dados.vencendoLista.map(p => [p.nome, p.dias]));
+
+    // Acionamentos de garantia em andamento
+    const ac = dados.acionamentos || { andamento: 0, atrasadas: 0, lista: [] };
+    document.getElementById('dashGarantiasAndamento').textContent = ac.andamento;
+    document.getElementById('dashGarantiasAtrasadas').textContent = ac.atrasadas;
+    const garantiasEl = document.getElementById('dashGarantiasLista');
+    garantiasEl.innerHTML = ac.lista.length
+      ? '<ul class="dash-lista-simples">' + ac.lista.map(g => `<li onclick="trocarPagina('garantias-view'); abrirDetalhesGarantia(${Number(g.id)})">Nº ${Number(g.id)} — ${escapeHtml(g.item)} — ${escapeHtml(g.status)}${g.prazoResposta ? ' (resposta até ' + escapeHtml(g.prazoResposta) + ')' : ''}${g.atrasada ? ' ⚠️ atrasada' : ''}</li>`).join('') + '</ul>'
+      : '<p class="dash-vazio">Nenhuma garantia em andamento.</p>';
+    registrarExportDash('dashGarantiasLista', ['Nº', 'Item', 'Status', 'Prazo de resposta', 'Atrasada'],
+      ac.lista.map(g => [g.id, g.item, g.status, g.prazoResposta, g.atrasada ? 'Sim' : 'Não']));
   } catch (error) {
     console.error('Erro ao buscar indicadores de peças:', error);
     document.getElementById('dashPecasGarantia').innerHTML = '<p class="dash-vazio">Erro ao carregar.</p>';

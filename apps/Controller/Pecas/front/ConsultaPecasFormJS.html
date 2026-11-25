@@ -193,8 +193,9 @@
         const localizacao = document.getElementById('pecaLocalizacaoSearch')?.value.trim() || '';
         const fornecedor = document.getElementById('pecaFornecedorSearch')?.value.trim() || '';
         const garantia = document.getElementById('filtro-garantia')?.value || '';
+        const tipo = document.getElementById('filtro-tipo')?.value || '';
 
-        const criterios = { nome, marca, localizacao, fornecedor, garantia };
+        const criterios = { nome, marca, localizacao, fornecedor, garantia, tipo };
 
         mostrarCarregandoPecas(true);
 
@@ -218,7 +219,7 @@
         if (carregando) {
           const tbody = document.getElementById('bodyPecasView');
           if (tbody) {
-            tbody.innerHTML = '<tr class="loading-row"><td colspan="10"><span class="spinner"></span>Buscando peças...</td></tr>';
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="11"><span class="spinner"></span>Buscando peças...</td></tr>';
           }
         }
       }
@@ -242,13 +243,14 @@
         if (!resumo) return;
 
         if (!Array.isArray(lista) || lista.length === 0) {
-          resumo.textContent = 'Nenhuma peça encontrada.';
+          resumo.textContent = 'Nenhum item encontrado.';
           return;
         }
 
         const desativadas = lista.filter(p => p.desativada).length;
         const ativas = lista.length - desativadas;
-        resumo.textContent = `${lista.length} peça${lista.length === 1 ? '' : 's'} — ${ativas} ativa${ativas === 1 ? '' : 's'}, ${desativadas} desativada${desativadas === 1 ? '' : 's'}`;
+        const produtos = lista.filter(p => p.tipo === 'produto').length;
+        resumo.textContent = `${lista.length} ite${lista.length === 1 ? 'm' : 'ns'} (${lista.length - produtos} peça${lista.length - produtos === 1 ? '' : 's'}, ${produtos} produto${produtos === 1 ? '' : 's'}) — ${ativas} ativo${ativas === 1 ? '' : 's'}, ${desativadas} desativado${desativadas === 1 ? '' : 's'}`;
       }
 
       // Peças desativadas sempre por último, independente da ordenação de coluna
@@ -265,8 +267,10 @@
         const localizacao = document.getElementById('pecaLocalizacaoSearch')?.value.trim().toLowerCase() || '';
         const fornecedor = document.getElementById('pecaFornecedorSearch')?.value.trim().toLowerCase() || '';
         const garantia = document.getElementById('filtro-garantia')?.value || '';
+        const tipo = document.getElementById('filtro-tipo')?.value || '';
 
         let listaFiltrada = pecas.filter(p => {
+          if (tipo && (p.tipo || 'peca') !== tipo) return false;
           if (nome && !String(p.nome || '').toLowerCase().includes(nome)) return false;
           if (marca && !String(p.marca || '').toLowerCase().includes(marca)) return false;
           if (localizacao && !String(p.localizacao || '').toLowerCase().includes(localizacao)) return false;
@@ -287,7 +291,7 @@
         tbody.innerHTML = '';
 
         if (!lista || lista.length === 0) {
-          tbody.innerHTML = '<tr class="empty-row"><td colspan="10">Nenhuma peça encontrada com os filtros informados.</td></tr>';
+          tbody.innerHTML = '<tr class="empty-row"><td colspan="11">Nenhum item encontrado com os filtros informados.</td></tr>';
           return;
         }
 
@@ -303,8 +307,16 @@
             ? `<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarPecaUI('${p.id}')">♻️</button>`
             : `<button class="btn-acao btn-excluir-linha" title="Desativar" onclick="abrirModalExclusao('${p.id}')">🗑️</button>`;
 
+          // Garantia: abre o acionamento (garantia vigente) ou mostra o que está em andamento
+          const btnGarantia = p.garantia_aberta_id
+            ? `<button class="btn-acao btn-acao-garantia" title="Ver a garantia nº ${p.garantia_aberta_id} (em andamento)" onclick="abrirDetalhesGarantia(${Number(p.garantia_aberta_id)})">🛡️</button>`
+            : (!p.desativada && p.garantia_vigente
+              ? `<button class="btn-acao btn-acao-garantia" title="Abrir garantia" onclick="abrirGarantiaItemUI(${Number(p.id)})">🛡️</button>`
+              : `<button class="btn-acao btn-acao-garantia" disabled title="${p.desativada ? 'Item desativado' : (p.dt_garantia ? 'Garantia vencida' : 'Sem data de garantia')}">🛡️</button>`);
+
           tr.innerHTML = `
             <td>${escapeHtml(p.nome)} ${p.desativada ? '<span class="status-desativado">(Desativado)</span>' : ''}</td>
+            <td>${p.tipo === 'produto' ? 'Produto' : 'Peça'}</td>
             <td>${escapeHtml(p.marca)}</td>
             <td>${escapeHtml(p.modelo)}</td>
             <td>${escapeHtml(p.fornecedor)}</td>
@@ -315,6 +327,7 @@
             <td>${escapeHtml(p.sei_num)}</td>
             <td>
               ${btnEditar}
+              ${btnGarantia}
               ${btnExcluir}
             </td>
           `;
@@ -329,6 +342,7 @@
         if (document.getElementById('pecaLocalizacaoSearch')) document.getElementById('pecaLocalizacaoSearch').value = '';
         if (document.getElementById('pecaFornecedorSearch')) document.getElementById('pecaFornecedorSearch').value = '';
         if (document.getElementById('filtro-garantia')) document.getElementById('filtro-garantia').value = '';
+        if (document.getElementById('filtro-tipo')) document.getElementById('filtro-tipo').value = '';
 
         sortState = { coluna: null, direcao: 'asc' };
         atualizarIndicadores();

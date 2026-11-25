@@ -20,6 +20,15 @@ function FiltrarPecas(criterios) {
   let cLocalizacaoFiltro = String(criterios.localizacao || '').trim().toLowerCase();
   let cFornecedorFiltro  = String(criterios.fornecedor || '').trim().toLowerCase();
   let cGarantiaFiltro    = String(criterios.garantia || '').trim().toLowerCase();
+  let cTipoFiltro        = String(criterios.tipo || '').trim().toLowerCase();
+
+  // Acionamento de garantia em andamento por item (botão da linha)
+  const garantiaEmAndamento = {};
+  if (typeof ReadGarantias === 'function') {
+    ReadGarantias().forEach(function (g) {
+      if (!garantiaEncerrada_(g[garantiaStatusCol])) garantiaEmAndamento[Number(g[garantiaPecaIdCol])] = Number(g[garantiaIdCol]);
+    });
+  }
 
   let res = [];
 
@@ -50,8 +59,10 @@ function FiltrarPecas(criterios) {
     let cLocalizacao = (cLocalizacaoFiltro === "" || colLocalizacao.includes(cLocalizacaoFiltro));
     let cFornecedor  = (cFornecedorFiltro === ""  || colFornecedor.includes(cFornecedorFiltro));
     let cGarantia    = (cGarantiaFiltro === ""    || colGarantia === cGarantiaFiltro);
+    let colTipo      = tipoItemEstoque_(dados[l][partsTipoCol]);
+    let cTipo        = (cTipoFiltro === ""        || colTipo === cTipoFiltro);
 
-    if (cNome && cMarca && cLocalizacao && cFornecedor && cGarantia) {
+    if (cNome && cMarca && cLocalizacao && cFornecedor && cGarantia && cTipo) {
       let dtGarantiaTexto = '';
       if (dtGarantiaValida && typeof dateToString === 'function') {
         dtGarantiaTexto = dateToString(dtGarantiaData);
@@ -67,6 +78,7 @@ function FiltrarPecas(criterios) {
         nome: String(dados[l][partsNameCol] || ''),
         marca: String(dados[l][partsBrandCol] || ''),
         modelo: String(dados[l][partsModelCol] || ''),
+        numero_serie: String(dados[l][partsNSCol] || ''),
         fornecedor: String(dados[l][partsSuplierCol] || ''),
         localizacao: String(dados[l][partsLocalCol] || ''),
         garantia: garantiaStatus,
@@ -74,7 +86,11 @@ function FiltrarPecas(criterios) {
         dias_garantia: diasGarantia,
         valor: dados[l][partsValueCol],
         sei_num: String(dados[l][partsSEINumCol] || ''),
-        desativada: desativada
+        desativada: desativada,
+        tipo: colTipo,
+        // garantia vigente (data final >= hoje) e acionamento em andamento
+        garantia_vigente: !!dtGarantiaValida && diasGarantia >= 0,
+        garantia_aberta_id: garantiaEmAndamento[Number(dados[l][partsIdCol])] || null
       };
 
       res.push(objRes);

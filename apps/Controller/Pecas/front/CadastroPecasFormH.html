@@ -29,12 +29,20 @@
       <!-- PARTE 1: INFORMAÇÕES DA PEÇA                  -->
       <!-- ============================================= -->
       <fieldset class="fieldset-principal">
-        <legend class="fieldset-legend">Informações da Peça</legend>
+        <legend class="fieldset-legend">Informações da Peça / Produto</legend>
         
         <div class="form-grid-3">
 
           <div class="field">
-            <label class="field__label" for="nomePeca">Nome da Peça *</label>
+            <label class="field__label" for="tipoItemPeca">Tipo *</label>
+            <select class="field__select" id="tipoItemPeca">
+              <option value="peca">Peça</option>
+              <option value="produto">Produto adquirido (estoque)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="nomePeca">Nome *</label>
             <input class="field__input" type="text" id="nomePeca" placeholder="Ex: Filtro HEPA, Placa Principal..." >
           </div>
 

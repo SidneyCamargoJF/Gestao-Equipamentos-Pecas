@@ -1,6 +1,6 @@
 let PartsTableName = 'tbl_pecas'
 let firstLineParts  = 3
-let numColumnsParts = 18
+let numColumnsParts = 19
 
 let partsIdCol = 0
 let partsNameCol  = 1
@@ -20,6 +20,14 @@ let partsSEINumCol = 14
 let partsDtCadastroCol = 15
 let partsDtAlteracaoCol = 16
 let partsDtExclusaoCol = 17
+// S -- 'peca' | 'produto' (produto adquirido do estoque); vazio = peça.
+// Coluna nova, no fim da aba.
+let partsTipoCol = 18
+
+// 'produto' ou 'peca' (padrão)
+function tipoItemEstoque_(valor) {
+  return String(valor || '').trim().toLowerCase() === 'produto' ? 'produto' : 'peca'
+}
 
 function ReadParts() {
 

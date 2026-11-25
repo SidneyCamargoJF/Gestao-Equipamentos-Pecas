@@ -48,12 +48,12 @@
           <button type="button" class="btn-success" style="width:auto;" onclick="abrirModeloEmailEditor()">+ Novo modelo</button>
         </div>
         <p style="font-size:0.8125rem; color:#64748b; margin-bottom:1rem;">
-          Usados no envio de e-mail do chamado para a empresa. Os campos entre {{ }} são trocados pelos dados do chamado, e o texto ainda pode ser alterado antes de enviar.
+          Usados no envio de e-mail do chamado (para a empresa do contrato) e da garantia (para o fornecedor da peça/produto). Os campos entre {{ }} são trocados pelos dados do chamado ou da garantia, e o texto ainda pode ser alterado antes de enviar.
         </p>
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
-              <tr><th>Nome</th><th>Assunto</th><th>Ações</th></tr>
+              <tr><th>Nome</th><th>Usado em</th><th>Assunto</th><th>Ações</th></tr>
             </thead>
             <tbody id="modelosEmailTableBody"></tbody>
           </table>

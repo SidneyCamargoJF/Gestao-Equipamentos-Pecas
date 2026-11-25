@@ -204,6 +204,14 @@
             <div class="metric-label">Cadastradas (últimos 30 dias)</div>
             <div class="metric-value" id="dashPecasCadastradas30">—</div>
           </div>
+          <div class="metric-card" style="cursor:pointer;" onclick="trocarPagina('garantias-view', 'andamento')" title="Ver as garantias em andamento">
+            <div class="metric-label">Garantias em andamento</div>
+            <div class="metric-value" id="dashGarantiasAndamento">—</div>
+          </div>
+          <div class="metric-card" style="cursor:pointer;" onclick="trocarPagina('garantias-view', 'atrasadas')" title="Ver as garantias com prazo de resposta vencido">
+            <div class="metric-label">Garantias com prazo vencido</div>
+            <div class="metric-value" id="dashGarantiasAtrasadas">—</div>
+          </div>
         </div>
 
         <div class="dash-grid-3">
@@ -250,6 +258,17 @@
             </button>
           </div>
           <div id="dashPecasVencendo" class="dash-painel-corpo">Carregando...</div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>🛡️ Garantias em andamento</h2>
+            <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashGarantiasLista','garantias_em_andamento.csv')">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              CSV
+            </button>
+          </div>
+          <div id="dashGarantiasLista" class="dash-painel-corpo">Carregando...</div>
         </div>
       </div>
 

@@ -1,0 +1,444 @@
+<script>
+  // =====================================================
+  // GARANTIAS -- consulta (#page-garantias-view), abertura
+  // (#modalAbrirGarantia, a partir da peça/produto) e controle
+  // (#modalDetalheGarantia: status, protocolo, prazo, anexos, histórico e
+  // e-mail ao fornecedor). Backend: apps/Controller/Garantias/back.
+  // =====================================================
+
+  const GARANTIA_STATUS_CLASSE = {
+    'Aberta': 'aberta', 'Enviada ao fornecedor': 'enviada', 'Em análise': 'analise',
+    'Atendida': 'atendida', 'Negada': 'negada', 'Cancelada': 'cancelada'
+  };
+  const GARANTIA_TIPOS_ANEXO = ['Laudo', 'Foto', 'Nota fiscal', 'Documento'];
+
+  let garantiasLista = [];
+  let garantiaDetalheAtual = null;
+  let garantiaAbrirItemId = null;
+  let garantiaItensBusca = null;      // itens do estoque para a busca da abertura
+  let garantiaAbertaUltimaId = null;
+
+  function escGarantia(s) {
+    return String(s === undefined || s === null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function badgeStatusGarantia(status) {
+    return `<span class="garantia-status garantia-status--${GARANTIA_STATUS_CLASSE[status] || 'aberta'}">${escGarantia(status)}</span>`;
+  }
+
+  // 'dd/MM/yyyy' -> 'yyyy-MM-dd' (input date)
+  function dataParaInputGarantia(texto) {
+    const m = String(texto || '').match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
+  }
+
+  // ===== CONSULTA =====
+  // situacao: 'andamento' (padrão) | 'atrasadas' | 'encerradas' | 'todas'
+  async function renderGarantias(situacao) {
+    const sel = document.getElementById('garantiaFiltroSituacao');
+    if (sel && situacao) sel.value = situacao;
+    await consultarGarantias();
+  }
+
+  function filtrosGarantia() {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const situacao = v('garantiaFiltroSituacao');
+    return {
+      texto: v('garantiaFiltroTexto').trim(),
+      status: v('garantiaFiltroStatus'),
+      tipo: v('garantiaFiltroTipo'),
+      fornecedor: v('garantiaFiltroFornecedor').trim(),
+      situacao: situacao === 'todas' ? '' : situacao
+    };
+  }
+
+  async function consultarGarantias() {
+    const tbody = document.getElementById('garantiasTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    try {
+      const r = await runServerFunction('listarGarantias', filtrosGarantia());
+      if (r && r.sucesso === false) throw new Error(r.mensagem);
+      garantiasLista = (r && r.garantias) || [];
+      renderTabelaGarantias();
+    } catch (e) {
+      console.error('Erro ao consultar garantias:', e);
+      if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Erro ao buscar as garantias.</td></tr>';
+    }
+  }
+
+  function limparFiltrosGarantia() {
+    ['garantiaFiltroTexto', 'garantiaFiltroStatus', 'garantiaFiltroTipo', 'garantiaFiltroFornecedor'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    const sel = document.getElementById('garantiaFiltroSituacao'); if (sel) sel.value = 'andamento';
+    consultarGarantias();
+  }
+
+  function renderTabelaGarantias() {
+    const tbody = document.getElementById('garantiasTableBody');
+    const resumo = document.getElementById('garantiasResumo');
+    if (!tbody) return;
+    if (resumo) {
+      const atrasadas = garantiasLista.filter(g => g.atrasada).length;
+      resumo.textContent = garantiasLista.length
+        ? `${garantiasLista.length} garantia${garantiasLista.length === 1 ? '' : 's'}${atrasadas ? ` — ${atrasadas} com prazo de resposta vencido` : ''}`
+        : '';
+    }
+    if (!garantiasLista.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Nenhuma garantia encontrada.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = garantiasLista.map(g => `
+      <tr class="${g.atrasada ? 'garantia-linha-atrasada' : ''}">
+        <td>${Number(g.id)}</td>
+        <td>${escGarantia(g.item ? g.item.nome : '')}${g.item && g.item.numeroSerie ? `<br><small>NS ${escGarantia(g.item.numeroSerie)}</small>` : ''}</td>
+        <td>${escGarantia(g.item ? g.item.tipoTexto : '')}</td>
+        <td>${escGarantia(g.fornecedor)}</td>
+        <td>${escGarantia(g.dataAbertura)}</td>
+        <td>${badgeStatusGarantia(g.status)}</td>
+        <td>${escGarantia(g.prazoResposta)}${g.atrasada ? ' <span class="garantia-atrasada" title="Prazo de resposta do fornecedor vencido">Atrasada</span>' : ''}</td>
+        <td>${escGarantia(g.protocolo)}</td>
+        <td class="acao-cell"><button class="btn-acao" title="Detalhes" onclick="abrirDetalhesGarantia(${Number(g.id)})">👁️</button></td>
+      </tr>`).join('');
+  }
+
+  // ===== ABERTURA =====
+  // pecaId: vindo da consulta de peças (item já escolhido); sem pecaId,
+  // mostra a busca de itens com garantia vigente.
+  async function abrirGarantiaItemUI(pecaId) {
+    garantiaAbrirItemId = null;
+    document.getElementById('garantiaAbrirDefeito').value = '';
+    document.getElementById('garantiaAbrirPrazo').value = '';
+    document.getElementById('garantiaBuscaItem').value = '';
+    document.getElementById('garantiaBuscaResultados').innerHTML = '';
+    document.getElementById('garantiaBuscaArea').style.display = pecaId ? 'none' : '';
+    mostrarItemAberturaGarantia(null, '');
+    exibirModal('modalAbrirGarantia');
+    if (pecaId) await escolherItemGarantia(pecaId);
+    else {
+      garantiaItensBusca = null;
+      setTimeout(() => { const el = document.getElementById('garantiaBuscaItem'); if (el) el.focus(); }, 50);
+    }
+  }
+
+  function mostrarItemAberturaGarantia(item, aviso, podeAbrir) {
+    const box = document.getElementById('garantiaItemResumo');
+    const avisoEl = document.getElementById('garantiaAbrirAviso');
+    const btn = document.getElementById('btnConfirmarAbrirGarantia');
+    if (box) {
+      box.style.display = item ? '' : 'none';
+      box.innerHTML = item ? `
+        <strong>${escGarantia(item.tipoTexto)}: ${escGarantia(item.nome)}</strong>
+        <span>${escGarantia([item.marca, item.modelo].filter(Boolean).join(' / '))}${item.numeroSerie ? ' · NS ' + escGarantia(item.numeroSerie) : ''}</span>
+        <span>Fornecedor: ${escGarantia(item.fornecedor || '—')}${item.notaFiscal ? ' · NF ' + escGarantia(item.notaFiscal) + (item.dataNota ? ' de ' + escGarantia(item.dataNota) : '') : ''}</span>
+        <span>Garantia até: <strong>${escGarantia(item.garantiaAte || '—')}</strong>${item.garantia ? ' (' + escGarantia(item.garantia) + ')' : ''}</span>` : '';
+    }
+    if (avisoEl) { avisoEl.textContent = aviso || ''; avisoEl.style.display = aviso ? '' : 'none'; }
+    if (btn) btn.disabled = !podeAbrir;
+    ['garantiaAbrirDefeito', 'garantiaAbrirPrazo'].forEach(id => { const el = document.getElementById(id); if (el) el.disabled = !podeAbrir; });
+  }
+
+  async function escolherItemGarantia(pecaId) {
+    mostrarItemAberturaGarantia(null, 'Conferindo o item...', false);
+    let r;
+    try { r = await runServerFunction('verificarItemParaGarantia', pecaId); }
+    catch (e) { r = { sucesso: false, mensagem: 'Erro ao conectar com o servidor.' }; }
+    if (!r || !r.sucesso) { mostrarItemAberturaGarantia(null, (r && r.mensagem) || 'Item não encontrado.', false); return; }
+    garantiaAbrirItemId = r.podeAbrir ? r.item.id : null;
+    mostrarItemAberturaGarantia(r.item, r.podeAbrir ? '' : r.motivo, r.podeAbrir);
+    const avisoEl = document.getElementById('garantiaAbrirAviso');
+    if (!r.podeAbrir && r.garantiaAbertaId && avisoEl) {
+      avisoEl.innerHTML = escGarantia(r.motivo) + ` <button type="button" class="btn-link" onclick="fecharModal('modalAbrirGarantia'); abrirDetalhesGarantia(${Number(r.garantiaAbertaId)})">Ver a garantia</button>`;
+    }
+    if (r.podeAbrir) setTimeout(() => { const el = document.getElementById('garantiaAbrirDefeito'); if (el) el.focus(); }, 50);
+  }
+
+  // Busca de itens (nome, modelo ou número de série) com garantia vigente
+  async function buscarItemGarantiaUI() {
+    const termo = (document.getElementById('garantiaBuscaItem').value || '').trim().toLowerCase();
+    const box = document.getElementById('garantiaBuscaResultados');
+    if (termo.length < 2) { box.innerHTML = ''; return; }
+    if (!garantiaItensBusca) {
+      box.innerHTML = '<span class="spinner"></span>Carregando itens...';
+      try {
+        const lista = await runServerFunction('FiltrarPecas', {});
+        garantiaItensBusca = Array.isArray(lista) ? lista : [];
+      } catch (e) { garantiaItensBusca = []; }
+    }
+    const achados = garantiaItensBusca.filter(p => !p.desativada &&
+      [p.nome, p.modelo, p.numero_serie].some(v => String(v || '').toLowerCase().includes(termo))).slice(0, 15);
+    box.innerHTML = achados.length ? achados.map(p => `
+      <button type="button" class="garantia-busca-item${p.garantia_vigente ? '' : ' garantia-busca-item--vencida'}" onclick="escolherItemGarantia(${Number(p.id)})">
+        <strong>${escGarantia(p.nome)}</strong> <small>${p.tipo === 'produto' ? 'Produto' : 'Peça'}${p.numero_serie ? ' · NS ' + escGarantia(p.numero_serie) : ''}${p.modelo ? ' · ' + escGarantia(p.modelo) : ''}</small>
+        <span>${p.garantia_vigente ? 'Garantia até ' + escGarantia(p.dt_garantia) : (p.dt_garantia ? 'Garantia vencida em ' + escGarantia(p.dt_garantia) : 'Sem data de garantia')}</span>
+      </button>`).join('') : '<p class="garantia-vazio">Nenhum item encontrado.</p>';
+  }
+
+  async function confirmarAbrirGarantiaUI() {
+    if (!garantiaAbrirItemId) return;
+    const defeito = document.getElementById('garantiaAbrirDefeito').value.trim();
+    if (!defeito) { alert('Descreva o defeito.'); return; }
+    exibirModal('processando');
+    try {
+      const r = await runServerFunction('abrirGarantia', {
+        pecaId: garantiaAbrirItemId, defeito: defeito, prazoResposta: document.getElementById('garantiaAbrirPrazo').value
+      });
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao abrir a garantia.'); return; }
+      fecharModal('modalAbrirGarantia');
+      garantiaAbertaUltimaId = r.id;
+      document.getElementById('garantiaAbertaMensagem').textContent = r.mensagem +
+        (r.emailFornecedor ? '' : '\nO fornecedor não tem e-mail cadastrado: no envio, digite o destinatário.');
+      exibirModal('modalGarantiaAberta');
+      if (typeof consultarPecas === 'function' && document.getElementById('page-pecas-view')?.classList.contains('active')) consultarPecas();
+      if (document.getElementById('page-garantias-view')?.classList.contains('active')) consultarGarantias();
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      fecharModal('processando');
+    }
+  }
+
+  function garantiaAbertaAcao(acao) {
+    const id = garantiaAbertaUltimaId;
+    fecharModal('modalGarantiaAberta');
+    if (!id) return;
+    if (acao === 'email') abrirEmailGarantia(id);
+    else abrirDetalhesGarantia(id);
+  }
+
+  // ===== DETALHE / CONTROLE =====
+  async function abrirDetalhesGarantia(id) {
+    const corpo = document.getElementById('garantiaDetalheCorpo');
+    document.getElementById('garantiaDetalheTitulo').textContent = '🛡️ Garantia nº ' + id;
+    if (corpo) corpo.innerHTML = '<p><span class="spinner"></span>Carregando...</p>';
+    exibirModal('modalDetalheGarantia');
+    await recarregarDetalheGarantia(id);
+  }
+
+  async function recarregarDetalheGarantia(id) {
+    const corpo = document.getElementById('garantiaDetalheCorpo');
+    let r;
+    try { r = await runServerFunction('buscarGarantiaDetalhada', id); }
+    catch (e) { r = { sucesso: false, mensagem: 'Erro ao conectar com o servidor.' }; }
+    if (!r || !r.sucesso) { if (corpo) corpo.innerHTML = `<p>${escGarantia((r && r.mensagem) || 'Garantia não encontrada.')}</p>`; return; }
+    garantiaDetalheAtual = r.garantia;
+    if (corpo) corpo.innerHTML = montarDetalheGarantiaHtml(r.garantia);
+    carregarAnexosGarantiaUI(id);
+  }
+
+  function linhaGarantia(rotulo, valor) {
+    if (valor === undefined || valor === null || String(valor).trim() === '') return '';
+    return `<div class="garantia-campo"><span>${escGarantia(rotulo)}</span><strong>${escGarantia(valor)}</strong></div>`;
+  }
+
+  function botoesAcaoGarantia(g) {
+    const b = (acao, rotulo, classe) => `<button type="button" class="${classe || 'btn-secondary'}" style="width:auto;" onclick="acaoGarantiaUI('${acao}')">${rotulo}</button>`;
+    const email = `<button type="button" class="btn-secondary" style="width:auto;" onclick="abrirEmailGarantia(${Number(g.id)})">📧 E-mail ao fornecedor</button>`;
+    switch (g.status) {
+      case 'Aberta': return email + b('enviar', '📤 Marcar como enviada', 'btn-primary') + b('atualizar', '✏️ Protocolo / prazo') + b('cancelar', 'Cancelar garantia', 'btn-danger');
+      case 'Enviada ao fornecedor': return email + b('analise', '🔎 Em análise', 'btn-primary') + b('encerrar', '✅ Encerrar', 'btn-success') + b('atualizar', '✏️ Protocolo / prazo') + b('cancelar', 'Cancelar garantia', 'btn-danger');
+      case 'Em análise': return email + b('encerrar', '✅ Encerrar', 'btn-success') + b('atualizar', '✏️ Protocolo / prazo') + b('cancelar', 'Cancelar garantia', 'btn-danger');
+      case 'Atendida': case 'Negada': return email + b('reabrir', '↩️ Reabrir');
+      default: return '';
+    }
+  }
+
+  function montarDetalheGarantiaHtml(g) {
+    const it = g.item || {};
+    const historico = (g.historico || []).map(h => `
+      <li><span class="garantia-hist-data">${escGarantia(h.data)}${h.usuario ? ' · ' + escGarantia(h.usuario) : ''}</span>${escGarantia(h.texto)}</li>`).join('');
+    return `
+      <div class="garantia-det-topo">${badgeStatusGarantia(g.status)}${g.atrasada ? ' <span class="garantia-atrasada">Prazo de resposta vencido</span>' : ''}</div>
+      <div class="garantia-det-grid">
+        <section class="garantia-det-secao">
+          <h4>${escGarantia(it.tipoTexto || 'Item')}</h4>
+          ${linhaGarantia('Nome', it.nome)}
+          ${linhaGarantia('Marca / modelo', [it.marca, it.modelo].filter(Boolean).join(' / '))}
+          ${linhaGarantia('Número de série', it.numeroSerie)}
+          ${linhaGarantia('Localização', it.localizacao)}
+          ${linhaGarantia('Nota fiscal', it.notaFiscal ? it.notaFiscal + (it.dataNota ? ' de ' + it.dataNota : '') : '')}
+          ${linhaGarantia('Garantia até', it.garantiaAte ? it.garantiaAte + (it.garantia ? ' (' + it.garantia + ')' : '') : '')}
+        </section>
+        <section class="garantia-det-secao">
+          <h4>Acionamento</h4>
+          ${linhaGarantia('Fornecedor', g.fornecedor + (g.emailFornecedor ? ' — ' + g.emailFornecedor : ' (sem e-mail cadastrado)'))}
+          ${linhaGarantia('Aberta em', g.dataAbertura + (g.abertoPor ? ' por ' + g.abertoPor : ''))}
+          ${linhaGarantia('Defeito', g.defeito)}
+          ${linhaGarantia('Protocolo do fornecedor', g.protocolo)}
+          ${linhaGarantia('Enviada em', g.dataEnvio)}
+          ${linhaGarantia('Prazo de resposta', g.prazoResposta)}
+          ${linhaGarantia('Resultado', g.status === 'Negada' ? 'Negada' : g.resultadoTexto)}
+          ${linhaGarantia(g.status === 'Negada' ? 'Motivo da negativa' : 'Resolução', g.resolucao)}
+          ${linhaGarantia('Encerrada em', g.dataEncerramento)}
+        </section>
+      </div>
+      <div class="garantia-acoes">${botoesAcaoGarantia(g)}</div>
+      <div id="garantiaAcaoForm" class="garantia-acao-form" style="display:none;"></div>
+
+      <section class="garantia-det-secao">
+        <h4>Anexos <small>(laudo, fotos, nota fiscal)</small></h4>
+        <div id="garantiaAnexosLista"><span class="spinner"></span>Carregando anexos...</div>
+        ${g.status === 'Cancelada' ? '' : `
+        <div class="garantia-anexo-novo">
+          <select class="field__select" id="garantiaAnexoTipo">${GARANTIA_TIPOS_ANEXO.map(t => `<option>${t}</option>`).join('')}</select>
+          <input type="file" id="garantiaAnexoArquivo" accept="application/pdf,image/*">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="adicionarAnexoGarantiaUI()">Anexar</button>
+        </div>`}
+      </section>
+
+      <section class="garantia-det-secao">
+        <h4>Histórico</h4>
+        <div class="garantia-anotacao">
+          <textarea class="field__input" id="garantiaAnotacaoTexto" rows="2" placeholder="Nova anotação (contato com o fornecedor, combinados...)"></textarea>
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="adicionarAnotacaoGarantiaUI()">Adicionar anotação</button>
+        </div>
+        <ul class="garantia-historico">${historico || '<li>Sem registros.</li>'}</ul>
+      </section>`;
+  }
+
+  // Formulário da ação escolhida (abaixo dos botões)
+  function acaoGarantiaUI(acao) {
+    const g = garantiaDetalheAtual;
+    const box = document.getElementById('garantiaAcaoForm');
+    if (!g || !box) return;
+    if (acao === 'analise') {
+      if (!confirm('Marcar a garantia como em análise pelo fornecedor?')) return;
+      executarAcaoGarantia({ acao: 'analise' });
+      return;
+    }
+    const campoProtocolo = `<div class="field"><label class="field__label" for="garantiaAcaoProtocolo">Protocolo do fornecedor</label>
+      <input class="field__input" type="text" id="garantiaAcaoProtocolo" value="${escGarantia(g.protocolo)}"></div>`;
+    const campoPrazo = `<div class="field"><label class="field__label" for="garantiaAcaoPrazo">Prazo de resposta</label>
+      <input class="field__input" type="date" id="garantiaAcaoPrazo" value="${dataParaInputGarantia(g.prazoResposta)}"></div>`;
+    const campoTexto = (rotulo, ph) => `<div class="field"><label class="field__label" for="garantiaAcaoTexto">${rotulo}</label>
+      <textarea class="field__input" id="garantiaAcaoTexto" rows="3" placeholder="${ph || ''}"></textarea></div>`;
+    const titulos = { enviar: 'Enviada ao fornecedor', atualizar: 'Protocolo e prazo de resposta', encerrar: 'Encerrar a garantia', reabrir: 'Reabrir a garantia', cancelar: 'Cancelar a garantia' };
+    let html = `<h5>${titulos[acao] || ''}</h5>`;
+    if (acao === 'enviar' || acao === 'atualizar') html += `<div class="garantia-acao-linha">${campoProtocolo}${campoPrazo}</div>`;
+    else if (acao === 'encerrar') {
+      html += `<div class="garantia-resultados">
+        ${[['troca', 'Atendida — troca'], ['reparo', 'Atendida — reparo'], ['reembolso', 'Atendida — reembolso'], ['negada', 'Negada pelo fornecedor']]
+          .map(([v, r]) => `<label><input type="radio" name="garantiaResultado" value="${v}"> ${r}</label>`).join('')}
+      </div>` + campoTexto('Resolução (obrigatória se negada)', 'O que foi feito / motivo da negativa');
+    } else if (acao === 'reabrir') html += campoTexto('Motivo da reabertura *');
+    else if (acao === 'cancelar') html += campoTexto('Motivo do cancelamento *');
+    html += `<div class="garantia-acao-botoes">
+      <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharAcaoGarantia()">Voltar</button>
+      <button type="button" class="btn-primary" style="width:auto;" onclick="confirmarAcaoGarantiaUI('${acao}')">Confirmar</button></div>`;
+    box.innerHTML = html;
+    box.style.display = '';
+  }
+
+  function fecharAcaoGarantia() {
+    const box = document.getElementById('garantiaAcaoForm');
+    if (box) { box.innerHTML = ''; box.style.display = 'none'; }
+  }
+
+  function confirmarAcaoGarantiaUI(acao) {
+    const val = id => { const el = document.getElementById(id); return el ? el.value : undefined; };
+    const dados = { acao: acao };
+    if (acao === 'enviar' || acao === 'atualizar') { dados.protocolo = val('garantiaAcaoProtocolo'); dados.prazoResposta = val('garantiaAcaoPrazo'); }
+    if (acao === 'encerrar') {
+      const marcado = document.querySelector('input[name="garantiaResultado"]:checked');
+      if (!marcado) { alert('Escolha o resultado da garantia.'); return; }
+      dados.resolucao = (val('garantiaAcaoTexto') || '').trim();
+      if (marcado.value === 'negada') {
+        if (!dados.resolucao) { alert('Informe o motivo da negativa.'); return; }
+        dados.acao = 'negar';
+      } else { dados.acao = 'atender'; dados.resultado = marcado.value; }
+    }
+    if (acao === 'reabrir' || acao === 'cancelar') {
+      dados.motivo = (val('garantiaAcaoTexto') || '').trim();
+      if (!dados.motivo) { alert('Informe o motivo.'); return; }
+    }
+    executarAcaoGarantia(dados);
+  }
+
+  async function executarAcaoGarantia(dados) {
+    const g = garantiaDetalheAtual;
+    if (!g) return;
+    dados.id = g.id;
+    exibirModal('processando');
+    try {
+      const r = await runServerFunction('alterarGarantia', dados);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao alterar a garantia.'); return; }
+      mostrarMensagem(r.mensagem, 'sucesso');
+      await recarregarDetalheGarantia(g.id);
+      if (document.getElementById('page-garantias-view')?.classList.contains('active')) consultarGarantias();
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      fecharModal('processando');
+    }
+  }
+
+  async function adicionarAnotacaoGarantiaUI() {
+    const g = garantiaDetalheAtual;
+    const el = document.getElementById('garantiaAnotacaoTexto');
+    const texto = el ? el.value.trim() : '';
+    if (!g || !texto) { alert('Digite a anotação.'); return; }
+    try {
+      const r = await runServerFunction('adicionarAnotacaoGarantia', g.id, texto);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao gravar a anotação.'); return; }
+      await recarregarDetalheGarantia(g.id);
+    } catch (e) { alert('Erro ao conectar com o servidor.'); }
+  }
+
+  // ===== ANEXOS =====
+  async function carregarAnexosGarantiaUI(id) {
+    const box = document.getElementById('garantiaAnexosLista');
+    if (!box) return;
+    let lista = [];
+    try { lista = await runServerFunction('buscarAnexosGarantia', id) || []; } catch (e) { lista = []; }
+    const nome = n => typeof nomeArquivoSemData === 'function' ? nomeArquivoSemData(n) : n;
+    const podeExcluir = garantiaDetalheAtual && garantiaDetalheAtual.status !== 'Cancelada';
+    box.innerHTML = lista.length ? '<div class="anexo-lista">' + lista.map(a => `
+      <div class="anexo-card-wrapper">
+        <a href="${escGarantia(a.url)}" target="_blank" rel="noopener" class="anexo-card" title="${escGarantia(nome(a.nomeArquivo))}">
+          <div class="anexo-card-icone">📄</div><span class="anexo-card-nome">${escGarantia(a.tipo)}: ${escGarantia(nome(a.nomeArquivo))}</span>
+        </a>
+        ${podeExcluir ? `<button type="button" class="anexo-card-excluir" title="Excluir anexo" onclick="excluirAnexoGarantiaUI(${Number(a.id)})">✕</button>` : ''}
+      </div>`).join('') + '</div>' : '<p class="garantia-vazio">Nenhum anexo.</p>';
+  }
+
+  function lerArquivoGarantia(arquivo) {
+    const limite = typeof ANEXO_CADASTRO_TAMANHO_MAX !== 'undefined' ? ANEXO_CADASTRO_TAMANHO_MAX : 3 * 1024 * 1024;
+    return new Promise((resolve, reject) => {
+      if (arquivo.size > limite) { reject(new Error('O arquivo "' + arquivo.name + '" passa de 3MB.')); return; }
+      const leitor = new FileReader();
+      leitor.onload = () => resolve({ nome: arquivo.name, tipo: arquivo.type || 'application/octet-stream', base64: String(leitor.result).split(',')[1] || '' });
+      leitor.onerror = () => reject(new Error('Erro ao ler o arquivo "' + arquivo.name + '".'));
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+
+  async function adicionarAnexoGarantiaUI() {
+    const g = garantiaDetalheAtual;
+    const input = document.getElementById('garantiaAnexoArquivo');
+    if (!g || !input || !input.files || !input.files.length) { alert('Escolha um arquivo.'); return; }
+    let arquivo;
+    try { arquivo = await lerArquivoGarantia(input.files[0]); } catch (e) { alert(e.message); return; }
+    exibirModal('processando');
+    try {
+      const r = await runServerFunction('adicionarAnexoGarantia', g.id, document.getElementById('garantiaAnexoTipo').value, arquivo);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao anexar.'); return; }
+      if (r.duplicado) mostrarMensagem('Este arquivo já estava anexado a esta garantia.', 'aviso');
+      await recarregarDetalheGarantia(g.id);
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      fecharModal('processando');
+    }
+  }
+
+  async function excluirAnexoGarantiaUI(anexoId) {
+    const g = garantiaDetalheAtual;
+    if (!g || !confirm('Excluir este anexo?')) return;
+    try {
+      const r = await runServerFunction('excluirAnexoGarantia', anexoId);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }
+      await recarregarDetalheGarantia(g.id);
+    } catch (e) { alert('Erro ao conectar com o servidor.'); }
+  }
+</script>

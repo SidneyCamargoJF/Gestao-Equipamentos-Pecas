@@ -250,6 +250,33 @@ As constantes de `EquipamentosModel.js` são 0-based (A = 0), e o model liga `co
 | P | Data de cadastro |
 | Q | Data de alteração |
 | R | Data de exclusão |
+| S | Tipo: `peca` ou `produto` (produto adquirido do estoque); vazio = peça |
+
+## tbl_garantias — [GarantiasModel.js](../apps/01-Model/GarantiasModel.js) (0-based)
+
+Um acionamento de garantia de uma peça/produto por linha. Criada sozinha no primeiro uso (ou por `criarTabelasNovasSeNecessario()`), junto com `tbl_garantia_historico` e `tbl_garantia_anexos`.
+
+| Col | Conteúdo |
+|---|---|
+| A | ID |
+| B | ID da peça/produto (`tbl_pecas`) |
+| C | Fornecedor (nome, como no item) |
+| D | Data de abertura |
+| E | Defeito |
+| F | Protocolo do fornecedor |
+| G | Status: Aberta, Enviada ao fornecedor, Em análise, Atendida, Negada, Cancelada |
+| H | Data de envio ao fornecedor |
+| I | Prazo de resposta |
+| J | Resultado: `troca`, `reparo`, `reembolso` ou `negada` |
+| K | Resolução / motivo da negativa |
+| L | Data de encerramento |
+| M | Aberto por |
+| N | Data de alteração |
+| O | Data de exclusão (cancelamento) |
+
+**tbl_garantia_historico** (0-based): ID, ID da garantia, texto, data/hora, usuário, data de exclusão.
+
+**tbl_garantia_anexos** (0-based): mesmo formato das outras tabelas de anexo (ID, ID da garantia, tipo, nome do arquivo, URL, hash, data do upload, data de exclusão).
 
 ## tbl_fornecedor — [FornecedorModel.js](../apps/01-Model/FornecedorModel.js) (1-based)
 
@@ -316,6 +343,7 @@ Modelos de e-mail do chamado (Configuração → Modelos de e-mail). Criada pelo
 | E | Data de cadastro |
 | F | Data de alteração |
 | G | Data de exclusão |
+| H | Contexto: `chamado` ou `garantia`; vazio = chamado (coluna incluída depois; numa aba antiga, o sistema cria o cabeçalho e os modelos de garantia na primeira leitura) |
 
 Os campos aceitos estão em `camposModeloEmail_()` ([ModelosEmailBackend.js](../apps/Controller/ModelosEmail/back/ModelosEmailBackend.js)). Cada envio fica no histórico do chamado (`[SISTEMA] E-mail enviado para ...`) e em `tbl_chamado_emails`.
 

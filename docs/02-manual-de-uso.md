@@ -23,15 +23,50 @@ Padrões das consultas:
 - A situação da garantia (vigente ou vencida) é calculada pela data de garantia.
 - O **estado** aparece numa coluna da consulta, que pode ser ordenada na sequência Novo → Velho, e nos detalhes do equipamento. Aparece também na lista de equipamentos do chamado.
 
-## Peças
+## Peças e produtos
+
+O cadastro de **Peças e Estoque** guarda peças e produtos adquiridos que ficam no estoque. O campo **Tipo** (Peça / Produto) separa os dois; itens antigos, sem tipo, contam como peça.
 
 **Campos:**
-- nome, marca, modelo, capacidade e número de série;
+- tipo, nome, marca, modelo, capacidade e número de série;
 - local e fornecedor;
 - nota fiscal (número e data) e garantia (prazo e data final);
 - modalidade, valor e processo SEI.
 
 As peças com garantia vencendo aparecem na **Agenda**.
+
+**Consulta:** filtro e coluna **Tipo**. Em cada linha, o botão 🛡️ abre a garantia do item (veja [Garantias](#garantias)): fica ativo quando a garantia está vigente; com uma garantia em andamento, ele abre essa garantia; com a garantia vencida, sem data ou item desativado, fica apagado.
+
+## Garantias
+
+Menu **Cadastros → Garantias**. Controla o acionamento da garantia de uma peça ou produto que deu defeito.
+
+### Abrir uma garantia
+
+- Pelo botão 🛡️ na consulta de peças, ou por **+ Abrir garantia** na tela de Garantias (busque o item pelo nome, modelo ou número de série).
+- Só abre com a garantia do item **vigente** (data final igual ou posterior a hoje) e sem outra garantia em andamento para o mesmo item.
+- Informe o **defeito** (obrigatório) e, se quiser, o **prazo de resposta** do fornecedor.
+- Depois de aberta, a confirmação oferece **Enviar e-mail ao fornecedor**.
+
+### Andamento
+
+| Status | Como chega |
+|---|---|
+| Aberta | ao abrir |
+| Enviada ao fornecedor | **Marcar como enviada** (com protocolo e prazo, opcionais) ou ao enviar o e-mail ao fornecedor com a garantia ainda Aberta |
+| Em análise | **Em análise**, depois de enviada |
+| Atendida | **Encerrar** escolhendo troca, reparo ou reembolso |
+| Negada | **Encerrar** escolhendo "Negada pelo fornecedor" (motivo obrigatório) |
+| Cancelada | **Cancelar garantia** (motivo obrigatório), antes de encerrar |
+
+- **Protocolo / prazo** altera o protocolo do fornecedor e o prazo de resposta enquanto a garantia não está encerrada.
+- **Reabrir** volta uma garantia Atendida ou Negada para Em análise (motivo obrigatório).
+- Com o prazo de resposta vencido e a garantia em andamento, ela aparece como **Atrasada** (em vermelho, no topo da lista).
+- **Anexos:** laudo, fotos, nota fiscal ou outro documento (até 3 MB por arquivo).
+- **Histórico:** cada passo fica registrado com data e usuário; dá para incluir anotações.
+- **E-mail ao fornecedor:** a mesma tela de e-mail do chamado, com o e-mail do fornecedor do item e os modelos de garantia.
+
+**Consulta:** busca (nº, item, número de série, defeito, protocolo), situação (em andamento, prazo vencido, encerradas, todas), status, tipo e fornecedor. Canceladas só aparecem filtrando pelo status Cancelada.
 
 ## Marcas
 
@@ -180,6 +215,7 @@ Os botões **Calendário** e **Lista por dia** trocam a visão. A lista mostra o
 | Preventiva | data prevista (último dia do mês da competência) |
 | Contrato | data final de contratos ativos e não encerrados |
 | Peça | data final da garantia |
+| Garantia | prazo de resposta do fornecedor, nas garantias em andamento |
 
 ## Dashboard
 
@@ -196,7 +232,7 @@ As seções têm botão de exportação em CSV.
 
 ### Demais seções
 
-Chamados, Contratos (vigentes, vencendo em 30 dias, vencidos, encerrados), Equipamentos, Peças e Fornecedores.
+Chamados, Contratos (vigentes, vencendo em 30 dias, vencidos, encerrados), Equipamentos, Peças e Fornecedores. Em Peças, os indicadores **Garantias em andamento** e **Garantias com prazo vencido** e a lista das garantias em andamento levam à tela de Garantias.
 
 ## Relatórios
 
@@ -223,11 +259,11 @@ O menu **Configuração** tem dois itens: **Usuários** e **Modelos de e-mail**.
 
 ### Configuração → Modelos de e-mail
 
-Lista os modelos usados no [e-mail para a empresa](#e-mail-para-a-empresa), com **Alterar** e **Excluir** em cada linha e o botão **+ Novo modelo**.
+Lista os modelos usados no [e-mail para a empresa](#e-mail-para-a-empresa) e no e-mail ao fornecedor da [garantia](#garantias), com **Alterar** e **Excluir** em cada linha e o botão **+ Novo modelo**.
 
-- Cada modelo tem nome (não pode repetir), assunto e mensagem.
-- Os botões de **Campos do chamado** inserem, onde está o cursor, marcadores como `{{numero_chamado}}` ou `{{empresa}}`. No envio, eles viram os dados do chamado.
-- Na primeira vez, o sistema cria cinco modelos: solicitação de atendimento, cobrança de prazo de atendimento, cobrança de prazo de solução, agendamento e solicitação de atualização.
+- Cada modelo tem nome (não pode repetir), **Usado em** (Chamado ou Garantia), assunto e mensagem. A tela de envio mostra só os modelos do seu tipo.
+- Os botões de **Campos** inserem, onde está o cursor, marcadores como `{{numero_chamado}}` e `{{empresa}}` (chamado) ou `{{numero_garantia}}`, `{{item}}` e `{{numero_serie}}` (garantia). No envio, eles viram os dados do registro.
+- Na primeira vez, o sistema cria cinco modelos de chamado (solicitação de atendimento, cobrança de prazo de atendimento, cobrança de prazo de solução, agendamento e solicitação de atualização) e dois de garantia (acionamento de garantia e cobrança de resposta).
 
 ### Configuração → Usuários
 

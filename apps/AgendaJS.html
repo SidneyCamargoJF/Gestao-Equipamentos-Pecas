@@ -9,7 +9,7 @@ let agendaModo = (function () {
 })();
 
 const AGENDA_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-const AGENDA_ROTULOS_TIPO = { chamado: 'Chamado', preventiva: 'Preventiva prevista', contrato: 'Contrato vencendo', peca: 'Garantia de peça vencendo' };
+const AGENDA_ROTULOS_TIPO = { chamado: 'Chamado', preventiva: 'Preventiva prevista', contrato: 'Contrato vencendo', peca: 'Garantia de peça vencendo', garantia: 'Prazo de resposta da garantia' };
 const AGENDA_DIAS_SEMANA = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
 async function renderAgenda() {
@@ -220,6 +220,9 @@ function irParaEventoAgenda(tipo, id) {
     } else if (tipo === 'contrato') {
         trocarPagina('contratos-view');
         if (typeof abrirDetalhesContrato === 'function') abrirDetalhesContrato(id);
+    } else if (tipo === 'garantia') {
+        trocarPagina('garantias-view');
+        if (typeof abrirDetalhesGarantia === 'function') abrirDetalhesGarantia(id);
     } else if (tipo === 'peca') {
         trocarPagina('pecas-view');
         const campo = document.getElementById('filtro-garantia');

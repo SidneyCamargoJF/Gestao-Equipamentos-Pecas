@@ -6,11 +6,24 @@
   //   preenchidos com os dados do chamado e podem ser alterados) ou digita
   //   o e-mail do zero; "Salvar como modelo" guarda o texto como modelo.
   // - Depois de salvar um chamado, #modalChamadoSalvo oferece o envio.
+  // - A mesma tela atende a garantia (e-mail ao fornecedor): cada modelo tem
+  //   um contexto ('chamado' | 'garantia') e campos próprios.
   // Backend: apps/Controller/ModelosEmail/back/ModelosEmailBackend.js
   // =====================================================
 
   let modelosEmailCache = [];
   let camposModeloEmailCache = [];
+  let camposPorContextoEmail = {};                 // { chamado: [...], garantia: [...] }
+  const ROTULO_CONTEXTO_EMAIL = { chamado: 'Chamado', garantia: 'Garantia' };
+  // Por contexto: funções do servidor e textos da tela de envio
+  const CONTEXTO_EMAIL = {
+    chamado: { preparar: 'prepararEmailChamado', enviar: 'enviarEmailChamado', campoId: 'chamadoId',
+      titulo: '📧 E-mail para a empresa — Chamado #', semEmail: 'Sem e-mail cadastrado no contrato/fornecedor: digite o destinatário.',
+      comEmail: 'E-mail cadastrado da empresa ' },
+    garantia: { preparar: 'prepararEmailGarantia', enviar: 'enviarEmailGarantia', campoId: 'garantiaId',
+      titulo: '📧 E-mail ao fornecedor — Garantia nº ', semEmail: 'Sem e-mail cadastrado para o fornecedor: digite o destinatário.',
+      comEmail: 'E-mail cadastrado do fornecedor ' }
+  };
   let modeloEmailEditandoId = null;
   let modeloEmailCampoFoco = 'modeloEmailCorpo';   // onde o botão de campo insere
   let modeloEmailAoSalvar = null;                  // callback (envio: recarrega a lista do select)
@@ -22,16 +35,17 @@
   // ===== CONFIGURAÇÃO > MODELOS DE E-MAIL =====
   async function consultarModelosEmail() {
     const tbody = document.getElementById('modelosEmailTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
     try {
       const r = await runServerFunction('listarModelosEmail');
       if (r && r.sucesso === false) throw new Error(r.mensagem);
       modelosEmailCache = (r && r.modelos) || [];
       camposModeloEmailCache = (r && r.campos) || [];
+      camposPorContextoEmail = (r && r.camposPorContexto) || { chamado: camposModeloEmailCache };
       renderTabelaModelosEmail();
     } catch (error) {
       console.error('Erro ao consultar modelos de e-mail:', error);
-      if (tbody) tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Erro ao buscar os modelos.</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Erro ao buscar os modelos.</td></tr>';
     }
   }
 
@@ -39,12 +53,13 @@
     const tbody = document.getElementById('modelosEmailTableBody');
     if (!tbody) return;
     if (!modelosEmailCache.length) {
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Nenhum modelo cadastrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum modelo cadastrado.</td></tr>';
       return;
     }
     tbody.innerHTML = modelosEmailCache.map(m => `
         <tr>
             <td>${escapeHtml(m.nome)}</td>
+            <td>${escapeHtml(ROTULO_CONTEXTO_EMAIL[m.contexto] || 'Chamado')}</td>
             <td>${escapeHtml(m.assunto)}</td>
             <td class="acao-cell">
                 <button class="btn-acao" title="Alterar" onclick="abrirModeloEmailEditor(${Number(m.id)})">✏️</button>
@@ -69,8 +84,8 @@
   }
 
   // ===== EDITOR DE MODELO (#modalModeloEmail) =====
-  // id: altera esse modelo; sem id: novo. inicial: { nome, assunto, corpo }
-  // (usado pelo "Salvar como modelo" do envio).
+  // id: altera esse modelo; sem id: novo. inicial: { nome, assunto, corpo,
+  // contexto } (usado pelo "Salvar como modelo" do envio).
   function abrirModeloEmailEditor(id, inicial, aoSalvar) {
     const m = id ? modelosEmailCache.find(x => Number(x.id) === Number(id)) : null;
     const base = m || inicial || {};
@@ -80,16 +95,22 @@
     document.getElementById('modeloEmailNome').value = base.nome || '';
     document.getElementById('modeloEmailAssunto').value = base.assunto || '';
     document.getElementById('modeloEmailCorpo').value = base.corpo || '';
+    const ctxEl = document.getElementById('modeloEmailContexto');
+    if (ctxEl) ctxEl.value = base.contexto === 'garantia' ? 'garantia' : 'chamado';
     modeloEmailCampoFoco = 'modeloEmailCorpo';
     renderCamposModeloEmail();
     exibirModal('modalModeloEmail');
     setTimeout(() => { const el = document.getElementById('modeloEmailNome'); if (el) el.focus(); }, 50);
   }
 
+  // Botões de campo do contexto escolhido no editor
   function renderCamposModeloEmail() {
     const box = document.getElementById('modeloEmailCampos');
     if (!box) return;
-    box.innerHTML = camposModeloEmailCache.map(c =>
+    const ctxEl = document.getElementById('modeloEmailContexto');
+    const contexto = ctxEl ? ctxEl.value : 'chamado';
+    const campos = camposPorContextoEmail[contexto] || (contexto === 'chamado' ? camposModeloEmailCache : []);
+    box.innerHTML = campos.map(c =>
       `<button type="button" class="modelo-email-campo" title="Inserir {{${c.chave}}}" onclick="inserirCampoModeloEmail('${c.chave}')">${escapeHtml(c.rotulo)}</button>`
     ).join('');
   }
@@ -119,7 +140,8 @@
       id: modeloEmailEditandoId || '',
       nome: document.getElementById('modeloEmailNome').value.trim(),
       assunto: document.getElementById('modeloEmailAssunto').value.trim(),
-      corpo: document.getElementById('modeloEmailCorpo').value
+      corpo: document.getElementById('modeloEmailCorpo').value,
+      contexto: (document.getElementById('modeloEmailContexto') || {}).value || 'chamado'
     };
     if (!dados.nome) { alert('Digite o nome do modelo.'); return; }
     if (!dados.assunto) { alert('Digite o assunto do e-mail.'); return; }
@@ -162,17 +184,20 @@
       Object.prototype.hasOwnProperty.call(valores || {}, chave) ? String(valores[chave] || '') : todo);
   }
 
-  // Texto já preenchido -> modelo: troca os dados do chamado de volta por
-  // {{campo}} (só os que identificam o chamado, pra não trocar palavras
-  // comuns como o status ou a prioridade).
+  // Texto já preenchido -> modelo: troca os dados do chamado/garantia de
+  // volta por {{campo}} (só os que identificam o registro, pra não trocar
+  // palavras comuns como o status ou a prioridade).
   function textoParaModeloEmail(texto, valores) {
     let t = String(texto || '');
-    const n = String((valores || {}).numero_chamado || '');
+    const v = valores || {};
+    const chaveNumero = Object.prototype.hasOwnProperty.call(v, 'numero_garantia') ? 'numero_garantia' : 'numero_chamado';
+    const palavra = chaveNumero === 'numero_garantia' ? 'garantia' : 'chamado';
+    const n = String(v[chaveNumero] || '');
     if (n) {
-      t = t.replace(new RegExp('#' + n + '(?!\\d)', 'g'), '#{{numero_chamado}}')
-           .replace(new RegExp('(chamado\\s+(?:n[º°o.]*\\s*)?)' + n + '(?!\\d)', 'gi'), '$1{{numero_chamado}}');
+      t = t.replace(new RegExp('#' + n + '(?!\\d)', 'g'), '#{{' + chaveNumero + '}}')
+           .replace(new RegExp('(' + palavra + '\\s+(?:n[º°o.]*\\s*)?)' + n + '(?!\\d)', 'gi'), '$1{{' + chaveNumero + '}}');
     }
-    const ignorar = ['numero_chamado', 'status', 'prioridade', 'tipo', 'data_hoje'];
+    const ignorar = ['numero_chamado', 'numero_garantia', 'status', 'prioridade', 'tipo', 'tipo_item', 'data_hoje'];
     Object.keys(valores || {})
       .filter(k => ignorar.indexOf(k) === -1 && String(valores[k] || '').trim().length >= 4)
       .sort((a, b) => String(valores[b]).length - String(valores[a]).length)
@@ -181,12 +206,22 @@
   }
 
   // opcoes.reenviar: abre com o último e-mail enviado (Reenviar da edição)
-  async function abrirEmailChamado(chamadoId, opcoes) {
+  function abrirEmailChamado(chamadoId, opcoes) {
+    return abrirEmailRegistro_('chamado', chamadoId, opcoes);
+  }
+
+  // E-mail ao fornecedor da garantia (GarantiasJS)
+  function abrirEmailGarantia(garantiaId) {
+    return abrirEmailRegistro_('garantia', garantiaId);
+  }
+
+  async function abrirEmailRegistro_(contexto, registroId, opcoes) {
+    const cfg = CONTEXTO_EMAIL[contexto];
     const reenviar = !!(opcoes && opcoes.reenviar);
     exibirModal('processando');
     let r;
     try {
-      r = await runServerFunction('prepararEmailChamado', chamadoId);
+      r = await runServerFunction(cfg.preparar, registroId);
     } catch (e) {
       r = { sucesso: false, mensagem: 'Erro ao conectar com o servidor.' };
     } finally {
@@ -194,13 +229,16 @@
     }
     if (!r || r.sucesso === false) { alert((r && r.mensagem) || 'Não foi possível preparar o e-mail.'); return; }
 
+    r.contexto = contexto;
+    r.registroId = r.registroId || r.chamadoId || registroId;
     emailChamadoAtual = r;
     modelosEmailCache = r.modelos || [];
     camposModeloEmailCache = r.campos || [];
+    camposPorContextoEmail[contexto] = camposModeloEmailCache;
 
     const ultimo = reenviar ? r.ultimoEmail : null;
     document.getElementById('emailChamadoTitulo').textContent =
-      (reenviar ? '📧 Reenviar e-mail — Chamado #' : '📧 E-mail para a empresa — Chamado #') + r.chamadoId;
+      (reenviar ? '📧 Reenviar e-mail — Chamado #' : cfg.titulo) + r.registroId;
     document.getElementById('emailChamadoPara').value = ultimo ? ultimo.para : (r.para || '');
     document.getElementById('emailChamadoCc').value = ultimo ? ultimo.cc : '';
     document.getElementById('emailChamadoAssunto').value = ultimo ? ultimo.assunto : '';
@@ -217,8 +255,7 @@
     }
     const aviso = document.getElementById('emailChamadoAvisoPara');
     if (aviso) {
-      aviso.textContent = r.para ? (r.empresa ? 'E-mail cadastrado da empresa ' + r.empresa + '.' : '')
-        : 'Sem e-mail cadastrado no contrato/fornecedor: digite o destinatário.';
+      aviso.textContent = r.para ? (r.empresa ? cfg.comEmail + r.empresa + '.' : '') : cfg.semEmail;
     }
     popularSelectModelosEmail('');
     exibirModal('modalEmailChamado');
@@ -261,17 +298,25 @@
     const corpo = document.getElementById('emailChamadoCorpo').value;
     if (!assunto && !corpo.trim()) { alert('Digite o assunto e o texto do e-mail antes de salvar como modelo.'); return; }
     const v = emailChamadoAtual.valores;
+    const contexto = emailChamadoAtual.contexto || 'chamado';
     abrirModeloEmailEditor(null, {
       nome: '',
       assunto: textoParaModeloEmail(assunto, v),
-      corpo: textoParaModeloEmail(corpo, v)
-    }, function (novoId) { popularSelectModelosEmail(novoId); });
+      corpo: textoParaModeloEmail(corpo, v),
+      contexto: contexto
+    }, function (novoId) {
+      // a lista do envio fica só com os modelos do contexto
+      modelosEmailCache = modelosEmailCache.filter(m => (m.contexto || 'chamado') === contexto);
+      popularSelectModelosEmail(novoId);
+    });
   }
 
   async function enviarEmailChamadoUI() {
     if (!emailChamadoAtual) return;
+    const contexto = emailChamadoAtual.contexto || 'chamado';
+    const cfg = CONTEXTO_EMAIL[contexto];
     const dados = {
-      chamadoId: emailChamadoAtual.chamadoId,
+      [cfg.campoId]: emailChamadoAtual.registroId,
       para: document.getElementById('emailChamadoPara').value.trim(),
       cc: document.getElementById('emailChamadoCc').value.trim(),
       assunto: document.getElementById('emailChamadoAssunto').value.trim(),
@@ -284,15 +329,22 @@
 
     exibirModal('processando');
     try {
-      const r = await runServerFunction('enviarEmailChamado', dados);
+      const r = await runServerFunction(cfg.enviar, dados);
       if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao enviar o e-mail.'); return; }
       fecharEmailChamado();
       mostrarMensagem(r.mensagem, 'sucesso');
       // detalhe do chamado aberto: atualiza o histórico (o envio fica registrado)
       const det = document.getElementById('modalDetalheChamado');
-      if (det && det.classList.contains('aberto') && typeof carregarHistoricoChamadoUI === 'function') {
+      if (contexto === 'chamado' && det && det.classList.contains('aberto') && typeof carregarHistoricoChamadoUI === 'function') {
         carregarHistoricoChamadoUI(dados.chamadoId);
       }
+      // garantia aberta no detalhe: recarrega (histórico e status podem mudar)
+      const detG = document.getElementById('modalDetalheGarantia');
+      if (contexto === 'garantia' && detG && detG.classList.contains('aberto') && typeof recarregarDetalheGarantia === 'function') {
+        recarregarDetalheGarantia(dados.garantiaId);
+      }
+      if (contexto === 'garantia' && typeof consultarGarantias === 'function' &&
+          document.getElementById('page-garantias-view')?.classList.contains('active')) consultarGarantias();
     } catch (e) {
       alert('Erro ao conectar com o servidor.');
     } finally {

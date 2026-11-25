@@ -49,8 +49,9 @@ function salvarPeca(dadosPeca) {
             // nem em dataExclusao (coluna seguinte, usada pra desativar a peça).
             const dataAlteracao = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
             abaRegistroPecas.getRange(linhaReal, partsDtAlteracaoCol + 1).setValue(dataAlteracao);
+            abaRegistroPecas.getRange(linhaReal, partsTipoCol + 1).setValue(tipoItemEstoque_(dadosPeca.tipo));
 
-            return { sucesso: true, mensagem: "Peça atualizada com sucesso!", id: idBuscado};
+            return { sucesso: true, mensagem: (tipoItemEstoque_(dadosPeca.tipo) === 'produto' ? "Produto atualizado" : "Peça atualizada") + " com sucesso!", id: idBuscado};
           }
         }
       }
@@ -83,12 +84,15 @@ function salvarPeca(dadosPeca) {
       dadosPeca.modalidade,
       dadosPeca.valor,
       dadosPeca.seiNum,
-      dataHoje
+      dataHoje,
+      '',                                  // data de alteração
+      '',                                  // data de exclusão
+      tipoItemEstoque_(dadosPeca.tipo)     // S: peça | produto
     ];
 
     abaRegistroPecas.appendRow(linhaNova);
 
-    return { sucesso: true, mensagem: "Peça cadastrada com sucesso!", id: novoId };
+    return { sucesso: true, mensagem: (tipoItemEstoque_(dadosPeca.tipo) === 'produto' ? "Produto cadastrado" : "Peça cadastrada") + " com sucesso!", id: novoId };
 
   } catch (e) {
     Logger.log("Erro ao salvar peça: " + e.message);
@@ -122,7 +126,8 @@ function buscarPecaPorId(id) {
           dtGarantia: converterParaInputDate(linha[partsDtGarantiaCol]),
           modalidade: String(linha[partsModalidadeCol] || ''),
           valor: linha[partsValueCol],
-          seiNum: String(linha[partsSEINumCol] || '')
+          seiNum: String(linha[partsSEINumCol] || ''),
+          tipo: tipoItemEstoque_(linha[partsTipoCol])
         };
       }
     }

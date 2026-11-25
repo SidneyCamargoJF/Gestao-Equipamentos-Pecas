@@ -76,5 +76,8 @@ function buscarEventosAgenda(ano, mes) {
       });
     });
 
+  // ===== Garantias em andamento: prazo de resposta do fornecedor =====
+  eventosAgendaGarantias_(inicio, fim).forEach(ev => eventos.push(ev));
+
   return eventos;
 }

@@ -40,6 +40,10 @@ Depois de publicar, cada usuário precisa **autorizar de novo** o app (envio de 
 
 A aba `tbl_modelos_email` é criada sozinha ao abrir **Configuração → Modelos de e-mail**, e a `tbl_chamado_emails` no primeiro envio (ou as duas com `criarTabelasNovasSeNecessario()`).
 
+### Garantias
+
+As abas `tbl_garantias`, `tbl_garantia_historico` e `tbl_garantia_anexos` são criadas sozinhas na primeira garantia aberta (ou com `criarTabelasNovasSeNecessario()`). A coluna **S (Tipo)** de `tbl_pecas` é preenchida ao salvar cada item; os itens antigos ficam vazios e contam como peça.
+
 ### Usuários
 
 Cadastre cada pessoa em **Configuração → Usuários**. O campo **Usuário** é o login Google, sem o domínio. Sem cadastro, a pessoa aparece como "Desconhecido" em "Aberto por".
