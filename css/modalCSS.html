@@ -1054,4 +1054,41 @@
   overflow: auto;
 }
 
+
+/* ===== LINHA DO TÍTULO DAS MODAIS =====
+   Faixa de fundo própria (de ponta a ponta, por cima do padding de 1.5rem
+   do .modal) e fixa no alto quando a modal rola. O botão de fechar é
+   vermelho. Vale para o cabeçalho com fechar e para o <h3> que abre a modal. */
+.modal > .detalhe-chamado-cabecalho:first-child,
+.modal > .modal-detalhes-header:first-child,
+.modal:not(.modal-processando) > h3:first-child {
+  position: sticky;
+  top: -1.5rem;
+  z-index: 2;
+  margin: -1.5rem -1.5rem 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #e0e7ff;
+  border-bottom: 0.0625rem solid #c7d2fe;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.modal > .detalhe-chamado-cabecalho:first-child h3,
+.modal > .modal-detalhes-header:first-child h3,
+.modal:not(.modal-processando) > h3:first-child {
+  color: #1e1b4b;
+}
+
+.btn-modal-fechar {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+  font-weight: 700;
+}
+
+.btn-modal-fechar:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
+}
+
 </style>

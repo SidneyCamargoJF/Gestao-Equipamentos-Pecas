@@ -341,6 +341,11 @@
           <h3>🛡️ Abrir garantia</h3>
           <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalAbrirGarantia')">✕</button>
         </div>
+        <!-- botões no início, logo abaixo do título -->
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalAbrirGarantia')">Cancelar</button>
+          <button type="button" class="btn-success" style="width:auto;" id="btnConfirmarAbrirGarantia" onclick="confirmarAbrirGarantiaUI()" disabled>Abrir garantia</button>
+        </div>
         <div id="garantiaBuscaArea">
           <div class="field">
             <label class="field__label" for="garantiaBuscaItem">Peça ou produto</label>
@@ -360,10 +365,6 @@
             <input class="field__input" type="date" id="garantiaAbrirPrazo" disabled>
           </div>
         </form>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalAbrirGarantia')">Cancelar</button>
-          <button type="button" class="btn-success" style="width:auto;" id="btnConfirmarAbrirGarantia" onclick="confirmarAbrirGarantiaUI()" disabled>Abrir garantia</button>
-        </div>
       </div>
     </div>
 
