@@ -180,7 +180,9 @@
     return t;
   }
 
-  async function abrirEmailChamado(chamadoId) {
+  // opcoes.reenviar: abre com o último e-mail enviado (Reenviar da edição)
+  async function abrirEmailChamado(chamadoId, opcoes) {
+    const reenviar = !!(opcoes && opcoes.reenviar);
     exibirModal('processando');
     let r;
     try {
@@ -196,11 +198,21 @@
     modelosEmailCache = r.modelos || [];
     camposModeloEmailCache = r.campos || [];
 
-    document.getElementById('emailChamadoTitulo').textContent = '📧 E-mail para a empresa — Chamado #' + r.chamadoId;
-    document.getElementById('emailChamadoPara').value = r.para || '';
-    document.getElementById('emailChamadoCc').value = '';
-    document.getElementById('emailChamadoAssunto').value = '';
-    document.getElementById('emailChamadoCorpo').value = '';
+    const ultimo = reenviar ? r.ultimoEmail : null;
+    document.getElementById('emailChamadoTitulo').textContent =
+      (reenviar ? '📧 Reenviar e-mail — Chamado #' : '📧 E-mail para a empresa — Chamado #') + r.chamadoId;
+    document.getElementById('emailChamadoPara').value = ultimo ? ultimo.para : (r.para || '');
+    document.getElementById('emailChamadoCc').value = ultimo ? ultimo.cc : '';
+    document.getElementById('emailChamadoAssunto').value = ultimo ? ultimo.assunto : '';
+    document.getElementById('emailChamadoCorpo').value = ultimo ? ultimo.corpo : '';
+    const avisoReenvio = document.getElementById('emailChamadoAvisoReenvio');
+    if (avisoReenvio) {
+      avisoReenvio.style.display = reenviar ? '' : 'none';
+      avisoReenvio.textContent = !reenviar ? '' : ultimo
+        ? 'Último e-mail enviado em ' + ultimo.enviadoEm + (ultimo.enviadoPor ? ' por ' + ultimo.enviadoPor : '') +
+          (ultimo.total > 1 ? ' (' + ultimo.total + ' envios no total)' : '') + '. Confira, altere se precisar e envie de novo.'
+        : 'Nenhum e-mail deste chamado foi guardado pelo sistema ainda. Escreva o e-mail ou escolha um modelo.';
+    }
     const aviso = document.getElementById('emailChamadoAvisoPara');
     if (aviso) {
       aviso.textContent = r.para ? (r.empresa ? 'E-mail cadastrado da empresa ' + r.empresa + '.' : '')

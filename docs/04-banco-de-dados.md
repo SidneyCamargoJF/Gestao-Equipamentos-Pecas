@@ -317,7 +317,23 @@ Modelos de e-mail do chamado (Configuração → Modelos de e-mail). Criada pelo
 | F | Data de alteração |
 | G | Data de exclusão |
 
-Os campos aceitos estão em `camposModeloEmail_()` ([ModelosEmailBackend.js](../apps/Controller/ModelosEmail/back/ModelosEmailBackend.js)). O envio não tem tabela própria: fica no histórico do chamado (`[SISTEMA] E-mail enviado para ...`).
+Os campos aceitos estão em `camposModeloEmail_()` ([ModelosEmailBackend.js](../apps/Controller/ModelosEmail/back/ModelosEmailBackend.js)). Cada envio fica no histórico do chamado (`[SISTEMA] E-mail enviado para ...`) e em `tbl_chamado_emails`.
+
+## tbl_chamado_emails — [ChamadoEmailsModel.js](../apps/01-Model/ChamadoEmailsModel.js) (1-based)
+
+Um registro por e-mail enviado pelo sistema; o mais recente do chamado é o que o **Reenviar e-mail** da edição carrega. Criada sozinha no primeiro envio (ou por `criarTabelasNovasSeNecessario()`).
+
+| Col | Conteúdo |
+|---|---|
+| A | ID |
+| B | ID do chamado |
+| C | Para (separados por `; `) |
+| D | Cópia |
+| E | Assunto |
+| F | Mensagem |
+| G | Enviado em (dd/MM/yyyy HH:mm) |
+| H | Enviado por (nome do usuário) |
+| I | Data de exclusão |
 
 ## Tabelas auxiliares (1-based)
 

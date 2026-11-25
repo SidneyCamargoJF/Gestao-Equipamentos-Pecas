@@ -160,10 +160,12 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
 
 Abre pelo botão **Enviar e-mail para a empresa**, na confirmação depois de salvar o chamado ou nos detalhes do chamado.
 
+**Reenviar e-mail:** na edição do chamado, o botão **📧 Reenviar e-mail** abre a mesma tela já com o último e-mail enviado pelo sistema para esse chamado (destinatários, cópia, assunto e mensagem), com a data e quem enviou. Dá para alterar antes de enviar de novo. Se nenhum e-mail foi guardado ainda, a tela abre em branco para escrever. O e-mail usa os dados já salvos do chamado: com alterações não salvas, o sistema pergunta antes.
+
 - **Para:** vem com o e-mail do contrato (ou do fornecedor, se o contrato não tiver). Pode ser alterado; vários e-mails são separados por `;`. **Cópia** é opcional.
 - **Modelo:** escolha um modelo para preencher o assunto e a mensagem com os dados do chamado (número, assunto, equipamentos, contrato, empresa, prazos etc.). O texto continua editável antes de enviar. Sem modelo, digite o e-mail.
 - **Salvar como modelo:** guarda o assunto e a mensagem digitados como um modelo novo. Os dados do chamado (número, empresa, contrato, equipamentos...) voltam a ser campos, para servir a outros chamados; confira e dê um nome antes de salvar.
-- **Enviar:** o e-mail sai pela sua conta Google e fica registrado nas Movimentações do chamado.
+- **Enviar:** o e-mail sai pela sua conta Google, fica registrado nas Movimentações do chamado e é guardado para o Reenviar.
 
 ## Agenda
 

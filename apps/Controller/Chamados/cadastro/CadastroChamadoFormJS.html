@@ -25,6 +25,10 @@
 
     // Anexos já enviados (de edições anteriores) são geridos na tela de
     // Consulta (modal de detalhes) -- aqui só dá pra adicionar novos.
+    // Reenviar e-mail: só na edição (chamado já salvo)
+    document.querySelectorAll('#page-chamado-form .chamado-btn-reenviar-email')
+      .forEach(btn => { btn.style.display = id ? '' : 'none'; });
+
     const avisoAnexosEl = document.getElementById('chamadoEditandoAnexosAviso');
     if (avisoAnexosEl) avisoAnexosEl.style.display = id ? 'inline' : 'none';
 
@@ -869,6 +873,16 @@
       salvandoChamado = false;
       if (btnSalvarEl) btnSalvarEl.disabled = false;
     }
+  }
+
+  // Edição: abre a tela de e-mail com o último e-mail enviado à empresa
+  // (para conferir/alterar e enviar de novo). Usa os dados já salvos.
+  function reenviarEmailChamadoForm() {
+    const id = document.getElementById('chamadoId')?.value || '';
+    if (!id) return;
+    if (typeof formularioAlterado === 'function' && formularioAlterado() &&
+        !confirm('Há alterações não salvas neste chamado. O e-mail usa os dados já salvos. Continuar mesmo assim?')) return;
+    if (typeof abrirEmailChamado === 'function') abrirEmailChamado(id, { reenviar: true });
   }
 
   function lerArquivoComoBase64(inputEl) {

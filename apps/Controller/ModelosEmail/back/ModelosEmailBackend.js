@@ -204,9 +204,40 @@ function valoresCamposEmailChamado_(c) {
   };
 }
 
+/** Último e-mail enviado pelo sistema para o chamado (ou null). */
+function ultimoEmailChamado_(chamadoId) {
+  const enviados = ReadTicketEmails().filter(function (l) {
+    return Number(l[ticketEmailChamadoIdCol - 1]) === Number(chamadoId) && !String(l[ticketEmailDtExclusaoCol - 1] || '').trim();
+  });
+  if (!enviados.length) return null;
+  const l = enviados[enviados.length - 1];
+  return {
+    para: String(l[ticketEmailParaCol - 1] || ''),
+    cc: String(l[ticketEmailCcCol - 1] || ''),
+    assunto: String(l[ticketEmailAssuntoCol - 1] || ''),
+    corpo: String(l[ticketEmailCorpoCol - 1] || ''),
+    enviadoEm: String(l[ticketEmailEnviadoEmCol - 1] || ''),
+    enviadoPor: String(l[ticketEmailEnviadoPorCol - 1] || ''),
+    total: enviados.length
+  };
+}
+
+/** Guarda o e-mail enviado (cria a aba no 1º envio). */
+function registrarEmailChamado_(chamadoId, para, cc, assunto, corpo) {
+  executarComLock(function () {
+    criarAbaSeNaoExistir_(ticketEmailsTableName, CABECALHO_CHAMADO_EMAILS);
+    const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ticketEmailsTableName);
+    const pos = proximoIdTabela(aba, firstLineTicketEmails);
+    const agora = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
+    aba.getRange(pos.proximaLinha, 1, 1, numColumnsTicketEmails)
+      .setValues([[pos.novoId, chamadoId, para, cc, assunto, corpo, agora, nomeUsuarioLogado(), '']]);
+  });
+}
+
 /**
  * Tudo que a tela de envio precisa: destinatário sugerido (e-mail do
- * contrato ou do fornecedor), valores dos campos, modelos e campos.
+ * contrato ou do fornecedor), valores dos campos, modelos e campos, e o
+ * último e-mail enviado (para o "Reenviar e-mail" da edição).
  */
 function prepararEmailChamado(chamadoId) {
   try {
@@ -221,7 +252,8 @@ function prepararEmailChamado(chamadoId) {
       empresa: String(c.contratoEmpresa || '').trim(),
       valores: valoresCamposEmailChamado_(c),
       modelos: lista.modelos || [],
-      campos: lista.campos || camposModeloEmail_()
+      campos: lista.campos || camposModeloEmail_(),
+      ultimoEmail: ultimoEmailChamado_(c.id)
     };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
@@ -266,6 +298,13 @@ function enviarEmailChamado(dados) {
     const opcoes = { to: para.itens.join(','), subject: assunto, body: corpo };
     if (cc.itens.length) opcoes.cc = cc.itens.join(',');
     MailApp.sendEmail(opcoes);
+
+    // Guarda o e-mail para poder reenviar; falha aqui não desfaz o envio
+    try {
+      registrarEmailChamado_(chamadoId, para.itens.join('; '), cc.itens.join('; '), assunto, corpo);
+    } catch (erroRegistro) {
+      console.error('Não foi possível guardar o e-mail enviado: ' + erroRegistro.message);
+    }
 
     adicionarHistoricoSistema(chamadoId, 'E-mail enviado para ' + para.itens.join(', ') +
       (cc.itens.length ? ' (cópia: ' + cc.itens.join(', ') + ')' : '') + '. Assunto: ' + assunto);

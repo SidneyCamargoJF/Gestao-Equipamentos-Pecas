@@ -36,7 +36,7 @@ Em **Configurações do projeto → Propriedades do script**, crie a propriedade
 
 O envio de e-mail do chamado usa o `MailApp`. Na primeira publicação com esse recurso, cada usuário precisa **autorizar de novo** o app (envio de e-mail em seu nome). O e-mail sai da conta de quem está usando o sistema e conta na cota diária de envio dessa conta.
 
-A aba `tbl_modelos_email` é criada sozinha ao abrir **Configuração → Modelos de e-mail** (ou com `criarTabelasNovasSeNecessario()`).
+A aba `tbl_modelos_email` é criada sozinha ao abrir **Configuração → Modelos de e-mail**, e a `tbl_chamado_emails` no primeiro envio (ou as duas com `criarTabelasNovasSeNecessario()`).
 
 ### Usuários
 

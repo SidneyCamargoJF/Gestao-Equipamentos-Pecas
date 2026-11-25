@@ -26,7 +26,9 @@ function criarTabelasNovasSeNecessario() {
       'DATA_ALTERACAO', 'DATA_EXCLUSAO'
     ]),
     // modelos de e-mail (Configuração > Modelos de e-mail), já com os modelos iniciais
-    garantirAbaModelosEmail_()
+    garantirAbaModelosEmail_(),
+    // e-mails enviados por chamado (Reenviar e-mail)
+    criarAbaSeNaoExistir_(ticketEmailsTableName, CABECALHO_CHAMADO_EMAILS)
   ];
 
   resultado.forEach(function (r) { Logger.log(r.mensagem); });
