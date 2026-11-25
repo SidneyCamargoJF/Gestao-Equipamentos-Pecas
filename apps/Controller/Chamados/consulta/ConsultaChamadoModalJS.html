@@ -332,10 +332,26 @@ async function carregarObsEquipamentosEncerramento(chamadoId) {
         definirStatusObsEquip('');
         habilitarFormObsEquip(true);
         renderizarListaObsEquip();
+        preencherEquipUnicoObs();
     } catch (error) {
         console.error('Erro ao carregar equipamentos para o encerramento:', error);
         definirStatusObsEquip('Não foi possível carregar os equipamentos.');
     }
+}
+
+// OS com um equipamento só: já traz o patrimônio conferido, sem precisar
+// digitar (só se ele ainda não tem observação na lista).
+let obsEquipPreenchidoAuto = '';   // patrimônio que o sistema preencheu sozinho
+
+function preencherEquipUnicoObs() {
+    if (obsEquipOs.length !== 1 || obsEquipIncluidas.length || obsEquipEditandoId) return;
+    const e = obsEquipOs[0];
+    const pat = document.getElementById('chamadoObsEquipPatrimonio');
+    if (pat) pat.value = e.patrimonio || '';
+    obsEquipPreenchidoAuto = pat ? pat.value : '';
+    obsEquipConferido = e;
+    mostrarConferenciaObsEquip(e, '');
+    atualizarBotoesFormObsEquip();
 }
 
 function habilitarFormObsEquip(habilitar) {
@@ -468,11 +484,13 @@ function excluirObsEquipUI(id) {
     obsEquipIncluidas = obsEquipIncluidas.filter(o => o.id !== Number(id));
     if (obsEquipEditandoId === Number(id)) limparFormObsEquip();
     renderizarListaObsEquip();
+    preencherEquipUnicoObs();
 }
 
 function cancelarAlteracaoObsEquipUI() {
     limparFormObsEquip();
     renderizarListaObsEquip();
+    preencherEquipUnicoObs();
 }
 
 function renderizarListaObsEquip() {
@@ -514,7 +532,11 @@ function obsEquipPendenteSemIncluir() {
     if (!bloco || bloco.style.display === 'none') return false;
     const pat = document.getElementById('chamadoObsEquipPatrimonio');
     const texto = document.getElementById('chamadoObsEquipTexto');
-    return !!((pat && pat.value.trim()) || (texto && texto.value.trim()));
+    if (texto && texto.value.trim()) return true;
+    // patrimônio preenchido pelo sistema (OS de um equipamento só) sem
+    // observação digitada não é pendência
+    if (obsEquipPreenchidoAuto && pat && pat.value === obsEquipPreenchidoAuto) return false;
+    return !!(pat && pat.value.trim());
 }
 
 async function confirmarCaixaTextoChamado() {

@@ -146,7 +146,7 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
 - Para concluir é obrigatório informar o motivo.
 - Ao clicar em Resolver, os botões Resolver e Adicionar anotação somem; o campo do motivo fica menor, com **Cancelar** e **Confirmar encerramento** à direita dele.
 - **Preventiva:** ao clicar em Resolver, aparece também a **observação por patrimônio** (opcional).
-  1. Digite o patrimônio. O sistema procura entre os equipamentos da OS (lista do chamado e checklist) e mostra, na frente do campo, a descrição do equipamento para conferência: nome/modelo, marca, capacidade, localização e estado. Patrimônio fora da OS não é aceito.
+  1. Digite o patrimônio. O sistema procura entre os equipamentos da OS (lista do chamado e checklist) e mostra, na frente do campo, a descrição do equipamento para conferência: nome/modelo, marca, capacidade, localização e estado. Patrimônio fora da OS não é aceito. Se a OS tiver **um equipamento só**, o patrimônio já vem preenchido e conferido: basta digitar a observação.
   2. Digite a observação e clique em **Incluir** (ou tecle Enter).
   3. Abaixo aparece a lista dos equipamentos incluídos com a observação de cada um. Em cada linha há os botões **Alterar** (carrega a observação para editar; o botão passa a ser "Salvar alteração") e **Excluir**.
   - Um patrimônio só entra uma vez na lista; para mudar, use Alterar.
