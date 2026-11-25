@@ -418,6 +418,7 @@
         if (resposta && resposta.sucesso) {
           alert(resposta.mensagem || 'Peça salva com sucesso!');
           limparPeca();
+          if (typeof marcarFormularioSalvo === 'function') marcarFormularioSalvo();
           if (typeof trocarPagina === 'function') {
             trocarPagina('pecas-view');
           }

@@ -232,6 +232,19 @@
       </div>
     </div>
 
+    <!-- MODAL "SAIR SEM SALVAR" -- cadastro/edição com alteração não salva
+         (js/IndexSPAJS.html: confirmarSaidaSemSalvar) -->
+    <div class="modal-overlay" id="modalSairSemSalvar">
+      <div class="modal">
+        <h3>⚠️ Alterações não salvas</h3>
+        <p>Você alterou este cadastro e ainda não salvou. Deseja realmente sair sem salvar? As alterações serão perdidas.</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="btnContinuarEditando" onclick="continuarEditandoFormulario()" style="width:auto;">Continuar editando</button>
+          <button class="btn-danger" id="btnSairSemSalvar" onclick="sairSemSalvarConfirmado()">Sair sem salvar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL DE ANEXO DUPLICADO -->
     <div class="modal-overlay" id="modalAnexoDuplicado">
       <div class="modal">

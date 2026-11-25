@@ -6,7 +6,111 @@
   let paginaHistorico = [];
   let voltandoPagina = false;
 
+  // ===== AVISO DE "SAIR SEM SALVAR" (cadastros e edições) =====
+  // O estado do formulário (valores dos campos + listas em memória) é
+  // fotografado no primeiro clique/tecla do usuário na página -- assim o
+  // preenchimento automático da edição (que acontece antes) não conta como
+  // alteração. Ao sair (menu, Voltar, Cancelar...), se o estado mudou,
+  // pergunta antes. Depois de salvar, a tela chama marcarFormularioSalvo().
+  const PAGINAS_FORMULARIO = ['chamado-form', 'contratos-form', 'equipments-form', 'fornecedor-form', 'pecas-form'];
+
+  // Listas mantidas em memória pelos formulários (não são campos da tela)
+  const ESTADO_EXTRA_FORMULARIO = {
+    'contratos-form': function () {
+      return [typeof equipamentos !== 'undefined' ? equipamentos : null, typeof servicos !== 'undefined' ? servicos : null,
+        typeof produtos !== 'undefined' ? produtos : null, typeof checklist !== 'undefined' ? checklist : null];
+    },
+    'chamado-form': function () {
+      return typeof equipamentosChamado !== 'undefined' ? equipamentosChamado : null;
+    }
+  };
+
+  let baseFormulario = null;        // { pagina, estado }
+  let acaoSaidaPendente = null;
+
+  function paginaAtivaId_() {
+    const ativa = document.querySelector('.spa-page.active');
+    return ativa ? ativa.id.replace('page-', '') : null;
+  }
+
+  // Campos de busca/pesquisa não são dado do cadastro
+  function campoIgnoradoFormulario_(el) {
+    return el.hasAttribute('data-ignorar-alteracao') || /busca/i.test(el.id || '') ||
+      ['button', 'submit', 'reset'].indexOf(el.type) !== -1;
+  }
+
+  function estadoFormulario_(pagina) {
+    const pageEl = document.getElementById('page-' + pagina);
+    if (!pageEl) return '';
+    const campos = Array.from(pageEl.querySelectorAll('input, select, textarea'))
+      .filter(function (el) { return !campoIgnoradoFormulario_(el); })
+      .map(function (el, i) {
+        const valor = (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value;
+        return (el.id || el.name || i) + '=' + valor;
+      });
+    const extra = ESTADO_EXTRA_FORMULARIO[pagina] ? ESTADO_EXTRA_FORMULARIO[pagina]() : null;
+    let anexos = null;
+    try {
+      if (typeof anexosCadastroSelecionados !== 'undefined') {
+        anexos = Object.keys(anexosCadastroSelecionados).map(function (k) {
+          return k + ':' + (anexosCadastroSelecionados[k] || []).map(function (a) { return a && a.name; }).join(',');
+        });
+      }
+    } catch (e) { anexos = null; }
+    return JSON.stringify([campos, extra, anexos]);
+  }
+
+  function registrarBaseFormulario_(evento) {
+    const pagina = paginaAtivaId_();
+    if (!pagina || PAGINAS_FORMULARIO.indexOf(pagina) === -1) return;
+    const alvo = evento.target;
+    if (!alvo || !alvo.closest || !alvo.closest('#page-' + pagina)) return;
+    if (baseFormulario && baseFormulario.pagina === pagina) return;
+    baseFormulario = { pagina: pagina, estado: estadoFormulario_(pagina) };
+  }
+  document.addEventListener('pointerdown', registrarBaseFormulario_, true);
+  document.addEventListener('mousedown', registrarBaseFormulario_, true);
+  document.addEventListener('keydown', registrarBaseFormulario_, true);
+
+  function formularioAlterado() {
+    const pagina = paginaAtivaId_();
+    if (!baseFormulario || baseFormulario.pagina !== pagina) return false;
+    return estadoFormulario_(pagina) !== baseFormulario.estado;
+  }
+
+  // Chamar depois de gravar com sucesso (a tela pode sair sem perguntar)
+  function marcarFormularioSalvo() {
+    baseFormulario = null;
+  }
+
+  function confirmarSaidaSemSalvar(acao) {
+    acaoSaidaPendente = acao;
+    if (typeof exibirModal === 'function') exibirModal('modalSairSemSalvar');
+    else if (window.confirm('Você alterou este cadastro e não salvou. Sair sem salvar?')) sairSemSalvarConfirmado();
+  }
+
+  function sairSemSalvarConfirmado() {
+    const acao = acaoSaidaPendente;
+    acaoSaidaPendente = null;
+    baseFormulario = null;
+    if (typeof fecharModal === 'function') fecharModal('modalSairSemSalvar');
+    if (acao) acao();
+  }
+
+  function continuarEditandoFormulario() {
+    acaoSaidaPendente = null;
+    if (typeof fecharModal === 'function') fecharModal('modalSairSemSalvar');
+  }
+
+  // Fechar/recarregar a aba do navegador com alteração não salva
+  window.addEventListener('beforeunload', function (e) {
+    if (!formularioAlterado()) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
   function voltarPagina() {
+    if (formularioAlterado()) { confirmarSaidaSemSalvar(voltarPagina); return; }
     if (paginaHistorico.length === 0) {
       trocarPagina('dashboard');
       return;
@@ -18,6 +122,13 @@
 
   // SPA View Switcher
   function trocarPagina(paginaId, param) {
+    // cadastro/edição alterado e não salvo: pergunta antes de sair
+    if (formularioAlterado()) {
+      confirmarSaidaSemSalvar(function () { trocarPagina(paginaId, param); });
+      return;
+    }
+    baseFormulario = null;
+
     const paginaAtivaAntes = document.querySelector('.spa-page.active');
     const idAtual = paginaAtivaAntes ? paginaAtivaAntes.id.replace('page-', '') : null;
 

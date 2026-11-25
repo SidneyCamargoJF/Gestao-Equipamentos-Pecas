@@ -1162,6 +1162,7 @@ async function salvarContrato() {
         exibirAvisoAnexoDuplicado('Você anexou dois ou mais documentos idênticos.');
       }
 
+      if (typeof marcarFormularioSalvo === 'function') marcarFormularioSalvo();
       trocarPagina('contratos-view');
     } catch (err) {
       console.error('Erro ao salvar contrato:', err);
