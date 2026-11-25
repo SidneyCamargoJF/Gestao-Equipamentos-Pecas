@@ -3,12 +3,18 @@
 let agendaAnoAtual = new Date().getFullYear();
 let agendaMesAtual = new Date().getMonth() + 1;
 let agendaEventosAtuais = [];
+// 'calendario' ou 'lista' (listagem corrida quebrada por dia); lembra a última escolha
+let agendaModo = (function () {
+    try { return localStorage.getItem('agendaModo') === 'lista' ? 'lista' : 'calendario'; } catch (e) { return 'calendario'; }
+})();
 
 const AGENDA_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const AGENDA_ROTULOS_TIPO = { chamado: 'Chamado', preventiva: 'Preventiva prevista', contrato: 'Contrato vencendo', peca: 'Garantia de peça vencendo' };
+const AGENDA_DIAS_SEMANA = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
 async function renderAgenda() {
     popularAnoAgenda();
+    aplicarModoAgenda();
     await carregarEventosAgenda();
 }
 
@@ -34,6 +40,8 @@ async function carregarEventosAgenda() {
 
     const grid = document.getElementById('agendaGrid');
     if (grid) grid.innerHTML = '<p class="dash-vazio">Carregando...</p>';
+    const lista = document.getElementById('agendaLista');
+    if (lista) lista.innerHTML = '<p class="dash-vazio">Carregando...</p>';
 
     try {
         agendaEventosAtuais = await runServerFunction('buscarEventosAgenda', agendaAnoAtual, agendaMesAtual);
@@ -42,7 +50,73 @@ async function carregarEventosAgenda() {
         agendaEventosAtuais = [];
     }
 
-    desenharGradeAgenda();
+    desenharAgenda();
+}
+
+function desenharAgenda() {
+    if (agendaModo === 'lista') desenharListaAgenda();
+    else desenharGradeAgenda();
+}
+
+function mudarModoAgenda(modo) {
+    agendaModo = modo === 'lista' ? 'lista' : 'calendario';
+    try { localStorage.setItem('agendaModo', agendaModo); } catch (e) { /* sem localStorage */ }
+    aplicarModoAgenda();
+    desenharAgenda();
+}
+
+// Mostra a visão escolhida e marca o botão ativo
+function aplicarModoAgenda() {
+    const ehLista = agendaModo === 'lista';
+    const cal = document.getElementById('agendaVisaoCalendario');
+    const lista = document.getElementById('agendaLista');
+    if (cal) cal.style.display = ehLista ? 'none' : '';
+    if (lista) lista.style.display = ehLista ? '' : 'none';
+    const btnCal = document.getElementById('agendaModoCalendario');
+    const btnLista = document.getElementById('agendaModoLista');
+    if (btnCal) btnCal.classList.toggle('active', !ehLista);
+    if (btnLista) btnLista.classList.toggle('active', ehLista);
+}
+
+// Listagem corrida do mês: só os dias com evento, cada dia com seu cabeçalho
+function desenharListaAgenda() {
+    const lista = document.getElementById('agendaLista');
+    if (!lista) return;
+
+    const eventosPorDia = {};
+    agendaEventosAtuais.forEach(ev => {
+        if (!eventosPorDia[ev.data]) eventosPorDia[ev.data] = [];
+        eventosPorDia[ev.data].push(ev);
+    });
+    const dias = Object.keys(eventosPorDia).sort();
+
+    if (!dias.length) {
+        lista.innerHTML = '<p class="dash-vazio">Nenhum evento neste mês.</p>';
+        return;
+    }
+
+    const hojeStr = formatarDataISOLocalAgenda(new Date());
+    lista.innerHTML = dias.map(dataStr => {
+        const [ano, mes, dia] = dataStr.split('-');
+        const diaSemana = AGENDA_DIAS_SEMANA[new Date(Number(ano), Number(mes) - 1, Number(dia)).getDay()];
+        const eventos = eventosPorDia[dataStr];
+        const ehHoje = dataStr === hojeStr;
+        const itens = eventos.map(ev => `
+                <div class="agenda-evento-item agenda-cor-borda-${ev.tipo}" onclick="irParaEventoAgenda('${ev.tipo}', '${ev.id}')">
+                    <span class="agenda-evento-tipo">${AGENDA_ROTULOS_TIPO[ev.tipo] || ev.tipo}</span>
+                    <span class="agenda-evento-titulo">${escapeHtml(ev.titulo)}</span>
+                </div>`).join('');
+        return `
+            <div class="agenda-lista-dia${ehHoje ? ' agenda-lista-dia-hoje' : ''}">
+                <div class="agenda-lista-dia-cabecalho">
+                    <span class="agenda-lista-dia-data">${dia}/${mes}/${ano}</span>
+                    <span class="agenda-lista-dia-semana">${diaSemana}${ehHoje ? ' · Hoje' : ''}</span>
+                    <span class="agenda-lista-dia-qtd">${eventos.length} ${eventos.length === 1 ? 'evento' : 'eventos'}</span>
+                </div>
+                <div class="agenda-lista-dia-eventos">${itens}
+                </div>
+            </div>`;
+    }).join('');
 }
 
 function mudarMesAgenda(delta) {

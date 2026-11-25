@@ -160,6 +160,8 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
 
 Calendário mensal com os eventos abaixo.
 
+Os botões **Calendário** e **Lista por dia** trocam a visão. A lista mostra os eventos do mês em sequência, separados por dia (data, dia da semana e quantidade); dias sem evento não aparecem. Clicar num evento abre o registro. O sistema lembra a última visão escolhida.
+
 | Evento | Data usada |
 |---|---|
 | Chamado | data de abertura |

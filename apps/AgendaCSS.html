@@ -26,6 +26,21 @@
   gap: 0.75rem;
 }
 
+.agenda-controles-acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.agenda-modo.tabs-nav {
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+}
+
+.agenda-modo .tab-btn {
+  flex: 0 0 auto;
+}
+
 .agenda-btn-nav {
   width: 2.25rem;
   height: 2.25rem;
@@ -184,6 +199,52 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--color-slate-500, #64748b);
+}
+
+/* ===== LISTAGEM CORRIDA POR DIA ===== */
+.agenda-lista-dia {
+  margin-bottom: 1.25rem;
+}
+
+.agenda-lista-dia:last-child {
+  margin-bottom: 0;
+}
+
+.agenda-lista-dia-cabecalho {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.625rem;
+  border-bottom: 0.125rem solid var(--color-slate-200, #e2e8f0);
+}
+
+.agenda-lista-dia-data {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-slate-800, #1e293b);
+}
+
+.agenda-lista-dia-semana {
+  font-size: 0.8125rem;
+  color: var(--color-slate-500, #64748b);
+}
+
+.agenda-lista-dia-qtd {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--color-slate-400, #94a3b8);
+}
+
+.agenda-lista-dia-hoje .agenda-lista-dia-cabecalho {
+  border-bottom-color: #4f46e5;
+  background: #eef2ff;
+  border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.agenda-lista-dia-hoje .agenda-lista-dia-data,
+.agenda-lista-dia-hoje .agenda-lista-dia-semana {
+  color: #4f46e5;
 }
 
 .agenda-evento-titulo {

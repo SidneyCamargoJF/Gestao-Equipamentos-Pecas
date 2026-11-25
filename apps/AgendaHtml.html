@@ -12,7 +12,13 @@
             <select id="agendaAnoSelect" class="field__select agenda-ano-select" onchange="mudarAnoAgenda()"></select>
             <button type="button" class="btn-secondary agenda-btn-nav" onclick="mudarMesAgenda(1)">›</button>
           </div>
-          <button type="button" class="btn-secondary" style="width:auto;" onclick="irParaHojeAgenda()">Hoje</button>
+          <div class="agenda-controles-acoes">
+            <div class="tabs-nav agenda-modo">
+              <button type="button" class="tab-btn active" id="agendaModoCalendario" onclick="mudarModoAgenda('calendario')">📅 Calendário</button>
+              <button type="button" class="tab-btn" id="agendaModoLista" onclick="mudarModoAgenda('lista')">📋 Lista por dia</button>
+            </div>
+            <button type="button" class="btn-secondary" style="width:auto;" onclick="irParaHojeAgenda()">Hoje</button>
+          </div>
         </div>
 
         <div class="agenda-legenda">
@@ -22,11 +28,16 @@
           <span class="agenda-legenda-item"><span class="agenda-ponto agenda-cor-peca"></span>Garantias de peças vencendo</span>
         </div>
 
+        <div id="agendaVisaoCalendario">
         <div class="agenda-dias-semana">
           <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
         </div>
 
         <div id="agendaGrid" class="agenda-grid"><!-- preenchido via JS: desenharGradeAgenda() --></div>
+        </div>
+
+        <!-- Listagem corrida do mês, quebrada por dia: desenharListaAgenda() -->
+        <div id="agendaLista" class="agenda-lista" style="display:none;"></div>
       </div>
     </section>
 
