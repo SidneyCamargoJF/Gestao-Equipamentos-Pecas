@@ -303,6 +303,22 @@ As constantes de `EquipamentosModel.js` são 0-based (A = 0), e o model liga `co
 
 Linhas cadastradas antes da coluna **Usuário** existir precisam ser corrigidas à mão: até a correção, as colunas ficam deslocadas.
 
+## tbl_modelos_email — [ModelosEmailModel.js](../apps/01-Model/ModelosEmailModel.js) (0-based)
+
+Modelos de e-mail do chamado (Configuração → Modelos de e-mail). Criada pelo sistema na primeira vez que os modelos são abertos, já com cinco modelos iniciais (ou por `criarTabelasNovasSeNecessario()`).
+
+| Col | Conteúdo |
+|---|---|
+| A | ID |
+| B | Nome (único entre os ativos) |
+| C | Assunto (aceita `{{campo}}`) |
+| D | Corpo (aceita `{{campo}}`) |
+| E | Data de cadastro |
+| F | Data de alteração |
+| G | Data de exclusão |
+
+Os campos aceitos estão em `camposModeloEmail_()` ([ModelosEmailBackend.js](../apps/Controller/ModelosEmail/back/ModelosEmailBackend.js)). O envio não tem tabela própria: fica no histórico do chamado (`[SISTEMA] E-mail enviado para ...`).
+
 ## Tabelas auxiliares (1-based)
 
 **tbl_localizacao**

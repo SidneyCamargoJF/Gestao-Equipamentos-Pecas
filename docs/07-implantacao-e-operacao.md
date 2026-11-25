@@ -32,6 +32,12 @@ As três funções podem ser executadas de novo sem efeito colateral.
 
 Em **Configurações do projeto → Propriedades do script**, crie a propriedade `ADMINS` com os e-mails separados por vírgula. Só esses usuários poderão usar o botão **Gerar preventivas do mês**. Se a propriedade estiver vazia, todos podem.
 
+### E-mail
+
+O envio de e-mail do chamado usa o `MailApp`. Na primeira publicação com esse recurso, cada usuário precisa **autorizar de novo** o app (envio de e-mail em seu nome). O e-mail sai da conta de quem está usando o sistema e conta na cota diária de envio dessa conta.
+
+A aba `tbl_modelos_email` é criada sozinha ao abrir **Configuração → Modelos de e-mail** (ou com `criarTabelasNovasSeNecessario()`).
+
 ### Usuários
 
 Cadastre cada pessoa em **Configuração → Usuários**. O campo **Usuário** é o login Google, sem o domínio. Sem cadastro, a pessoa aparece como "Desconhecido" em "Aberto por".

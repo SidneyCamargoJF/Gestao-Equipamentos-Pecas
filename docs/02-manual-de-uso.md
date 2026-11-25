@@ -109,7 +109,7 @@ A tela tem o bloco **Dados do Chamado** e, abaixo, três abas: **Vínculo Contra
   - Se o campo for salvo vazio, o servidor grava a empresa do contrato.
 - **Anexos:** relatórios e notas fiscais, com até 3 MB por arquivo.
 
-**Ao salvar**, o chamado guarda a lista de equipamentos. Sem contrato escolhido, o sistema procura o contrato vigente do primeiro equipamento da lista e calcula os prazos de SLA.
+**Ao salvar** (botão **Salvar**, na abertura e na edição), o chamado guarda a lista de equipamentos. Sem contrato escolhido, o sistema procura o contrato vigente do primeiro equipamento da lista e calcula os prazos de SLA. Depois de salvo, aparece a confirmação com o botão **Enviar e-mail para a empresa** (veja [E-mail para a empresa](#e-mail-para-a-empresa)).
 
 ### Consultar
 
@@ -127,7 +127,7 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
 
 ### Detalhes do chamado (modal)
 
-- **Informações do Chamado:** dados, contrato, origem, competência, data prevista e prazos.
+- **Informações do Chamado:** dados, contrato, origem, competência, data prevista e prazos, e o botão **Enviar e-mail para a empresa**.
 - **Equipamento / Equipamentos:** aba logo depois de Informações do Chamado.
   - **Preventiva:** a aba se chama "Equipamentos (N)" e traz a tabela com todos os equipamentos da OS (lista do chamado e checklist): patrimônio, equipamento, capacidade, localização, estado e, se houver, a observação de encerramento.
   - **Demais tipos:** a aba se chama "Equipamento" e mostra só o equipamento do chamado (patrimônio, nome, marca, modelo, capacidade, localização e estado).
@@ -155,6 +155,15 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
   - Se o chamado for reaberto e resolvido de novo, as observações anteriores já aparecem na lista.
 - Se a OS ainda tiver itens de checklist pendentes, o motivo informado fica no histórico como justificativa das pendências.
 - **Desativar** marca o chamado como `Cancelado`. **Reativar** desfaz.
+
+### E-mail para a empresa
+
+Abre pelo botão **Enviar e-mail para a empresa**, na confirmação depois de salvar o chamado ou nos detalhes do chamado.
+
+- **Para:** vem com o e-mail do contrato (ou do fornecedor, se o contrato não tiver). Pode ser alterado; vários e-mails são separados por `;`. **Cópia** é opcional.
+- **Modelo:** escolha um modelo para preencher o assunto e a mensagem com os dados do chamado (número, assunto, equipamentos, contrato, empresa, prazos etc.). O texto continua editável antes de enviar. Sem modelo, digite o e-mail.
+- **Salvar como modelo:** guarda o assunto e a mensagem digitados como um modelo novo. Os dados do chamado (número, empresa, contrato, equipamentos...) voltam a ser campos, para servir a outros chamados; confira e dê um nome antes de salvar.
+- **Enviar:** o e-mail sai pela sua conta Google e fica registrado nas Movimentações do chamado.
 
 ## Agenda
 
@@ -205,7 +214,19 @@ O menu **Relatórios** abre um submenu com um item por relatório: **Checklist**
 
 Use **Imprimir** para gerar a versão em papel ou PDF. As regras estão no documento [03](03-manutencao-por-contrato.md#7-manutenção-das-preventivas).
 
-## Configuração → Usuários
+## Configuração
+
+O menu **Configuração** tem dois itens: **Usuários** e **Modelos de e-mail**.
+
+### Configuração → Modelos de e-mail
+
+Lista os modelos usados no [e-mail para a empresa](#e-mail-para-a-empresa), com **Alterar** e **Excluir** em cada linha e o botão **+ Novo modelo**.
+
+- Cada modelo tem nome (não pode repetir), assunto e mensagem.
+- Os botões de **Campos do chamado** inserem, onde está o cursor, marcadores como `{{numero_chamado}}` ou `{{empresa}}`. No envio, eles viram os dados do chamado.
+- Na primeira vez, o sistema cria cinco modelos: solicitação de atendimento, cobrança de prazo de atendimento, cobrança de prazo de solução, agendamento e solicitação de atualização.
+
+### Configuração → Usuários
 
 **Campos:** matrícula, **usuário** (login Google, a parte antes do `@`), nome, lotação e setor.
 

@@ -24,7 +24,9 @@ function criarTabelasNovasSeNecessario() {
       'ID', 'CHAMADO_ID', 'EQUIPAMENTO_ID', 'CHECKLIST_ID', 'DESCRICAO', 'PERIODICIDADE',
       'RESULTADO', 'OBSERVACAO', 'EXECUTADO_EM', 'REGISTRADO_POR', 'DATA_CADASTRO',
       'DATA_ALTERACAO', 'DATA_EXCLUSAO'
-    ])
+    ]),
+    // modelos de e-mail (Configuração > Modelos de e-mail), já com os modelos iniciais
+    garantirAbaModelosEmail_()
   ];
 
   resultado.forEach(function (r) { Logger.log(r.mensagem); });

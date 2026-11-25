@@ -334,6 +334,89 @@
       </div>
     </div>
 
+    <!-- CHAMADO SALVO: oferece o envio de e-mail para a empresa (ModelosEmailJS) -->
+    <div class="modal-overlay" id="modalChamadoSalvo">
+      <div class="modal">
+        <h3>✅ Chamado salvo</h3>
+        <p id="chamadoSalvoMensagem" style="white-space:pre-line;"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalChamadoSalvo')">Fechar</button>
+          <button type="button" class="btn-primary" style="width:auto;" onclick="enviarEmailChamadoSalvo()">📧 Enviar e-mail para a empresa</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENVIO DE E-MAIL DO CHAMADO (ModelosEmailJS) -->
+    <div class="modal-overlay" id="modalEmailChamado">
+      <div class="modal modal-lg modal-email">
+        <div class="detalhe-chamado-cabecalho">
+          <h3 id="emailChamadoTitulo">📧 E-mail para a empresa</h3>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharEmailChamado()">✕</button>
+        </div>
+        <form autocomplete="off" onsubmit="return false;">
+          <div class="field">
+            <label class="field__label" for="emailChamadoModelo">Modelo</label>
+            <select class="field__select" id="emailChamadoModelo" onchange="aplicarModeloEmailChamado()"></select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="emailChamadoPara">Para *</label>
+            <input class="field__input" type="text" id="emailChamadoPara" placeholder="email@empresa.com.br">
+            <small class="modal-email-dica" id="emailChamadoAvisoPara"></small>
+          </div>
+          <div class="field">
+            <label class="field__label" for="emailChamadoCc">Cópia (opcional)</label>
+            <input class="field__input" type="text" id="emailChamadoCc" placeholder="Separe vários e-mails com ;">
+          </div>
+          <div class="field">
+            <label class="field__label" for="emailChamadoAssunto">Assunto *</label>
+            <input class="field__input" type="text" id="emailChamadoAssunto">
+          </div>
+          <div class="field">
+            <label class="field__label" for="emailChamadoCorpo">Mensagem *</label>
+            <textarea class="field__input modal-email-texto" id="emailChamadoCorpo" rows="12"></textarea>
+          </div>
+        </form>
+        <div class="modal-actions modal-email-acoes">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="salvarEmailComoModeloUI()">💾 Salvar como modelo</button>
+          <span class="modal-email-espaco"></span>
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharEmailChamado()">Cancelar</button>
+          <button type="button" class="btn-primary" style="width:auto;" onclick="enviarEmailChamadoUI()">📧 Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CADASTRO / ALTERAÇÃO DE MODELO DE E-MAIL (ModelosEmailJS) -->
+    <div class="modal-overlay" id="modalModeloEmail">
+      <div class="modal modal-lg modal-email">
+        <div class="detalhe-chamado-cabecalho">
+          <h3 id="modeloEmailTitulo">📝 Modelo de e-mail</h3>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModeloEmailEditor()">✕</button>
+        </div>
+        <form autocomplete="off" onsubmit="return false;">
+          <div class="field">
+            <label class="field__label" for="modeloEmailNome">Nome do modelo *</label>
+            <input class="field__input" type="text" id="modeloEmailNome" placeholder="Ex.: Solicitação de atendimento">
+          </div>
+          <div class="field">
+            <label class="field__label" for="modeloEmailAssunto">Assunto *</label>
+            <input class="field__input" type="text" id="modeloEmailAssunto" onfocus="focoCampoModeloEmail('modeloEmailAssunto')">
+          </div>
+          <div class="field">
+            <label class="field__label" for="modeloEmailCorpo">Mensagem *</label>
+            <textarea class="field__input modal-email-texto" id="modeloEmailCorpo" rows="10" onfocus="focoCampoModeloEmail('modeloEmailCorpo')"></textarea>
+          </div>
+          <div class="field">
+            <span class="field__label">Campos do chamado <small>(clique para inserir onde está o cursor; no envio, viram os dados do chamado)</small></span>
+            <div class="modelo-email-campos" id="modeloEmailCampos"></div>
+          </div>
+        </form>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModeloEmailEditor()">Cancelar</button>
+          <button type="button" class="btn-success" style="width:auto;" onclick="salvarModeloEmailUI()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- GENÉRICO / SISTEMA -->
 
     <!-- MODAL DE PROCESSAMENTO -->

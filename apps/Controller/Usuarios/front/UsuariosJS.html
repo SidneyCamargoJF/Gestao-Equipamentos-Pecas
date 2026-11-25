@@ -1,7 +1,13 @@
 <script>
 
-async function renderConfiguracoes() {
-    await consultarUsuarios();
+// secao: 'usuarios' (padrão) ou 'modelos-email' -- itens do submenu Configuração
+async function renderConfiguracoes(secao) {
+    const atual = secao === 'modelos-email' ? 'modelos-email' : 'usuarios';
+    document.querySelectorAll('#page-configuracoes .config-secao').forEach(el => {
+        el.style.display = el.id === 'config-secao-' + atual ? '' : 'none';
+    });
+    if (atual === 'modelos-email') await consultarModelosEmail();
+    else await consultarUsuarios();
 }
 
 async function consultarUsuarios() {

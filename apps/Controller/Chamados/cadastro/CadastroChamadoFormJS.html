@@ -23,9 +23,6 @@
     const tituloEl = document.getElementById('chamadoFormTitulo');
     if (tituloEl) tituloEl.textContent = id ? '✏️ Editar Chamado' : '📩 Abrir Chamado';
 
-    const btnSalvarEl = document.getElementById('chamadoBtnSalvar');
-    if (btnSalvarEl) btnSalvarEl.textContent = id ? 'Salvar Alterações' : 'Salvar Chamado';
-
     // Anexos já enviados (de edições anteriores) são geridos na tela de
     // Consulta (modal de detalhes) -- aqui só dá pra adicionar novos.
     const avisoAnexosEl = document.getElementById('chamadoEditandoAnexosAviso');
@@ -853,14 +850,15 @@
           return;
         }
 
-        alert(resposta.mensagem);
-
         if (resposta && resposta.duplicado) {
           exibirAvisoAnexoDuplicado('Você anexou dois ou mais documentos idênticos.');
         }
 
         if (typeof marcarFormularioSalvo === 'function') marcarFormularioSalvo();
         trocarPagina('chamado-view');
+        // Chamado salvo: mensagem com a opção de enviar e-mail para a empresa
+        if (resposta && resposta.id && typeof exibirChamadoSalvo === 'function') exibirChamadoSalvo(resposta.id, resposta.mensagem);
+        else alert(resposta.mensagem);
       } catch (err) {
         console.error('Erro ao salvar chamado:', err);
         alert('Erro ao conectar com o servidor.');

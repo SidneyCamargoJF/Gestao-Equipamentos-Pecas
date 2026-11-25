@@ -4,7 +4,8 @@
         <h1>⚙️ Configurações do Sistema</h1>
       </div>
 
-      <div class="panel">
+      <!-- Seções: uma por item do submenu (renderConfiguracoes(secao) mostra só a escolhida) -->
+      <div class="panel config-secao" id="config-secao-usuarios">
         <h2 style="font-size:1.0625rem; font-weight:700; margin-bottom:1rem; color:#0f172a;">Usuários</h2>
 
         <form autocomplete="off" onsubmit="return false;" style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap; margin-bottom:1.5rem;">
@@ -37,6 +38,24 @@
               <tr><th>Matrícula</th><th>Usuário</th><th>Nome</th><th>Lotação</th><th>Setor</th><th>Ações</th></tr>
             </thead>
             <tbody id="usuariosTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel config-secao" id="config-secao-modelos-email" style="display:none;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem;">
+          <h2 style="font-size:1.0625rem; font-weight:700; margin:0; color:#0f172a;">Modelos de e-mail</h2>
+          <button type="button" class="btn-success" style="width:auto;" onclick="abrirModeloEmailEditor()">+ Novo modelo</button>
+        </div>
+        <p style="font-size:0.8125rem; color:#64748b; margin-bottom:1rem;">
+          Usados no envio de e-mail do chamado para a empresa. Os campos entre {{ }} são trocados pelos dados do chamado, e o texto ainda pode ser alterado antes de enviar.
+        </p>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr><th>Nome</th><th>Assunto</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="modelosEmailTableBody"></tbody>
           </table>
         </div>
       </div>

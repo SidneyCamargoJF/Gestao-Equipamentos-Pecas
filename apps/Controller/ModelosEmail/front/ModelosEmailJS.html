@@ -1,0 +1,287 @@
+<script>
+  // =====================================================
+  // MODELOS DE E-MAIL + ENVIO DE E-MAIL DO CHAMADO
+  // - Configuração > Modelos de e-mail: lista, inclui, altera e exclui.
+  // - Envio (#modalEmailChamado): escolhe um modelo (os {{campos}} já vêm
+  //   preenchidos com os dados do chamado e podem ser alterados) ou digita
+  //   o e-mail do zero; "Salvar como modelo" guarda o texto como modelo.
+  // - Depois de salvar um chamado, #modalChamadoSalvo oferece o envio.
+  // Backend: apps/Controller/ModelosEmail/back/ModelosEmailBackend.js
+  // =====================================================
+
+  let modelosEmailCache = [];
+  let camposModeloEmailCache = [];
+  let modeloEmailEditandoId = null;
+  let modeloEmailCampoFoco = 'modeloEmailCorpo';   // onde o botão de campo insere
+  let modeloEmailAoSalvar = null;                  // callback (envio: recarrega a lista do select)
+  let emailChamadoAtual = null;                    // { chamadoId, valores, modelos, campos }
+  let chamadoSalvoId = null;
+
+  const CAMPO_MODELO_EMAIL_RE = /\{\{\s*(\w+)\s*\}\}/g;
+
+  // ===== CONFIGURAÇÃO > MODELOS DE E-MAIL =====
+  async function consultarModelosEmail() {
+    const tbody = document.getElementById('modelosEmailTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    try {
+      const r = await runServerFunction('listarModelosEmail');
+      if (r && r.sucesso === false) throw new Error(r.mensagem);
+      modelosEmailCache = (r && r.modelos) || [];
+      camposModeloEmailCache = (r && r.campos) || [];
+      renderTabelaModelosEmail();
+    } catch (error) {
+      console.error('Erro ao consultar modelos de e-mail:', error);
+      if (tbody) tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Erro ao buscar os modelos.</td></tr>';
+    }
+  }
+
+  function renderTabelaModelosEmail() {
+    const tbody = document.getElementById('modelosEmailTableBody');
+    if (!tbody) return;
+    if (!modelosEmailCache.length) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Nenhum modelo cadastrado.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = modelosEmailCache.map(m => `
+        <tr>
+            <td>${escapeHtml(m.nome)}</td>
+            <td>${escapeHtml(m.assunto)}</td>
+            <td class="acao-cell">
+                <button class="btn-acao" title="Alterar" onclick="abrirModeloEmailEditor(${Number(m.id)})">✏️</button>
+                <button class="btn-acao" title="Excluir" onclick="excluirModeloEmailUI(${Number(m.id)})">🗑️</button>
+            </td>
+        </tr>`).join('');
+  }
+
+  async function excluirModeloEmailUI(id) {
+    const m = modelosEmailCache.find(x => Number(x.id) === Number(id));
+    if (!window.confirm('Excluir o modelo "' + (m ? m.nome : id) + '"?')) return;
+    exibirModal('processando');
+    try {
+      const r = await runServerFunction('excluirModeloEmail', id);
+      alert(r.mensagem);
+      if (r.sucesso) await consultarModelosEmail();
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      fecharModal('processando');
+    }
+  }
+
+  // ===== EDITOR DE MODELO (#modalModeloEmail) =====
+  // id: altera esse modelo; sem id: novo. inicial: { nome, assunto, corpo }
+  // (usado pelo "Salvar como modelo" do envio).
+  function abrirModeloEmailEditor(id, inicial, aoSalvar) {
+    const m = id ? modelosEmailCache.find(x => Number(x.id) === Number(id)) : null;
+    const base = m || inicial || {};
+    modeloEmailEditandoId = m ? m.id : null;
+    modeloEmailAoSalvar = aoSalvar || null;
+    document.getElementById('modeloEmailTitulo').textContent = m ? '✏️ Alterar modelo de e-mail' : '📝 Novo modelo de e-mail';
+    document.getElementById('modeloEmailNome').value = base.nome || '';
+    document.getElementById('modeloEmailAssunto').value = base.assunto || '';
+    document.getElementById('modeloEmailCorpo').value = base.corpo || '';
+    modeloEmailCampoFoco = 'modeloEmailCorpo';
+    renderCamposModeloEmail();
+    exibirModal('modalModeloEmail');
+    setTimeout(() => { const el = document.getElementById('modeloEmailNome'); if (el) el.focus(); }, 50);
+  }
+
+  function renderCamposModeloEmail() {
+    const box = document.getElementById('modeloEmailCampos');
+    if (!box) return;
+    box.innerHTML = camposModeloEmailCache.map(c =>
+      `<button type="button" class="modelo-email-campo" title="Inserir {{${c.chave}}}" onclick="inserirCampoModeloEmail('${c.chave}')">${escapeHtml(c.rotulo)}</button>`
+    ).join('');
+  }
+
+  // Botão de campo insere {{chave}} onde está o cursor (assunto ou texto)
+  function inserirCampoModeloEmail(chave) {
+    const el = document.getElementById(modeloEmailCampoFoco) || document.getElementById('modeloEmailCorpo');
+    if (!el) return;
+    const marca = '{{' + chave + '}}';
+    const ini = typeof el.selectionStart === 'number' ? el.selectionStart : el.value.length;
+    const fim = typeof el.selectionEnd === 'number' ? el.selectionEnd : el.value.length;
+    el.value = el.value.slice(0, ini) + marca + el.value.slice(fim);
+    el.focus();
+    try { el.setSelectionRange(ini + marca.length, ini + marca.length); } catch (e) { /* ignore */ }
+  }
+
+  function focoCampoModeloEmail(id) { modeloEmailCampoFoco = id; }
+
+  function fecharModeloEmailEditor() {
+    fecharModal('modalModeloEmail');
+    modeloEmailEditandoId = null;
+    modeloEmailAoSalvar = null;
+  }
+
+  async function salvarModeloEmailUI() {
+    const dados = {
+      id: modeloEmailEditandoId || '',
+      nome: document.getElementById('modeloEmailNome').value.trim(),
+      assunto: document.getElementById('modeloEmailAssunto').value.trim(),
+      corpo: document.getElementById('modeloEmailCorpo').value
+    };
+    if (!dados.nome) { alert('Digite o nome do modelo.'); return; }
+    if (!dados.assunto) { alert('Digite o assunto do e-mail.'); return; }
+    if (!dados.corpo.trim()) { alert('Digite o texto do e-mail.'); return; }
+
+    exibirModal('processando');
+    try {
+      const r = await runServerFunction('salvarModeloEmail', dados);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao salvar o modelo.'); return; }
+      const aoSalvar = modeloEmailAoSalvar;
+      fecharModeloEmailEditor();
+      alert(r.mensagem);
+      await consultarModelosEmail();
+      if (aoSalvar) aoSalvar(r.id);
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      fecharModal('processando');
+    }
+  }
+
+  // ===== DEPOIS DE SALVAR O CHAMADO (#modalChamadoSalvo) =====
+  function exibirChamadoSalvo(chamadoId, mensagem) {
+    chamadoSalvoId = chamadoId;
+    const msg = document.getElementById('chamadoSalvoMensagem');
+    if (msg) msg.textContent = mensagem || 'Chamado salvo com sucesso!';
+    exibirModal('modalChamadoSalvo');
+  }
+
+  function enviarEmailChamadoSalvo() {
+    const id = chamadoSalvoId;
+    fecharModal('modalChamadoSalvo');
+    chamadoSalvoId = null;
+    if (id) abrirEmailChamado(id);
+  }
+
+  // ===== ENVIO DO E-MAIL (#modalEmailChamado) =====
+  function preencherCamposEmail(texto, valores) {
+    return String(texto || '').replace(CAMPO_MODELO_EMAIL_RE, (todo, chave) =>
+      Object.prototype.hasOwnProperty.call(valores || {}, chave) ? String(valores[chave] || '') : todo);
+  }
+
+  // Texto já preenchido -> modelo: troca os dados do chamado de volta por
+  // {{campo}} (só os que identificam o chamado, pra não trocar palavras
+  // comuns como o status ou a prioridade).
+  function textoParaModeloEmail(texto, valores) {
+    let t = String(texto || '');
+    const n = String((valores || {}).numero_chamado || '');
+    if (n) {
+      t = t.replace(new RegExp('#' + n + '(?!\\d)', 'g'), '#{{numero_chamado}}')
+           .replace(new RegExp('(chamado\\s+(?:n[º°o.]*\\s*)?)' + n + '(?!\\d)', 'gi'), '$1{{numero_chamado}}');
+    }
+    const ignorar = ['numero_chamado', 'status', 'prioridade', 'tipo', 'data_hoje'];
+    Object.keys(valores || {})
+      .filter(k => ignorar.indexOf(k) === -1 && String(valores[k] || '').trim().length >= 4)
+      .sort((a, b) => String(valores[b]).length - String(valores[a]).length)
+      .forEach(k => { t = t.split(String(valores[k])).join('{{' + k + '}}'); });
+    return t;
+  }
+
+  async function abrirEmailChamado(chamadoId) {
+    exibirModal('processando');
+    let r;
+    try {
+      r = await runServerFunction('prepararEmailChamado', chamadoId);
+    } catch (e) {
+      r = { sucesso: false, mensagem: 'Erro ao conectar com o servidor.' };
+    } finally {
+      fecharModal('processando');
+    }
+    if (!r || r.sucesso === false) { alert((r && r.mensagem) || 'Não foi possível preparar o e-mail.'); return; }
+
+    emailChamadoAtual = r;
+    modelosEmailCache = r.modelos || [];
+    camposModeloEmailCache = r.campos || [];
+
+    document.getElementById('emailChamadoTitulo').textContent = '📧 E-mail para a empresa — Chamado #' + r.chamadoId;
+    document.getElementById('emailChamadoPara').value = r.para || '';
+    document.getElementById('emailChamadoCc').value = '';
+    document.getElementById('emailChamadoAssunto').value = '';
+    document.getElementById('emailChamadoCorpo').value = '';
+    const aviso = document.getElementById('emailChamadoAvisoPara');
+    if (aviso) {
+      aviso.textContent = r.para ? (r.empresa ? 'E-mail cadastrado da empresa ' + r.empresa + '.' : '')
+        : 'Sem e-mail cadastrado no contrato/fornecedor: digite o destinatário.';
+    }
+    popularSelectModelosEmail('');
+    exibirModal('modalEmailChamado');
+  }
+
+  function popularSelectModelosEmail(selecionado) {
+    const sel = document.getElementById('emailChamadoModelo');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Sem modelo (digitar o e-mail) —</option>' +
+      modelosEmailCache.map(m => `<option value="${Number(m.id)}">${escapeHtml(m.nome)}</option>`).join('');
+    sel.value = selecionado ? String(selecionado) : '';
+  }
+
+  // Escolheu um modelo: assunto e texto vêm com os dados do chamado (editáveis)
+  function aplicarModeloEmailChamado() {
+    const sel = document.getElementById('emailChamadoModelo');
+    const m = modelosEmailCache.find(x => String(x.id) === String(sel ? sel.value : ''));
+    if (!m || !emailChamadoAtual) return;
+    const assuntoEl = document.getElementById('emailChamadoAssunto');
+    const corpoEl = document.getElementById('emailChamadoCorpo');
+    if ((assuntoEl.value.trim() || corpoEl.value.trim()) &&
+        !window.confirm('Trocar o assunto e o texto já digitados pelos do modelo "' + m.nome + '"?')) {
+      sel.value = '';
+      return;
+    }
+    assuntoEl.value = preencherCamposEmail(m.assunto, emailChamadoAtual.valores);
+    corpoEl.value = preencherCamposEmail(m.corpo, emailChamadoAtual.valores);
+  }
+
+  function fecharEmailChamado() {
+    fecharModal('modalEmailChamado');
+    emailChamadoAtual = null;
+  }
+
+  // Guarda o e-mail digitado como modelo (abre o editor pra conferir o nome
+  // e os campos antes de gravar)
+  function salvarEmailComoModeloUI() {
+    if (!emailChamadoAtual) return;
+    const assunto = document.getElementById('emailChamadoAssunto').value.trim();
+    const corpo = document.getElementById('emailChamadoCorpo').value;
+    if (!assunto && !corpo.trim()) { alert('Digite o assunto e o texto do e-mail antes de salvar como modelo.'); return; }
+    const v = emailChamadoAtual.valores;
+    abrirModeloEmailEditor(null, {
+      nome: '',
+      assunto: textoParaModeloEmail(assunto, v),
+      corpo: textoParaModeloEmail(corpo, v)
+    }, function (novoId) { popularSelectModelosEmail(novoId); });
+  }
+
+  async function enviarEmailChamadoUI() {
+    if (!emailChamadoAtual) return;
+    const dados = {
+      chamadoId: emailChamadoAtual.chamadoId,
+      para: document.getElementById('emailChamadoPara').value.trim(),
+      cc: document.getElementById('emailChamadoCc').value.trim(),
+      assunto: document.getElementById('emailChamadoAssunto').value.trim(),
+      corpo: document.getElementById('emailChamadoCorpo').value
+    };
+    if (!dados.para) { alert('Informe o e-mail do destinatário.'); return; }
+    if (!dados.assunto) { alert('Digite o assunto do e-mail.'); return; }
+    if (!dados.corpo.trim()) { alert('Digite o texto do e-mail.'); return; }
+
+    exibirModal('processando');
+    try {
+      const r = await runServerFunction('enviarEmailChamado', dados);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao enviar o e-mail.'); return; }
+      fecharEmailChamado();
+      mostrarMensagem(r.mensagem, 'sucesso');
+      // detalhe do chamado aberto: atualiza o histórico (o envio fica registrado)
+      const det = document.getElementById('modalDetalheChamado');
+      if (det && det.classList.contains('aberto') && typeof carregarHistoricoChamadoUI === 'function') {
+        carregarHistoricoChamadoUI(dados.chamadoId);
+      }
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      fecharModal('processando');
+    }
+  }
+</script>
