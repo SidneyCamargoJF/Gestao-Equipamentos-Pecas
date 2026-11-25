@@ -658,6 +658,15 @@ class LocalizacaoController {
 const marcaController = new MarcaController();
 const localizacaoController = new LocalizacaoController();
 
+// Configuração > Marcas / Localizações: a mesma página mostra só a parte
+// escolhida no menu (secao: 'marcas' | 'localizacoes').
+function renderMarcasLocalizacoes(secao) {
+  const parte = secao === 'localizacoes' ? 'localizacoes' : 'marcas';
+  if (typeof ativarAba === 'function') ativarAba(parte);
+  const titulo = document.getElementById('marcasLocalizacoesTitulo');
+  if (titulo) titulo.textContent = parte === 'localizacoes' ? '📍 Localizações' : '🏷️ Marcas';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof initTabs === 'function') initTabs();
   marcaController.init();

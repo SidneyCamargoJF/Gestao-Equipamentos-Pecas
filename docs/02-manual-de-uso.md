@@ -41,7 +41,7 @@ As peças com garantia vencendo aparecem na **Agenda**.
 
 ## Garantias
 
-Menu **Cadastros → Garantias**. Controla o acionamento da garantia de uma peça ou produto que deu defeito. Na consulta, os botões **Limpar**, **+ Abrir garantia** e **Consultar** ficam à direita do título.
+Item **Garantias** na barra de menu principal. Controla o acionamento da garantia de uma peça ou produto que deu defeito. Na consulta, os botões **Limpar**, **+ Abrir garantia** e **Consultar** ficam à direita do título.
 
 ### Abrir uma garantia
 
@@ -70,9 +70,9 @@ Menu **Cadastros → Garantias**. Controla o acionamento da garantia de uma peç
 
 **Consulta:** busca (nº, item, número de série, defeito, protocolo), situação (em andamento, prazo vencido, encerradas, todas), status, tipo e fornecedor. Canceladas só aparecem filtrando pelo status Cancelada.
 
-## Marcas
+## Marcas e Localizações
 
-Cadastro simples (nome), usado nos cadastros de equipamentos e peças.
+Ficam em **Configuração → Marcas** e **Configuração → Localizações** (cada item abre só a sua lista). Cadastro simples (nome), usado nos cadastros de equipamentos e peças.
 
 ## Fornecedores
 
@@ -262,7 +262,7 @@ Use **Imprimir** para gerar a versão em papel ou PDF. As regras estão no docum
 
 ## Configuração
 
-O menu **Configuração** tem dois itens: **Usuários** e **Modelos de e-mail**.
+O menu **Configuração** tem os itens **Usuários**, **Modelos de e-mail**, **Marcas** e **Localizações** (veja [Marcas e Localizações](#marcas-e-localizações)).
 
 ### Configuração → Modelos de e-mail
 
