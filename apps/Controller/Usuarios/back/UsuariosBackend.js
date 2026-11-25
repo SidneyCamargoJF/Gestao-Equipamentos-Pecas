@@ -16,6 +16,7 @@ function filtrarUsuarios(criterios) {
       nome: nome,
       lotacao: dados[i][userLotacao] ? String(dados[i][userLotacao]).trim() : "",
       setor: dados[i][userSetorCol] ? String(dados[i][userSetorCol]).trim() : "",
+      email: dados[i][userEmailCol] ? String(dados[i][userEmailCol]).trim() : "",
       desativado: String(dados[i][userDtExclusaoCol] || "").trim() !== ""
     });
   }
@@ -25,39 +26,82 @@ function filtrarUsuarios(criterios) {
   return res;
 }
 
-function cadastrarUsuario(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput) {
+function cadastrarUsuario(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput) {
   try {
     return executarComLock(function () {
-      return cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput);
+      return cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput);
     });
   } catch (e) {
     return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
   }
 }
 
-function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput) {
-  try {
-    const matricula = (matriculaInput || "").toString().trim();
-    const usuario = (usuarioInput || "").toString().trim().toLowerCase();
-    const nome = (nomeInput || "").toString().trim();
-    const lotacao = (lotacaoInput || "").toString().trim();
-    const setor = (setorInput || "").toString().trim();
+/**
+ * Confere os campos do usuário. { mensagem } se algo estiver errado, ou
+ * { dados } com os valores limpos. E-mail é opcional, mas validado.
+ */
+function validarCamposUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput) {
+  const d = {
+    matricula: (matriculaInput || "").toString().trim(),
+    usuario: (usuarioInput || "").toString().trim().toLowerCase(),
+    nome: (nomeInput || "").toString().trim(),
+    lotacao: (lotacaoInput || "").toString().trim(),
+    setor: (setorInput || "").toString().trim(),
+    email: (emailInput || "").toString().trim().toLowerCase()
+  };
+  if (d.matricula === "") return { mensagem: "Digite a matrícula." };
+  if (d.usuario === "") return { mensagem: "Digite o usuário (login Google)." };
+  if (d.nome === "") return { mensagem: "Digite o nome do usuário." };
+  if (d.lotacao === "") return { mensagem: "Digite a lotação." };
+  if (d.setor === "") return { mensagem: "Digite o setor." };
+  if (d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) return { mensagem: "E-mail inválido." };
+  return { dados: d };
+}
 
-    if (matricula === "") {
-      return { sucesso: false, mensagem: "Digite a matrícula." };
-    }
-    if (usuario === "") {
-      return { sucesso: false, mensagem: "Digite o usuário (e-mail de login)." };
-    }
-    if (nome === "") {
-      return { sucesso: false, mensagem: "Digite o nome do usuário." };
-    }
-    if (lotacao === "") {
-      return { sucesso: false, mensagem: "Digite a lotação." };
-    }
-    if (setor === "") {
-      return { sucesso: false, mensagem: "Digite o setor." };
-    }
+/**
+ * Altera um usuário ativo. dados: { matricula, usuario, nome, lotacao,
+ * setor, email }. Não mexe nas datas de cadastro e exclusão.
+ */
+function alterarUsuario(idInput, dadosInput) {
+  try {
+    return executarComLock(function () {
+      const id = Number(idInput);
+      if (!id) return { sucesso: false, mensagem: "ID do usuário inválido." };
+      const d0 = dadosInput || {};
+      const v = validarCamposUsuario_(d0.matricula, d0.usuario, d0.nome, d0.lotacao, d0.setor, d0.email);
+      if (v.mensagem) return { sucesso: false, mensagem: v.mensagem };
+      const d = v.dados;
+
+      const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(userTableName);
+      if (!aba) return { sucesso: false, mensagem: "Aba '" + userTableName + "' não foi encontrada." };
+
+      const lista = ReadUsers();
+      const idx = lista.findIndex(function (l) { return Number(l[userIdCol]) === id; });
+      if (idx === -1) return { sucesso: false, mensagem: "Usuário não encontrado." };
+      if (String(lista[idx][userDtExclusaoCol] || "").trim()) return { sucesso: false, mensagem: "Usuário desativado: reative antes de alterar." };
+
+      const repetido = lista.some(function (l) {
+        return Number(l[userIdCol]) !== id && !String(l[userDtExclusaoCol] || "").trim() &&
+          chaveUsuarioLogin_(l[userUsuarioCol]) === chaveUsuarioLogin_(d.usuario);
+      });
+      if (repetido) return { sucesso: false, mensagem: "Já existe outro usuário ativo com esse login." };
+
+      const linha = idx + firstLineUsers;
+      aba.getRange(linha, userMatriculaCol + 1, 1, 5).setValues([[d.matricula, d.usuario, d.nome, d.lotacao, d.setor]]);
+      aba.getRange(linha, userEmailCol + 1).setValue(d.email);
+      return { sucesso: true, mensagem: "Usuário alterado com sucesso!" };
+    });
+  } catch (e) {
+    return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
+  }
+}
+
+function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput) {
+  try {
+    const v = validarCamposUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput);
+    if (v.mensagem) return { sucesso: false, mensagem: v.mensagem };
+    const matricula = v.dados.matricula, usuario = v.dados.usuario, nome = v.dados.nome,
+      lotacao = v.dados.lotacao, setor = v.dados.setor, email = v.dados.email;
 
     const planilha = SpreadsheetApp.getActiveSpreadsheet();
     const aba = planilha.getSheetByName(userTableName);
@@ -76,8 +120,8 @@ function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput
     const dataHoje = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
     const pos = proximoIdTabela(aba, firstLineUsers);
 
-    // [ID, Matrícula, Usuário, Nome, Lotação, Setor, Data Cadastro, Data Exclusão]
-    const linha = [pos.novoId, matricula, usuario, nome, lotacao, setor, dataHoje, ""];
+    // [ID, Matrícula, Usuário, Nome, Lotação, Setor, Data Cadastro, Data Exclusão, E-mail]
+    const linha = [pos.novoId, matricula, usuario, nome, lotacao, setor, dataHoje, "", email];
     aba.getRange(pos.proximaLinha, 1, 1, numColumnsUsers).setValues([linha]);
 
     return { sucesso: true, mensagem: "Usuário cadastrado com sucesso!" };

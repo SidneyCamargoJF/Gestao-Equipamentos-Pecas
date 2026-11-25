@@ -14,7 +14,7 @@
             <input class="field__input" type="text" id="usuarioMatriculaInput" placeholder="Matrícula...">
           </div>
           <div class="field" style="flex:2; min-width:12rem;">
-            <label class="field__label" for="usuarioLoginInput">Usuário (e-mail de login)</label>
+            <label class="field__label" for="usuarioLoginInput">Usuário (login Google)</label>
             <input class="field__input" type="text" id="usuarioLoginInput" placeholder="fulano@dominio...">
           </div>
           <div class="field" style="flex:2; min-width:12rem;">
@@ -29,13 +29,18 @@
             <label class="field__label" for="usuarioSetorInput">Setor</label>
             <input class="field__input" type="text" id="usuarioSetorInput" placeholder="Setor...">
           </div>
-          <button type="button" class="btn-primary" style="width:auto;" onclick="cadastrarUsuarioUI()">Adicionar</button>
+          <div class="field" style="flex:2; min-width:12rem;">
+            <label class="field__label" for="usuarioEmailInput">E-mail</label>
+            <input class="field__input" type="email" id="usuarioEmailInput" placeholder="nome@dominio...">
+          </div>
+          <button type="button" class="btn-primary" style="width:auto;" id="usuarioBtnSalvar" onclick="cadastrarUsuarioUI()">Adicionar</button>
+          <button type="button" class="btn-secondary" style="width:auto; display:none;" id="usuarioBtnCancelar" onclick="cancelarEdicaoUsuarioUI()">Cancelar</button>
         </form>
 
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
-              <tr><th>Matrícula</th><th>Usuário</th><th>Nome</th><th>Lotação</th><th>Setor</th><th>Ações</th></tr>
+              <tr><th>Matrícula</th><th>Usuário</th><th>Nome</th><th>Lotação</th><th>Setor</th><th>E-mail</th><th>Ações</th></tr>
             </thead>
             <tbody id="usuariosTableBody"></tbody>
           </table>

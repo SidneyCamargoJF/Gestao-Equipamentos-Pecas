@@ -267,7 +267,9 @@ Lista os modelos usados no [e-mail para a empresa](#e-mail-para-a-empresa) e no 
 
 ### Configuração → Usuários
 
-**Campos:** matrícula, **usuário** (login Google, a parte antes do `@`), nome, lotação e setor.
+**Campos:** matrícula, **usuário** (login Google, a parte antes do `@`), nome, lotação, setor e **e-mail** (opcional, para contato).
+
+- Na lista, o ✏️ carrega o usuário no formulário de cima; o botão passa a ser **Salvar alteração** (e **Cancelar** desfaz). Usuário desativado precisa ser reativado antes de alterar.
 
 - O login não pode se repetir.
 - O sistema identifica quem está usando pelo e-mail da conta Google. O **nome** cadastrado é o que aparece em "Aberto por" e no registro do checklist.

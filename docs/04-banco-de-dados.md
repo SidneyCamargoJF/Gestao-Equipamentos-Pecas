@@ -327,6 +327,7 @@ Um acionamento de garantia de uma peça/produto por linha. Criada sozinha no pri
 | F | Setor |
 | G | Data de cadastro |
 | H | Data de exclusão |
+| I | E-mail de contato (opcional; coluna incluída depois, no fim da aba) |
 
 Linhas cadastradas antes da coluna **Usuário** existir precisam ser corrigidas à mão: até a correção, as colunas ficam deslocadas.
 
