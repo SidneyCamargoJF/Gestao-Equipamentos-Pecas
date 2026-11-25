@@ -270,7 +270,45 @@
 
 .modal-email-anexo-opcao--sem-arquivo { color: var(--color-slate-400, #94a3b8); cursor: default; }
 .modal-email-anexo-vazio { margin: 0; color: var(--color-slate-500, #64748b); }
-.modal-email-anexos-arquivos { margin-top: 0.25rem; color: var(--color-slate-600, #475569); }
+.modal-email-anexos-acoes {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.modal-email-anexos-acoes .field__input { flex: 1; }
+
+.modal-email-anexos-selecionados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.modal-email-anexo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.1875rem 0.5rem;
+  background: #eef2ff;
+  border: 0.0625rem solid #c7d2fe;
+  border-radius: 1rem;
+  color: #3730a3;
+}
+
+.modal-email-anexo-chip button {
+  padding: 0;
+  font: inherit;
+  line-height: 1;
+  color: #6366f1;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.modal-email-anexo-item { font-size: 0.75rem; color: var(--color-slate-500, #64748b); }
 
 .modal-acoes-topo {
   margin-bottom: 1rem;

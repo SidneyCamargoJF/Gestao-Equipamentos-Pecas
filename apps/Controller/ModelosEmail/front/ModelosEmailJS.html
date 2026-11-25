@@ -258,41 +258,126 @@
       aviso.textContent = r.para ? (r.empresa ? cfg.comEmail + r.empresa + '.' : '') : cfg.semEmail;
     }
     popularSelectModelosEmail('');
-    renderAnexosEmail(contexto === 'garantia' ? r : null);
+    renderAnexosEmail(r, contexto);
     exibirModal('modalEmailChamado');
   }
 
-  // ===== DOCUMENTOS ANEXADOS (e-mail de garantia) =====
-  // r: resposta do prepararEmailGarantia (aquisicoes, anexosGarantia); null esconde a área
-  function renderAnexosEmail(r) {
-    const area = document.getElementById('emailAnexosArea');
-    if (!area) return;
-    const arq = document.getElementById('emailAnexoArquivos');
-    if (arq) arq.value = '';
-    const listaArq = document.getElementById('emailAnexosArquivosLista');
-    if (listaArq) listaArq.textContent = '';
-    area.style.display = r ? '' : 'none';
-    if (!r) return;
-    const notas = r.aquisicoes || [];
-    document.getElementById('emailAnexosNotas').innerHTML = notas.length ? notas.map(a => {
-      const desc = 'NF ' + escapeHtml(a.numeroNF) + (a.fornecedor ? ' — ' + escapeHtml(a.fornecedor) : '') +
-        (a.dataAquisicao ? ' — ' + escapeHtml(a.dataAquisicao) : '');
-      return a.temArquivo
-        ? `<label class="modal-email-anexo-opcao"><input type="checkbox" class="email-anexo-nota" value="${Number(a.id)}"> ${desc}</label>`
-        : `<label class="modal-email-anexo-opcao modal-email-anexo-opcao--sem-arquivo" title="Inclua o arquivo da nota nas aquisições do item (cadastro de peças)"><input type="checkbox" disabled> ${desc} <small>(${a.doCadastro ? 'do cadastro do item, ' : ''}sem arquivo)</small></label>`;
-    }).join('') : '<p class="modal-email-anexo-vazio">Nenhuma nota cadastrada para o item.</p>';
-    const anexos = r.anexosGarantia || [];
-    const nome = n => typeof nomeArquivoSemData === 'function' ? nomeArquivoSemData(n) : n;
-    document.getElementById('emailAnexosGarantia').innerHTML = anexos.length ? anexos.map(a =>
-      `<label class="modal-email-anexo-opcao"><input type="checkbox" class="email-anexo-garantia" value="${Number(a.id)}"> ${escapeHtml(a.tipo)}: ${escapeHtml(nome(a.nomeArquivo))}</label>`
-    ).join('') : '<p class="modal-email-anexo-vazio">Nenhum anexo na garantia.</p>';
+  // ===== DOCUMENTOS ANEXADOS (chamado e garantia) =====
+  // - Notas fiscais do cadastro de peças (tbl_pecas_aquisicoes): na garantia
+  //   vêm sugeridas as do item; a busca procura em todos os itens.
+  // - Anexos do próprio chamado/garantia (caixas de marcar).
+  // - Arquivos do computador: botão "Incluir do computador", somam e saem
+  //   da lista pelo ✕.
+  let notasEmailSel = new Map();     // id da aquisição -> descrição
+  let notasEmailSugeridas = [];      // notas do item (garantia)
+  let arquivosEmailSel = [];         // File[]
+  let buscaNotasEmailTimer = null;
+
+  function descricaoNotaEmail(a) {
+    return 'NF ' + (a.numeroNF || '') + (a.fornecedor ? ' — ' + a.fornecedor : '') + (a.dataAquisicao ? ' — ' + a.dataAquisicao : '');
   }
 
-  function listarArquivosEmailUI() {
+  function renderAnexosEmail(r, contexto) {
+    notasEmailSel = new Map();
+    arquivosEmailSel = [];
+    notasEmailSugeridas = (r && r.aquisicoes) || [];
+    const busca = document.getElementById('emailBuscaNotas');
+    if (busca) busca.value = '';
     const arq = document.getElementById('emailAnexoArquivos');
-    const lista = document.getElementById('emailAnexosArquivosLista');
-    if (!arq || !lista) return;
-    lista.textContent = Array.from(arq.files || []).map(f => f.name).join(', ');
+    if (arq) arq.value = '';
+    const titulo = document.getElementById('emailAnexosRegistroTitulo');
+    if (titulo) titulo.textContent = contexto === 'garantia' ? 'Anexos da garantia' : 'Anexos do chamado';
+    const anexos = (r && (r.anexosRegistro || r.anexosGarantia)) || [];
+    const nome = n => typeof nomeArquivoSemData === 'function' ? nomeArquivoSemData(n) : n;
+    const reg = document.getElementById('emailAnexosRegistro');
+    if (reg) reg.innerHTML = anexos.length ? anexos.map(a =>
+      `<label class="modal-email-anexo-opcao"><input type="checkbox" class="email-anexo-registro" value="${Number(a.id)}"> ${escapeHtml(a.tipo)}: ${escapeHtml(nome(a.nomeArquivo))}</label>`
+    ).join('') : `<p class="modal-email-anexo-vazio">Nenhum anexo ${contexto === 'garantia' ? 'na garantia' : 'no chamado'}.</p>`;
+    mostrarNotasEmail(notasEmailSugeridas, notasEmailSugeridas.length ? 'Notas fiscais do item (últimas aquisições)' : 'Notas fiscais do cadastro de peças');
+    renderSelecionadosEmail();
+  }
+
+  function mostrarNotasEmail(lista, titulo, vazio) {
+    const tituloEl = document.getElementById('emailAnexosNotasTitulo');
+    if (tituloEl) tituloEl.textContent = titulo;
+    const box = document.getElementById('emailAnexosNotas');
+    if (!box) return;
+    if (!lista.length) {
+      box.innerHTML = `<p class="modal-email-anexo-vazio">${escapeHtml(vazio || 'Use a busca acima para escolher notas fiscais do cadastro de peças.')}</p>`;
+      return;
+    }
+    box.innerHTML = lista.map(a => {
+      const desc = escapeHtml(descricaoNotaEmail(a));
+      const item = a.item ? ` <span class="modal-email-anexo-item">· ${escapeHtml(a.item)}${a.itemNumeroSerie ? ' (NS ' + escapeHtml(a.itemNumeroSerie) + ')' : ''}</span>` : '';
+      if (!a.temArquivo) {
+        return `<label class="modal-email-anexo-opcao modal-email-anexo-opcao--sem-arquivo" title="Inclua o arquivo da nota nas Aquisições do item (cadastro de peças)"><input type="checkbox" disabled> ${desc}${item} <small>(${a.doCadastro ? 'do cadastro do item, ' : ''}sem arquivo)</small></label>`;
+      }
+      const marcado = notasEmailSel.has(Number(a.id)) ? ' checked' : '';
+      return `<label class="modal-email-anexo-opcao"><input type="checkbox" class="email-anexo-nota" value="${Number(a.id)}" data-desc="${escapeHtml(descricaoNotaEmail(a) + (a.item ? ' · ' + a.item : ''))}"${marcado} onchange="alternarNotaEmailUI(this)"> ${desc}${item}</label>`;
+    }).join('');
+  }
+
+  function alternarNotaEmailUI(el) {
+    const id = Number(el.value);
+    if (el.checked) notasEmailSel.set(id, el.getAttribute('data-desc') || ('NF ' + id));
+    else notasEmailSel.delete(id);
+    renderSelecionadosEmail();
+  }
+
+  // Busca de notas em todos os itens (a partir de 2 letras); vazia volta às sugeridas
+  function buscarNotasEmailUI() {
+    clearTimeout(buscaNotasEmailTimer);
+    buscaNotasEmailTimer = setTimeout(executarBuscaNotasEmail, 300);
+  }
+
+  async function executarBuscaNotasEmail() {
+    const termo = ((document.getElementById('emailBuscaNotas') || {}).value || '').trim();
+    if (termo.length < 2) {
+      mostrarNotasEmail(notasEmailSugeridas, notasEmailSugeridas.length ? 'Notas fiscais do item (últimas aquisições)' : 'Notas fiscais do cadastro de peças');
+      return;
+    }
+    const box = document.getElementById('emailAnexosNotas');
+    if (box) box.innerHTML = '<span class="spinner"></span>Buscando...';
+    let r;
+    try { r = await runServerFunction('buscarNotasPecas', termo); } catch (e) { r = { notas: [] }; }
+    mostrarNotasEmail((r && r.notas) || [], 'Notas encontradas no cadastro de peças', 'Nenhuma nota com arquivo encontrada para "' + termo + '".');
+  }
+
+  function incluirArquivosEmailUI() {
+    const input = document.getElementById('emailAnexoArquivos');
+    const limite = typeof ANEXO_CADASTRO_TAMANHO_MAX !== 'undefined' ? ANEXO_CADASTRO_TAMANHO_MAX : 3 * 1024 * 1024;
+    const grandes = [];
+    Array.from((input && input.files) || []).forEach(f => {
+      if (f.size > limite) grandes.push(f.name);
+      else arquivosEmailSel.push(f);
+    });
+    if (input) input.value = '';
+    if (grandes.length) alert('Arquivo acima de 3 MB não incluído: ' + grandes.join(', '));
+    renderSelecionadosEmail();
+  }
+
+  function removerArquivoEmailUI(i) {
+    arquivosEmailSel.splice(i, 1);
+    renderSelecionadosEmail();
+  }
+
+  function removerNotaEmailUI(id) {
+    notasEmailSel.delete(Number(id));
+    const cb = document.querySelector('#emailAnexosNotas .email-anexo-nota[value="' + Number(id) + '"]');
+    if (cb) cb.checked = false;
+    renderSelecionadosEmail();
+  }
+
+  // Resumo do que vai anexado (notas escolhidas e arquivos do computador)
+  function renderSelecionadosEmail() {
+    const box = document.getElementById('emailAnexosSelecionados');
+    if (!box) return;
+    const chips = [];
+    notasEmailSel.forEach((desc, id) => chips.push(
+      `<span class="modal-email-anexo-chip">🧾 ${escapeHtml(desc)} <button type="button" title="Remover" onclick="removerNotaEmailUI(${Number(id)})">✕</button></span>`));
+    arquivosEmailSel.forEach((f, i) => chips.push(
+      `<span class="modal-email-anexo-chip">📎 ${escapeHtml(f.name)} <button type="button" title="Remover" onclick="removerArquivoEmailUI(${i})">✕</button></span>`));
+    box.innerHTML = chips.length ? chips.join('') : '<span class="modal-email-anexo-vazio">Nenhuma nota ou arquivo escolhido (os anexos do registro são marcados abaixo).</span>';
   }
 
   function lerArquivoEmail(arquivo) {
@@ -306,13 +391,12 @@
     });
   }
 
-  // { aquisicoes, garantia, arquivos } marcados na área de documentos
+  // { aquisicoes, registro, arquivos } escolhidos na área de documentos
   async function lerAnexosEmail() {
-    const marcados = sel => Array.from(document.querySelectorAll('#emailAnexosArea ' + sel + ':checked')).map(c => Number(c.value));
-    const arq = document.getElementById('emailAnexoArquivos');
+    const registro = Array.from(document.querySelectorAll('#emailAnexosArea .email-anexo-registro:checked')).map(c => Number(c.value));
     const arquivos = [];
-    for (const f of Array.from((arq && arq.files) || [])) arquivos.push(await lerArquivoEmail(f));
-    return { aquisicoes: marcados('.email-anexo-nota'), garantia: marcados('.email-anexo-garantia'), arquivos: arquivos };
+    for (const f of arquivosEmailSel) arquivos.push(await lerArquivoEmail(f));
+    return { aquisicoes: Array.from(notasEmailSel.keys()), registro: registro, arquivos: arquivos };
   }
 
   function popularSelectModelosEmail(selecionado) {
@@ -380,9 +464,7 @@
     if (!dados.para) { alert('Informe o e-mail do destinatário.'); return; }
     if (!dados.assunto) { alert('Digite o assunto do e-mail.'); return; }
     if (!dados.corpo.trim()) { alert('Digite o texto do e-mail.'); return; }
-    if (contexto === 'garantia') {
-      try { dados.anexos = await lerAnexosEmail(); } catch (e) { alert(e.message); return; }
-    }
+    try { dados.anexos = await lerAnexosEmail(); } catch (e) { alert(e.message); return; }
 
     exibirModal('processando');
     try {

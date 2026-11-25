@@ -119,11 +119,41 @@ function aquisicoesParaGarantia_(pecaId) {
   return ordenarAquisicoes_(lista).slice(0, 5);
 }
 
-/** Blob do arquivo da nota de uma aquisição do item (ou erro). */
-function blobAquisicao_(aquisicaoId, pecaId) {
+/**
+ * Busca de notas (com arquivo) em todos os itens, para anexar no e-mail.
+ * termo: nome, modelo ou nº de série do item, nº da nota ou fornecedor.
+ * Mais recentes primeiro, até 20.
+ */
+function buscarNotasPecas(termo) {
+  try {
+    const t = String(termo || '').trim().toLowerCase();
+    if (t.length < 2) return { sucesso: true, notas: [] };
+    const itens = {};
+    ReadParts().forEach(function (l) {
+      itens[Number(l[partsIdCol])] = { nome: String(l[partsNameCol] || ''), modelo: String(l[partsModelCol] || ''), ns: String(l[partsNSCol] || '') };
+    });
+    const notas = ReadPecasAquisicoes()
+      .filter(function (l) { return !String(l[aquisicaoDtExclusaoCol] || '').trim() && String(l[aquisicaoArquivoIdCol] || '').trim(); })
+      .map(function (l) {
+        const a = objetoAquisicao_(l);
+        const it = itens[a.pecaId] || { nome: '', modelo: '', ns: '' };
+        a.item = it.nome; a.itemModelo = it.modelo; a.itemNumeroSerie = it.ns;
+        return a;
+      })
+      .filter(function (a) {
+        return [a.item, a.itemModelo, a.itemNumeroSerie, a.numeroNF, a.fornecedor].join(' ').toLowerCase().indexOf(t) !== -1;
+      });
+    return { sucesso: true, notas: ordenarAquisicoes_(notas).slice(0, 20) };
+  } catch (e) {
+    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message, notas: [] };
+  }
+}
+
+/** Blob do arquivo da nota de uma aquisição (de qualquer item), ou erro. */
+function blobAquisicao_(aquisicaoId) {
   const l = ReadPecasAquisicoes().find(function (x) { return Number(x[aquisicaoIdCol]) === Number(aquisicaoId); });
-  if (!l || Number(l[aquisicaoPecaIdCol]) !== Number(pecaId) || String(l[aquisicaoDtExclusaoCol] || '').trim()) {
-    throw new Error('nota fiscal (aquisição ' + aquisicaoId + ') não encontrada para este item.');
+  if (!l || String(l[aquisicaoDtExclusaoCol] || '').trim()) {
+    throw new Error('nota fiscal (aquisição ' + aquisicaoId + ') não encontrada.');
   }
   const idArq = String(l[aquisicaoArquivoIdCol] || '').trim();
   if (!idArq) throw new Error('a nota ' + l[aquisicaoNumeroNFCol] + ' não tem arquivo.');

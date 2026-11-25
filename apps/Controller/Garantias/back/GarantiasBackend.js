@@ -457,39 +457,17 @@ function prepararEmailGarantia(garantiaId) {
       ultimoEmail: null,
       // documentos para anexar: últimas notas do item e anexos da garantia
       aquisicoes: aquisicoesParaGarantia_(g.pecaId),
-      anexosGarantia: buscarAnexosGarantia(g.id)
+      anexosGarantia: buscarAnexosGarantia(g.id),
+      anexosRegistro: buscarAnexosGarantia(g.id)
     };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
   }
 }
 
-const LIMITE_ANEXOS_EMAIL_BYTES = 20 * 1024 * 1024;   // Gmail aceita 25 MB com a codificação
-
-/**
- * Blobs dos documentos escolhidos. anexos: { aquisicoes: [id], garantia:
- * [id do anexo], arquivos: [{ nome, tipo, base64 }] }.
- */
+/** Blobs dos documentos escolhidos (ver blobsAnexosEmail_). */
 function blobsAnexosGarantia_(garantiaId, pecaId, anexos) {
-  const a = anexos || {};
-  const blobs = [];
-  (a.aquisicoes || []).forEach(function (idAq) { blobs.push(blobAquisicao_(idAq, pecaId)); });
-  if ((a.garantia || []).length) {
-    const daGarantia = buscarAnexosGarantia(garantiaId);
-    a.garantia.forEach(function (idAn) {
-      const an = daGarantia.find(function (x) { return Number(x.id) === Number(idAn); });
-      const idArq = an ? idArquivoDrive_(an.url) : '';
-      if (!idArq) throw new Error('anexo ' + idAn + ' da garantia não encontrado.');
-      blobs.push(DriveApp.getFileById(idArq).getBlob().setName(String(an.nomeArquivo || 'anexo')));
-    });
-  }
-  (a.arquivos || []).forEach(function (arq) {
-    if (!arq || !arq.base64) return;
-    blobs.push(Utilities.newBlob(Utilities.base64Decode(arq.base64), arq.tipo || 'application/octet-stream', arq.nome || 'anexo'));
-  });
-  const total = blobs.reduce(function (s, b) { return s + b.getBytes().length; }, 0);
-  if (total > LIMITE_ANEXOS_EMAIL_BYTES) throw new Error('os anexos passam de 20 MB no total. Escolha menos documentos.');
-  return blobs;
+  return blobsAnexosEmail_(anexos, buscarAnexosGarantia(garantiaId));
 }
 
 /** dados: { garantiaId, para, cc, assunto, corpo, confirmacaoLeitura, anexos } */

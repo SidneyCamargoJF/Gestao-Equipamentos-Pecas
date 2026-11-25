@@ -66,11 +66,7 @@ Menu **Cadastros → Garantias**. Controla o acionamento da garantia de uma peç
 - Com o prazo de resposta vencido e a garantia em andamento, ela aparece como **Atrasada** (em vermelho, no topo da lista).
 - **Anexos:** laudo, fotos, nota fiscal ou outro documento (até 3 MB por arquivo).
 - **Histórico:** cada passo fica registrado com data e usuário; dá para incluir anotações.
-- **E-mail ao fornecedor:** a mesma tela de e-mail do chamado, com o e-mail do fornecedor do item e os modelos de garantia. Em **Documentos anexados**:
-  - **Notas fiscais do item:** as 5 aquisições mais recentes (nº, fornecedor e data), incluindo a nota do próprio cadastro do item. Marque as que vão anexadas; nota sem arquivo aparece apagada (inclua o arquivo nas Aquisições do item).
-  - **Anexos da garantia:** marque laudo, fotos etc. já guardados na garantia.
-  - **Arquivo do computador:** um ou mais arquivos (até 3 MB cada). Eles também ficam guardados nos anexos da garantia, com o tipo "Enviado por e-mail".
-  - O total dos anexos pode ter até 20 MB. O histórico da garantia registra os nomes dos arquivos enviados.
+- **E-mail ao fornecedor:** a mesma tela de e-mail do chamado, com o e-mail do fornecedor do item e os modelos de garantia. Os **Documentos anexados** funcionam como no e-mail do chamado (veja [E-mail para a empresa](#e-mail-para-a-empresa)); aqui as notas sugeridas são as 5 aquisições mais recentes do item (incluindo a nota do próprio cadastro) e os anexos são os da garantia.
 
 **Consulta:** busca (nº, item, número de série, defeito, protocolo), situação (em andamento, prazo vencido, encerradas, todas), status, tipo e fornecedor. Canceladas só aparecem filtrando pelo status Cancelada.
 
@@ -207,6 +203,11 @@ Abre pelo botão **Enviar e-mail para a empresa**, na confirmação depois de sa
 - **Modelo:** escolha um modelo para preencher o assunto e a mensagem com os dados do chamado (número, assunto, equipamentos, contrato, empresa, prazos etc.). O texto continua editável antes de enviar. Sem modelo, digite o e-mail.
 - **Salvar como modelo:** guarda o assunto e a mensagem digitados como um modelo novo. Os dados do chamado (número, empresa, contrato, equipamentos...) voltam a ser campos, para servir a outros chamados; confira e dê um nome antes de salvar.
 - **Solicitar confirmação de leitura:** vem marcada. O e-mail pede ao destinatário a confirmação de leitura, que chega na **sua caixa de entrada** (não no sistema). Quem decide devolver é o programa de e-mail do destinatário: o Outlook costuma perguntar, e alguns programas ignoram o pedido.
+- **📎 Documentos anexados** (logo abaixo de Cópia):
+  - **Notas fiscais do cadastro de peças:** digite na busca (item, modelo, nº de série, nº da nota ou fornecedor) e marque as notas que vão anexadas; a busca procura nas aquisições de todas as peças/produtos (só notas com arquivo). Na garantia, as notas do item já aparecem sugeridas. As escolhidas ficam no resumo, com ✕ para tirar.
+  - **Anexos do chamado / da garantia:** marque os documentos já guardados no registro.
+  - **📎 Incluir do computador:** escolha um ou mais arquivos (até 3 MB cada); dá para clicar de novo para somar mais, e cada um sai pelo ✕. Os arquivos enviados também ficam guardados nos anexos do chamado (tipo Outro) ou da garantia (tipo "Enviado por e-mail").
+  - O total pode ter até 20 MB. O histórico registra os nomes dos arquivos enviados.
 - **Enviar:** o e-mail sai pela sua conta Google, fica registrado nas Movimentações do chamado (indicando se a confirmação foi pedida) e é guardado para o Reenviar.
 
 ## Agenda

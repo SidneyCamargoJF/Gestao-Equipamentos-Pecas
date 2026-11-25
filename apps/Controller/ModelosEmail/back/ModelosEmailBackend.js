@@ -351,7 +351,10 @@ function prepararEmailChamado(chamadoId) {
       valores: valoresCamposEmailChamado_(c),
       modelos: lista.modelos || [],
       campos: lista.campos || camposModeloEmail_('chamado'),
-      ultimoEmail: ultimoEmailChamado_(c.id)
+      ultimoEmail: ultimoEmailChamado_(c.id),
+      // documentos para anexar: anexos do chamado (notas: busca no cadastro de peças)
+      aquisicoes: [],
+      anexosRegistro: anexosChamadoParaEmail_(c.id)
     };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
@@ -473,7 +476,41 @@ function enviarEmailComConfirmacao_(para, cc, assunto, corpo, pedirConfirmacao, 
   };
 }
 
-/** dados: { chamadoId, para, cc, assunto, corpo, confirmacaoLeitura } */
+// ===== DOCUMENTOS ANEXADOS (chamado e garantia) =====
+
+// Anexos do chamado (sem a aba de anexos, lista vazia)
+function anexosChamadoParaEmail_(chamadoId) {
+  try { return buscarAnexosChamado(chamadoId) || []; } catch (e) { return []; }
+}
+
+const LIMITE_ANEXOS_EMAIL_BYTES = 20 * 1024 * 1024;   // Gmail aceita 25 MB com a codificação
+
+/**
+ * Blobs dos documentos escolhidos na tela de envio. anexos: {
+ * aquisicoes: [id da nota em tbl_pecas_aquisicoes], registro: [id do anexo
+ * do chamado/garantia] (garantia: nome antigo), arquivos: [{ nome, tipo,
+ * base64 }] }. anexosDoRegistro: lista de buscarAnexos* do registro.
+ */
+function blobsAnexosEmail_(anexos, anexosDoRegistro) {
+  const a = anexos || {};
+  const blobs = [];
+  (a.aquisicoes || []).forEach(function (idAq) { blobs.push(blobAquisicao_(idAq)); });
+  (a.registro || a.garantia || []).forEach(function (idAn) {
+    const an = (anexosDoRegistro || []).find(function (x) { return Number(x.id) === Number(idAn); });
+    const idArq = an ? idArquivoDrive_(an.url) : '';
+    if (!idArq) throw new Error('anexo ' + idAn + ' não encontrado.');
+    blobs.push(DriveApp.getFileById(idArq).getBlob().setName(String(an.nomeArquivo || 'anexo')));
+  });
+  (a.arquivos || []).forEach(function (arq) {
+    if (!arq || !arq.base64) return;
+    blobs.push(Utilities.newBlob(Utilities.base64Decode(arq.base64), arq.tipo || 'application/octet-stream', arq.nome || 'anexo'));
+  });
+  const total = blobs.reduce(function (s, b) { return s + b.getBytes().length; }, 0);
+  if (total > LIMITE_ANEXOS_EMAIL_BYTES) throw new Error('os anexos passam de 20 MB no total. Escolha menos documentos.');
+  return blobs;
+}
+
+/** dados: { chamadoId, para, cc, assunto, corpo, confirmacaoLeitura, anexos } */
 function enviarEmailChamado(dados) {
   try {
     const chamadoId = Number(dados && dados.chamadoId);
@@ -486,8 +523,14 @@ function enviarEmailChamado(dados) {
     if (!v.sucesso) return v;
     const para = { itens: v.para }, cc = { itens: v.cc }, assunto = v.assunto, corpo = v.corpo;
 
+    // documentos escolhidos (notas do cadastro de peças, anexos do chamado, arquivos do computador)
+    let blobs;
+    try { blobs = blobsAnexosEmail_(dados.anexos, dados.anexos && (dados.anexos.registro || []).length ? anexosChamadoParaEmail_(chamadoId) : []); }
+    catch (erroAnexo) { return { sucesso: false, mensagem: 'Não foi possível anexar: ' + erroAnexo.message }; }
+    const nomesAnexos = blobs.map(function (b) { return b.getName(); });
+
     // confirmação de leitura: pedida, a não ser que venha desmarcada
-    const envio = enviarEmailComConfirmacao_(para.itens, cc.itens, assunto, corpo, dados.confirmacaoLeitura !== false);
+    const envio = enviarEmailComConfirmacao_(para.itens, cc.itens, assunto, corpo, dados.confirmacaoLeitura !== false, blobs);
 
     // Guarda o e-mail para poder reenviar; falha aqui não desfaz o envio
     try {
@@ -496,11 +539,19 @@ function enviarEmailChamado(dados) {
       console.error('Não foi possível guardar o e-mail enviado: ' + erroRegistro.message);
     }
 
+    // arquivos do computador ficam também nos anexos do chamado
+    ((dados.anexos && dados.anexos.arquivos) || []).forEach(function (arq) {
+      if (!arq || !arq.base64) return;
+      try { adicionarAnexoChamado(chamadoId, 'Outro', { nome: arq.nome, tipo: arq.tipo, base64: arq.base64 }); }
+      catch (erroGuardar) { console.error('Anexo enviado não guardado: ' + erroGuardar.message); }
+    });
+
     adicionarHistoricoSistema(chamadoId, 'E-mail enviado para ' + para.itens.join(', ') +
       (cc.itens.length ? ' (cópia: ' + cc.itens.join(', ') + ')' : '') +
-      (envio.confirmacao ? ', com confirmação de leitura solicitada' : '') + '. Assunto: ' + assunto);
+      (envio.confirmacao ? ', com confirmação de leitura solicitada' : '') + '. Assunto: ' + assunto +
+      (nomesAnexos.length ? '. Anexos: ' + nomesAnexos.join(', ') : ''));
 
-    let mensagem = 'E-mail enviado para ' + para.itens.join(', ') + '.';
+    let mensagem = 'E-mail enviado para ' + para.itens.join(', ') + (nomesAnexos.length ? ', com ' + nomesAnexos.length + ' anexo(s)' : '') + '.';
     if (envio.confirmacao) mensagem += '\nConfirmação de leitura solicitada: se o destinatário aceitar, ela chega na sua caixa de entrada.';
     if (envio.aviso) mensagem += '\n' + envio.aviso;
     return { sucesso: true, mensagem: mensagem, confirmacaoLeitura: envio.confirmacao };
