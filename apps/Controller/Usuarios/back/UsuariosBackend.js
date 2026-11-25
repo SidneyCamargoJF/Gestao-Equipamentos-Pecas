@@ -169,18 +169,21 @@ function emailUsuarioLogado_() {
   }
 }
 
-/** { email, nome, encontrado } do usuário logado. nome cai no e-mail se ele não estiver cadastrado. */
+/** { email, nome, encontrado, setor, lotacao } do usuário logado. nome cai no e-mail se ele não estiver cadastrado. */
 function buscarUsuarioLogado() {
   const email = emailUsuarioLogado_();
-  if (!email) return { email: '', nome: '', encontrado: false };
+  if (!email) return { email: '', nome: '', encontrado: false, setor: '', lotacao: '' };
 
   const chave = chaveUsuarioLogin_(email);
   const linha = ReadUsers().find(function (l) {
     return !String(l[userDtExclusaoCol] || '').trim() && chaveUsuarioLogin_(l[userUsuarioCol]) === chave;
   });
   return linha
-    ? { email: email, nome: String(linha[userNomeCol] || '').trim() || email, encontrado: true }
-    : { email: email, nome: email, encontrado: false };
+    ? {
+      email: email, nome: String(linha[userNomeCol] || '').trim() || email, encontrado: true,
+      setor: String(linha[userSetorCol] || '').trim(), lotacao: String(linha[userLotacao] || '').trim()
+    }
+    : { email: email, nome: email, encontrado: false, setor: '', lotacao: '' };
 }
 
 /** Texto gravado em "Aberto por"/"Registrado por". */

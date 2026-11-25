@@ -3,6 +3,39 @@
     // Initialize Application
     document.addEventListener('DOMContentLoaded', () => {
       trocarPagina('dashboard');
+      carregarUsuarioMenu();
     });
+
+    // Nome e setor do usuário logado na barra de menu (cadastro em
+    // Configuração > Usuários; sem cadastro, mostra o e-mail e avisa).
+    async function carregarUsuarioMenu() {
+      const nomeEl = document.getElementById('menuUsuarioNome');
+      const setorEl = document.getElementById('menuUsuarioSetor');
+      const avatarEl = document.getElementById('menuUsuarioAvatar');
+      const boxEl = document.getElementById('menuUsuario');
+      let u = null;
+      try { u = await runServerFunction('buscarUsuarioLogado'); } catch (e) { u = null; }
+      if (!u || !(u.nome || u.email)) {
+        if (nomeEl) nomeEl.textContent = 'Usuário não identificado';
+        if (setorEl) setorEl.textContent = '';
+        if (avatarEl) avatarEl.textContent = '?';
+        return;
+      }
+      const nome = u.nome || u.email;
+      const setor = u.encontrado ? (u.setor || '') : 'Não cadastrado em Usuários';
+      if (nomeEl) nomeEl.textContent = nome;
+      if (setorEl) setorEl.textContent = setor;
+      if (avatarEl) avatarEl.textContent = iniciaisUsuarioMenu(u.encontrado ? nome : String(u.email || '').split('@')[0]);
+      if (boxEl) boxEl.title = [nome, u.lotacao && u.setor ? u.lotacao + ' / ' + u.setor : setor, u.email].filter(Boolean).join('\n');
+    }
+
+    // "Maria da Silva Souza" -> "MS"; "fulano.tal" -> "FT"
+    function iniciaisUsuarioMenu(nome) {
+      const ignorar = ['da', 'de', 'do', 'das', 'dos', 'e'];
+      const partes = String(nome || '').trim().split(/[\s._-]+/).filter(p => p && ignorar.indexOf(p.toLowerCase()) === -1);
+      if (!partes.length) return '?';
+      const ini = partes.length === 1 ? partes[0].slice(0, 2) : partes[0][0] + partes[partes.length - 1][0];
+      return ini.toUpperCase();
+    }
 
 </script>

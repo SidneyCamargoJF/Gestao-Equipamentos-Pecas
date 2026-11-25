@@ -242,6 +242,34 @@
       font-size: 0.8125rem;
     }
 
+    .menu-user-texto {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      line-height: 1.2;
+      max-width: 16rem;
+    }
+
+    .menu-user-nome {
+      font-weight: 600;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .menu-user-setor {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .menu-user-setor:empty { display: none; }
+
     .menu-user .avatar {
       width: 2.25rem;
       height: 2.25rem;
@@ -696,7 +724,7 @@
     /* Responsive Mobile Media Queries */
     @media (max-width: 48rem) {
       .menu-items .menu-item span { display: none; }
-      .menu-user span { display: none; }
+      .menu-user span, .menu-user-texto { display: none; }
       .top-menu { padding: 0 1rem; }
       .metrics-grid { grid-template-columns: repeat(2, 1fr); }
       .metric-value { font-size: 1.5rem; }

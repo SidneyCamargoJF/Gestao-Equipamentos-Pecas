@@ -113,9 +113,13 @@
       </li>
     </ul>
 
-    <div class="menu-user">
-      <span>User Name</span>
-      <div class="avatar">UN</div>
+    <!-- Usuário logado (nome e setor do cadastro em Configuração > Usuários) -- carregarUsuarioMenu() em js/IndexJS -->
+    <div class="menu-user" id="menuUsuario">
+      <div class="menu-user-texto">
+        <span class="menu-user-nome" id="menuUsuarioNome">Carregando...</span>
+        <span class="menu-user-setor" id="menuUsuarioSetor"></span>
+      </div>
+      <div class="avatar" id="menuUsuarioAvatar">…</div>
     </div>
   </nav>
 

@@ -272,3 +272,4 @@ Lista os modelos usados no [e-mail para a empresa](#e-mail-para-a-empresa) e no 
 - O login não pode se repetir.
 - O sistema identifica quem está usando pelo e-mail da conta Google. O **nome** cadastrado é o que aparece em "Aberto por" e no registro do checklist.
 - Quem não está cadastrado aparece como "Desconhecido".
+- O **nome** e o **setor** do usuário aparecem no canto direito da barra de menu, com as iniciais. Passando o mouse, aparecem a lotação e o e-mail. Sem cadastro, aparecem o e-mail e o aviso "Não cadastrado em Usuários".
