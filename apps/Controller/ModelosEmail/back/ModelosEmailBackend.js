@@ -268,7 +268,65 @@ function listaEmails_(texto) {
   return { itens: itens, invalidos: invalidos };
 }
 
-/** dados: { chamadoId, para, cc, assunto, corpo } */
+// ===== CONFIRMAÇÃO DE LEITURA =====
+// O MailApp não aceita cabeçalhos próprios; com a confirmação de leitura o
+// e-mail vai pela API do Gmail (serviço avançado "Gmail", habilitado no
+// appsscript.json) com Disposition-Notification-To / Return-Receipt-To
+// apontando para quem envia. Quem decide devolver a confirmação é o
+// programa de e-mail do destinatário (pode perguntar ou ignorar).
+
+// Cabeçalho com acento (RFC 2047), em pedaços curtos
+function cabecalhoMimeUtf8_(texto) {
+  const s = String(texto || '');
+  if (/^[\x20-\x7e]*$/.test(s)) return s;
+  const pedacos = [];
+  for (let i = 0; i < s.length; i += 30) {
+    pedacos.push('=?UTF-8?B?' + Utilities.base64Encode(s.slice(i, i + 30), Utilities.Charset.UTF_8) + '?=');
+  }
+  return pedacos.join('\r\n ');
+}
+
+function montarMimeEmail_(para, cc, assunto, corpo, confirmarPara) {
+  const linhas = ['To: ' + para.join(', ')];
+  if (cc.length) linhas.push('Cc: ' + cc.join(', '));
+  linhas.push('Subject: ' + cabecalhoMimeUtf8_(assunto));
+  if (confirmarPara) {
+    linhas.push('Disposition-Notification-To: ' + confirmarPara);
+    linhas.push('Return-Receipt-To: ' + confirmarPara);
+  }
+  linhas.push('MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '');
+  const corpo64 = Utilities.base64Encode(corpo.replace(/\n/g, '\r\n'), Utilities.Charset.UTF_8);
+  linhas.push(corpo64.replace(/(.{76})/g, '$1\r\n'));
+  return linhas.join('\r\n');
+}
+
+/**
+ * Envia e diz se a confirmação de leitura foi pedida. Sem o serviço do
+ * Gmail habilitado (ou sem o e-mail de quem envia), vai pelo MailApp, sem
+ * confirmação.
+ */
+function enviarEmailComConfirmacao_(para, cc, assunto, corpo, pedirConfirmacao) {
+  const remetente = pedirConfirmacao ? emailUsuarioLogado_() : '';
+  const temGmail = typeof Gmail !== 'undefined' && Gmail && Gmail.Users && Gmail.Users.Messages;
+  if (pedirConfirmacao && remetente && temGmail) {
+    const mime = montarMimeEmail_(para, cc, assunto, corpo, remetente);
+    Gmail.Users.Messages.send({ raw: Utilities.base64EncodeWebSafe(mime, Utilities.Charset.UTF_8) }, 'me');
+    return { confirmacao: true };
+  }
+  if (MailApp.getRemainingDailyQuota() < para.length + cc.length) {
+    throw new Error('a cota diária de envio de e-mails da sua conta acabou. Tente amanhã.');
+  }
+  const opcoes = { to: para.join(','), subject: assunto, body: corpo };
+  if (cc.length) opcoes.cc = cc.join(',');
+  MailApp.sendEmail(opcoes);
+  return {
+    confirmacao: false,
+    aviso: pedirConfirmacao ? (temGmail ? 'Não foi possível identificar o seu e-mail para pedir a confirmação de leitura.'
+      : 'Confirmação de leitura não solicitada: o serviço do Gmail não está habilitado no projeto.') : ''
+  };
+}
+
+/** dados: { chamadoId, para, cc, assunto, corpo, confirmacaoLeitura } */
 function enviarEmailChamado(dados) {
   try {
     const chamadoId = Number(dados && dados.chamadoId);
@@ -291,13 +349,8 @@ function enviarEmailChamado(dados) {
       return { sucesso: false, mensagem: 'O e-mail ainda tem campos do modelo sem preencher ({{...}}). Revise o texto antes de enviar.' };
     }
 
-    if (MailApp.getRemainingDailyQuota() < para.itens.length + cc.itens.length) {
-      return { sucesso: false, mensagem: 'A cota diária de envio de e-mails da sua conta acabou. Tente amanhã.' };
-    }
-
-    const opcoes = { to: para.itens.join(','), subject: assunto, body: corpo };
-    if (cc.itens.length) opcoes.cc = cc.itens.join(',');
-    MailApp.sendEmail(opcoes);
+    // confirmação de leitura: pedida, a não ser que venha desmarcada
+    const envio = enviarEmailComConfirmacao_(para.itens, cc.itens, assunto, corpo, dados.confirmacaoLeitura !== false);
 
     // Guarda o e-mail para poder reenviar; falha aqui não desfaz o envio
     try {
@@ -307,9 +360,13 @@ function enviarEmailChamado(dados) {
     }
 
     adicionarHistoricoSistema(chamadoId, 'E-mail enviado para ' + para.itens.join(', ') +
-      (cc.itens.length ? ' (cópia: ' + cc.itens.join(', ') + ')' : '') + '. Assunto: ' + assunto);
+      (cc.itens.length ? ' (cópia: ' + cc.itens.join(', ') + ')' : '') +
+      (envio.confirmacao ? ', com confirmação de leitura solicitada' : '') + '. Assunto: ' + assunto);
 
-    return { sucesso: true, mensagem: 'E-mail enviado para ' + para.itens.join(', ') + '.' };
+    let mensagem = 'E-mail enviado para ' + para.itens.join(', ') + '.';
+    if (envio.confirmacao) mensagem += '\nConfirmação de leitura solicitada: se o destinatário aceitar, ela chega na sua caixa de entrada.';
+    if (envio.aviso) mensagem += '\n' + envio.aviso;
+    return { sucesso: true, mensagem: mensagem, confirmacaoLeitura: envio.confirmacao };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro ao enviar o e-mail: ' + e.message };
   }

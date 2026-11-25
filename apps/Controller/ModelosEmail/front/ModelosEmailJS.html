@@ -205,6 +205,8 @@
     document.getElementById('emailChamadoCc').value = ultimo ? ultimo.cc : '';
     document.getElementById('emailChamadoAssunto').value = ultimo ? ultimo.assunto : '';
     document.getElementById('emailChamadoCorpo').value = ultimo ? ultimo.corpo : '';
+    const confirmacaoEl = document.getElementById('emailChamadoConfirmacaoLeitura');
+    if (confirmacaoEl) confirmacaoEl.checked = true;   // confirmação de leitura: marcada por padrão
     const avisoReenvio = document.getElementById('emailChamadoAvisoReenvio');
     if (avisoReenvio) {
       avisoReenvio.style.display = reenviar ? '' : 'none';
@@ -273,7 +275,8 @@
       para: document.getElementById('emailChamadoPara').value.trim(),
       cc: document.getElementById('emailChamadoCc').value.trim(),
       assunto: document.getElementById('emailChamadoAssunto').value.trim(),
-      corpo: document.getElementById('emailChamadoCorpo').value
+      corpo: document.getElementById('emailChamadoCorpo').value,
+      confirmacaoLeitura: !!(document.getElementById('emailChamadoConfirmacaoLeitura') || {}).checked
     };
     if (!dados.para) { alert('Informe o e-mail do destinatário.'); return; }
     if (!dados.assunto) { alert('Digite o assunto do e-mail.'); return; }

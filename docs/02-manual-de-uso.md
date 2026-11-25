@@ -165,7 +165,8 @@ Abre pelo botão **Enviar e-mail para a empresa**, na confirmação depois de sa
 - **Para:** vem com o e-mail do contrato (ou do fornecedor, se o contrato não tiver). Pode ser alterado; vários e-mails são separados por `;`. **Cópia** é opcional.
 - **Modelo:** escolha um modelo para preencher o assunto e a mensagem com os dados do chamado (número, assunto, equipamentos, contrato, empresa, prazos etc.). O texto continua editável antes de enviar. Sem modelo, digite o e-mail.
 - **Salvar como modelo:** guarda o assunto e a mensagem digitados como um modelo novo. Os dados do chamado (número, empresa, contrato, equipamentos...) voltam a ser campos, para servir a outros chamados; confira e dê um nome antes de salvar.
-- **Enviar:** o e-mail sai pela sua conta Google, fica registrado nas Movimentações do chamado e é guardado para o Reenviar.
+- **Solicitar confirmação de leitura:** vem marcada. O e-mail pede ao destinatário a confirmação de leitura, que chega na **sua caixa de entrada** (não no sistema). Quem decide devolver é o programa de e-mail do destinatário: o Outlook costuma perguntar, e alguns programas ignoram o pedido.
+- **Enviar:** o e-mail sai pela sua conta Google, fica registrado nas Movimentações do chamado (indicando se a confirmação foi pedida) e é guardado para o Reenviar.
 
 ## Agenda
 

@@ -34,7 +34,9 @@ Em **Configurações do projeto → Propriedades do script**, crie a propriedade
 
 ### E-mail
 
-O envio de e-mail do chamado usa o `MailApp`. Na primeira publicação com esse recurso, cada usuário precisa **autorizar de novo** o app (envio de e-mail em seu nome). O e-mail sai da conta de quem está usando o sistema e conta na cota diária de envio dessa conta.
+O envio de e-mail do chamado usa a **API do Gmail** (serviço avançado `Gmail`, já declarado no `appsscript.json`), porque só ela aceita o cabeçalho da confirmação de leitura (`Disposition-Notification-To`). Se o serviço não estiver habilitado, o envio cai no `MailApp`, sem confirmação, e a tela avisa.
+
+Depois de publicar, cada usuário precisa **autorizar de novo** o app (envio de e-mail em seu nome). Se o domínio restringir o acesso de apps ao Gmail, o administrador do Google Workspace precisa liberar este projeto. O e-mail sai da conta de quem está usando o sistema e conta na cota diária de envio dessa conta.
 
 A aba `tbl_modelos_email` é criada sozinha ao abrir **Configuração → Modelos de e-mail**, e a `tbl_chamado_emails` no primeiro envio (ou as duas com `criarTabelasNovasSeNecessario()`).
 
