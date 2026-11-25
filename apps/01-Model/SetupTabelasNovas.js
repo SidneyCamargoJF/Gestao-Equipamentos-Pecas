@@ -31,7 +31,9 @@ function criarTabelasNovasSeNecessario() {
     criarAbaSeNaoExistir_(ticketEmailsTableName, CABECALHO_CHAMADO_EMAILS)
   ].concat(
     // garantias de peças/produtos: acionamentos, histórico e anexos
-    garantirAbasGarantias_()
+    garantirAbasGarantias_(),
+    // aquisições (notas fiscais) das peças/produtos
+    criarAbaSeNaoExistir_(pecasAquisicoesTableName, CABECALHO_PECAS_AQUISICOES)
   );
 
   resultado.forEach(function (r) { Logger.log(r.mensagem); });

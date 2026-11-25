@@ -468,4 +468,23 @@ body {
   }
 }
 
+/* ===== AQUISIÇÕES (cadastro de peça/produto) ===== */
+.peca-aquisicoes-ajuda {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--color-slate-500, #64748b);
+}
+
+.peca-aquisicoes-form {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr 1.5fr auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 64rem) {
+  .peca-aquisicoes-form { grid-template-columns: 1fr 1fr; }
+}
+
 </style>

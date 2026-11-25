@@ -164,6 +164,41 @@
       </fieldset>
 
       <!-- ============================================= -->
+      <!-- AQUISIÇÕES (notas fiscais) -- gravadas na hora, só com o item salvo.
+           Campos com data-ignorar-alteracao: não contam no "sair sem salvar". -->
+      <!-- ============================================= -->
+      <fieldset class="fieldset-principal" id="pecaAquisicoesSecao">
+        <legend class="fieldset-legend">Aquisições (notas fiscais)</legend>
+        <p class="peca-aquisicoes-ajuda">O mesmo item pode ter sido comprado em épocas e de fornecedores diferentes. As notas daqui são sugeridas no e-mail de garantia (as 5 mais recentes).</p>
+        <p class="peca-aquisicoes-ajuda" id="pecaAquisicoesAviso">Salve o item para incluir aquisições.</p>
+        <div class="peca-aquisicoes-form" id="pecaAquisicoesForm" style="display:none;">
+          <div class="field">
+            <label class="field__label" for="aquisicaoNF">Nº da nota *</label>
+            <input class="field__input" type="text" id="aquisicaoNF" placeholder="Ex: 12345" data-ignorar-alteracao>
+          </div>
+          <div class="field">
+            <label class="field__label" for="aquisicaoFornecedor">Fornecedor *</label>
+            <select class="field__select" id="aquisicaoFornecedor" data-ignorar-alteracao></select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="aquisicaoData">Data de aquisição *</label>
+            <input class="field__input" type="date" id="aquisicaoData" data-ignorar-alteracao>
+          </div>
+          <div class="field">
+            <label class="field__label" for="aquisicaoArquivo">Arquivo da nota</label>
+            <input class="field__input" type="file" id="aquisicaoArquivo" accept="application/pdf,image/*" data-ignorar-alteracao>
+          </div>
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="incluirAquisicaoPecaUI()">Incluir</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>Nº da nota</th><th>Fornecedor</th><th>Data de aquisição</th><th>Arquivo</th><th>Ações</th></tr></thead>
+            <tbody id="pecaAquisicoesLista"><tr><td colspan="5" style="text-align:center;">Nenhuma aquisição.</td></tr></tbody>
+          </table>
+        </div>
+      </fieldset>
+
+      <!-- ============================================= -->
       <!-- BOTÕES DE AÇÃO                                -->
       <!-- ============================================= -->
       <div class="form-actions">

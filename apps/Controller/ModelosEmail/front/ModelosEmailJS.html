@@ -258,7 +258,61 @@
       aviso.textContent = r.para ? (r.empresa ? cfg.comEmail + r.empresa + '.' : '') : cfg.semEmail;
     }
     popularSelectModelosEmail('');
+    renderAnexosEmail(contexto === 'garantia' ? r : null);
     exibirModal('modalEmailChamado');
+  }
+
+  // ===== DOCUMENTOS ANEXADOS (e-mail de garantia) =====
+  // r: resposta do prepararEmailGarantia (aquisicoes, anexosGarantia); null esconde a área
+  function renderAnexosEmail(r) {
+    const area = document.getElementById('emailAnexosArea');
+    if (!area) return;
+    const arq = document.getElementById('emailAnexoArquivos');
+    if (arq) arq.value = '';
+    const listaArq = document.getElementById('emailAnexosArquivosLista');
+    if (listaArq) listaArq.textContent = '';
+    area.style.display = r ? '' : 'none';
+    if (!r) return;
+    const notas = r.aquisicoes || [];
+    document.getElementById('emailAnexosNotas').innerHTML = notas.length ? notas.map(a => {
+      const desc = 'NF ' + escapeHtml(a.numeroNF) + (a.fornecedor ? ' — ' + escapeHtml(a.fornecedor) : '') +
+        (a.dataAquisicao ? ' — ' + escapeHtml(a.dataAquisicao) : '');
+      return a.temArquivo
+        ? `<label class="modal-email-anexo-opcao"><input type="checkbox" class="email-anexo-nota" value="${Number(a.id)}"> ${desc}</label>`
+        : `<label class="modal-email-anexo-opcao modal-email-anexo-opcao--sem-arquivo" title="Inclua o arquivo da nota nas aquisições do item (cadastro de peças)"><input type="checkbox" disabled> ${desc} <small>(${a.doCadastro ? 'do cadastro do item, ' : ''}sem arquivo)</small></label>`;
+    }).join('') : '<p class="modal-email-anexo-vazio">Nenhuma nota cadastrada para o item.</p>';
+    const anexos = r.anexosGarantia || [];
+    const nome = n => typeof nomeArquivoSemData === 'function' ? nomeArquivoSemData(n) : n;
+    document.getElementById('emailAnexosGarantia').innerHTML = anexos.length ? anexos.map(a =>
+      `<label class="modal-email-anexo-opcao"><input type="checkbox" class="email-anexo-garantia" value="${Number(a.id)}"> ${escapeHtml(a.tipo)}: ${escapeHtml(nome(a.nomeArquivo))}</label>`
+    ).join('') : '<p class="modal-email-anexo-vazio">Nenhum anexo na garantia.</p>';
+  }
+
+  function listarArquivosEmailUI() {
+    const arq = document.getElementById('emailAnexoArquivos');
+    const lista = document.getElementById('emailAnexosArquivosLista');
+    if (!arq || !lista) return;
+    lista.textContent = Array.from(arq.files || []).map(f => f.name).join(', ');
+  }
+
+  function lerArquivoEmail(arquivo) {
+    const limite = typeof ANEXO_CADASTRO_TAMANHO_MAX !== 'undefined' ? ANEXO_CADASTRO_TAMANHO_MAX : 3 * 1024 * 1024;
+    return new Promise((resolve, reject) => {
+      if (arquivo.size > limite) { reject(new Error('O arquivo "' + arquivo.name + '" passa de 3MB.')); return; }
+      const leitor = new FileReader();
+      leitor.onload = () => resolve({ nome: arquivo.name, tipo: arquivo.type || 'application/octet-stream', base64: String(leitor.result).split(',')[1] || '' });
+      leitor.onerror = () => reject(new Error('Erro ao ler o arquivo "' + arquivo.name + '".'));
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+
+  // { aquisicoes, garantia, arquivos } marcados na área de documentos
+  async function lerAnexosEmail() {
+    const marcados = sel => Array.from(document.querySelectorAll('#emailAnexosArea ' + sel + ':checked')).map(c => Number(c.value));
+    const arq = document.getElementById('emailAnexoArquivos');
+    const arquivos = [];
+    for (const f of Array.from((arq && arq.files) || [])) arquivos.push(await lerArquivoEmail(f));
+    return { aquisicoes: marcados('.email-anexo-nota'), garantia: marcados('.email-anexo-garantia'), arquivos: arquivos };
   }
 
   function popularSelectModelosEmail(selecionado) {
@@ -326,6 +380,9 @@
     if (!dados.para) { alert('Informe o e-mail do destinatário.'); return; }
     if (!dados.assunto) { alert('Digite o assunto do e-mail.'); return; }
     if (!dados.corpo.trim()) { alert('Digite o texto do e-mail.'); return; }
+    if (contexto === 'garantia') {
+      try { dados.anexos = await lerAnexosEmail(); } catch (e) { alert(e.message); return; }
+    }
 
     exibirModal('processando');
     try {

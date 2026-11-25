@@ -1,5 +1,26 @@
 <style>
 /* ===== GARANTIAS (consulta, abertura e detalhe) ===== */
+.garantia-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.garantia-cabecalho h1 { margin: 0; }
+
+.garantia-cabecalho-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.garantia-cabecalho-botoes button { width: auto; }
+
 .garantia-filtros {
   display: grid;
   grid-template-columns: 2fr 1.3fr 1.2fr 1fr 1.3fr;

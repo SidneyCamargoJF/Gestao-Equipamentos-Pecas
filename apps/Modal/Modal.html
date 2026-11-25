@@ -436,6 +436,23 @@
             <input type="checkbox" id="emailChamadoConfirmacaoLeitura" checked>
             Solicitar confirmação de leitura <small>(chega na sua caixa de entrada, se o destinatário aceitar)</small>
           </label>
+          <!-- Documentos anexados (só no e-mail de garantia) -- ModelosEmailJS -->
+          <div class="modal-email-anexos" id="emailAnexosArea" style="display:none;">
+            <span class="field__label">Documentos anexados</span>
+            <div class="modal-email-anexos-grupo">
+              <strong>Notas fiscais do item <small>(últimas aquisições)</small></strong>
+              <div id="emailAnexosNotas"></div>
+            </div>
+            <div class="modal-email-anexos-grupo">
+              <strong>Anexos da garantia</strong>
+              <div id="emailAnexosGarantia"></div>
+            </div>
+            <div class="modal-email-anexos-grupo">
+              <strong>Arquivo do computador <small>(até 3 MB cada)</small></strong>
+              <input type="file" id="emailAnexoArquivos" multiple accept="application/pdf,image/*" data-ignorar-alteracao onchange="listarArquivosEmailUI()">
+              <div id="emailAnexosArquivosLista" class="modal-email-anexos-arquivos"></div>
+            </div>
+          </div>
         </form>
         <div class="modal-actions modal-email-acoes">
           <button type="button" class="btn-secondary" style="width:auto;" onclick="salvarEmailComoModeloUI()">💾 Salvar como modelo</button>

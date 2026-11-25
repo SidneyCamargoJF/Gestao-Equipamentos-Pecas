@@ -454,14 +454,45 @@ function prepararEmailGarantia(garantiaId) {
       para: g.emailFornecedor || '', empresa: g.fornecedor || '',
       valores: valoresCamposEmailGarantia_(g),
       modelos: lista.modelos || [], campos: camposModeloEmail_('garantia'),
-      ultimoEmail: null
+      ultimoEmail: null,
+      // documentos para anexar: últimas notas do item e anexos da garantia
+      aquisicoes: aquisicoesParaGarantia_(g.pecaId),
+      anexosGarantia: buscarAnexosGarantia(g.id)
     };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
   }
 }
 
-/** dados: { garantiaId, para, cc, assunto, corpo, confirmacaoLeitura } */
+const LIMITE_ANEXOS_EMAIL_BYTES = 20 * 1024 * 1024;   // Gmail aceita 25 MB com a codificação
+
+/**
+ * Blobs dos documentos escolhidos. anexos: { aquisicoes: [id], garantia:
+ * [id do anexo], arquivos: [{ nome, tipo, base64 }] }.
+ */
+function blobsAnexosGarantia_(garantiaId, pecaId, anexos) {
+  const a = anexos || {};
+  const blobs = [];
+  (a.aquisicoes || []).forEach(function (idAq) { blobs.push(blobAquisicao_(idAq, pecaId)); });
+  if ((a.garantia || []).length) {
+    const daGarantia = buscarAnexosGarantia(garantiaId);
+    a.garantia.forEach(function (idAn) {
+      const an = daGarantia.find(function (x) { return Number(x.id) === Number(idAn); });
+      const idArq = an ? idArquivoDrive_(an.url) : '';
+      if (!idArq) throw new Error('anexo ' + idAn + ' da garantia não encontrado.');
+      blobs.push(DriveApp.getFileById(idArq).getBlob().setName(String(an.nomeArquivo || 'anexo')));
+    });
+  }
+  (a.arquivos || []).forEach(function (arq) {
+    if (!arq || !arq.base64) return;
+    blobs.push(Utilities.newBlob(Utilities.base64Decode(arq.base64), arq.tipo || 'application/octet-stream', arq.nome || 'anexo'));
+  });
+  const total = blobs.reduce(function (s, b) { return s + b.getBytes().length; }, 0);
+  if (total > LIMITE_ANEXOS_EMAIL_BYTES) throw new Error('os anexos passam de 20 MB no total. Escolha menos documentos.');
+  return blobs;
+}
+
+/** dados: { garantiaId, para, cc, assunto, corpo, confirmacaoLeitura, anexos } */
 function enviarEmailGarantia(dados) {
   try {
     const id = Number(dados && dados.garantiaId);
@@ -469,12 +500,28 @@ function enviarEmailGarantia(dados) {
     if (!loc) return { sucesso: false, mensagem: 'Garantia não encontrada.' };
     const v = validarEmailDigitado_(dados);
     if (!v.sucesso) return v;
-    const envio = enviarEmailComConfirmacao_(v.para, v.cc, v.assunto, v.corpo, dados.confirmacaoLeitura !== false);
+    let blobs;
+    try { blobs = blobsAnexosGarantia_(id, loc.dados[garantiaPecaIdCol], dados.anexos); }
+    catch (erroAnexo) { return { sucesso: false, mensagem: 'Não foi possível anexar: ' + erroAnexo.message }; }
+    const envio = enviarEmailComConfirmacao_(v.para, v.cc, v.assunto, v.corpo, dados.confirmacaoLeitura !== false, blobs);
+    const nomesAnexos = blobs.map(function (b) { return b.getName(); });
 
-    let mensagem = 'E-mail enviado para ' + v.para.join(', ') + '.';
+    let mensagem = 'E-mail enviado para ' + v.para.join(', ') + (nomesAnexos.length ? ', com ' + nomesAnexos.length + ' anexo(s)' : '') + '.';
     executarComLock(function () {
       registrarHistoricoGarantia_(id, 'E-mail enviado para ' + v.para.join(', ') + (v.cc.length ? ' (cópia: ' + v.cc.join(', ') + ')' : '') +
-        (envio.confirmacao ? ', com confirmação de leitura solicitada' : '') + '. Assunto: ' + v.assunto);
+        (envio.confirmacao ? ', com confirmação de leitura solicitada' : '') + '. Assunto: ' + v.assunto +
+        (nomesAnexos.length ? '. Anexos: ' + nomesAnexos.join(', ') : ''));
+      // arquivos escolhidos do computador ficam também nos anexos da garantia
+      ((dados.anexos && dados.anexos.arquivos) || []).forEach(function (arq) {
+        if (!arq || !arq.base64) return;
+        try {
+          adicionarAnexoGenerico({
+            tabelaAnexos: garantiaAnexosTableName, idRegistro: id, tipo: 'Enviado por e-mail',
+            arquivo: { nome: arq.nome, tipo: arq.tipo, base64: arq.base64 },
+            firstLine: firstLineGarantiaAnexos, numColumns: numColumnsGarantiaAnexos
+          });
+        } catch (erroGuardar) { console.error('Anexo enviado não guardado: ' + erroGuardar.message); }
+      });
       // Aberta + e-mail ao fornecedor = enviada
       if (String(loc.dados[garantiaStatusCol]) === GARANTIA_STATUS.ABERTA) {
         gravarCamposGarantia_(loc.linha, { [garantiaStatusCol]: GARANTIA_STATUS.ENVIADA, [garantiaDtEnvioCol]: hojeGarantia_() });

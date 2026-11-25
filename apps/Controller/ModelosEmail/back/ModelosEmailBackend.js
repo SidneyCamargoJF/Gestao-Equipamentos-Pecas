@@ -405,7 +405,19 @@ function cabecalhoMimeUtf8_(texto) {
   return pedacos.join('\r\n ');
 }
 
-function montarMimeEmail_(para, cc, assunto, corpo, confirmarPara) {
+// Nome de arquivo para o cabeçalho do anexo (com acento: RFC 2047, inteiro)
+function nomeArquivoMime_(nome) {
+  const s = String(nome || 'anexo').replace(/["\r\n]/g, '');
+  return /^[\x20-\x7e]*$/.test(s) ? s : '=?UTF-8?B?' + Utilities.base64Encode(s, Utilities.Charset.UTF_8) + '?=';
+}
+
+const base64EmLinhas_ = function (b64) { return b64.replace(/(.{76})/g, '$1\r\n'); };
+
+/**
+ * E-mail em MIME (API do Gmail). anexos: [Blob] -- com anexos, vira
+ * multipart/mixed (texto + um bloco por arquivo).
+ */
+function montarMimeEmail_(para, cc, assunto, corpo, confirmarPara, anexos) {
   const linhas = ['To: ' + para.join(', ')];
   if (cc.length) linhas.push('Cc: ' + cc.join(', '));
   linhas.push('Subject: ' + cabecalhoMimeUtf8_(assunto));
@@ -413,22 +425,37 @@ function montarMimeEmail_(para, cc, assunto, corpo, confirmarPara) {
     linhas.push('Disposition-Notification-To: ' + confirmarPara);
     linhas.push('Return-Receipt-To: ' + confirmarPara);
   }
-  linhas.push('MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '');
-  const corpo64 = Utilities.base64Encode(corpo.replace(/\n/g, '\r\n'), Utilities.Charset.UTF_8);
-  linhas.push(corpo64.replace(/(.{76})/g, '$1\r\n'));
+  const corpo64 = base64EmLinhas_(Utilities.base64Encode(corpo.replace(/\n/g, '\r\n'), Utilities.Charset.UTF_8));
+  if (!anexos || !anexos.length) {
+    linhas.push('MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '');
+    linhas.push(corpo64);
+    return linhas.join('\r\n');
+  }
+  const limite = 'limite_' + Utilities.getUuid().replace(/-/g, '');
+  linhas.push('MIME-Version: 1.0', 'Content-Type: multipart/mixed; boundary="' + limite + '"', '');
+  linhas.push('--' + limite, 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', corpo64);
+  anexos.forEach(function (blob) {
+    const nome = nomeArquivoMime_(blob.getName());
+    linhas.push('--' + limite,
+      'Content-Type: ' + (blob.getContentType() || 'application/octet-stream') + '; name="' + nome + '"',
+      'Content-Disposition: attachment; filename="' + nome + '"',
+      'Content-Transfer-Encoding: base64', '',
+      base64EmLinhas_(Utilities.base64Encode(blob.getBytes())));
+  });
+  linhas.push('--' + limite + '--');
   return linhas.join('\r\n');
 }
 
 /**
  * Envia e diz se a confirmação de leitura foi pedida. Sem o serviço do
  * Gmail habilitado (ou sem o e-mail de quem envia), vai pelo MailApp, sem
- * confirmação.
+ * confirmação. anexos: [Blob] (opcional).
  */
-function enviarEmailComConfirmacao_(para, cc, assunto, corpo, pedirConfirmacao) {
+function enviarEmailComConfirmacao_(para, cc, assunto, corpo, pedirConfirmacao, anexos) {
   const remetente = pedirConfirmacao ? emailUsuarioLogado_() : '';
   const temGmail = typeof Gmail !== 'undefined' && Gmail && Gmail.Users && Gmail.Users.Messages;
   if (pedirConfirmacao && remetente && temGmail) {
-    const mime = montarMimeEmail_(para, cc, assunto, corpo, remetente);
+    const mime = montarMimeEmail_(para, cc, assunto, corpo, remetente, anexos);
     Gmail.Users.Messages.send({ raw: Utilities.base64EncodeWebSafe(mime, Utilities.Charset.UTF_8) }, 'me');
     return { confirmacao: true };
   }
@@ -437,6 +464,7 @@ function enviarEmailComConfirmacao_(para, cc, assunto, corpo, pedirConfirmacao) 
   }
   const opcoes = { to: para.join(','), subject: assunto, body: corpo };
   if (cc.length) opcoes.cc = cc.join(',');
+  if (anexos && anexos.length) opcoes.attachments = anexos;
   MailApp.sendEmail(opcoes);
   return {
     confirmacao: false,

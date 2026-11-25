@@ -35,11 +35,13 @@ O cadastro de **Peças e Estoque** guarda peças e produtos adquiridos que ficam
 
 As peças com garantia vencendo aparecem na **Agenda**.
 
+**Aquisições (notas fiscais):** na edição do item, a seção **Aquisições** guarda cada compra do mesmo item, que pode ter sido adquirido em épocas e de fornecedores diferentes: **nº da nota**, **fornecedor**, **data de aquisição** e o **arquivo da nota** (PDF ou imagem, até 3 MB). Inclua e exclua na própria lista; a gravação é na hora (não precisa clicar em Salvar). Num item novo, salve primeiro.
+
 **Consulta:** filtro e coluna **Tipo**. Em cada linha, o botão 🛡️ abre a garantia do item (veja [Garantias](#garantias)): fica ativo quando a garantia está vigente; com uma garantia em andamento, ele abre essa garantia; com a garantia vencida, sem data ou item desativado, fica apagado.
 
 ## Garantias
 
-Menu **Cadastros → Garantias**. Controla o acionamento da garantia de uma peça ou produto que deu defeito.
+Menu **Cadastros → Garantias**. Controla o acionamento da garantia de uma peça ou produto que deu defeito. Na consulta, os botões **Limpar**, **+ Abrir garantia** e **Consultar** ficam à direita do título.
 
 ### Abrir uma garantia
 
@@ -64,7 +66,11 @@ Menu **Cadastros → Garantias**. Controla o acionamento da garantia de uma peç
 - Com o prazo de resposta vencido e a garantia em andamento, ela aparece como **Atrasada** (em vermelho, no topo da lista).
 - **Anexos:** laudo, fotos, nota fiscal ou outro documento (até 3 MB por arquivo).
 - **Histórico:** cada passo fica registrado com data e usuário; dá para incluir anotações.
-- **E-mail ao fornecedor:** a mesma tela de e-mail do chamado, com o e-mail do fornecedor do item e os modelos de garantia.
+- **E-mail ao fornecedor:** a mesma tela de e-mail do chamado, com o e-mail do fornecedor do item e os modelos de garantia. Em **Documentos anexados**:
+  - **Notas fiscais do item:** as 5 aquisições mais recentes (nº, fornecedor e data), incluindo a nota do próprio cadastro do item. Marque as que vão anexadas; nota sem arquivo aparece apagada (inclua o arquivo nas Aquisições do item).
+  - **Anexos da garantia:** marque laudo, fotos etc. já guardados na garantia.
+  - **Arquivo do computador:** um ou mais arquivos (até 3 MB cada). Eles também ficam guardados nos anexos da garantia, com o tipo "Enviado por e-mail".
+  - O total dos anexos pode ter até 20 MB. O histórico da garantia registra os nomes dos arquivos enviados.
 
 **Consulta:** busca (nº, item, número de série, defeito, protocolo), situação (em andamento, prazo vencido, encerradas, todas), status, tipo e fornecedor. Canceladas só aparecem filtrando pelo status Cancelada.
 

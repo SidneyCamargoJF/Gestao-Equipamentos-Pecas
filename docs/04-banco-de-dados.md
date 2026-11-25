@@ -278,6 +278,23 @@ Um acionamento de garantia de uma peça/produto por linha. Criada sozinha no pri
 
 **tbl_garantia_anexos** (0-based): mesmo formato das outras tabelas de anexo (ID, ID da garantia, tipo, nome do arquivo, URL, hash, data do upload, data de exclusão).
 
+## tbl_pecas_aquisicoes — [PecasAquisicoesModel.js](../apps/01-Model/PecasAquisicoesModel.js) (0-based)
+
+Aquisições (compras) de uma peça/produto, com a nota fiscal. Criada sozinha na primeira aquisição incluída (ou por `criarTabelasNovasSeNecessario()`). As 5 mais recentes (mais a nota do cadastro do item) são sugeridas no e-mail de garantia.
+
+| Col | Conteúdo |
+|---|---|
+| A | ID |
+| B | ID da peça/produto (`tbl_pecas`) |
+| C | Número da nota |
+| D | Fornecedor |
+| E | Data de aquisição |
+| F | Nome do arquivo da nota |
+| G | URL do arquivo (Drive) |
+| H | ID do arquivo no Drive (usado para anexar no e-mail) |
+| I | Data de cadastro |
+| J | Data de exclusão |
+
 ## tbl_fornecedor — [FornecedorModel.js](../apps/01-Model/FornecedorModel.js) (1-based)
 
 | Col | Conteúdo |

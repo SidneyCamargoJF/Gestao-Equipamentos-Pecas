@@ -44,6 +44,8 @@ A aba `tbl_modelos_email` é criada sozinha ao abrir **Configuração → Modelo
 
 As abas `tbl_garantias`, `tbl_garantia_historico` e `tbl_garantia_anexos` são criadas sozinhas na primeira garantia aberta (ou com `criarTabelasNovasSeNecessario()`). A coluna **S (Tipo)** de `tbl_pecas` é preenchida ao salvar cada item; os itens antigos ficam vazios e contam como peça.
 
+A aba `tbl_pecas_aquisicoes` é criada sozinha na primeira aquisição incluída num item. Os arquivos das notas vão para a mesma pasta de anexos do Drive. Para anexar arquivos do Drive no e-mail, o app passa a ler esses arquivos (`DriveApp`), o que já fazia parte da autorização dos anexos.
+
 ### Usuários
 
 Cadastre cada pessoa em **Configuração → Usuários**. O campo **Usuário** é o login Google, sem o domínio. Sem cadastro, a pessoa aparece como "Desconhecido" em "Aberto por".

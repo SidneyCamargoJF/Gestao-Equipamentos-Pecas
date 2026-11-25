@@ -309,6 +309,108 @@
       const nomeInput = document.getElementById('nomePeca');
       if (nomeInput) nomeInput.focus();
     }
+
+    prepararAquisicoesPeca(id);
+  }
+
+  // ===== AQUISIÇÕES (notas fiscais do item) =====
+  // Só com o item já salvo (edição): cada inclusão/exclusão grava na hora.
+  let aquisicoesPecaId = null;
+
+  function prepararAquisicoesPeca(id) {
+    aquisicoesPecaId = id ? Number(id) : null;
+    const form = document.getElementById('pecaAquisicoesForm');
+    const aviso = document.getElementById('pecaAquisicoesAviso');
+    if (form) form.style.display = aquisicoesPecaId ? '' : 'none';
+    if (aviso) aviso.style.display = aquisicoesPecaId ? 'none' : '';
+    limparFormAquisicaoPeca();
+    // fornecedores: as mesmas opções do cadastro, já com o do item escolhido
+    const origem = document.getElementById('fornecedorSelect');
+    const destino = document.getElementById('aquisicaoFornecedor');
+    if (origem && destino) {
+      destino.innerHTML = origem.innerHTML;
+      destino.value = origem.value || '';
+    }
+    renderAquisicoesPeca([]);
+    if (aquisicoesPecaId) carregarAquisicoesPecaUI();
+  }
+
+  function limparFormAquisicaoPeca() {
+    ['aquisicaoNF', 'aquisicaoData', 'aquisicaoArquivo'].forEach(elId => {
+      const el = document.getElementById(elId);
+      if (el) el.value = '';
+    });
+  }
+
+  async function carregarAquisicoesPecaUI() {
+    const tbody = document.getElementById('pecaAquisicoesLista');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    let r;
+    try { r = await runServerFunction('listarAquisicoesPeca', aquisicoesPecaId); } catch (e) { r = null; }
+    renderAquisicoesPeca((r && r.aquisicoes) || []);
+  }
+
+  function renderAquisicoesPeca(lista) {
+    const tbody = document.getElementById('pecaAquisicoesLista');
+    if (!tbody) return;
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    tbody.innerHTML = lista.length ? lista.map(a => `
+      <tr>
+        <td>${esc(a.numeroNF)}</td>
+        <td>${esc(a.fornecedor)}</td>
+        <td>${esc(a.dataAquisicao)}</td>
+        <td>${a.arquivoUrl ? `<a href="${esc(a.arquivoUrl)}" target="_blank" rel="noopener">📄 Ver nota</a>` : '<span style="color:#94a3b8;">sem arquivo</span>'}</td>
+        <td class="acao-cell"><button type="button" class="btn-acao" title="Excluir" onclick="excluirAquisicaoPecaUI(${Number(a.id)})">🗑️</button></td>
+      </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;">Nenhuma aquisição.</td></tr>';
+  }
+
+  function lerArquivoAquisicao(input) {
+    return new Promise((resolve, reject) => {
+      const f = input && input.files && input.files[0];
+      if (!f) { resolve(null); return; }
+      const limite = typeof ANEXO_CADASTRO_TAMANHO_MAX !== 'undefined' ? ANEXO_CADASTRO_TAMANHO_MAX : 3 * 1024 * 1024;
+      if (f.size > limite) { reject(new Error('O arquivo "' + f.name + '" passa de 3MB.')); return; }
+      const leitor = new FileReader();
+      leitor.onload = () => resolve({ nome: f.name, tipo: f.type || 'application/octet-stream', base64: String(leitor.result).split(',')[1] || '' });
+      leitor.onerror = () => reject(new Error('Erro ao ler o arquivo "' + f.name + '".'));
+      leitor.readAsDataURL(f);
+    });
+  }
+
+  async function incluirAquisicaoPecaUI() {
+    if (!aquisicoesPecaId) return;
+    const dados = {
+      pecaId: aquisicoesPecaId,
+      numeroNF: (document.getElementById('aquisicaoNF')?.value || '').trim(),
+      fornecedor: document.getElementById('aquisicaoFornecedor')?.value || '',
+      dataAquisicao: document.getElementById('aquisicaoData')?.value || ''
+    };
+    if (!dados.numeroNF) { alert('Informe o número da nota.'); return; }
+    if (!dados.fornecedor) { alert('Escolha o fornecedor.'); return; }
+    if (!dados.dataAquisicao) { alert('Informe a data de aquisição.'); return; }
+    try { dados.arquivo = await lerArquivoAquisicao(document.getElementById('aquisicaoArquivo')); }
+    catch (e) { alert(e.message); return; }
+
+    if (typeof exibirModal === 'function') exibirModal('processando');
+    try {
+      const r = await runServerFunction('salvarAquisicaoPeca', dados);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao incluir a aquisição.'); return; }
+      limparFormAquisicaoPeca();
+      await carregarAquisicoesPecaUI();
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      if (typeof fecharModal === 'function') fecharModal('processando');
+    }
+  }
+
+  async function excluirAquisicaoPecaUI(id) {
+    if (!confirm('Excluir esta aquisição?')) return;
+    try {
+      const r = await runServerFunction('excluirAquisicaoPeca', id);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }
+      await carregarAquisicoesPecaUI();
+    } catch (e) { alert('Erro ao conectar com o servidor.'); }
   }
 
   // ===== 3.1 CARREGAR DADOS DE UMA PEÇA EXISTENTE PARA EDIÇÃO =====
