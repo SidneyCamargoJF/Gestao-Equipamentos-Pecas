@@ -67,10 +67,10 @@ Ao preencher a data inicial, a data base preventiva é sugerida com o mesmo valo
 | 🛠️ Serviços | Tipo de manutenção (Preventiva/Corretiva), periodicidade, **valor unitário** (R$ por equipamento, editável também no card do serviço) e a especificação do equipamento em cascata: **categoria → capacidade → tipo**, só com o que existe em equipamentos cadastrados (com um tipo só, ele já vem escolhido). Ao confirmar, aparece "Processando" enquanto os equipamentos da especificação são buscados e incluídos na aba Equipamentos; a mensagem informa quantos entraram e quantos já estavam no contrato |
 | 🔧 Equipamentos | Equipamentos cobertos pelo contrato |
 | 📦 Produtos | Produtos ou peças previstos |
-| ✅ Checklist | Itens do checklist preventivo, por equipamento. Um formulário só: escolha a **categoria** e o **tipo** do equipamento (em cascata, como no serviço; "Todos os tipos" vale para a categoria inteira), digite a **etapa**, escolha a **periodicidade** (mensal, bimestral, trimestral, quadrimestral, semestral ou anual) e clique em **Adicionar** (ou Enter). Categoria e tipo ficam escolhidos para lançar várias etapas seguidas. Os itens aparecem na lista logo abaixo (categoria, tipo, descrição, período), com editar e remover em cada linha. Na OS preventiva, cada equipamento recebe só os itens da sua categoria/tipo; itens antigos sem categoria valem para todos |
+| ✅ Checklist | Itens do checklist preventivo, por equipamento. Um formulário só: escolha a **categoria** e o **tipo** do equipamento (em cascata, como no serviço; "Todos os tipos" vale para a categoria inteira), digite a **etapa**, escolha a **periodicidade** (mensal, bimestral, trimestral, quadrimestral, semestral ou anual) e clique em **Adicionar** (ou Enter). Categoria e tipo ficam escolhidos para lançar várias etapas seguidas. Os itens aparecem na lista logo abaixo (categoria, tipo, descrição, período), com editar e remover em cada linha. No chamado preventivo, cada equipamento recebe só os itens da sua categoria/tipo; itens antigos sem categoria valem para todos |
 | ⏱️ SLA | Para cada prioridade: prazo de atendimento (h), prazo de solução (h) e se conta só horas úteis |
 
-Um contrato só gera OS preventivas se tiver um serviço do tipo **Preventiva** e itens de checklist. Detalhes no documento [03](03-manutencao-por-contrato.md).
+Um contrato só gera chamados preventivos se tiver um serviço do tipo **Preventiva** e itens de checklist. Detalhes no documento [03](03-manutencao-por-contrato.md).
 
 ## Chamados
 
@@ -119,22 +119,22 @@ A tela tem o bloco **Dados do Chamado** e, abaixo, três abas: **Vínculo Contra
 - **Origem:** manual ou automática;
 - **Só atrasados**.
 
-Nas **preventivas**, as colunas Equipamento e Localização mostram **Diversos**, porque a OS cobre vários equipamentos. Mesmo assim, o filtro de equipamento encontra a preventiva quando o patrimônio digitado está na lista do chamado ou no checklist da OS.
+Nas **preventivas**, as colunas Equipamento e Localização mostram **Diversos**, porque o chamado cobre vários equipamentos. Mesmo assim, o filtro de equipamento encontra a preventiva quando o patrimônio digitado está na lista do chamado ou no checklist do chamado.
 
 Os chamados atrasados recebem o selo **Atrasado**. Ao passar o mouse sobre ele, aparece o motivo do atraso.
 
-O botão **Gerar preventivas do mês** gera manualmente as OS da competência atual. Se a propriedade `ADMINS` estiver configurada, só os administradores podem usá-lo. Veja o documento [07](07-implantacao-e-operacao.md).
+O botão **Gerar preventivas do mês** gera manualmente os chamados preventivos da competência atual. Se a propriedade `ADMINS` estiver configurada, só os administradores podem usá-lo. Veja o documento [07](07-implantacao-e-operacao.md).
 
 ### Detalhes do chamado (modal)
 
 - **Informações do Chamado:** dados, contrato, origem, competência, data prevista e prazos, e o botão **Enviar e-mail para a empresa**.
 - **Equipamento / Equipamentos:** aba logo depois de Informações do Chamado.
-  - **Preventiva:** a aba se chama "Equipamentos (N)" e traz a tabela com todos os equipamentos da OS (lista do chamado e checklist): patrimônio, equipamento, capacidade, localização, estado e, se houver, a observação de encerramento.
+  - **Preventiva:** a aba se chama "Equipamentos (N)" e traz a tabela com todos os equipamentos do chamado (lista do chamado e checklist): patrimônio, equipamento, capacidade, localização, estado e, se houver, a observação de encerramento.
   - **Demais tipos:** a aba se chama "Equipamento" e mostra só o equipamento do chamado (patrimônio, nome, marca, modelo, capacidade, localização e estado).
 - **Movimentações:**
   - histórico automático, com linhas prefixadas por `[SISTEMA]`;
   - anotações livres, que podem ser editadas e excluídas.
-- **Checklist:** aparece só em OS com itens.
+- **Checklist:** aparece só em chamado com itens.
   - Para cada item e equipamento: resultado (pendente, ok, não conforme ou não aplicável) e observação.
   - Ao salvar, gravam-se a data/hora e o usuário que registrou.
   - Num item **não conforme**, o botão **Abrir corretiva** cria um chamado corretivo para o equipamento, já vinculado ao mesmo contrato. Ele não deixa abrir duas corretivas para o mesmo item.
@@ -146,14 +146,14 @@ O botão **Gerar preventivas do mês** gera manualmente as OS da competência at
 - Para concluir é obrigatório informar o motivo.
 - Ao clicar em Resolver, os botões Resolver e Adicionar anotação somem; o campo do motivo fica menor, com **Cancelar** e **Confirmar encerramento** à direita dele.
 - **Preventiva:** ao clicar em Resolver, aparece também a **observação por patrimônio** (opcional).
-  1. Digite o patrimônio. O sistema procura entre os equipamentos da OS (lista do chamado e checklist) e mostra, na frente do campo, a descrição do equipamento para conferência: nome/modelo, marca, capacidade, localização e estado. Patrimônio fora da OS não é aceito. Se a OS tiver **um equipamento só**, o patrimônio já vem preenchido e conferido: basta digitar a observação.
+  1. Digite o patrimônio. O sistema procura entre os equipamentos do chamado (lista e checklist) e mostra, na frente do campo, a descrição do equipamento para conferência: nome/modelo, marca, capacidade, localização e estado. Patrimônio fora do chamado não é aceito. Se o chamado tiver **um equipamento só**, o patrimônio já vem preenchido e conferido: basta digitar a observação.
   2. Digite a observação e clique em **Incluir** (ou tecle Enter).
   3. Abaixo aparece a lista dos equipamentos incluídos com a observação de cada um. Em cada linha há os botões **Alterar** (carrega a observação para editar; o botão passa a ser "Salvar alteração") e **Excluir**.
   - Um patrimônio só entra uma vez na lista; para mudar, use Alterar.
   - Se houver patrimônio ou observação digitados e não incluídos, o encerramento pede para incluir ou limpar antes de confirmar.
   - As observações ficam gravadas por equipamento e registradas no histórico. Excluir da lista uma observação já gravada apaga essa observação.
   - Se o chamado for reaberto e resolvido de novo, as observações anteriores já aparecem na lista.
-- Se a OS ainda tiver itens de checklist pendentes, o motivo informado fica no histórico como justificativa das pendências.
+- Se o chamado ainda tiver itens de checklist pendentes, o motivo informado fica no histórico como justificativa das pendências.
 - **Desativar** marca o chamado como `Cancelado`. **Reativar** desfaz.
 
 ### E-mail para a empresa
@@ -205,10 +205,10 @@ O menu **Relatórios** abre um submenu com um item por relatório: **Checklist**
 
 **Manutenção das preventivas (conferência da NF):** escolha o contrato, a competência ou os dois. Sem contrato ("Todos os contratos"), saem todos os contratos daquela competência; sem competência, todas as competências do contrato.
 
-- **Uma seção por contrato e competência**, com a empresa e as OS consideradas (com o status de cada uma).
+- **Uma seção por contrato e competência**, com a empresa e os chamados considerados (com o status de cada um).
 - **Tabela principal:** uma linha por serviço (categoria, tipo e capacidade), com quantidade de equipamentos atendidos, valor unitário e valor total, e uma linha de **Total** no fim.
-- **Equipamento atendido:** tem item do checklist marcado como OK ou Não conforme, ou está numa OS **concluída** (mesmo que o checklist não tenha sido marcado). Só fica de fora da OS concluída o equipamento com todos os itens marcados como N/A.
-- **Equipamentos sem preventiva executada:** ficam numa tabela separada, com a OS e o motivo, e não entram no valor.
+- **Equipamento atendido:** tem item do checklist marcado como OK ou Não conforme, ou está num chamado **concluído** (mesmo que o checklist não tenha sido marcado). Só fica de fora do chamado concluído o equipamento com todos os itens marcados como N/A.
+- **Equipamentos sem preventiva executada:** ficam numa tabela separada, com o chamado e o motivo, e não entram no valor.
 - **Observações por equipamento:** os equipamentos que receberam observação no chamado: a observação digitada para o patrimônio ao resolver (sem rótulo) e as dos itens do checklist (com a descrição do item). Quem não teve a preventiva executada aparece marcado.
 - **Resolução do chamado:** logo depois, o texto informado ao concluir o chamado. Se o chamado foi reaberto e concluído de novo, vale o mais recente.
 - **Total geral:** quando há mais de uma seção, um quadro no fim soma todas.

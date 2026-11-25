@@ -200,7 +200,7 @@ function gerarPreventivasDoMes_(competenciaInformada) {
         ]);
       });
     });
-    registrar('gerada: OS ' + chamadoId + ', ' + equipComItens.length + ' equipamento(s), ' + totalItens + ' item(ns)');
+    registrar('gerada: chamado ' + chamadoId + ', ' + equipComItens.length + ' equipamento(s), ' + totalItens + ' item(ns)');
   });
 
   // ---- gravação em lote
@@ -210,7 +210,7 @@ function gerarPreventivasDoMes_(competenciaInformada) {
     adicionarHistoricoSistemaLote(historico);
   }
 
-  const mensagem = 'Competência ' + competencia + ': ' + novasOS.length + ' OS e ' + novosItens.length + ' itens de checklist criados.';
+  const mensagem = 'Competência ' + competencia + ': ' + novasOS.length + ' chamado(s) e ' + novosItens.length + ' itens de checklist criados.';
   console.log(mensagem);
   return {
     sucesso: true,

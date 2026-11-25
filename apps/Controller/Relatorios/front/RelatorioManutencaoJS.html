@@ -81,7 +81,7 @@ function montarSecaoManutencao(s) {
         '<h3 class="rel-manutencao-secao-titulo">' + escapeHtml(rotuloContratoRelatorio(c)) + ' — ' + escapeHtml(formatarCompetenciaRelatorio(s.competencia)) + '</h3>' +
         '<div class="rel-manutencao-cabecalho">' +
         (c.empresa ? '<div><strong>Empresa:</strong> ' + escapeHtml(c.empresa) + '</div>' : '') +
-        '<div><strong>OS consideradas:</strong> ' + s.os.map(function (o) {
+        '<div><strong>Chamados considerados:</strong> ' + s.os.map(function (o) {
             return '#' + Number(o.id) + (o.status ? ' (' + escapeHtml(o.status === 'Concluido' ? 'Concluído' : o.status) + ')' : '');
         }).join(', ') + '</div>' +
         '</div>';
@@ -110,7 +110,7 @@ function montarSecaoManutencao(s) {
 
     if (s.naoExecutados.length) {
         html += '<h4 class="rel-manutencao-subtitulo">Equipamentos sem preventiva executada (não entram no total)</h4>' +
-            '<table class="rel-manutencao-tabela rel-manutencao-tabela--secundaria"><thead><tr><th>Patrimônio</th><th>Equipamento</th><th>Localização</th><th>OS</th><th>Situação</th></tr></thead><tbody>' +
+            '<table class="rel-manutencao-tabela rel-manutencao-tabela--secundaria"><thead><tr><th>Patrimônio</th><th>Equipamento</th><th>Localização</th><th>Chamado</th><th>Situação</th></tr></thead><tbody>' +
             s.naoExecutados.map(function (e) {
                 return '<tr><td>' + escapeHtml(e.patrimonio || ('#' + e.id)) + '</td><td>' + escapeHtml(e.nome) + '</td><td>' +
                     escapeHtml(e.localizacao) + '</td><td>#' + Number(e.os) + '</td><td>' + escapeHtml(e.motivo) + '</td></tr>';
@@ -130,7 +130,7 @@ function montarSecaoManutencao(s) {
                 // checklist leva a descrição do item
                 const linhas = e.itens.map(function (o) {
                     const partes = [];
-                    if (variasOs) partes.push('OS #' + Number(o.os));
+                    if (variasOs) partes.push('Chamado #' + Number(o.os));
                     if (o.origem && o.origem !== 'Encerramento') partes.push(escapeHtml(o.origem));
                     return '<li>' + (partes.length ? '<span class="rel-manutencao-obs-origem">' + partes.join(' · ') + ':</span> ' : '') +
                         escapeHtml(o.texto) + '</li>';
@@ -150,7 +150,7 @@ function montarSecaoManutencao(s) {
         html += '<h4 class="rel-manutencao-subtitulo">Resolução do chamado</h4>' +
             '<div class="rel-manutencao-resolucao">' +
             resolucoes.map(function (o) {
-                return '<p>' + (s.os.length > 1 ? '<span class="rel-manutencao-obs-origem">OS #' + Number(o.id) + ':</span> ' : '') +
+                return '<p>' + (s.os.length > 1 ? '<span class="rel-manutencao-obs-origem">Chamado #' + Number(o.id) + ':</span> ' : '') +
                     escapeHtml(o.resolucao) + '</p>';
             }).join('') +
             '</div>';

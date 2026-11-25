@@ -186,13 +186,13 @@ function abrirCorretivaItemChecklist_(itemId) {
 
   const osId = Number(item[ticketChecklistChamadoIdCol - 1]);
   const os = ReadTickets().find(function (l) { return Number(l[0]) === osId; });
-  if (!os) return { sucesso: false, mensagem: 'OS de origem não encontrada.' };
+  if (!os) return { sucesso: false, mensagem: 'Chamado de origem não encontrado.' };
 
   const marca = 'Corretiva aberta para o item ' + Number(itemId) + ' ';
   const jaAberta = ReadTicketHistorico().some(function (h) {
     return Number(h[ticketHistoricoChamadoIdCol - 1]) === osId && String(h[ticketHistoricoTextoCol - 1] || '').indexOf(marca) !== -1;
   });
-  if (jaAberta) return { sucesso: false, mensagem: 'Já foi aberta uma corretiva para este item (veja o histórico da OS #' + osId + ').' };
+  if (jaAberta) return { sucesso: false, mensagem: 'Já foi aberta uma corretiva para este item (veja o histórico do chamado #' + osId + ').' };
 
   const descricaoItem = String(item[ticketChecklistDescricaoCol - 1] || '');
   const obs = String(item[ticketChecklistObservacaoCol - 1] || '');
@@ -202,11 +202,11 @@ function abrirCorretivaItemChecklist_(itemId) {
     classificacao: 'media',
     equipamentoId: item[ticketChecklistEquipamentoIdCol - 1],
     atribuidoA: os[ticketsAtribuidoCol - 1] || '',
-    descricao: ('Aberta a partir da OS #' + osId + ' (' + (os[ticketsReasonCol - 1] || '') + ').' + (obs ? ' Obs.: ' + obs : '')).slice(0, 300)
+    descricao: ('Aberta a partir do chamado #' + osId + ' (' + (os[ticketsReasonCol - 1] || '') + ').' + (obs ? ' Obs.: ' + obs : '')).slice(0, 300)
   }, { contratoId: os[ticketsContratoIdCol - 1] });
   if (!resposta.sucesso) return resposta;
 
-  adicionarHistoricoSistema(resposta.id, 'Aberta a partir da OS #' + osId + ', item "' + descricaoItem + '"');
+  adicionarHistoricoSistema(resposta.id, 'Aberta a partir do chamado #' + osId + ', item "' + descricaoItem + '"');
   adicionarHistoricoSistema(osId, marca + '("' + descricaoItem + '"): chamado #' + resposta.id);
 
   return { sucesso: true, mensagem: 'Chamado corretivo #' + resposta.id + ' aberto.', id: resposta.id };

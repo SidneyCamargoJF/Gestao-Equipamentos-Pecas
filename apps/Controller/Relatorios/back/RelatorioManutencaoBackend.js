@@ -154,7 +154,7 @@ function buscarRelatorioManutencaoPreventiva(contratoId, competencia) {
         if (s.executados) executado = true;
         else if (s.total && s.naoAplicaveis === s.total) motivo = 'Itens do checklist marcados como N/A';
         else if (concluida) executado = true;
-        else motivo = s.total ? (s.pendentes + ' de ' + s.total + ' itens pendentes; OS ' + (status || 'Aberto')) : 'OS ' + (status || 'Aberto');
+        else motivo = s.total ? (s.pendentes + ' de ' + s.total + ' itens pendentes; chamado ' + (status || 'Aberto')) : 'Chamado ' + (status || 'Aberto');
 
         const atual = secao.equip[idEquip];
         if (!atual || (executado && !atual.executado)) {
@@ -268,7 +268,7 @@ function buscarRelatorioManutencaoPreventiva(contratoId, competencia) {
       },
       secoes: lista,
       totalGeral: totalGeral,
-      mensagem: lista.length ? '' : 'Nenhuma OS preventiva encontrada para o filtro escolhido.'
+      mensagem: lista.length ? '' : 'Nenhum chamado preventivo encontrado para o filtro escolhido.'
     };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
