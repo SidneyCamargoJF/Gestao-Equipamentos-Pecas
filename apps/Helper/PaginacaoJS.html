@@ -1,0 +1,123 @@
+<script>
+  // ===== PAGINAÇÃO DAS CONSULTAS =====
+  // Limita quantos itens cada consulta mostra por vez (10, 20, 50 ou 100),
+  // com navegação entre páginas. Funciona sozinha: observa o corpo da lista
+  // (tbody ou .gtable-body) e, a cada vez que a consulta o preenche, esconde
+  // as linhas fora da página -- as rotinas de cada tela não mudam. As linhas
+  // escondidas continuam no DOM (exportação e impressão seguem completas).
+  // O tamanho escolhido fica guardado no navegador, por lista.
+  const PAGINACAO_TAMANHOS = [10, 20, 50, 100];
+  const PAGINACAO_PADRAO = 10;
+  const PAGINACAO_LISTAS = [
+    'chamadosTableBody', 'contratosTableBody', 'tabelaBodyEquipment', 'bodyFornecedoresView',
+    'tabelaBodyMarca', 'tabelaBodyLocalizacao', 'bodyPecasView', 'garantiasTableBody',
+    'notasTableBody', 'pfTableBody', 'estoqueTableBody', 'estMovTableBody',
+    'usuariosTableBody', 'modelosEmailTableBody'
+  ];
+  const paginacoes = {};
+
+  // "Buscando...", "Nenhum ... encontrado": célula única, não é item
+  function linhaInformativaPaginacao(linha) {
+    return linha.classList.contains('gtable-empty-row') || linha.classList.contains('gtable-loading-row') ||
+      !!linha.querySelector(':scope > td[colspan], :scope > .gtable-cell-full');
+  }
+
+  function lerTamanhoPaginacao(bodyId) {
+    try {
+      const n = Number(localStorage.getItem('paginacao:' + bodyId));
+      if (PAGINACAO_TAMANHOS.indexOf(n) !== -1) return n;
+    } catch (e) { /* navegador sem localStorage */ }
+    return PAGINACAO_PADRAO;
+  }
+
+  function gravarTamanhoPaginacao(bodyId, n) {
+    try { localStorage.setItem('paginacao:' + bodyId, String(n)); } catch (e) { /* ignora */ }
+  }
+
+  function iniciarPaginacao(bodyId) {
+    const body = document.getElementById(bodyId);
+    if (!body || paginacoes[bodyId]) return;
+    const ancora = body.closest('.table-wrapper, .gtable-wrapper') || body.closest('table') || body;
+    const barra = document.createElement('div');
+    barra.className = 'paginacao';
+    barra.id = 'paginacao-' + bodyId;
+    barra.hidden = true;
+    ancora.insertAdjacentElement('afterend', barra);
+
+    const estado = { body: body, barra: barra, pagina: 1, tamanho: lerTamanhoPaginacao(bodyId), linhas: [] };
+    paginacoes[bodyId] = estado;
+    // Lista refeita (nova consulta): volta à página 1. Uma linha trocada ou
+    // removida (edição, exclusão) mantém a página atual.
+    new MutationObserver(function () {
+      if (!estado.linhas.some(function (l) { return l.parentNode === body; })) estado.pagina = 1;
+      aplicarPaginacao(bodyId);
+    }).observe(body, { childList: true });
+    aplicarPaginacao(bodyId);
+  }
+
+  function aplicarPaginacao(bodyId) {
+    const e = paginacoes[bodyId];
+    if (!e) return;
+    const linhas = Array.from(e.body.children).filter(function (l) { return !linhaInformativaPaginacao(l); });
+    e.linhas = linhas;
+    const total = linhas.length;
+    const paginas = Math.max(1, Math.ceil(total / e.tamanho));
+    e.pagina = Math.min(Math.max(1, e.pagina), paginas);
+    const ini = (e.pagina - 1) * e.tamanho, fim = ini + e.tamanho;
+    linhas.forEach(function (l, i) { l.classList.toggle('pag-oculta', i < ini || i >= fim); });
+    // a linha informativa nunca fica escondida
+    Array.from(e.body.children).forEach(function (l) { if (linhaInformativaPaginacao(l)) l.classList.remove('pag-oculta'); });
+    desenharBarraPaginacao(bodyId, total, paginas, ini, Math.min(fim, total));
+  }
+
+  function desenharBarraPaginacao(bodyId, total, paginas, ini, fim) {
+    const e = paginacoes[bodyId];
+    e.barra.hidden = total === 0;
+    if (!total) { e.barra.innerHTML = ''; return; }
+    const opcoes = PAGINACAO_TAMANHOS.map(function (n) {
+      return '<option value="' + n + '"' + (n === e.tamanho ? ' selected' : '') + '>' + n + '</option>';
+    }).join('');
+    const botao = function (acao, texto, titulo, desabilitado) {
+      return '<button type="button" class="btn-secondary paginacao-btn" data-acao="' + acao + '" title="' + titulo + '"' +
+        (desabilitado ? ' disabled' : '') + '>' + texto + '</button>';
+    };
+    e.barra.innerHTML =
+      '<label class="paginacao-tamanho">Exibir <select class="paginacao-select" aria-label="Itens por página">' + opcoes + '</select> por página</label>' +
+      '<span class="paginacao-info">' + (ini + 1) + '–' + fim + ' de ' + total + '</span>' +
+      '<span class="paginacao-nav">' +
+        botao('primeira', '«', 'Primeira página', e.pagina === 1) +
+        botao('anterior', '‹', 'Página anterior', e.pagina === 1) +
+        '<span class="paginacao-pagina">Página ' + e.pagina + ' de ' + paginas + '</span>' +
+        botao('proxima', '›', 'Próxima página', e.pagina === paginas) +
+        botao('ultima', '»', 'Última página', e.pagina === paginas) +
+      '</span>';
+    e.barra.querySelector('.paginacao-select').addEventListener('change', function () {
+      e.tamanho = Number(this.value) || PAGINACAO_PADRAO;
+      gravarTamanhoPaginacao(bodyId, e.tamanho);
+      e.pagina = 1;
+      aplicarPaginacao(bodyId);
+    });
+    e.barra.querySelectorAll('.paginacao-btn').forEach(function (b) {
+      b.addEventListener('click', function () { irParaPaginaPaginacao(bodyId, b.getAttribute('data-acao')); });
+    });
+  }
+
+  function irParaPaginaPaginacao(bodyId, acao) {
+    const e = paginacoes[bodyId];
+    if (!e) return;
+    const paginas = Math.max(1, Math.ceil(e.linhas.length / e.tamanho));
+    if (acao === 'primeira') e.pagina = 1;
+    else if (acao === 'anterior') e.pagina -= 1;
+    else if (acao === 'proxima') e.pagina += 1;
+    else if (acao === 'ultima') e.pagina = paginas;
+    else if (typeof acao === 'number') e.pagina = acao;
+    aplicarPaginacao(bodyId);
+  }
+
+  function iniciarPaginacaoConsultas() {
+    PAGINACAO_LISTAS.forEach(iniciarPaginacao);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarPaginacaoConsultas);
+  else iniciarPaginacaoConsultas();
+</script>

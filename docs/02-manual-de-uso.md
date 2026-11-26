@@ -7,6 +7,7 @@ Navegação: o menu superior troca de página sem recarregar. O botão **Voltar*
 Padrões das consultas:
 
 - **Filtros e lista:** cada consulta tem filtros no topo e a lista de resultados abaixo. Os registros desativados aparecem por último, com fundo vermelho.
+- **Itens por página:** abaixo da lista, escolha quantos itens exibir (10, 20, 50 ou 100; padrão 10) e navegue com « ‹ › », vendo "1–10 de 57" e a página atual. A escolha fica guardada no navegador para cada lista. Uma nova consulta volta à página 1. Vale para chamados, contratos, equipamentos, fornecedores, marcas, localizações, peças e produtos, garantias, notas fiscais, produtos x fornecedores, estoque, movimentações, usuários e modelos de e-mail.
 - **Desativar e reativar:** os registros não são apagados. Desativar grava a data de exclusão; reativar limpa essa data.
 - **Detalhes:** a lupa ou o clique na linha abre um modal com os detalhes do registro.
 
