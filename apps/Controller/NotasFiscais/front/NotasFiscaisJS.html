@@ -417,11 +417,19 @@
         quantidade: nfNumero(nfTexto(prod, 'qCom')), valorUnitario: nfNumero(nfTexto(prod, 'vUnCom')), valorTotal: nfNumero(nfTexto(prod, 'vProd'))
       };
     });
+    const end = emit && emit.getElementsByTagName('enderEmit')[0];
     return {
       numero: nfTexto(ide, 'nNF'), serie: nfTexto(ide, 'serie'), chave: chave,
       dataEmissao: (nfTexto(ide, 'dhEmi') || nfTexto(ide, 'dEmi')).slice(0, 10),
       fornecedorCnpj: nfTexto(emit, 'CNPJ') || nfTexto(emit, 'CPF'), fornecedorNome: nfTexto(emit, 'xNome'),
-      fornecedorFantasia: nfTexto(emit, 'xFant'), valorTotal: nfNumero(nfTexto(tot, 'vNF')), itens: itens
+      fornecedorFantasia: nfTexto(emit, 'xFant'), valorTotal: nfNumero(nfTexto(tot, 'vNF')), itens: itens,
+      // para incluir o fornecedor no cadastro, se ele não existir
+      fornecedorDados: {
+        razaoSocial: nfTexto(emit, 'xNome'), nomeFantasia: nfTexto(emit, 'xFant'), cnpj: nfTexto(emit, 'CNPJ') || nfTexto(emit, 'CPF'),
+        inscricaoEstadual: nfTexto(emit, 'IE'), email: nfTexto(emit, 'email'),
+        telefone: nfTexto(end, 'fone'), cep: nfTexto(end, 'CEP'), logradouro: nfTexto(end, 'xLgr'), numero: nfTexto(end, 'nro'),
+        complemento: nfTexto(end, 'xCpl'), bairro: nfTexto(end, 'xBairro'), cidade: nfTexto(end, 'xMun'), uf: nfTexto(end, 'UF')
+      }
     };
   }
 
@@ -434,48 +442,118 @@
     });
   }
 
+  // Importação em duas etapas: lê o XML e mostra o resumo
+  // (#modalConfirmarXmlNF); só preenche a nota (e inclui o fornecedor, se
+  // marcado) depois de "Importar".
+  let nfImportacaoPendente = null;
+
+  function nfFornecedorDoCadastro(cnpj, nome) {
+    const c = String(cnpj || '').replace(/\D/g, '');
+    const n = String(nome || '').trim().toLowerCase();
+    return nfFornecedores.find(z => (c && z.cnpj === c) || (!c && n && (z.nome.toLowerCase() === n || (z.fantasia && z.fantasia.toLowerCase() === n)))) || null;
+  }
+
   async function importarXmlNotaUI() {
     const input = document.getElementById('nfXmlArquivo');
     const arquivo = input && input.files && input.files[0];
     if (!arquivo) return;
     input.value = '';
-    const status = document.getElementById('nfXmlStatus');
     let x;
     try { x = parsearXmlNotaFiscal(await nfLerArquivo(arquivo, true)); }
     catch (e) { alert(e.message); return; }
-    if (nfItens.length && !confirm('Trocar os itens atuais pelos ' + x.itens.length + ' itens do XML?')) return;
+
+    let base64 = '';
+    try { base64 = String(await nfLerArquivo(arquivo, false)).split(',')[1] || ''; } catch (e) { /* o XML só não fica anexado */ }
+
+    const f = nfFornecedorDoCadastro(x.fornecedorCnpj, x.fornecedorNome);
+    // relação automática pelo código do produto no fornecedor
+    let relacoes = [];
+    try {
+      const r = await runServerFunction('relacionarItensNotaFiscal', x.fornecedorCnpj, f ? f.nome : x.fornecedorNome, x.itens.map(it => ({ codigo: it.codigo })));
+      relacoes = (r && r.relacoes) || [];
+    } catch (e) { relacoes = []; }
+
+    nfImportacaoPendente = { x: x, fornecedor: f, relacoes: relacoes, arquivo: { nome: arquivo.name, base64: base64 } };
+    renderResumoImportacaoXml();
+    exibirModal('modalConfirmarXmlNF');
+  }
+
+  function renderResumoImportacaoXml() {
+    const p = nfImportacaoPendente;
+    const box = document.getElementById('nfXmlResumo');
+    if (!p || !box) return;
+    const x = p.x;
+    const relacionados = p.relacoes.filter(r => r.pecaId).length;
+    const nomeRel = i => { const r = p.relacoes.find(z => z.indice === i && z.pecaId); return r ? r.pecaNome : ''; };
+    const fd = x.fornecedorDados || {};
+    const endereco = [fd.logradouro, fd.numero, fd.bairro, fd.cidade && (fd.cidade + (fd.uf ? '/' + fd.uf : ''))].filter(Boolean).join(', ');
+    box.innerHTML = `
+      <div class="nf-xml-bloco">
+        <h4>Nota</h4>
+        <p>Nº <strong>${nfEsc(x.numero)}</strong>${x.serie ? ' · série ' + nfEsc(x.serie) : ''} · emissão ${nfEsc(x.dataEmissao.split('-').reverse().join('/'))} · valor <strong>${nfMoeda(x.valorTotal)}</strong></p>
+        ${x.chave ? '<p class="nf-xml-chave">Chave ' + nfEsc(x.chave) + '</p>' : ''}
+      </div>
+      <div class="nf-xml-bloco">
+        <h4>Fornecedor</h4>
+        <p><strong>${nfEsc(x.fornecedorNome)}</strong>${x.fornecedorCnpj ? ' · CNPJ ' + nfEsc(nfFormatarCnpj(x.fornecedorCnpj)) : ''}</p>
+        ${p.fornecedor
+          ? '<p class="nf-xml-ok">✓ Já está no cadastro de fornecedores' + (p.fornecedor.nome !== x.fornecedorNome ? ' como "' + nfEsc(p.fornecedor.nome) + '"' : '') + '.</p>'
+          : `<p class="nf-xml-aviso">Este fornecedor não está no cadastro de fornecedores.</p>
+             <label class="nf-xml-opcao"><input type="checkbox" id="nfXmlIncluirFornecedor" checked> Incluir no cadastro de fornecedores (distribuidor de produtos)${endereco ? ', com o endereço: ' + nfEsc(endereco) : ''}</label>`}
+      </div>
+      <div class="nf-xml-bloco">
+        <h4>Itens (${x.itens.length}) <small>— ${relacionados} já relacionado${relacionados === 1 ? '' : 's'} ao cadastro pelo código do fornecedor</small></h4>
+        <ul class="nf-xml-itens">${x.itens.map((it, i) => `<li><span>${nfEsc(it.codigo)}</span> ${nfEsc(it.descricao)} · ${nfEsc(it.quantidade)} × ${nfMoeda(it.valorUnitario)}${nomeRel(i) ? ' <em>→ ' + nfEsc(nomeRel(i)) + '</em>' : ''}</li>`).join('')}</ul>
+      </div>
+      ${nfItens.length ? '<p class="nf-xml-aviso">Os dados e os ' + nfItens.length + ' itens que já estão na tela serão substituídos pelos do XML.</p>' : ''}
+      <p class="nf-ajuda">O XML também fica guardado como anexo da nota. Nada é gravado antes de você clicar em Salvar na nota (a não ser a inclusão do fornecedor, se marcada).</p>`;
+  }
+
+  function cancelarImportacaoXmlUI() {
+    nfImportacaoPendente = null;
+    fecharModal('modalConfirmarXmlNF');
+  }
+
+  async function confirmarImportacaoXmlUI() {
+    const p = nfImportacaoPendente;
+    if (!p) return;
+    const x = p.x;
+    let fornecedor = p.fornecedor;
+    const incluir = !fornecedor && !!(document.getElementById('nfXmlIncluirFornecedor') || {}).checked;
+    fecharModal('modalConfirmarXmlNF');
+    nfImportacaoPendente = null;
+
+    if (incluir) {
+      exibirModal('processando');
+      try {
+        const r = await runServerFunction('criarFornecedorDaNota', x.fornecedorDados);
+        if (r && r.sucesso) { fornecedor = r.fornecedor; await nfCarregarFornecedores(); mostrarMensagem(r.mensagem, 'sucesso'); }
+        else alert((r && r.mensagem) || 'Não foi possível incluir o fornecedor.');
+      } catch (e) { alert('Erro ao incluir o fornecedor.'); }
+      finally { fecharModal('processando'); }
+    }
 
     const set = (id, v) => { const el = document.getElementById(id); if (el && v !== '' && v !== undefined) el.value = v; };
     set('nfNumero', x.numero); set('nfSerie', x.serie); set('nfChave', x.chave); set('nfDataEmissao', x.dataEmissao);
     set('nfValorTotal', x.valorTotal === '' ? '' : String(x.valorTotal).replace('.', ','));
-    // fornecedor: o do cadastro com o mesmo CNPJ; sem cadastro, o nome do XML
-    const f = nfFornecedores.find(z => z.cnpj && z.cnpj === String(x.fornecedorCnpj).replace(/\D/g, ''));
-    set('nfFornecedor', f ? f.nome : x.fornecedorNome);
+    set('nfFornecedor', fornecedor ? fornecedor.nome : x.fornecedorNome);
     set('nfFornecedorCnpj', nfFormatarCnpj(x.fornecedorCnpj));
-    nfItens = x.itens.map(it => Object.assign(it, { pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false, garantiaMeses: '', garantiaAte: '' }));
-
-    // guarda o XML como anexo da nota
-    try {
-      const base64 = String(await nfLerArquivo(arquivo, false)).split(',')[1] || '';
-      nfAnexosPendentes = nfAnexosPendentes.filter(a => a.tipoAnexo !== 'XML');
-      nfAnexosPendentes.push({ nome: arquivo.name, tipo: 'text/xml', base64: base64, tipoAnexo: 'XML' });
-    } catch (e) { /* o XML só não fica anexado */ }
-
-    // relação automática pelo código do produto no fornecedor
+    nfItens = x.itens.map(it => Object.assign({}, it, { pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false, garantiaMeses: '', garantiaAte: '' }));
     let relacionados = 0;
-    try {
-      const r = await runServerFunction('relacionarItensNotaFiscal', x.fornecedorCnpj, f ? f.nome : x.fornecedorNome, nfItens.map(it => ({ codigo: it.codigo })));
-      ((r && r.relacoes) || []).forEach(rel => {
-        const it = nfItens[rel.indice];
-        if (it && rel.pecaId) { Object.assign(it, { pecaId: rel.pecaId, pecaNome: rel.pecaNome, pecaTipo: rel.pecaTipo, relacaoAuto: true }); relacionados++; }
-      });
-    } catch (e) { /* segue sem relação automática */ }
-
+    p.relacoes.forEach(rel => {
+      const it = nfItens[rel.indice];
+      if (it && rel.pecaId) { Object.assign(it, { pecaId: rel.pecaId, pecaNome: rel.pecaNome, pecaTipo: rel.pecaTipo, relacaoAuto: true }); relacionados++; }
+    });
+    if (p.arquivo.base64) {
+      nfAnexosPendentes = nfAnexosPendentes.filter(a => a.tipoAnexo !== 'XML');
+      nfAnexosPendentes.push({ nome: p.arquivo.nome, tipo: 'text/xml', base64: p.arquivo.base64, tipoAnexo: 'XML' });
+    }
     renderItensNota();
     renderAnexosPendentesNota();
+    const status = document.getElementById('nfXmlStatus');
     if (status) {
       status.textContent = `XML importado: nota ${x.numero}, ${x.itens.length} ite${x.itens.length === 1 ? 'm' : 'ns'}, ${relacionados} relacionado${relacionados === 1 ? '' : 's'} pelo código.` +
-        (f ? '' : ' Fornecedor (CNPJ ' + nfFormatarCnpj(x.fornecedorCnpj) + ') não está no cadastro de fornecedores.');
+        (fornecedor ? '' : ' Fornecedor (CNPJ ' + nfFormatarCnpj(x.fornecedorCnpj) + ') não está no cadastro de fornecedores.');
     }
   }
 
@@ -555,6 +633,18 @@
       alert('Informe a garantia geral da nota (meses ou data final). Se cada produto tiver a sua, escolha "Por produto".');
       const el = document.getElementById('nfGarantiaMeses'); if (el) el.focus();
       return;
+    }
+
+    // fornecedor que não está no cadastro: pergunta antes de incluir
+    if (!nfFornecedorDoCadastro(dados.fornecedorCnpj, dados.fornecedor)) {
+      if (!confirm('O fornecedor "' + dados.fornecedor + '"' + (dados.fornecedorCnpj ? ' (CNPJ ' + dados.fornecedorCnpj + ')' : '') +
+          ' não está no cadastro de fornecedores.\n\nIncluir no cadastro e salvar a nota?')) {
+        alert('A nota não foi salva. Escolha um fornecedor da lista ou confirme a inclusão.');
+        return;
+      }
+      const rf = await runServerFunction('criarFornecedorDaNota', { razaoSocial: dados.fornecedor, cnpj: dados.fornecedorCnpj });
+      if (!rf || rf.sucesso === false) { alert((rf && rf.mensagem) || 'Não foi possível incluir o fornecedor.'); return; }
+      await nfCarregarFornecedores();
     }
 
     exibirModal('processando');

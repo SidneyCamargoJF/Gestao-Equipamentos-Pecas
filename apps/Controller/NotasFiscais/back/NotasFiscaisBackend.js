@@ -82,6 +82,53 @@ function listarFornecedoresNF() {
     .sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
 }
 
+function formatarCnpjNF_(c) {
+  const d = soDigitosNF_(c);
+  return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : d;
+}
+
+/**
+ * Inclui no cadastro o fornecedor da nota que ainda não existe (pelo CNPJ;
+ * sem CNPJ, pelo nome). Vem do XML (com endereço) ou do nome digitado na
+ * nota -- sempre depois da confirmação do usuário. Marca como distribuidor
+ * de produtos. dados: { razaoSocial, nomeFantasia, cnpj, inscricaoEstadual,
+ * email, telefone, cep, logradouro, numero, complemento, bairro, cidade, uf }
+ */
+function criarFornecedorDaNota(dados) {
+  try {
+    return executarComLock(function () {
+      const d = dados || {};
+      const razao = String(d.razaoSocial || '').trim();
+      const cnpj = soDigitosNF_(d.cnpj);
+      if (!razao) return { sucesso: false, mensagem: 'Informe o nome (razão social) do fornecedor.' };
+      if (cnpj && cnpj.length !== 14 && cnpj.length !== 11) return { sucesso: false, mensagem: 'CNPJ do fornecedor inválido.' };
+      const existente = listarFornecedoresNF().find(function (f) {
+        return cnpj ? f.cnpj === cnpj : f.nome.toLowerCase() === razao.toLowerCase();
+      });
+      if (existente) return { sucesso: true, mensagem: 'Fornecedor já cadastrado.', fornecedor: existente, jaExistia: true };
+
+      const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(supplierTableName);
+      if (!aba) return { sucesso: false, mensagem: "Aba '" + supplierTableName + "' não foi encontrada." };
+      const pos = proximoIdTabela(aba, firstLineSupplier);
+      const t = function (v) { return String(v === undefined || v === null ? '' : v).trim(); };
+      // [id, prestador, distribuidor, razão social, fantasia, cnpj, IE, IM, e-mail,
+      //  telefone, celular, whatsapp, cep, logradouro, número, bairro, cidade, UF,
+      //  complemento, data de cadastro, data de alteração, status]
+      aba.getRange(pos.proximaLinha, 1, 1, numColumnsupplier).setValues([[
+        pos.novoId, '', 'Sim', razao, t(d.nomeFantasia) || razao, formatarCnpjNF_(cnpj), t(d.inscricaoEstadual), '', t(d.email),
+        t(d.telefone), '', '', soDigitosNF_(d.cep), t(d.logradouro), t(d.numero), t(d.bairro), t(d.cidade), t(d.uf),
+        t(d.complemento), hojeNF_(), '', 'Ativo'
+      ]]);
+      return {
+        sucesso: true, mensagem: 'Fornecedor ' + razao + ' incluído no cadastro.',
+        fornecedor: { nome: razao, fantasia: t(d.nomeFantasia), cnpj: cnpj }
+      };
+    });
+  } catch (e) {
+    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+  }
+}
+
 function mapaPecasNF_() {
   const mapa = {};
   ReadParts().forEach(function (l) {

@@ -79,9 +79,10 @@ Menu **Compras** na barra principal, com **Notas fiscais** e **Produtos x fornec
 **Consulta:** busca (número, chave, item, código), fornecedor, período de emissão, situação (ativas, desativadas, todas) e "só com itens sem relação com o cadastro". A lista mostra número/série, fornecedor, emissão, valor, itens (com quantos estão sem relação), garantia e anexos, com **✏️ Editar** e **🗑️ Desativar** (♻️ reativa).
 
 **Cadastro (+ Nova nota):**
-- **📥 Importar XML da NF-e:** preenche número, série, chave, emissão, valor, fornecedor (o do cadastro com o mesmo CNPJ; sem cadastro, o nome do XML) e os itens (código no fornecedor, descrição, NCM, quantidade e valores). O XML também fica guardado como anexo da nota.
-- **Dados da nota:** número *, série, data de emissão *, valor total, fornecedor * (da lista de fornecedores ou digitado), CNPJ, chave de acesso (44 dígitos) e observação.
-- **Garantia:**
+- **📥 Importar XML da NF-e:** primeiro mostra um **resumo para confirmar** (nota, fornecedor, itens e quantos já vêm relacionados ao cadastro); nada é preenchido antes de clicar em **Importar**. Ao importar, preenche número, série, chave, emissão, valor, fornecedor (o do cadastro com o mesmo CNPJ) e os itens (código no fornecedor, descrição, NCM, quantidade e valores). O XML também fica guardado como anexo da nota.
+  - **Fornecedor fora do cadastro:** o resumo avisa e traz marcada a opção **Incluir no cadastro de fornecedores**, com razão social, fantasia, CNPJ, IE, telefone e endereço do XML (como distribuidor de produtos). Desmarcando, a nota fica só com o nome do XML.
+- **Dados da nota:** número *, série, data de emissão *, valor total, fornecedor * (da lista de fornecedores ou digitado), CNPJ, chave de acesso (44 dígitos) e observação. Se o fornecedor digitado não estiver no cadastro, ao salvar o sistema pergunta se deve incluí-lo; sem a inclusão, a nota não é salva.
+- **Garantia** (Geral / Por produto e os campos de meses e data final na mesma linha):
   - **Geral:** vale para todos os itens; é obrigatória (meses ou data final; ao digitar os meses, a data final é calculada pela emissão).
   - **Por produto:** cada item ganha os campos de garantia (meses / até). Item sem garantia própria usa a garantia geral; se não houver nenhuma das duas, o sistema pede antes de salvar.
 - **Itens:** podem vir do XML ou ser incluídos à mão (**+ Incluir item**). Na coluna **Relação com o cadastro**:
