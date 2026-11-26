@@ -1,5 +1,19 @@
     <!-- CONFIGURAÇÕES -->
     <section id="page-configuracoes" class="spa-page">
+      <style>
+        .mig-titulo { margin: 1.25rem 0 0.5rem; font-size: 0.9375rem; color: #4f46e5; }
+        .mig-resumo { padding: 0.5rem 0.75rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 600; }
+        .mig-resumo:empty { display: none; }
+        .mig-resumo--ok { background: #dcfce7; color: #166534; }
+        .mig-resumo--pendente { background: #fef3c7; color: #92400e; }
+        .mig-situacao { display: inline-block; padding: 0.0625rem 0.5rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 700; }
+        .mig-situacao--ok { background: #dcfce7; color: #166534; }
+        .mig-situacao--pendente { background: #fef3c7; color: #92400e; }
+        .mig-situacao--feito { background: #e0e7ff; color: #3730a3; }
+        .mig-situacao--erro { background: #fee2e2; color: #b91c1c; }
+        .mig-aviso { font-size: 0.75rem; color: #92400e; }
+        .mig-relatorio { margin-top: 1rem; padding: 0.75rem; max-height: 16rem; overflow: auto; font-size: 0.75rem; background: #0f172a; color: #e2e8f0; border-radius: 0.375rem; white-space: pre-wrap; }
+      </style>
       <div class="page-header" style="margin-bottom: 1.5rem;">
         <h1>⚙️ Configurações do Sistema</h1>
       </div>
@@ -67,5 +81,38 @@
             <tbody id="modelosEmailTableBody"></tbody>
           </table>
         </div>
+      </div>
+      <!-- Migrações da planilha (MigracoesJS) -->
+      <div class="panel config-secao" id="config-secao-migracoes" style="display:none;">
+        <div class="nf-cabecalho">
+          <h2 style="font-size:1.0625rem; font-weight:700; margin:0; color:#0f172a;">Migrações da planilha</h2>
+          <div class="nf-cabecalho-botoes">
+            <button type="button" class="btn-secondary" onclick="carregarPainelMigracoes()">🔍 Verificar estrutura</button>
+            <button type="button" class="btn-primary" id="migBtnExecutar" onclick="executarMigracoesUI()">▶️ Executar migrações</button>
+          </div>
+        </div>
+        <p class="nf-ajuda">
+          Confere se a planilha tem todas as abas e colunas que o sistema usa. <strong>Executar migrações</strong> cria as abas que faltam,
+          completa os cabeçalhos das colunas novas (no fim das abas) e roda as migrações de dados pendentes. Não renomeia, não reordena e
+          não apaga nada; pode ser executado de novo. Rode depois de cada atualização do sistema. Só administradores executam.
+        </p>
+        <div id="migResumo" class="mig-resumo"></div>
+
+        <h3 class="mig-titulo">Estrutura das abas</h3>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>Aba</th><th>Situação</th><th>Colunas a incluir / incluídas</th><th>Avisos</th></tr></thead>
+            <tbody id="migEstruturaBody"></tbody>
+          </table>
+        </div>
+
+        <h3 class="mig-titulo">Migrações de dados</h3>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>Migração</th><th>O que faz</th><th>Situação</th></tr></thead>
+            <tbody id="migDadosBody"></tbody>
+          </table>
+        </div>
+        <pre id="migRelatorio" class="mig-relatorio" style="display:none;"></pre>
       </div>
     </section>

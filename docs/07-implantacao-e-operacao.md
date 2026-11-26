@@ -18,15 +18,32 @@ Se o `clasp push` falhar com `Syntax error`, nada é enviado. Causas comuns: cam
 
 ## Configuração inicial
 
-Execute uma vez no editor do Apps Script (selecione a função e clique em **Executar**):
+As migrações também podem ser feitas pelo sistema, em **Configuração → Migrações da planilha** (botões **Verificar estrutura** e **Executar migrações**; executar é só para administradores da propriedade `ADMINS`).
+
+No editor do Apps Script (selecione a função e clique em **Executar**):
 
 | Função | Para quê |
 |---|---|
+| `executarMigracoes()` | **Migrações da planilha** ([Migracoes.js](../apps/01-Model/Migracoes.js)): cria as abas que faltam e completa os cabeçalhos das colunas novas de **todas** as tabelas, e roda as migrações de dados pendentes. Rode depois de cada publicação que mexa em tabelas; pode ser repetida |
+| `verificarEstruturaTabelas()` | Só confere (não muda nada) e mostra no log, aba por aba, o que falta e os cabeçalhos com nome diferente do esperado |
+| `listarMigracoes()` | Mostra quais migrações de dados já rodaram e quando |
 | `instalarGatilhoPreventivas()` | Cria o gatilho diário (06h) de `gerarPreventivasDoMes`. Não duplica se já existir |
-| `migrarPeriodicidadeChecklist()` | Grava a coluna PERIODICIDADE nos itens antigos do checklist, lida do prefixo `[Mensal]` etc. |
-| `preencherCamposNovosChamados()` | Preenche ORIGEM, contrato, fornecedor e prazos de SLA nos chamados criados antes dessas colunas existirem |
 
-As três funções podem ser executadas de novo sem efeito colateral.
+O resultado de cada execução aparece em **Registro de execução** (log). `criarTabelasNovasSeNecessario()` continua existindo e hoje faz o mesmo que `executarMigracoes()`.
+
+### Migrações
+
+- **Estrutura (roda sempre):** uma por aba, a partir do esquema de todas as tabelas (`esquemaTabelas_`). Aba que não existe é criada com o cabeçalho na linha 2; aba que existe só recebe os nomes de cabeçalho que estão **vazios** (as colunas novas no fim). Nada é renomeado, reordenado ou apagado, e os dados não são tocados. Cabeçalho com nome diferente aparece como aviso no log. Em aba antiga com o cabeçalho na linha 1 (e a linha 2 vazia), completa a linha 1.
+- **Dados (rodam uma vez cada):** registradas nas Propriedades do script (`MIGRACOES_APLICADAS`):
+
+| Id | O que faz |
+|---|---|
+| `2026-01-periodicidade-checklist` | Grava a PERIODICIDADE dos itens antigos do checklist do contrato (prefixo `[Mensal]` etc.) |
+| `2026-01-campos-novos-chamados` | Preenche ORIGEM, contrato, fornecedor e prazos de SLA dos chamados antigos |
+| `2026-11-modelos-email-contexto` | Coluna CONTEXTO e modelos iniciais de garantia em `tbl_modelos_email` |
+| `2026-11-estoque-entradas-notas` | Entradas de estoque das notas fiscais lançadas antes do estoque |
+
+A aba legada `tab_materiais` (cadastro de materiais antigo, fora do menu) não entra nas migrações.
 
 ### Administradores
 

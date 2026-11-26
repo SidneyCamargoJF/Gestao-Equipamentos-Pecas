@@ -6,6 +6,7 @@ Cada tabela é uma aba da planilha vinculada ao projeto.
 
 - **Linhas:** a linha 1 guarda o índice (SEQUENCE), a linha 2 o cabeçalho, e os dados começam na **linha 3** (`firstLine… = 3`).
 - **Colunas:** nunca reordene as colunas existentes. Colunas novas entram **no fim** da aba, e a constante `numColumns…` do model é atualizada.
+- **Migrações:** o esquema de todas as abas (nome e ordem das colunas) fica em `esquemaTabelas_` ([Migracoes.js](../apps/01-Model/Migracoes.js)). `executarMigracoes()` cria as abas e os cabeçalhos que faltam; veja o documento [07](07-implantacao-e-operacao.md#migrações).
 - **ID:** é o último ID da aba mais 1 (`proximoIdTabela`), calculado dentro de `executarComLock`.
 - **Exclusão lógica:** grava a data de exclusão (`dd/MM/yyyy`) e pinta a linha de `#F4CCCC`. Reativar limpa a data e volta a cor `#FFFFFF`. Nenhuma linha é apagada.
 - **Datas:** `dd/MM/yyyy`, ou `dd/MM/yyyy HH:mm` quando a hora importa. O fuso é `America/Sao_Paulo`.

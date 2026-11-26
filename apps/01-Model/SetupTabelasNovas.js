@@ -15,32 +15,9 @@
 // já existir, não faz nada com ela (não sobrescreve, não duplica).
 // =====================================================
 function criarTabelasNovasSeNecessario() {
-  const resultado = [
-    criarAbaSeNaoExistir_(contractsSlaTableName, [
-      'ID', 'CONTRATO_ID', 'PRIORIDADE', 'PRAZO_ATENDIMENTO_HORAS', 'PRAZO_SOLUCAO_HORAS',
-      'HORAS_UTEIS', 'DATA_CADASTRO', 'DATA_ALTERACAO', 'DATA_EXCLUSAO'
-    ]),
-    criarAbaSeNaoExistir_(ticketChecklistTableName, [
-      'ID', 'CHAMADO_ID', 'EQUIPAMENTO_ID', 'CHECKLIST_ID', 'DESCRICAO', 'PERIODICIDADE',
-      'RESULTADO', 'OBSERVACAO', 'EXECUTADO_EM', 'REGISTRADO_POR', 'DATA_CADASTRO',
-      'DATA_ALTERACAO', 'DATA_EXCLUSAO'
-    ]),
-    // modelos de e-mail (Configuração > Modelos de e-mail), já com os modelos iniciais
-    garantirAbaModelosEmail_(),
-    // e-mails enviados por chamado (Reenviar e-mail)
-    criarAbaSeNaoExistir_(ticketEmailsTableName, CABECALHO_CHAMADO_EMAILS)
-  ].concat(
-    // garantias de peças/produtos: acionamentos, histórico e anexos
-    garantirAbasGarantias_(),
-    // aquisições (notas fiscais) das peças/produtos
-    criarAbaSeNaoExistir_(pecasAquisicoesTableName, CABECALHO_PECAS_AQUISICOES)
-  ).concat(
-    // Compras: notas fiscais, itens, anexos e produto x fornecedor
-    garantirAbasNotasFiscais_()
-  );
-
-  resultado.forEach(function (r) { Logger.log(r.mensagem); });
-  return resultado;
+  // Hoje faz o mesmo que executarMigracoes() (Migracoes.js): cria/completa a
+  // estrutura de todas as abas e roda as migrações de dados pendentes.
+  return executarMigracoes();
 }
 
 /**

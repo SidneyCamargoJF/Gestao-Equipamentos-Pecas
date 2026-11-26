@@ -1,12 +1,13 @@
 <script>
 
-// secao: 'usuarios' (padrão) ou 'modelos-email' -- itens do submenu Configuração
+// secao: 'usuarios' (padrão), 'modelos-email' ou 'migracoes' -- itens do submenu Configuração
 async function renderConfiguracoes(secao) {
-    const atual = secao === 'modelos-email' ? 'modelos-email' : 'usuarios';
+    const atual = ['modelos-email', 'migracoes'].indexOf(secao) !== -1 ? secao : 'usuarios';
     document.querySelectorAll('#page-configuracoes .config-secao').forEach(el => {
         el.style.display = el.id === 'config-secao-' + atual ? '' : 'none';
     });
     if (atual === 'modelos-email') await consultarModelosEmail();
+    else if (atual === 'migracoes') await carregarPainelMigracoes();
     else await consultarUsuarios();
 }
 

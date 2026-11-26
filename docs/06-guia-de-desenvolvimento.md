@@ -30,10 +30,11 @@ Regras que todo código novo deve seguir. Antes de mudar qualquer coisa, leia o 
 
 - **Linhas:** dados a partir da linha 3. A linha 1 é o índice, a linha 2 o cabeçalho.
 - **Colunas novas:** sempre **no fim da aba**, nunca reordenando as existentes.
-  1. Crie a coluna na planilha.
+  1. Acrescente o nome no fim da lista da aba em `esquemaTabelas_` ([Migracoes.js](../apps/01-Model/Migracoes.js)) — `executarMigracoes()` cria o cabeçalho na planilha.
   2. Adicione a constante no model.
-  3. Atualize `numColumns…`.
+  3. Atualize `numColumns…` (o esquema e o `numColumns` precisam ter o mesmo tamanho).
   4. Revise toda gravação que monta a linha inteira (`setValues` de N colunas).
+- **Tabela nova:** inclua a entrada em `esquemaTabelas_`. **Migração de dados nova:** inclua em `migracoesDados_` com um id novo (nunca reaproveite um id); ela roda uma vez em `executarMigracoes()`.
 - **ID:** use `proximoIdTabela(aba, firstLine)` **dentro de** `executarComLock(...)`. O lock é reentrante: uma função com lock pode chamar outra com lock.
 - **Exclusão lógica:** grave a data de exclusão e pinte a linha (`#F4CCCC`). Nunca apague linhas.
 - **Datas:** formato `dd/MM/yyyy` ou `dd/MM/yyyy HH:mm`, fuso `America/Sao_Paulo`. Para ler datas que podem vir como `Date` ou como texto, use `parseDataFlex`.

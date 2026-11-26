@@ -319,7 +319,14 @@ Use **Imprimir** para gerar a versão em papel ou PDF. As regras estão no docum
 
 ## Configuração
 
-O menu **Configuração** tem os itens **Usuários**, **Modelos de e-mail**, **Marcas** e **Localizações** (veja [Marcas e Localizações](#marcas-e-localizações)).
+O menu **Configuração** tem os itens **Usuários**, **Modelos de e-mail**, **Marcas**, **Localizações** (veja [Marcas e Localizações](#marcas-e-localizações)) e **Migrações da planilha**.
+
+### Configuração → Migrações da planilha
+
+Confere se a planilha tem todas as abas e colunas que o sistema usa.
+- **Estrutura das abas:** cada aba com a situação (OK, Aba não existe, Faltam colunas), as colunas a incluir e avisos de cabeçalho com nome diferente do esperado.
+- **Migrações de dados:** cada ajuste de dados com a data em que foi aplicado, ou Pendente.
+- **🔍 Verificar estrutura** só confere. **▶️ Executar migrações** cria as abas que faltam, completa os cabeçalhos das colunas novas e roda as migrações de dados pendentes, mostrando o relatório. Não renomeia, não reordena e não apaga nada, e pode ser executado de novo. Rode depois de cada atualização do sistema. Só administradores (propriedade `ADMINS`) executam.
 
 ### Configuração → Modelos de e-mail
 

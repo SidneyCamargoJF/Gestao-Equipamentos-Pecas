@@ -1,0 +1,83 @@
+<script>
+  // =====================================================
+  // CONFIGURAÇÃO > MIGRAÇÕES DA PLANILHA (#config-secao-migracoes)
+  // Verificar (só leitura) e executar as migrações (administradores).
+  // Backend: apps/01-Model/Migracoes.js
+  // =====================================================
+
+  const MIG_SITUACAO = {
+    ok: { texto: 'OK', classe: 'ok' }, ausente: { texto: 'Aba não existe', classe: 'pendente' },
+    faltando: { texto: 'Faltam colunas', classe: 'pendente' }, criada: { texto: 'Criada agora', classe: 'feito' },
+    completada: { texto: 'Completada agora', classe: 'feito' }
+  };
+
+  function migEsc(s) {
+    return String(s === undefined || s === null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  async function carregarPainelMigracoes() {
+    const tb = document.getElementById('migEstruturaBody');
+    if (tb) tb.innerHTML = '<tr><td colspan="4" style="text-align:center;"><span class="spinner"></span>Conferindo a planilha...</td></tr>';
+    let r;
+    try { r = await runServerFunction('painelMigracoes'); } catch (e) { r = { sucesso: false, mensagem: 'Erro ao conectar com o servidor.' }; }
+    if (!r || !r.sucesso) {
+      if (tb) tb.innerHTML = `<tr><td colspan="4" style="text-align:center;">${migEsc((r && r.mensagem) || 'Erro ao conferir.')}</td></tr>`;
+      return;
+    }
+    renderEstruturaMigracoes(r.estrutura);
+    renderDadosMigracoes(r.migracoes.map(m => ({ id: m.id, descricao: m.descricao, situacao: m.aplicadaEm ? 'Aplicada em ' + m.aplicadaEm : 'Pendente', pendente: !m.aplicadaEm })));
+    const btn = document.getElementById('migBtnExecutar');
+    if (btn) { btn.disabled = !r.admin; btn.title = r.admin ? '' : 'Somente administradores (propriedade ADMINS)'; }
+    const resumo = document.getElementById('migResumo');
+    const pendDados = r.migracoes.filter(m => !m.aplicadaEm).length;
+    if (resumo) {
+      resumo.textContent = (r.pendencias || pendDados)
+        ? `Há pendências: ${r.pendencias} aba(s) com estrutura a completar ou aviso, ${pendDados} migração(ões) de dados pendente(s).`
+        : 'Planilha em dia: todas as abas completas e todas as migrações de dados aplicadas.';
+      resumo.className = 'mig-resumo ' + (r.pendencias || pendDados ? 'mig-resumo--pendente' : 'mig-resumo--ok');
+    }
+  }
+
+  function renderEstruturaMigracoes(lista) {
+    const tb = document.getElementById('migEstruturaBody');
+    if (!tb) return;
+    tb.innerHTML = (lista || []).map(e => {
+      const s = MIG_SITUACAO[e.situacao] || { texto: e.situacao, classe: '' };
+      return `<tr>
+        <td><code>${migEsc(e.aba)}</code></td>
+        <td><span class="mig-situacao mig-situacao--${s.classe}">${migEsc(s.texto)}</span></td>
+        <td>${migEsc((e.colunasIncluidas || []).join(', '))}</td>
+        <td class="mig-aviso">${migEsc((e.avisos || []).join('; '))}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderDadosMigracoes(lista) {
+    const tb = document.getElementById('migDadosBody');
+    if (!tb) return;
+    tb.innerHTML = (lista || []).map(m => `<tr>
+        <td><code>${migEsc(m.id)}</code></td>
+        <td>${migEsc(m.descricao || '')}</td>
+        <td><span class="mig-situacao mig-situacao--${m.pendente ? 'pendente' : (m.erro ? 'erro' : 'ok')}">${migEsc(m.situacao)}</span>${m.mensagem ? '<br><small>' + migEsc(m.mensagem) + '</small>' : ''}</td>
+      </tr>`).join('');
+  }
+
+  async function executarMigracoesUI() {
+    if (!confirm('Executar as migrações da planilha?\n\nCria as abas que faltam, completa os cabeçalhos das colunas novas e roda as migrações de dados pendentes. Não renomeia, não reordena e não apaga nada.')) return;
+    exibirModal('processando');
+    let r;
+    try { r = await runServerFunction('executarMigracoesPeloSistema'); }
+    catch (e) { r = { sucesso: false, mensagem: 'Erro ao conectar com o servidor.' }; }
+    finally { fecharModal('processando'); }
+    if (!r || (!r.estrutura && r.sucesso === false)) { alert((r && r.mensagem) || 'Erro ao executar.'); return; }
+    renderEstruturaMigracoes(r.estrutura);
+    const descricoes = {};
+    document.querySelectorAll('#migDadosBody tr').forEach(tr => { descricoes[tr.cells[0].textContent] = tr.cells[1].textContent; });
+    renderDadosMigracoes((r.dados || []).map(d => ({
+      id: d.id, descricao: descricoes[d.id] || '', situacao: d.situacao, mensagem: d.mensagem, erro: d.situacao === 'ERRO'
+    })));
+    const log = document.getElementById('migRelatorio');
+    if (log) { log.textContent = r.texto || ''; log.style.display = r.texto ? '' : 'none'; }
+    mostrarMensagem(r.mensagem, r.sucesso ? 'sucesso' : 'erro');
+  }
+</script>
