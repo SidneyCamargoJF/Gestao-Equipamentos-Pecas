@@ -13,6 +13,8 @@
 //   coluna NF_ID), com o arquivo da nota escaneada -- aparece no cadastro
 //   do item e é sugerida no e-mail de garantia. Se a peça não tiver
 //   garantia/nota cadastradas, recebe as da nota.
+// - O VALOR da peça passa a ser o valor unitário da compra mais recente
+//   (nota ativa com a data de emissão mais nova que tenha o item).
 // =====================================================
 
 const TIPOS_ANEXO_NOTA = ['Nota escaneada', 'XML', 'Outro'];
@@ -547,7 +549,7 @@ function salvarNotaFiscal_(d) {
   if (semRelacao) mensagem += '\n' + semRelacao + ' item(ns) sem relação com o cadastro de peças/produtos.';
   if (relacoesNovas) mensagem += '\n' + relacoesNovas + ' relação(ões) produto x fornecedor gravada(s).';
   if (entradasEstoque) mensagem += '\n' + entradasEstoque + ' entrada(s) no estoque.';
-  if (pecasAtualizadas) mensagem += '\n' + pecasAtualizadas + ' peça(s)/produto(s) receberam a garantia/nota desta compra.';
+  if (pecasAtualizadas) mensagem += '\n' + pecasAtualizadas + ' peça(s)/produto(s) atualizados (valor, garantia ou nota desta compra).';
   if (nomesAnexos.length) mensagem += '\n' + nomesAnexos.length + ' anexo(s) incluído(s).';
   return { sucesso: true, id: nfId, mensagem: mensagem };
 }
@@ -592,8 +594,35 @@ function sincronizarAquisicoesNota_(nfId) {
 }
 
 /**
+ * Compra mais recente de cada peça: { pecaId: { nfId, data, valorUnitario } },
+ * entre as notas ativas, pela data de emissão (empate: a nota de id maior).
+ * Só itens com valor unitário.
+ */
+function ultimaCompraPorPeca_() {
+  const notas = {};
+  ReadNotasFiscais().forEach(function (l) {
+    if (String(l[nfDtExclusaoCol] || '').trim()) return;
+    const d = parseDataFlex(l[nfDataEmissaoCol]);
+    notas[Number(l[nfIdCol])] = d ? d.getTime() : 0;
+  });
+  const ultima = {};
+  ReadNfItens().forEach(function (i) {
+    const pecaId = Number(i[nfItemPecaIdCol]), nfId = Number(i[nfItemNfIdCol]);
+    if (!pecaId || String(i[nfItemDtExclusaoCol] || '').trim() || !(nfId in notas)) return;
+    const valor = numeroNF_(i[nfItemValorUnitCol]);
+    if (valor === '') return;
+    const atual = ultima[pecaId];
+    if (!atual || notas[nfId] > atual.data || (notas[nfId] === atual.data && nfId > atual.nfId)) {
+      ultima[pecaId] = { nfId: nfId, data: notas[nfId], valorUnitario: valor };
+    }
+  });
+  return ultima;
+}
+
+/**
  * Peça relacionada sem garantia (data final) ou sem nota cadastradas
- * recebe as desta compra. Devolve quantas foram completadas.
+ * recebe as desta compra; o valor da peça vira o valor unitário da compra
+ * mais recente. Devolve quantas foram atualizadas.
  */
 function completarPecasComNota_(nfId) {
   const det = buscarNotaFiscal(nfId);
@@ -601,6 +630,8 @@ function completarPecasComNota_(nfId) {
   const n = det.nota;
   const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(PartsTableName);
   const pecas = ReadParts();
+  const ultima = ultimaCompraPorPeca_();
+  const valorAtualizado = {};
   let qtd = 0;
   n.itens.forEach(function (it) {
     if (!it.pecaId) return;
@@ -608,6 +639,14 @@ function completarPecasComNota_(nfId) {
     if (idx === -1) return;
     const l = pecas[idx], linha = idx + firstLineParts;
     let mudou = false;
+    // valor: o da compra mais recente (esta nota, se for a mais nova)
+    const u = ultima[Number(it.pecaId)];
+    if (u && !valorAtualizado[it.pecaId] && Number(l[partsValueCol]) !== Number(u.valorUnitario)) {
+      aba.getRange(linha, partsValueCol + 1).setValue(u.valorUnitario);
+      pecas[idx][partsValueCol] = u.valorUnitario;
+      mudou = true;
+    }
+    valorAtualizado[it.pecaId] = true;
     if (!String(l[partsDtGarantiaCol] || '').trim() && it.garantiaEfetiva) {
       const fim = parseDataFlex(it.garantiaEfetiva);
       aba.getRange(linha, partsDtGarantiaCol + 1).setValue(Utilities.formatDate(fim, 'GMT-3', 'yyyy-MM-dd'));

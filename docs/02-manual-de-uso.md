@@ -99,6 +99,7 @@ Menu **Compras** na barra principal, com **Notas fiscais** e **Produtos x fornec
 - cada item relacionado **entra no estoque** com a quantidade da nota (alterar a nota refaz as entradas; desativar tira);
 - cada item relacionado vira uma **aquisição** da peça/produto (com a nota escaneada), sugerida no e-mail de garantia;
 - a peça/produto sem data de garantia ou sem nota cadastradas recebe as desta compra.
+- o **valor** da peça/produto passa a ser o valor unitário da **compra mais recente** (a nota ativa de data de emissão mais nova com o item). Lançar ou editar uma nota mais antiga não muda o valor; item da nota sem valor unitário também não. Notas lançadas antes desta regra atualizam o valor quando forem abertas e salvas de novo.
 
 Desativar a nota tira as aquisições que ela gerou; reativar devolve.
 
