@@ -196,6 +196,28 @@
   }
 
   // ----- fornecedor: escolhido da lista preenche o CNPJ
+  // (+) do fornecedor: abre o cadastro rápido de fornecedor (o mesmo de peças e
+  // equipamentos), já com o que foi digitado na nota (nome e CNPJ)
+  function nfAbrirCadastroFornecedor() {
+    if (typeof abrirModalCadastroFornecedor !== 'function') return;
+    abrirModalCadastroFornecedor('notas');
+    const nome = (document.getElementById('nfFornecedor').value || '').trim();
+    const cnpj = (document.getElementById('nfFornecedorCnpj').value || '').trim();
+    const conhecido = nome && nfFornecedorDoCadastro('', nome);
+    if (nome && !conhecido) document.getElementById('novoFornecedorRazaoSocial').value = nome;
+    if (cnpj && !conhecido) document.getElementById('novoFornecedorCnpj').value = cnpj;
+  }
+
+  // Chamado pelo cadastro rápido depois de gravar: recarrega a lista e já
+  // escolhe o fornecedor novo na nota
+  async function nfFornecedorCadastradoRapido(dados) {
+    await nfCarregarFornecedores();
+    const cnpj = String(dados.cnpj || '').replace(/\D/g, '');
+    const f = nfFornecedorDoCadastro(cnpj, dados.razaoSocial) || nfFornecedorDoCadastro('', dados.razaoSocial);
+    document.getElementById('nfFornecedor').value = f ? f.nome : dados.razaoSocial;
+    document.getElementById('nfFornecedorCnpj').value = nfFormatarCnpj(f ? f.cnpj : cnpj);
+  }
+
   function nfFornecedorEscolhido() {
     const nome = (document.getElementById('nfFornecedor').value || '').trim().toLowerCase();
     const f = nfFornecedores.find(x => x.nome.toLowerCase() === nome || (x.fantasia && x.fantasia.toLowerCase() === nome));

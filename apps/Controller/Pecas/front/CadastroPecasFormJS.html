@@ -186,6 +186,11 @@
         if (typeof fecharModal === 'function') fecharModal('processando');
         if (resposta && resposta.sucesso) {
           fecharModalCadastroFornecedor();
+          // nota fiscal: campo com lista (datalist), não select
+          if (contextoCadastroRapido === 'notas' && typeof nfFornecedorCadastradoRapido === 'function') {
+            await nfFornecedorCadastradoRapido(dados);
+            return;
+          }
           const selectId = (SELECTS_CADASTRO_RAPIDO.fornecedor[contextoCadastroRapido]) || 'fornecedorSelect';
           const opcoesFornecedor = (await loadSuppliers()).map(linha => linha[3]).filter(Boolean);
           preencherSelect(selectId, opcoesFornecedor, 'Selecione o Fornecedor');
