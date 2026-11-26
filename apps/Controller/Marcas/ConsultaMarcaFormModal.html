@@ -2,14 +2,14 @@
     <div class="modal-overlay" id='modalCadastroMarca'>
       <div class="modal">
         <h3> Nova Marca </h3>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroMarca')">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="marcaController.salvarNovaMarca()">Salvar</button>
+        </div>
         <div class="form-group">
           <label for="novaMarcaNome" class="field__label"> Nome da Marca *</label>
           <input type="text" id="novaMarcaNome" class="search-input" placeholder="Digite o nome da marca..."/>
           <span class="field__error-msg" id="novaMarcaNomeErro">Informe o nome da marca.</span>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroMarca')">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="marcaController.salvarNovaMarca()">Salvar</button>
         </div>
       </div>
     </div>
@@ -18,6 +18,10 @@
     <div class="modal-overlay" id="modalEdicaoMarca">
       <div class="modal">
         <h3>Editar Marca</h3>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalEdicaoMarca')" style="width:auto;">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="marcaController.executarEdicao()">Salvar</button>
+        </div>
         
         <!-- Guarda o ID da marca -->
         <input type="hidden" id="editMarcaId">
@@ -27,10 +31,6 @@
           <input type="text" id="editMarcaNome" class="search-input" placeholder="Digite o novo nome..."/>
         </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModal('modalEdicaoMarca')" style="width:auto;">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="marcaController.executarEdicao()">Salvar</button>
-        </div>
       </div>
     </div>
 
@@ -52,6 +52,10 @@
     <div class="modal-overlay" id="modalCadastroLocalizacaoCompleto">
       <div class="modal">
         <h3>Nova Localização</h3>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroLocalizacaoCompleto')">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="localizacaoController.salvarNovaLocalizacao()">Salvar</button>
+        </div>
         <div class="form-group">
           <label for="novaLocalizacaoCompletoNome" class="field__label">Nome da Localização *</label>
           <input type="text" id="novaLocalizacaoCompletoNome" class="search-input" placeholder="Digite o nome da localização..."/>
@@ -61,10 +65,6 @@
           <label for="novaLocalizacaoCompletoObservacao" class="field__label">Observação (opcional)</label>
           <textarea id="novaLocalizacaoCompletoObservacao" class="field__input" rows="3" placeholder="Opcional..."></textarea>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroLocalizacaoCompleto')">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="localizacaoController.salvarNovaLocalizacao()">Salvar</button>
-        </div>
       </div>
     </div>
 
@@ -72,6 +72,10 @@
     <div class="modal-overlay" id="modalEdicaoLocalizacao">
       <div class="modal">
         <h3>Editar Localização</h3>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalEdicaoLocalizacao')" style="width:auto;">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="localizacaoController.executarEdicao()">Salvar</button>
+        </div>
         <input type="hidden" id="editLocalizacaoId">
         <div class="form-group">
           <label for="editLocalizacaoNome" class="field__label">Nome da Localização:</label>
@@ -80,10 +84,6 @@
         <div class="form-group">
           <label for="editLocalizacaoObservacao" class="field__label">Observação</label>
           <textarea id="editLocalizacaoObservacao" class="field__input" rows="3" placeholder="Opcional..."></textarea>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModal('modalEdicaoLocalizacao')" style="width:auto;">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="localizacaoController.executarEdicao()">Salvar</button>
         </div>
       </div>
     </div>

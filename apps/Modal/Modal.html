@@ -17,14 +17,14 @@
     <div class="modal-overlay" id="modalCadastroLocalizacao">
       <div class="modal">
         <h3>Nova Localização</h3>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" onclick="fecharModalCadastroLocalizacao()">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="salvarNovaLocalizacao()">Salvar</button>
+        </div>
         <div class="form-group">
           <label for="novaLocalizacaoNome" class="field__label">Nome da Localização *</label>
           <input type="text" id="novaLocalizacaoNome" class="search-input" placeholder="Digite o nome da localização..."/>
           <span class="field__error-msg">Informe o nome da localização.</span>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModalCadastroLocalizacao()">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="salvarNovaLocalizacao()">Salvar</button>
         </div>
       </div>
     </div>
@@ -35,14 +35,14 @@
     <div class="modal-overlay" id="modalCadastroMarcaRapida">
       <div class="modal">
         <h3>Nova Marca</h3>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroMarcaRapida')">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="salvarNovaMarcaRapida()">Salvar</button>
+        </div>
         <div class="form-group">
           <label for="novaMarcaRapidaNome" class="field__label">Nome da Marca *</label>
           <input type="text" id="novaMarcaRapidaNome" class="search-input" placeholder="Digite o nome da marca..."/>
           <span class="field__error-msg">Informe o nome da marca.</span>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModal('modalCadastroMarcaRapida')">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="salvarNovaMarcaRapida()">Salvar</button>
         </div>
       </div>
     </div>
@@ -53,6 +53,10 @@
     <div class="modal-overlay" id="modalCadastroFornecedor">
       <div class="modal">
         <h3>Novo Fornecedor</h3>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" onclick="fecharModalCadastroFornecedor()">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="salvarNovoFornecedorRapido()">Salvar</button>
+        </div>
         <div class="form-group">
           <label for="novoFornecedorCnpj" class="field__label">CNPJ *</label>
           <input type="text" id="novoFornecedorCnpj" class="search-input" placeholder="00.000.000/0000-00"/>
@@ -82,10 +86,6 @@
           <label for="novoFornecedorTelefoneFixo" class="field__label">Telefone Fixo *</label>
           <input type="text" id="novoFornecedorTelefoneFixo" class="search-input" placeholder="(00) 0000-0000"/>
           <span class="field__error-msg">Informe o telefone fixo.</span>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="fecharModalCadastroFornecedor()">Cancelar</button>
-          <button type="button" class="btn-primary" onclick="salvarNovoFornecedorRapido()">Salvar</button>
         </div>
       </div>
     </div>
@@ -458,6 +458,10 @@
           <h3>⚙️ Estoque mínimo e unidade</h3>
           <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalParametrosEstoque')">✕</button>
         </div>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalParametrosEstoque')">Cancelar</button>
+          <button type="button" class="btn-success" style="width:auto;" onclick="salvarParametrosEstoqueUI()">Salvar</button>
+        </div>
         <p><strong id="estParamItem"></strong></p>
         <div class="field">
           <label class="field__label" for="estParamMinimo">Estoque mínimo (vazio = sem mínimo)</label>
@@ -466,10 +470,6 @@
         <div class="field">
           <label class="field__label" for="estParamUnidade">Unidade</label>
           <input class="field__input" type="text" id="estParamUnidade" placeholder="UN, CX, M, L...">
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalParametrosEstoque')">Cancelar</button>
-          <button type="button" class="btn-success" style="width:auto;" onclick="salvarParametrosEstoqueUI()">Salvar</button>
         </div>
       </div>
     </div>
@@ -543,6 +543,12 @@
           <h3 id="emailChamadoTitulo">📧 E-mail para a empresa</h3>
           <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharEmailChamado()">✕</button>
         </div>
+        <div class="modal-actions modal-acoes-topo modal-email-acoes">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="salvarEmailComoModeloUI()">💾 Salvar como modelo</button>
+          <span class="modal-email-espaco"></span>
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharEmailChamado()">Cancelar</button>
+          <button type="button" class="btn-primary" style="width:auto;" onclick="enviarEmailChamadoUI()">📧 Enviar</button>
+        </div>
         <p class="modal-email-aviso" id="emailChamadoAvisoReenvio" style="display:none;"></p>
         <form autocomplete="off" onsubmit="return false;">
           <div class="field">
@@ -590,12 +596,6 @@
             Solicitar confirmação de leitura <small>(chega na sua caixa de entrada, se o destinatário aceitar)</small>
           </label>
         </form>
-        <div class="modal-actions modal-email-acoes">
-          <button type="button" class="btn-secondary" style="width:auto;" onclick="salvarEmailComoModeloUI()">💾 Salvar como modelo</button>
-          <span class="modal-email-espaco"></span>
-          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharEmailChamado()">Cancelar</button>
-          <button type="button" class="btn-primary" style="width:auto;" onclick="enviarEmailChamadoUI()">📧 Enviar</button>
-        </div>
       </div>
     </div>
 

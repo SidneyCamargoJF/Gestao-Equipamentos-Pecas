@@ -21,6 +21,7 @@ Regras que todo código novo deve seguir. Antes de mudar qualquer coisa, leia o 
   - Quem chama `google.script.run` direto numa gravação abre e fecha o modal à mão, com `exibirModal('processando')` e `fecharModal('processando')` nos dois retornos.
   - O modal funciona com contador: só fecha quando cada abertura tiver o seu fechamento.
 - **HTML dinâmico:** passe por `escapeHtml()` todo texto interpolado em `innerHTML`.
+- **Modais de formulário:** os botões (Cancelar / Salvar / Enviar...) ficam no **topo**, logo abaixo do título, num `<div class="modal-actions modal-acoes-topo">` (faixa separada dos campos). Modais só de confirmação ou aviso mantêm os botões embaixo do texto.
 - **Mensagens:** use `mostrarMensagem(texto, tipo)` (`apps/Modal/ModalJS.html`); `tipo` é `sucesso`, `erro`, `aviso` ou `info`. Abre o modal `#modalMensagem`, enfileira mensagens seguidas e devolve uma Promise resolvida quando a pessoa fecha.
   - `alert()` é redirecionado para esse modal, com o tipo deduzido do texto. Diferente do alert do navegador, ele **não bloqueia**: o código depois dele continua rodando.
   - O alert original fica em `window.alertNativo`. O `confirm()` continua sendo o do navegador.
