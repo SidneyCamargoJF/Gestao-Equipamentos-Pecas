@@ -338,8 +338,10 @@ async function gerarPreventivasDash(competencia) {
   const escolhidas = checkboxesPreventivasDash(competencia).filter(cb => cb.checked);
   if (!escolhidas.length) { alert('Selecione ao menos um contrato.'); return; }
   const numeros = escolhidas.map(cb => cb.getAttribute('data-numero')).join(', ');
-  if (!confirm('Gerar os chamados de preventiva de ' + competenciaTextoDash(competencia) + ' para ' +
-    (escolhidas.length === 1 ? 'o contrato ' : 'os ' + escolhidas.length + ' contratos ') + numeros + '?')) return;
+  const ok = await confirmarModal('Competência ' + competenciaTextoDash(competencia) + ' — ' +
+    (escolhidas.length === 1 ? 'contrato ' : escolhidas.length + ' contratos: ') + numeros + '.',
+    { titulo: 'Gerar os chamados de preventiva?', confirmar: 'Gerar chamados' });
+  if (!ok) return;
   try {
     const r = await runServerFunction('gerarPreventivasDoMesManual', competencia, escolhidas.map(cb => Number(cb.value)));
     alert((r && r.mensagem) || 'Concluído.');

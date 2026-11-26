@@ -63,7 +63,9 @@
   }
 
   async function executarMigracoesUI() {
-    if (!confirm('Executar as migrações da planilha?\n\nCria as abas que faltam, completa os cabeçalhos das colunas novas e roda as migrações de dados pendentes. Não renomeia, não reordena e não apaga nada.')) return;
+    const ok = await confirmarModal('Cria as abas que faltam, completa os cabeçalhos das colunas novas e roda as migrações de dados pendentes.\n\nNão renomeia, não reordena e não apaga nada.',
+      { titulo: 'Executar as migrações da planilha?', confirmar: 'Executar' });
+    if (!ok) return;
     exibirModal('processando');
     let r;
     try { r = await runServerFunction('executarMigracoesPeloSistema'); }

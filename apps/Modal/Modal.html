@@ -650,6 +650,21 @@
       </div>
     </div>
 
+    <!-- MODAL DE CONFIRMAÇÃO (substitui o confirm do navegador -- ver confirmarModal em ModalJS) -->
+    <div class="modal-overlay" id="modalConfirmacao" role="alertdialog" aria-modal="true" aria-labelledby="modalConfirmacaoTitulo">
+      <div class="modal modal-mensagem modal-mensagem--aviso">
+        <div class="modal-mensagem-cabecalho">
+          <span class="modal-mensagem-icone" aria-hidden="true">?</span>
+          <h3 id="modalConfirmacaoTitulo">Confirmar</h3>
+        </div>
+        <p class="modal-mensagem-texto" id="modalConfirmacaoTexto"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="modalConfirmacaoCancelar" onclick="responderConfirmacao(false)">Cancelar</button>
+          <button type="button" class="btn-primary" id="modalConfirmacaoOk" onclick="responderConfirmacao(true)">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL DE MENSAGEM (substitui o alert do navegador -- ver mostrarMensagem em ModalJS) -->
     <div class="modal-overlay" id="modalMensagem" role="alertdialog" aria-modal="true" aria-labelledby="modalMensagemTitulo">
       <div class="modal modal-mensagem">
