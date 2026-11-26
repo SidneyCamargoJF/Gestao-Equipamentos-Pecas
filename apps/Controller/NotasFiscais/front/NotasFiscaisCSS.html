@@ -235,4 +235,21 @@
   .nf-pf-form { grid-template-columns: 1fr 1fr; }
   .nf-rel-novo { grid-template-columns: 1fr; }
 }
+
+/* totais da nota e conferência com o valor total */
+.nf-totais {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  align-items: end;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-slate-200, #e2e8f0);
+}
+@media (max-width: 768px) { .nf-totais { grid-template-columns: 1fr 1fr; } }
+.nf-totais-valor { font-weight: 700; font-size: 1rem; padding: 0.5rem 0; }
+.nf-conferencia { margin: 0.5rem 0 0; font-size: 0.875rem; color: var(--color-slate-500, #64748b); }
+.nf-conferencia--ok { color: #15803d; }
+.nf-conferencia--diferente { color: #b91c1c; font-weight: 600; }
+.nf-input-moeda { text-align: right; }
 </style>

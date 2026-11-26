@@ -98,7 +98,7 @@
               </div>
               <div class="field">
                 <label class="field__label" for="nfValorTotal">Valor total (R$)</label>
-                <input class="field__input" type="text" id="nfValorTotal" inputmode="decimal" placeholder="0,00">
+                <input class="field__input" type="text" id="nfValorTotal" inputmode="numeric" placeholder="0,00" oninput="this.value = nfMascaraMoeda(this.value); nfAtualizarTotais()">
               </div>
               <div class="field-with-plus nf-campo-largo">
                 <div class="field">
@@ -159,13 +159,34 @@
             <div class="table-wrapper">
               <table class="data-table nf-itens-tabela">
                 <thead>
-                  <tr><th>#</th><th>Código no fornecedor</th><th>Descrição *</th><th>Qtd</th><th>Valor unit.</th><th>Total</th>
+                  <tr><th>#</th><th>Código no fornecedor</th><th>Descrição *</th><th>Qtd</th><th>Valor unit.</th><th>Desconto</th><th>Total</th>
                     <th>Relação com o cadastro</th><th class="nf-col-garantia" style="display:none;">Garantia do produto (meses / até)</th><th></th></tr>
                 </thead>
                 <tbody id="nfItensLista"></tbody>
               </table>
             </div>
             <button type="button" class="btn-secondary" style="width:auto; margin-top:0.75rem;" onclick="incluirItemNotaUI()">+ Incluir item</button>
+
+            <!-- totais: soma dos itens - desconto geral + adicional, conferido com o valor total da nota -->
+            <div class="nf-totais">
+              <div class="field">
+                <label class="field__label">Soma dos itens</label>
+                <div class="nf-totais-valor" id="nfSomaItens">R$ 0,00</div>
+              </div>
+              <div class="field">
+                <label class="field__label" for="nfDesconto">(−) Desconto geral</label>
+                <input class="field__input" type="text" id="nfDesconto" inputmode="numeric" placeholder="0,00" oninput="this.value = nfMascaraMoeda(this.value); nfAtualizarTotais()">
+              </div>
+              <div class="field">
+                <label class="field__label" for="nfAdicional" title="Frete, seguro, IPI, outras despesas">(+) Adicional <em>(frete, seguro, IPI, outras)</em></label>
+                <input class="field__input" type="text" id="nfAdicional" inputmode="numeric" placeholder="0,00" oninput="this.value = nfMascaraMoeda(this.value); nfAtualizarTotais()">
+              </div>
+              <div class="field">
+                <label class="field__label">(=) Total calculado</label>
+                <div class="nf-totais-valor" id="nfTotalCalculado">R$ 0,00</div>
+              </div>
+            </div>
+            <p class="nf-conferencia" id="nfConferencia"></p>
           </fieldset>
 
           <fieldset class="fieldset-principal">

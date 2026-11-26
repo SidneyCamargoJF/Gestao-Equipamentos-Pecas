@@ -23,6 +23,20 @@
     return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
+  // Máscara de moeda do sistema (a mesma de equipamentos e contratos):
+  // digita só números e os dois últimos viram os centavos.
+  function nfMascaraMoeda(v) {
+    if (typeof aplicarMascaraMoedaEquip === 'function') return aplicarMascaraMoedaEquip(v);
+    const d = String(v || '').replace(/\D/g, '');
+    return d ? (Number(d) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+  }
+
+  // número -> "1.500,50" para os campos com máscara ('' fica vazio)
+  function nfValorCampo(v) {
+    const n = nfNumero(v);
+    return n === '' ? '' : Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   // "1.234,56" | "1234.56" | 1234.56 -> número ('' se vazio/inválido)
   function nfNumero(v) {
     if (v === '' || v === null || v === undefined) return '';
@@ -181,13 +195,14 @@
     nfNotaAtual = n;
     const set = (idCampo, v) => { const el = document.getElementById(idCampo); if (el) el.value = v === undefined || v === null ? '' : v; };
     set('nfNumero', n.numero); set('nfSerie', n.serie); set('nfChave', n.chave);
-    set('nfDataEmissao', nfDataInput(n.dataEmissao)); set('nfValorTotal', n.valorTotal === '' ? '' : String(n.valorTotal).replace('.', ','));
+    set('nfDataEmissao', nfDataInput(n.dataEmissao)); set('nfValorTotal', nfValorCampo(n.valorTotal));
+    set('nfDesconto', nfValorCampo(n.desconto)); set('nfAdicional', nfValorCampo(n.adicional));
     set('nfFornecedor', n.fornecedor); set('nfFornecedorCnpj', nfFormatarCnpj(n.fornecedorCnpj)); set('nfObservacao', n.observacao);
     set('nfGarantiaMeses', n.garantiaMeses); set('nfGarantiaAte', nfDataInput(n.garantiaAte));
     nfDefinirTipoGarantia(n.garantiaTipo);
     nfItens = n.itens.map(i => ({
       itemNum: i.itemNum, codigo: i.codigo, descricao: i.descricao, ncm: i.ncm, unidade: i.unidade,
-      quantidade: i.quantidade, valorUnitario: i.valorUnitario, valorTotal: i.valorTotal,
+      quantidade: i.quantidade, valorUnitario: i.valorUnitario, valorTotal: i.valorTotal, desconto: i.desconto === undefined ? '' : i.desconto,
       pecaId: i.pecaId, pecaNome: i.pecaNome, pecaTipo: i.pecaTipo, relacaoAuto: false,
       garantiaMeses: i.garantiaMeses, garantiaAte: nfDataInput(i.garantiaAte)
     }));
@@ -263,7 +278,7 @@
 
   // ----- itens
   function incluirItemNotaUI() {
-    nfItens.push({ itemNum: nfItens.length + 1, codigo: '', descricao: '', ncm: '', unidade: '', quantidade: 1, valorUnitario: '', valorTotal: '',
+    nfItens.push({ itemNum: nfItens.length + 1, codigo: '', descricao: '', ncm: '', unidade: '', quantidade: 1, valorUnitario: '', valorTotal: '', desconto: '',
       pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false, garantiaMeses: '', garantiaAte: '' });
     renderItensNota();
     const linhas = document.querySelectorAll('#nfItensLista tr');
@@ -277,17 +292,41 @@
     renderItensNota();
   }
 
+  // Soma dos itens - desconto geral + adicional, conferida com o valor total
+  // informado. Devolve { soma, calculado, informado, confere }.
+  function nfAtualizarTotais() {
+    const v = id => nfNumero((document.getElementById(id) || {}).value || '');
+    const soma = Math.round(nfItens.reduce((s, it) => s + (nfNumero(it.valorTotal) || 0), 0) * 100) / 100;
+    const calculado = Math.round((soma - (v('nfDesconto') || 0) + (v('nfAdicional') || 0)) * 100) / 100;
+    const informado = v('nfValorTotal');
+    const confere = informado === '' || Math.abs(informado - calculado) < 0.005;
+    const txt = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+    txt('nfSomaItens', nfMoeda(soma) || 'R$ 0,00');
+    txt('nfTotalCalculado', nfMoeda(calculado) || 'R$ 0,00');
+    const conf = document.getElementById('nfConferencia');
+    if (conf) {
+      conf.className = 'nf-conferencia ' + (informado === '' ? '' : (confere ? 'nf-conferencia--ok' : 'nf-conferencia--diferente'));
+      conf.textContent = informado === ''
+        ? 'Valor total da nota não informado: ao salvar, fica o total calculado.'
+        : (confere ? '✔ O valor total da nota (' + nfMoeda(informado) + ') confere com a soma dos itens.'
+          : '⚠ O valor total da nota (' + nfMoeda(informado) + ') não confere com o total calculado (' + nfMoeda(calculado) +
+            '). Diferença: ' + nfMoeda(Math.round((informado - calculado) * 100) / 100) + '.');
+    }
+    return { soma, calculado, informado, confere };
+  }
+
   function nfAtualizarItem(i, campo, valor) {
     const it = nfItens[i];
     if (!it) return;
     it[campo] = valor;
-    if (campo === 'quantidade' || campo === 'valorUnitario') {
+    if (campo === 'quantidade' || campo === 'valorUnitario' || campo === 'desconto') {
       const q = nfNumero(it.quantidade), u = nfNumero(it.valorUnitario);
       if (q !== '' && u !== '') {
-        it.valorTotal = Math.round(q * u * 100) / 100;
+        it.valorTotal = Math.round((q * u - (nfNumero(it.desconto) || 0)) * 100) / 100;
         const tot = document.querySelector(`#nfItensLista tr[data-i="${i}"] .nf-item-total`);
         if (tot) tot.textContent = nfMoeda(it.valorTotal);
       }
+      nfAtualizarTotais();
     }
     if (campo === 'garantiaMeses') {
       const ate = nfSomarMeses(document.getElementById('nfDataEmissao').value, String(valor).trim());
@@ -305,11 +344,14 @@
     if (!tbody) return;
     const porProduto = nfTipoGarantia() === 'produto';
     if (!nfItens.length) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Nenhum item. Importe o XML da NF-e ou clique em "+ Incluir item".</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Nenhum item. Importe o XML da NF-e ou clique em "+ Incluir item".</td></tr>';
       if (resumo) resumo.textContent = '';
+      nfAtualizarTotais();
       return;
     }
     const inp = (i, campo, valor, extra) => `<input class="field__input nf-input" data-campo="${campo}" value="${nfEsc(valor)}" ${extra || ''} oninput="nfAtualizarItem(${i}, '${campo}', this.value)">`;
+    // valores em R$: máscara de moeda ao digitar
+    const moeda = (i, campo, valor, extra) => `<input class="field__input nf-input nf-input-moeda" data-campo="${campo}" value="${nfEsc(nfValorCampo(valor))}" inputmode="numeric" placeholder="0,00" ${extra || ''} oninput="this.value = nfMascaraMoeda(this.value); nfAtualizarItem(${i}, '${campo}', this.value)">`;
     tbody.innerHTML = nfItens.map((it, i) => {
       const relacao = it.pecaId
         ? `<span class="nf-relacao">🔗 <strong>${nfEsc(it.pecaNome)}</strong> <small>(${it.pecaTipo === 'produto' ? 'Produto' : 'Peça'}${it.relacaoAuto ? ', pelo código do fornecedor' : ''})</small></span>
@@ -324,7 +366,8 @@
           <td>${inp(i, 'codigo', it.codigo, 'placeholder="Código"')}</td>
           <td>${inp(i, 'descricao', it.descricao, 'placeholder="Descrição *"')}${it.ncm ? '<small class="nf-ncm">NCM ' + nfEsc(it.ncm) + '</small>' : ''}</td>
           <td>${inp(i, 'quantidade', it.quantidade, 'inputmode="decimal" style="width:5rem;"')}</td>
-          <td>${inp(i, 'valorUnitario', it.valorUnitario === '' ? '' : String(it.valorUnitario).replace('.', ','), 'inputmode="decimal" style="width:7rem;"')}</td>
+          <td>${moeda(i, 'valorUnitario', it.valorUnitario, 'style="width:7rem;"')}</td>
+          <td>${moeda(i, 'desconto', it.desconto, 'style="width:6rem;"')}</td>
           <td class="nf-item-total">${nfMoeda(it.valorTotal)}</td>
           <td class="nf-col-relacao">${relacao}</td>
           <td class="nf-col-garantia" style="${porProduto ? '' : 'display:none;'}">
@@ -338,6 +381,7 @@
       const sem = nfItens.filter(it => !it.pecaId).length;
       resumo.textContent = `${nfItens.length} ite${nfItens.length === 1 ? 'm' : 'ns'}` + (sem ? ` — ${sem} sem relação com o cadastro` : ' — todos relacionados ao cadastro');
     }
+    nfAtualizarTotais();
   }
 
   // ----- relação do item com o cadastro (#modalRelacionarItemNF)
@@ -433,18 +477,27 @@
     const chave = String(inf.getAttribute('Id') || '').replace(/\D/g, '') || nfTexto(doc, 'chNFe');
     const itens = Array.from(inf.getElementsByTagName('det')).map((det, k) => {
       const prod = det.getElementsByTagName('prod')[0];
+      const bruto = nfNumero(nfTexto(prod, 'vProd')), desconto = nfNumero(nfTexto(prod, 'vDesc'));
       return {
         itemNum: Number(det.getAttribute('nItem')) || k + 1,
         codigo: nfTexto(prod, 'cProd'), descricao: nfTexto(prod, 'xProd'), ncm: nfTexto(prod, 'NCM'), unidade: nfTexto(prod, 'uCom'),
-        quantidade: nfNumero(nfTexto(prod, 'qCom')), valorUnitario: nfNumero(nfTexto(prod, 'vUnCom')), valorTotal: nfNumero(nfTexto(prod, 'vProd'))
+        quantidade: nfNumero(nfTexto(prod, 'qCom')), valorUnitario: nfNumero(nfTexto(prod, 'vUnCom')), desconto: desconto,
+        valorTotal: bruto === '' ? '' : Math.round((bruto - (desconto || 0)) * 100) / 100   // total do item já descontado
       };
     });
+    // totais: o desconto da nota que não está nos itens vira o desconto geral;
+    // frete, seguro, outras despesas, IPI, ST e II viram o adicional
+    const somaTot = tags => Math.round(tags.reduce((s, t) => s + (nfNumero(nfTexto(tot, t)) || 0), 0) * 100) / 100;
+    const descontoItens = itens.reduce((s, it) => s + (it.desconto || 0), 0);
+    const descontoGeral = Math.max(0, Math.round((somaTot(['vDesc']) - descontoItens) * 100) / 100);
+    const adicional = somaTot(['vFrete', 'vSeg', 'vOutro', 'vIPI', 'vIPIDevol', 'vST', 'vII']);
     const end = emit && emit.getElementsByTagName('enderEmit')[0];
     return {
       numero: nfTexto(ide, 'nNF'), serie: nfTexto(ide, 'serie'), chave: chave,
       dataEmissao: (nfTexto(ide, 'dhEmi') || nfTexto(ide, 'dEmi')).slice(0, 10),
       fornecedorCnpj: nfTexto(emit, 'CNPJ') || nfTexto(emit, 'CPF'), fornecedorNome: nfTexto(emit, 'xNome'),
       fornecedorFantasia: nfTexto(emit, 'xFant'), valorTotal: nfNumero(nfTexto(tot, 'vNF')), itens: itens,
+      desconto: descontoGeral || '', adicional: adicional || '',
       // para incluir o fornecedor no cadastro, se ele não existir
       fornecedorDados: {
         razaoSocial: nfTexto(emit, 'xNome'), nomeFantasia: nfTexto(emit, 'xFant'), cnpj: nfTexto(emit, 'CNPJ') || nfTexto(emit, 'CPF'),
@@ -557,10 +610,12 @@
 
     const set = (id, v) => { const el = document.getElementById(id); if (el && v !== '' && v !== undefined) el.value = v; };
     set('nfNumero', x.numero); set('nfSerie', x.serie); set('nfChave', x.chave); set('nfDataEmissao', x.dataEmissao);
-    set('nfValorTotal', x.valorTotal === '' ? '' : String(x.valorTotal).replace('.', ','));
+    set('nfValorTotal', nfValorCampo(x.valorTotal));
+    const setV = (id, v) => { const el = document.getElementById(id); if (el) el.value = nfValorCampo(v); };   // limpa se o XML não tiver
+    setV('nfDesconto', x.desconto); setV('nfAdicional', x.adicional);
     set('nfFornecedor', fornecedor ? fornecedor.nome : x.fornecedorNome);
     set('nfFornecedorCnpj', nfFormatarCnpj(x.fornecedorCnpj));
-    nfItens = x.itens.map(it => Object.assign({}, it, { pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false, garantiaMeses: '', garantiaAte: '' }));
+    nfItens = x.itens.map(it => Object.assign({ desconto: '' }, it, { pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false, garantiaMeses: '', garantiaAte: '' }));
     let relacionados = 0;
     p.relacoes.forEach(rel => {
       const it = nfItens[rel.indice];
@@ -637,11 +692,13 @@
     const dados = {
       id: v('nfId'), numero: v('nfNumero').trim(), serie: v('nfSerie').trim(), chave: v('nfChave').trim(),
       fornecedor: v('nfFornecedor').trim(), fornecedorCnpj: v('nfFornecedorCnpj').trim(), dataEmissao: v('nfDataEmissao'),
-      valorTotal: v('nfValorTotal').trim(), observacao: v('nfObservacao').trim(),
+      valorTotal: v('nfValorTotal').trim(), desconto: v('nfDesconto').trim(), adicional: v('nfAdicional').trim(),
+      observacao: v('nfObservacao').trim(),
       garantiaTipo: tipo, garantiaMeses: v('nfGarantiaMeses').trim(), garantiaAte: v('nfGarantiaAte'),
       itens: nfItens.map(it => ({
         itemNum: it.itemNum, codigo: it.codigo, descricao: String(it.descricao || '').trim(), ncm: it.ncm, unidade: it.unidade,
-        quantidade: it.quantidade, valorUnitario: it.valorUnitario, valorTotal: it.valorTotal, pecaId: it.pecaId || '',
+        quantidade: it.quantidade, valorUnitario: it.valorUnitario, desconto: it.desconto === undefined ? '' : it.desconto,
+        valorTotal: it.valorTotal, pecaId: it.pecaId || '',
         garantiaMeses: tipo === 'produto' ? it.garantiaMeses : '', garantiaAte: tipo === 'produto' ? it.garantiaAte : ''
       })),
       arquivos: nfAnexosPendentes
@@ -656,6 +713,13 @@
       const el = document.getElementById('nfGarantiaMeses'); if (el) el.focus();
       return;
     }
+    // valor total x soma dos itens: se não bate, confirma
+    const totais = nfAtualizarTotais();
+    if (!totais.confere && !(await confirmarModal(
+      'O valor total da nota (' + nfMoeda(totais.informado) + ') não confere com a soma dos itens − desconto geral + adicional (' +
+      nfMoeda(totais.calculado) + ').\n\nDiferença: ' + nfMoeda(Math.round((totais.informado - totais.calculado) * 100) / 100) +
+      '.\n\nConfira os valores, descontos e o adicional (frete, seguro, IPI, outras despesas).',
+      { titulo: 'Valores não conferem', confirmar: 'Salvar assim mesmo', cancelar: 'Corrigir' }))) return;
 
     // fornecedor que não está no cadastro: pergunta antes de incluir
     if (!nfFornecedorDoCadastro(dados.fornecedorCnpj, dados.fornecedor)) {

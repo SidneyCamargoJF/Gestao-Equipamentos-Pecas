@@ -319,8 +319,12 @@ Cabeçalho da nota (Compras → Notas fiscais). As quatro abas de Compras são c
 | M | Data de cadastro |
 | N | Data de alteração |
 | O | Data de exclusão |
+| P | Desconto geral da nota (além dos descontos dos itens) |
+| Q | Adicional: frete, seguro, IPI, outras despesas |
 
-**tbl_notas_fiscais_itens** (0-based): ID, ID da nota, nº do item, código no fornecedor, descrição, NCM, unidade, quantidade, valor unitário, valor total, ID da peça/produto relacionado (vazio = sem relação), garantia do produto (meses), garantia do produto (data final), data de exclusão. Ao alterar a nota, os itens anteriores recebem a data de exclusão e os atuais são gravados de novo.
+Valor total = soma dos totais dos itens − desconto geral + adicional (quando o valor total não é informado, é gravado o calculado).
+
+**tbl_notas_fiscais_itens** (0-based): ID, ID da nota, nº do item, código no fornecedor, descrição, NCM, unidade, quantidade, valor unitário, valor total (quantidade × valor unitário − desconto do item), ID da peça/produto relacionado (vazio = sem relação), garantia do produto (meses), garantia do produto (data final), data de exclusão, desconto do item (coluna O). Ao alterar a nota, os itens anteriores recebem a data de exclusão e os atuais são gravados de novo.
 
 **tbl_notas_fiscais_anexos** (0-based): formato das outras tabelas de anexo; tipos Nota escaneada, XML e Outro.
 

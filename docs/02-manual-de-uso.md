@@ -91,6 +91,8 @@ Menu **Compras** na barra principal, com **Notas fiscais** e **Produtos x fornec
 - **Itens:** podem vir do XML ou ser incluídos à mão (**+ Incluir item**). Na coluna **Relação com o cadastro**:
   - **🔗 relacionado** mostra a peça/produto do cadastro (com "pelo código do fornecedor" quando a relação veio sozinha), com **Trocar** e **Desfazer**;
   - **Sem relação** oferece **Escolher do cadastro** (busca por nome, modelo, marca ou nº de série) e **Cadastrar novo** (cria a peça/produto com o nome do item, o fornecedor e a nota).
+- **Valores:** valor total da nota, valor unitário e desconto dos itens têm máscara de moeda (digite só os números; os dois últimos são os centavos). O total de cada item é quantidade × valor unitário − desconto do item.
+- **Totais (abaixo dos itens):** soma dos itens, **(−) Desconto geral**, **(+) Adicional** (frete, seguro, IPI, outras despesas) e o **total calculado**. A conferência mostra na hora se o **valor total da nota confere** com o calculado ou a diferença. Ao salvar com diferença, o sistema pergunta (**Corrigir** ou **Salvar assim mesmo**); com o valor total vazio, fica o calculado. No XML, o desconto de cada item vem para o item, o desconto da nota que não está nos itens vira o desconto geral, e frete, seguro, outras despesas, IPI, ST e II viram o adicional.
 - **Nota escaneada e anexos:** escolha o tipo (Nota escaneada, XML, Outro) e clique em **📎 Incluir arquivo** (PDF, imagem ou XML, até 3 MB). Os arquivos são guardados ao salvar.
 
 **Ao salvar:**
@@ -99,7 +101,7 @@ Menu **Compras** na barra principal, com **Notas fiscais** e **Produtos x fornec
 - cada item relacionado **entra no estoque** com a quantidade da nota (alterar a nota refaz as entradas; desativar tira);
 - cada item relacionado vira uma **aquisição** da peça/produto (com a nota escaneada), sugerida no e-mail de garantia;
 - a peça/produto sem data de garantia ou sem nota cadastradas recebe as desta compra.
-- o **valor** da peça/produto passa a ser o valor unitário da **compra mais recente** (a nota ativa de data de emissão mais nova com o item). Lançar ou editar uma nota mais antiga não muda o valor; item da nota sem valor unitário também não. Notas lançadas antes desta regra atualizam o valor quando forem abertas e salvas de novo.
+- o **valor** da peça/produto passa a ser o valor unitário (já com o desconto do item) da **compra mais recente** (a nota ativa de data de emissão mais nova com o item). Lançar ou editar uma nota mais antiga não muda o valor; item da nota sem valor unitário também não. Notas lançadas antes desta regra atualizam o valor quando forem abertas e salvas de novo.
 
 Desativar a nota tira as aquisições que ela gerou; reativar devolve.
 

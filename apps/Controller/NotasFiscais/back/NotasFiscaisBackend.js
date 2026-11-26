@@ -14,7 +14,11 @@
 //   do item e é sugerida no e-mail de garantia. Se a peça não tiver
 //   garantia/nota cadastradas, recebe as da nota.
 // - O VALOR da peça passa a ser o valor unitário da compra mais recente
-//   (nota ativa com a data de emissão mais nova que tenha o item).
+//   (nota ativa com a data de emissão mais nova que tenha o item), já com
+//   o desconto do item.
+// - Descontos e adicional: cada item tem o seu desconto (o total do item já
+//   vem descontado); a nota tem desconto geral e adicional (frete, seguro,
+//   IPI, outras despesas). Total = soma dos itens - desconto + adicional.
 // =====================================================
 
 const TIPOS_ANEXO_NOTA = ['Nota escaneada', 'XML', 'Outro'];
@@ -377,6 +381,7 @@ function buscarNotaFiscal(idInput) {
         id: Number(i[nfItemIdCol]), itemNum: i[nfItemNumeroCol], codigo: String(i[nfItemCodigoCol] || ''),
         descricao: String(i[nfItemDescricaoCol] || ''), ncm: String(i[nfItemNcmCol] || ''), unidade: String(i[nfItemUnidadeCol] || ''),
         quantidade: i[nfItemQuantidadeCol], valorUnitario: i[nfItemValorUnitCol], valorTotal: i[nfItemValorTotalCol],
+        desconto: i[nfItemDescontoCol] === undefined ? '' : i[nfItemDescontoCol],
         pecaId: p ? p.id : null, pecaNome: p ? p.nome : '', pecaTipo: p ? p.tipo : '',
         garantiaMeses: meses, garantiaAte: String(i[nfItemGarantiaAteCol] || ''),
         garantiaEfetiva: ateProprio || String(l[nfGarantiaAteCol] || '')
@@ -388,6 +393,7 @@ function buscarNotaFiscal(idInput) {
         id: id, numero: String(l[nfNumeroCol] || ''), serie: String(l[nfSerieCol] || ''), chave: String(l[nfChaveCol] || ''),
         fornecedor: String(l[nfFornecedorCol] || ''), fornecedorCnpj: String(l[nfFornecedorCnpjCol] || ''),
         dataEmissao: String(l[nfDataEmissaoCol] || ''), valorTotal: l[nfValorTotalCol], garantiaTipo: tipo,
+        desconto: l[nfDescontoCol] === undefined ? '' : l[nfDescontoCol], adicional: l[nfAdicionalCol] === undefined ? '' : l[nfAdicionalCol],
         garantiaMeses: l[nfGarantiaMesesCol], garantiaAte: String(l[nfGarantiaAteCol] || ''), observacao: String(l[nfObservacaoCol] || ''),
         desativada: String(l[nfDtExclusaoCol] || '').trim() !== '', itens: itens, anexos: anexosNota_(id)
       }
@@ -401,10 +407,13 @@ function buscarNotaFiscal(idInput) {
 
 /**
  * dados: { id, numero, serie, chave, fornecedor, fornecedorCnpj,
- * dataEmissao, valorTotal, garantiaTipo, garantiaMeses, garantiaAte,
- * observacao, itens: [{ itemNum, codigo, descricao, ncm, unidade,
- * quantidade, valorUnitario, valorTotal, pecaId, garantiaMeses,
- * garantiaAte }], arquivos: [{ nome, tipo, base64, tipoAnexo }] }
+ * dataEmissao, valorTotal, desconto, adicional, garantiaTipo,
+ * garantiaMeses, garantiaAte, observacao, itens: [{ itemNum, codigo,
+ * descricao, ncm, unidade, quantidade, valorUnitario, desconto,
+ * valorTotal, pecaId, garantiaMeses, garantiaAte }],
+ * arquivos: [{ nome, tipo, base64, tipoAnexo }] }
+ * Total do item = quantidade x valor unitário - desconto do item.
+ * Valor total da nota vazio = soma dos itens - desconto geral + adicional.
  */
 function salvarNotaFiscal(dados) {
   try {
@@ -453,11 +462,15 @@ function salvarNotaFiscal_(d) {
       if (ateTexto === null) return { sucesso: false, mensagem: 'Item ' + (i + 1) + ': data final da garantia inválida.' };
     }
     const quantidade = numeroNF_(it.quantidade), valorUnitario = numeroNF_(it.valorUnitario);
+    const descontoItem = numeroNF_(it.desconto);
+    if (descontoItem !== '' && descontoItem < 0) return { sucesso: false, mensagem: 'Item ' + (i + 1) + ': o desconto não pode ser negativo.' };
     let valorTotal = numeroNF_(it.valorTotal);
-    if (valorTotal === '' && quantidade !== '' && valorUnitario !== '') valorTotal = Math.round(quantidade * valorUnitario * 100) / 100;
+    if (valorTotal === '' && quantidade !== '' && valorUnitario !== '') {
+      valorTotal = Math.round((quantidade * valorUnitario - (descontoItem || 0)) * 100) / 100;
+    }
     itens.push({
       itemNum: it.itemNum || (i + 1), codigo: String(it.codigo || '').trim(), descricao: descricao, ncm: String(it.ncm || '').trim(),
-      unidade: String(it.unidade || '').trim(), quantidade: quantidade, valorUnitario: valorUnitario, valorTotal: valorTotal,
+      unidade: String(it.unidade || '').trim(), quantidade: quantidade, valorUnitario: valorUnitario, valorTotal: valorTotal, desconto: descontoItem,
       pecaId: pecaId, garantiaMeses: meses, garantiaAte: ateTexto,
       garantiaEfetiva: (tipo === 'produto' ? garantiaAteNF_(emissao, meses, ateTexto) : '') || ateGeral
     });
@@ -491,8 +504,15 @@ function salvarNotaFiscal_(d) {
   });
   if (repetida) return { sucesso: false, mensagem: 'Esta nota já está cadastrada (nº ' + repetida[nfNumeroCol] + ', registro ' + repetida[nfIdCol] + ').' };
 
+  const desconto = numeroNF_(d.desconto), adicional = numeroNF_(d.adicional);
+  if ((desconto !== '' && desconto < 0) || (adicional !== '' && adicional < 0)) {
+    return { sucesso: false, mensagem: 'Desconto e adicional da nota não podem ser negativos.' };
+  }
+  let valorTotalNota = numeroNF_(d.valorTotal);
+  if (valorTotalNota === '') valorTotalNota = totalCalculadoNF_(itens, desconto, adicional);
+
   const hoje = hojeNF_();
-  const cabecalho = [numero, serie, chave, fornecedor, cnpj, dataBRNF_(emissao), numeroNF_(d.valorTotal), tipo,
+  const cabecalho = [numero, serie, chave, fornecedor, cnpj, dataBRNF_(emissao), valorTotalNota, tipo,
     mesesGeral, ateGeral, String(d.observacao || '').trim()];
   let nfId = id;
   if (id) {
@@ -502,10 +522,11 @@ function salvarNotaFiscal_(d) {
     const linha = idx + firstLineNotasFiscais;
     abaNF.getRange(linha, nfNumeroCol + 1, 1, cabecalho.length).setValues([cabecalho]);
     abaNF.getRange(linha, nfDtAlteracaoCol + 1).setValue(hoje);
+    abaNF.getRange(linha, nfDescontoCol + 1, 1, 2).setValues([[desconto, adicional]]);
   } else {
     const pos = proximoIdTabela(abaNF, firstLineNotasFiscais);
     nfId = pos.novoId;
-    abaNF.getRange(pos.proximaLinha, 1, 1, numColumnsNotasFiscais).setValues([[nfId].concat(cabecalho).concat([hoje, '', ''])]);
+    abaNF.getRange(pos.proximaLinha, 1, 1, numColumnsNotasFiscais).setValues([[nfId].concat(cabecalho).concat([hoje, '', '', desconto, adicional])]);
   }
 
   // ----- itens: os anteriores saem (exclusão lógica) e entram os atuais
@@ -519,7 +540,7 @@ function salvarNotaFiscal_(d) {
   const posItem = proximoIdTabela(abaItens, firstLineNfItens);
   abaItens.getRange(posItem.proximaLinha, 1, itens.length, numColumnsNfItens).setValues(itens.map(function (it, k) {
     return [posItem.novoId + k, nfId, it.itemNum, it.codigo, it.descricao, it.ncm, it.unidade, it.quantidade,
-      it.valorUnitario, it.valorTotal, it.pecaId, it.garantiaMeses, it.garantiaAte, ''];
+      it.valorUnitario, it.valorTotal, it.pecaId, it.garantiaMeses, it.garantiaAte, '', it.desconto];
   }));
 
   // ----- anexos enviados (nota escaneada, XML...)
@@ -593,6 +614,12 @@ function sincronizarAquisicoesNota_(nfId) {
   }));
 }
 
+/** Soma dos itens (já com o desconto de cada um) - desconto geral + adicional. */
+function totalCalculadoNF_(itens, desconto, adicional) {
+  const soma = (itens || []).reduce(function (s, it) { return s + (numeroNF_(it.valorTotal) || 0); }, 0);
+  return Math.round((soma - (numeroNF_(desconto) || 0) + (numeroNF_(adicional) || 0)) * 100) / 100;
+}
+
 /**
  * Compra mais recente de cada peça: { pecaId: { nfId, data, valorUnitario } },
  * entre as notas ativas, pela data de emissão (empate: a nota de id maior).
@@ -609,8 +636,11 @@ function ultimaCompraPorPeca_() {
   ReadNfItens().forEach(function (i) {
     const pecaId = Number(i[nfItemPecaIdCol]), nfId = Number(i[nfItemNfIdCol]);
     if (!pecaId || String(i[nfItemDtExclusaoCol] || '').trim() || !(nfId in notas)) return;
-    const valor = numeroNF_(i[nfItemValorUnitCol]);
+    let valor = numeroNF_(i[nfItemValorUnitCol]);
     if (valor === '') return;
+    // com desconto no item, vale o valor unitário já descontado
+    const desc = numeroNF_(i[nfItemDescontoCol]), qtd = numeroNF_(i[nfItemQuantidadeCol]);
+    if (desc && qtd) valor = Math.round((valor - desc / qtd) * 100) / 100;
     const atual = ultima[pecaId];
     if (!atual || notas[nfId] > atual.data || (notas[nfId] === atual.data && nfId > atual.nfId)) {
       ultima[pecaId] = { nfId: nfId, data: notas[nfId], valorUnitario: valor };
