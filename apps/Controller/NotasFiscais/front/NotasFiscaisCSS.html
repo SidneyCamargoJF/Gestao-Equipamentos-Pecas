@@ -106,13 +106,25 @@
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 1rem 2rem;
+  margin-top: -0.25rem;   /* sobe um pouco, mais perto do título do bloco */
+}
+
+.nf-garantia-opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.25rem;
+}
+
+.nf-garantia-opcoes > strong {
+  font-size: 0.8125rem;
+  color: var(--color-slate-700, #334155);
 }
 
 .nf-garantia-tipo {
   display: flex;
   flex-wrap: wrap;
   gap: 1.25rem;
-  padding-bottom: 0.625rem;
   font-size: 0.875rem;
 }
 
@@ -129,12 +141,6 @@
 .nf-garantia-geral .field:last-child { width: 12rem; }
 .nf-garantia-linha + .nf-ajuda { margin-top: 0.5rem; }
 
-.nf-garantia-geral > strong {
-  align-self: center;
-  padding-top: 1rem;
-  font-size: 0.8125rem;
-  color: var(--color-slate-700, #334155);
-}
 
 .nf-itens-tabela td { vertical-align: top; }
 .nf-itens-tabela .nf-input { padding: 0.375rem 0.5rem; font-size: 0.8125rem; min-width: 0; }

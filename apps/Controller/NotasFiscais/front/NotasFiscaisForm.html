@@ -123,12 +123,15 @@
             <legend class="fieldset-legend">Garantia</legend>
             <!-- tipo e campos da garantia geral na mesma linha -->
             <div class="nf-garantia-linha">
-              <div class="nf-garantia-tipo">
-                <label><input type="radio" name="nfGarantiaTipo" value="geral" checked onchange="nfMudouTipoGarantia()"> Geral</label>
-                <label><input type="radio" name="nfGarantiaTipo" value="produto" onchange="nfMudouTipoGarantia()"> Por produto</label>
+              <!-- opções e, embaixo, o rótulo da garantia geral -->
+              <div class="nf-garantia-opcoes">
+                <div class="nf-garantia-tipo">
+                  <label><input type="radio" name="nfGarantiaTipo" value="geral" checked onchange="nfMudouTipoGarantia()"> Geral</label>
+                  <label><input type="radio" name="nfGarantiaTipo" value="produto" onchange="nfMudouTipoGarantia()"> Por produto</label>
+                </div>
+                <strong id="nfGarantiaGeralRotulo">Garantia geral *</strong>
               </div>
               <div class="nf-garantia-geral">
-                <strong id="nfGarantiaGeralRotulo">Garantia geral *</strong>
                 <div class="field">
                   <label class="field__label" for="nfGarantiaMeses">Meses</label>
                   <input class="field__input" type="text" id="nfGarantiaMeses" inputmode="numeric" placeholder="Ex: 12" oninput="nfMesesGeralMudou()">
