@@ -142,6 +142,7 @@ function buscarContratoParaEdicao(idInput) {
       email: linha[contractEmailCol],
       gestor: linha[contractGestorCol],
       dataBasePreventiva: converterParaInputDate(linha[contractDataBasePreventivaCol]),
+      prazoPreventiva: prazoPreventivaContrato_(linha),
       equipamentos: equipamentos,
       servicos: servicos,
       produtos: produtos,
@@ -420,7 +421,8 @@ function salvarContratoBackend_ (dados) {
         '', // Situação não é mais escolhida na tela -- é calculada na Consulta (data final/encerramento)
         dataAtual,
         linhaAtual[contractDataExclusaoCol],
-        dados.dataBasePreventiva || dados.dataInicial
+        dados.dataBasePreventiva || dados.dataInicial,
+        dados.prazoPreventiva === 'data_base' ? 'data_base' : 'fim_mes'   // V: prazo da preventiva
       ];
 
       abaContratos.getRange(linhaReal, 1, 1, numColumnsContracts).setValues([linhaAtualizada]);
@@ -479,7 +481,8 @@ function salvarContratoBackend_ (dados) {
       '', // Situação não é mais escolhida na tela -- é calculada na Consulta (data final/encerramento)
       '',
       '',
-      dados.dataBasePreventiva || dados.dataInicial
+      dados.dataBasePreventiva || dados.dataInicial,
+      dados.prazoPreventiva === 'data_base' ? 'data_base' : 'fim_mes'   // V: prazo da preventiva
     ];
 
     abaContratos.getRange(ultimaLinha + 1, 1, 1, numColumnsContracts).setValues([novaLinha]);

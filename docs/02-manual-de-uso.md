@@ -144,9 +144,13 @@ O cadastro tem os dados principais e seis abas:
 - identificação: número, nome, processo SEI, empresa (fornecedor) e objeto;
 - valores e datas: valor, data inicial, data final e data de fechamento;
 - contato: contato da empresa, telefone, e-mail e gestor;
-- situação, data de encerramento e **data base preventiva**.
+- situação, data de encerramento, **data base preventiva** e **prazo de cada preventiva**.
 
 Ao preencher a data inicial, a data base preventiva é sugerida com o mesmo valor.
+
+O **prazo de cada preventiva** define a data prevista das preventivas do contrato:
+- **Até o fim do mês** (padrão): vence no último dia do mês da competência;
+- **No dia da data base**: vence no mesmo dia da data base (ex.: data base 15/01 → prevista para o dia 15 de cada mês devido). Se o mês não tiver esse dia (31 em fevereiro, por exemplo), vale o último dia do mês.
 
 | Aba | Conteúdo |
 |---|---|
@@ -276,7 +280,7 @@ Calendário com os eventos abaixo.
 | Evento | Data usada |
 |---|---|
 | Chamado | data de abertura |
-| Preventiva | data prevista (último dia do mês da competência) |
+| Preventiva | data prevista (fim do mês da competência ou dia da data base, conforme o prazo do contrato) |
 | Contrato | data final de contratos ativos e não encerrados |
 | Peça | data final da garantia |
 | Garantia | prazo de resposta do fornecedor, nas garantias em andamento |
@@ -287,15 +291,15 @@ As seções têm botão de exportação em CSV.
 
 ### Manutenção do mês
 
-- **Indicadores:** preventivas da competência atual, percentual de itens de checklist executados, preventivas atrasadas e corretivas fora do prazo.
+- **Indicadores:** preventivas da competência atual, percentual de itens de checklist executados, preventivas atrasadas (de qualquer mês, não só do atual) e corretivas fora do prazo.
 - **Painéis:**
   - situação das preventivas;
   - lista das corretivas com SLA vencido;
   - ranking dos equipamentos com mais corretivas nos últimos 12 meses.
 - **Atalhos:** clicar num indicador abre a Consulta de Chamados já filtrada. Clicar num item da lista abre o chamado.
 - **📅 Próximas manutenções** (mês atual e o seguinte), em duas colunas:
-  - **Abrir chamado:** preventivas previstas que ainda não têm chamado (mesmas regras da geração automática: contrato vigente, serviço Preventiva, itens do checklist devidos no mês e equipamentos ativos), por mês, com contrato, empresa, quantidade de equipamentos e data prevista. Administradores têm o botão **Gerar chamados** do mês (o mesmo de "Gerar preventivas do mês").
-  - **Agendar com a empresa:** chamados preventivos ainda **Abertos** com data prevista até o fim do mês seguinte, com o último e-mail enviado à empresa (ou "sem contato com a empresa"); atrasados ficam marcados. **📧** abre o e-mail já com o modelo de agendamento; **👁️** abre o chamado. Ao passar para Em andamento, o chamado sai da lista.
+  - **Abrir chamado:** preventivas previstas (dos 6 meses anteriores até o mês seguinte) que ainda não têm chamado (mesmas regras da geração automática: contrato vigente, serviço Preventiva, itens do checklist devidos no mês e equipamentos ativos), por mês, com contrato, empresa, quantidade de equipamentos e data prevista. As de meses passados, ou com a data prevista já vencida, aparecem como **atrasada** / **sem chamado**. Administradores têm o botão **Gerar chamados** do mês (o mesmo de "Gerar preventivas do mês").
+  - **Agendar com a empresa:** chamados preventivos ainda **Abertos** com data prevista até o fim do mês seguinte, com o último e-mail enviado à empresa (ou "sem contato com a empresa"); atrasados ficam marcados. **📧** abre o e-mail já com o modelo de agendamento; **👁️** abre o chamado. Ao passar para Em andamento, o chamado sai da lista, a não ser que a data prevista já tenha passado: aí continua, marcado como **em andamento** e atrasado, até ser concluído. O título mostra quantas estão atrasadas.
 
 ### Demais seções
 

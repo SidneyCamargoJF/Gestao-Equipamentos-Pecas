@@ -265,18 +265,21 @@ async function renderDashboardProximasManutencoes() {
     if (!d || d.sucesso === false) throw new Error(d ? d.mensagem : 'sem resposta');
     const comps = d.competencias || [];
     const sub = document.getElementById('dashProxCompetencias');
-    if (sub) sub.textContent = comps.length ? '(' + comps.map(competenciaTextoDash).join(' e ') + ')' : '';
+    if (sub) sub.textContent = (comps.length ? '(' + comps.map(competenciaTextoDash).join(' e ') + ')' : '') +
+      (d.atrasadas ? ' — ' + d.atrasadas + ' atrasada' + (d.atrasadas === 1 ? '' : 's') : '');
 
-    // abrir chamado: agrupado por competência, com o botão de gerar
-    abrirEl.innerHTML = d.abrir.length ? comps.map(comp => {
+    // abrir chamado: agrupado por competência (as passadas primeiro), com o botão de gerar
+    const compsAbrir = Array.from(new Set(d.abrir.map(p => p.competencia))).sort();
+    abrirEl.innerHTML = d.abrir.length ? compsAbrir.map(comp => {
       const lista = d.abrir.filter(p => p.competencia === comp);
-      if (!lista.length) return '';
-      return '<div class="dash-prox-grupo"><div class="dash-prox-grupo-cab"><strong>' + competenciaTextoDash(comp) + '</strong> — ' +
-        lista.length + ' contrato' + (lista.length === 1 ? '' : 's') +
+      const atrasada = lista.some(p => p.atrasado);
+      return '<div class="dash-prox-grupo' + (atrasada ? ' dash-prox-atrasado' : '') + '"><div class="dash-prox-grupo-cab"><strong>' + competenciaTextoDash(comp) + '</strong> — ' +
+        lista.length + ' contrato' + (lista.length === 1 ? '' : 's') + (atrasada ? ' <strong class="dash-prox-alerta">atrasada</strong>' : '') +
         (d.admin ? ' <button type="button" class="btn-secondary dash-prox-btn" onclick="gerarPreventivasDash(\'' + comp + '\')">Gerar chamados</button>' : '') +
         '</div><ul class="dash-lista-simples">' + lista.map(p =>
           '<li>Contrato <strong>' + escapeHtml(p.numero) + '</strong> — ' + escapeHtml(p.empresa) + ' · ' + p.equipamentos + ' equipamento' +
-          (p.equipamentos === 1 ? '' : 's') + ' · prevista até ' + escapeHtml(p.dataPrevista) + '</li>').join('') + '</ul></div>';
+          (p.equipamentos === 1 ? '' : 's') + ' · prevista ' + (p.prazo === 'data_base' ? 'para ' : 'até ') + escapeHtml(p.dataPrevista) +
+          (p.atrasado ? ' <strong class="dash-prox-alerta">sem chamado</strong>' : '') + '</li>').join('') + '</ul></div>';
     }).join('') : '<p class="dash-vazio">Nenhuma preventiva prevista sem chamado.</p>';
     registrarExportDash('dashProximas', ['Ação', 'Competência / Chamado', 'Contrato', 'Empresa', 'Data prevista', 'Situação'],
       d.abrir.map(p => ['Abrir chamado', competenciaTextoDash(p.competencia), p.numero, p.empresa, p.dataPrevista, p.equipamentos + ' equipamento(s)'])
@@ -289,6 +292,7 @@ async function renderDashboardProximasManutencoes() {
         '<span class="dash-prox-texto"><strong>#' + Number(c.id) + '</strong> ' + escapeHtml(c.assunto) +
         (c.empresa ? ' — ' + escapeHtml(c.empresa) : '') + '<br><small>' +
         (c.dataPrevista ? 'Prevista até ' + escapeHtml(c.dataPrevista) + (c.atrasado ? ' <strong class="dash-prox-alerta">atrasada</strong>' : '') : 'Sem data prevista') +
+        (c.emAndamento ? ' · <strong>em andamento</strong>' : '') +
         ' · ' + (c.ultimoEmail ? '📧 e-mail enviado em ' + escapeHtml(c.ultimoEmail.enviadoEm) : '<span class="dash-prox-alerta">sem contato com a empresa</span>') +
         '</small></span>' +
         '<span class="dash-prox-acoes">' +

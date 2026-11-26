@@ -44,7 +44,7 @@ function esquemaTabelas_() {
     // ----- contratos
     { aba: contractTableName, colunas: ['ID', 'NUMERO', 'NOME', 'DATA_ENCERRAMENTO', 'SEI', 'DATA_FECHAMENTO', 'EMPRESA', 'OBJETO',
       'OBSERVACOES', 'VALOR', 'DATA_INICIAL', 'DATA_FINAL', 'CONTATO_EMPRESA', 'TELEFONE', 'EMAIL', 'GESTOR', 'ATIVO', 'SITUACAO',
-      'DATA_ALTERACAO', 'DATA_EXCLUSAO', 'DATA_BASE_PREVENTIVA'] },
+      'DATA_ALTERACAO', 'DATA_EXCLUSAO', 'DATA_BASE_PREVENTIVA', 'PRAZO_PREVENTIVA'] },
     { aba: contractsEquipamentsTableName, colunas: ['ID', 'CONTRATO_ID', 'EQUIPAMENTO_ID', 'DATA_CADASTRO', 'DATA_EXCLUSAO'] },
     { aba: contractsServicosTableName, colunas: ['ID', 'CONTRATO_ID', 'TIPO_MANUTENCAO', 'CATEGORIA', 'TIPO', 'CAPACIDADE', 'PERIODICIDADE',
       'DATA_CADASTRO', 'DATA_EXCLUSAO', 'DATA_ALTERACAO', 'VALOR_UNITARIO'] },

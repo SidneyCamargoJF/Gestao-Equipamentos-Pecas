@@ -29,6 +29,21 @@ function competenciaAtual_() {
   return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM');
 }
 
+/**
+ * Prazo da preventiva do contrato (coluna V): 'data_base' = no dia da data
+ * base em cada mês devido; 'fim_mes' (padrão) = até o último dia do mês.
+ */
+function prazoPreventivaContrato_(linhaContrato) {
+  return String(linhaContrato[contractPrazoPreventivaCol] || '').trim() === 'data_base' ? 'data_base' : 'fim_mes';
+}
+
+/** Data prevista da preventiva do contrato na competência (dia da data base ou fim do mês). */
+function dataPrevistaPreventiva_(linhaContrato, dataBase, ano, mes) {
+  const ultimo = new Date(ano, mes, 0);
+  if (prazoPreventivaContrato_(linhaContrato) !== 'data_base' || !dataBase) return ultimo;
+  return new Date(ano, mes - 1, Math.min(dataBase.getDate(), ultimo.getDate()));
+}
+
 /** Meses entre a data base e a competência (0 = mês da data base). */
 function mesesDesdeBase(dataBase, ano, mes) {
   return (ano - dataBase.getFullYear()) * 12 + (mes - (dataBase.getMonth() + 1));
@@ -122,7 +137,6 @@ function gerarPreventivasDoMes_(competenciaInformada) {
   const posChamado = proximoIdTabela(abaChamados, firstLineTickets);
   const posItem = proximoIdTabela(abaChecklist, firstLineTicketChecklist);
   const hoje = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy');
-  const dataPrevista = Utilities.formatDate(ultimoDia, tz, 'dd/MM/yyyy');
 
   const novasOS = [];
   const novosItens = [];
@@ -176,6 +190,7 @@ function gerarPreventivasDoMes_(competenciaInformada) {
 
     const empresa = String(c[contractEmpresaCol] || '').trim();
     const chamadoId = posChamado.novoId + novasOS.length;
+    const dataPrevista = Utilities.formatDate(dataPrevistaPreventiva_(c, dataBase, comp.ano, comp.mes), tz, 'dd/MM/yyyy');
 
     // ID, ID_EQUIPAMENTO, MOTIVO, TIPO, PRIORIDADE, DATA_ABERTURA, ABERTO_POR,
     // ATRIBUIDO_A, DATA_INICIO_ANDAMENTO, DATA_FINALIZACAO, OBSERVACAO, STATUS,

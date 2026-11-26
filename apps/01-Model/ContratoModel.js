@@ -1,6 +1,6 @@
 let contractTableName = 'tbl_contratos'
 let firstLineContracts = 3
-let numColumnsContracts = 21
+let numColumnsContracts = 22
 
 let contractIdCol = 0
 let contractNumberCol = 1
@@ -23,6 +23,7 @@ let contractSituacaoCol = 17
 let contractDataAletracaoCol = 18
 let contractDataExclusaoCol = 19
 let contractDataBasePreventivaCol = 20   // U -- início do ciclo das preventivas
+let contractPrazoPreventivaCol = 21      // V -- 'fim_mes' (padrão) | 'data_base': prazo de cada preventiva
 
 
 function ReadContracts() {

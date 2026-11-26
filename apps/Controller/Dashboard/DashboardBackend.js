@@ -284,6 +284,14 @@ function buscarIndicadoresManutencao() {
     if (s !== 'concluido' && prevista && inicioDoDia(prevista) < inicioDoDia(agora)) prev.atrasadas++;
   });
 
+  // Atrasadas: TODA preventiva não concluída com a data prevista vencida,
+  // de qualquer competência (a do mês passado que ficou para trás também conta).
+  prev.atrasadas = chamados.filter(l => {
+    if (tipo(l) !== 'preventiva' || status(l) === 'concluido') return false;
+    const prevista = parseDataFlex(l[ticketsDataPrevistaCol - 1]);
+    return !!prevista && inicioDoDia(prevista) < inicioDoDia(agora);
+  }).length;
+
   const idsPreventivas = new Set(preventivas.map(l => Number(l[0])));
   const itens = ReadTicketChecklist().filter(l =>
     idsPreventivas.has(Number(l[ticketChecklistChamadoIdCol - 1])) && !l[ticketChecklistDataExclusaoCol - 1]);

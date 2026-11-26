@@ -82,7 +82,7 @@ Itens antigos sem a coluna de periodicidade são lidos pelo prefixo da descriç�
   - tipo `preventiva`, origem `automatica` e prioridade `media`;
   - aberta por `Sistema` e atribuída à empresa do contrato;
   - motivo `Preventiva AAAA-MM — <número do contrato>`;
-  - competência e data prevista (último dia do mês);
+  - competência e data prevista, conforme o **prazo de cada preventiva** do contrato (coluna V): `fim_mes` (padrão) = último dia do mês; `data_base` = o dia da data base no mês (limitado ao último dia do mês);
   - CONTRATO_ID e FORNECEDOR_ID.
   - Não recebe prazos de SLA: o prazo da preventiva é a data prevista.
 - **Itens em `tbl_chamado_checklist`:** um para cada equipamento ativo coberto pelo contrato e cada item devido **que vale para ele**, com resultado `pendente`. O item vale para o equipamento quando a categoria (coluna I) é igual ao NOME do equipamento e o tipo (coluna J) é igual ao MODELO, sem diferenciar maiúsculas. Categoria vazia vale para todos; tipo vazio vale para todos os tipos da categoria. Equipamento sem nenhum item devido fica fora da OS.
@@ -123,7 +123,7 @@ A função é `buscarIndicadoresManutencao()` em [DashboardBackend.js](../apps/C
 - itens dessas OS com resultado diferente de `pendente`;
 - o percentual é calculado sobre o total de itens.
 
-**Preventivas atrasadas:** não concluídas e com a data prevista já passada.
+**Preventivas atrasadas:** não concluídas e com a data prevista já passada, de qualquer competência (a de um mês anterior que ficou para trás também conta).
 
 **Corretivas fora do prazo:** tipo `corretiva` com prazo de SLA vencido (seção 5).
 

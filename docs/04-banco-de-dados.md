@@ -128,6 +128,7 @@ Itens a executar numa OS: uma linha para cada combinação de equipamento e item
 | S | `contractDataAletracaoCol` | Data de alteração |
 | T | `contractDataExclusaoCol` | Data de exclusão |
 | U | `contractDataBasePreventivaCol` | Data base do ciclo das preventivas |
+| V | `contractPrazoPreventivaCol` | Prazo de cada preventiva: `fim_mes` (padrão) ou `data_base` |
 
 ### Tabelas filhas do contrato (0-based, um model por arquivo)
 

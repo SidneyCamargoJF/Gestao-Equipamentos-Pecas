@@ -62,6 +62,8 @@
     });
     const valorField = document.getElementById('valorContrato');
     if (valorField) valorField.value = '';
+    const prazoPrevEl = document.getElementById('prazoPreventiva');
+    if (prazoPrevEl) prazoPrevEl.value = 'fim_mes';   // padrão: até o fim do mês
     const valorUnitField = document.getElementById('servicoValorUnitario');
     if (valorUnitField) valorUnitField.value = '';
     atualizarOpacidadeDataEncerramento();
@@ -165,6 +167,8 @@
         if (el) el.value = dados[campoId] || '';
       });
       contatoEmpresaAutoValor = { telefone: dados.telefone || '', email: dados.email || '' };
+      const prazoEl = document.getElementById('prazoPreventiva');
+      if (prazoEl) prazoEl.value = dados.prazoPreventiva === 'data_base' ? 'data_base' : 'fim_mes';
       const valorField = document.getElementById('valorContrato');
       if (valorField) valorField.value = formatarValorExibicaoContrato(dados.valor);
       document.getElementById('empresaSearch').value = dados.empresa || '';
@@ -1124,6 +1128,7 @@ async function salvarContrato() {
       dataInicial: document.getElementById('dataInicial').value,
       dataFinal: document.getElementById('dataFinal').value,
       dataBasePreventiva: document.getElementById('dataBasePreventiva').value,
+      prazoPreventiva: (document.getElementById('prazoPreventiva') || {}).value || 'fim_mes',
       contatoEmpresa: document.getElementById('contatoEmpresa').value.trim(),
       telefone: document.getElementById('telefone').value.trim(),
       email: document.getElementById('email').value.trim(),
