@@ -36,7 +36,9 @@ O cadastro **Cadastros → Peças e Produtos** guarda peças e produtos adquirid
 
 As peças com garantia vencendo aparecem na **Agenda**.
 
-**Aquisições (notas fiscais):** as notas lançadas em **Compras → Notas fiscais** entram aqui sozinhas para os itens relacionados. Na edição do item, a seção **Aquisições** guarda cada compra do mesmo item, que pode ter sido adquirido em épocas e de fornecedores diferentes: **nº da nota**, **fornecedor**, **data de aquisição** e o **arquivo da nota** (PDF ou imagem, até 3 MB). Inclua e exclua na própria lista; a gravação é na hora (não precisa clicar em Salvar). Num item novo, salve primeiro.
+**Aquisições (notas fiscais):** as notas lançadas em **Compras → Notas fiscais** entram aqui sozinhas para os itens relacionados. No fim do cadastro, o grupo **Compras e fornecedores** tem duas abas. A aba **🧾 Aquisições** guarda cada compra do mesmo item, que pode ter sido adquirido em épocas e de fornecedores diferentes: **nº da nota**, **fornecedor**, **data de aquisição** e o **arquivo da nota** (PDF ou imagem, até 3 MB). Inclua e exclua na própria lista; a gravação é na hora (não precisa clicar em Salvar). Num item novo, salve primeiro.
+
+**Fornecedores do item:** a aba **🏭 Fornecedores** mostra os fornecedores deste item e o **código** que cada um usa para ele (com a descrição como vem na nota). É a mesma relação de **Compras → Produtos x fornecedores**, usada para relacionar sozinho os itens do XML da NF-e. Escolha o fornecedor (já vem sugerido o do item), informe o código e clique em **Incluir**; 🗑️ exclui. A gravação também é na hora, e num item novo é preciso salvar primeiro. As abas mostram a quantidade entre parênteses.
 
 **Consulta:** filtro e coluna **Tipo**. Em cada linha, o botão 🛡️ abre a garantia do item (veja [Garantias](#garantias)): fica ativo quando a garantia está vigente; com uma garantia em andamento, ele abre essa garantia; com a garantia vencida, sem data ou item desativado, fica apagado.
 

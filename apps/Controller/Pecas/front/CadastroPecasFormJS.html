@@ -338,6 +338,93 @@
     }
     renderAquisicoesPeca([]);
     if (aquisicoesPecaId) carregarAquisicoesPecaUI();
+    // abas Aquisições / Fornecedores: sempre começa na primeira
+    if (typeof initTabs === 'function') initTabs();
+    if (typeof ativarAba === 'function') ativarAba('peca-aquisicoes');
+    prepararFornecedoresPeca();
+  }
+
+  // ===== FORNECEDORES DO ITEM (relação produto x fornecedor) =====
+  // Mesma tabela de Compras → Produtos x fornecedores; grava na hora.
+  let fornecedoresPecaOpcoes = [];
+
+  async function prepararFornecedoresPeca() {
+    const form = document.getElementById('pecaFornecedoresForm');
+    const aviso = document.getElementById('pecaFornecedoresAviso');
+    if (form) form.style.display = aquisicoesPecaId ? '' : 'none';
+    if (aviso) aviso.style.display = aquisicoesPecaId ? 'none' : '';
+    ['pecaPfCodigo', 'pecaPfDescricao'].forEach(elId => { const el = document.getElementById(elId); if (el) el.value = ''; });
+    renderFornecedoresPeca([]);
+    if (!aquisicoesPecaId) return;
+    const pecaId = aquisicoesPecaId;
+    try { fornecedoresPecaOpcoes = await runServerFunction('listarFornecedoresNF') || []; } catch (e) { fornecedoresPecaOpcoes = []; }
+    if (pecaId !== aquisicoesPecaId) return;   // trocou de item enquanto carregava
+    const sel = document.getElementById('pecaPfFornecedor');
+    if (sel) {
+      const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+      sel.innerHTML = '<option value="">Selecione o fornecedor</option>' +
+        fornecedoresPecaOpcoes.map((f, i) => '<option value="' + i + '">' + esc(f.nome) + (f.fantasia && f.fantasia !== f.nome ? ' (' + esc(f.fantasia) + ')' : '') + '</option>').join('');
+      // já sugere o fornecedor do item
+      const doItem = (document.getElementById('fornecedorSelect') || {}).value || '';
+      const i = fornecedoresPecaOpcoes.findIndex(f => doItem && (f.nome === doItem || f.fantasia === doItem));
+      sel.value = i >= 0 ? String(i) : '';
+    }
+    await carregarFornecedoresPecaUI();
+  }
+
+  async function carregarFornecedoresPecaUI() {
+    const tbody = document.getElementById('pecaFornecedoresLista');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    let r;
+    try { r = await runServerFunction('listarProdutoFornecedor', { pecaId: aquisicoesPecaId }); } catch (e) { r = null; }
+    renderFornecedoresPeca((r && r.relacoes) || []);
+  }
+
+  function renderFornecedoresPeca(lista) {
+    const tbody = document.getElementById('pecaFornecedoresLista');
+    const cont = document.getElementById('pecaFornecedoresContador');
+    if (cont) cont.textContent = lista.length ? '(' + lista.length + ')' : '';
+    if (!tbody) return;
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const cnpj = c => { const d = String(c || '').replace(/\D/g, ''); return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : d; };
+    tbody.innerHTML = lista.length ? lista.map(x => `
+      <tr>
+        <td>${esc(x.fornecedor)}</td>
+        <td>${esc(cnpj(x.cnpj))}</td>
+        <td>${esc(x.codigo)}</td>
+        <td>${esc(x.descricao)}</td>
+        <td class="acao-cell"><button type="button" class="btn-acao" title="Excluir" onclick="excluirFornecedorPecaUI(${Number(x.id)})">🗑️</button></td>
+      </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;">Nenhum fornecedor.</td></tr>';
+  }
+
+  async function incluirFornecedorPecaUI() {
+    if (!aquisicoesPecaId) return;
+    const f = fornecedoresPecaOpcoes[Number((document.getElementById('pecaPfFornecedor') || {}).value)];
+    const codigo = ((document.getElementById('pecaPfCodigo') || {}).value || '').trim();
+    if (!f || (document.getElementById('pecaPfFornecedor') || {}).value === '') { alert('Escolha o fornecedor.'); return; }
+    if (!codigo) { alert('Informe o código do item no fornecedor.'); return; }
+    const dados = { pecaId: aquisicoesPecaId, fornecedor: f.nome, cnpj: f.cnpj, codigo: codigo,
+      descricao: ((document.getElementById('pecaPfDescricao') || {}).value || '').trim() };
+    if (typeof exibirModal === 'function') exibirModal('processando');
+    try {
+      const r = await runServerFunction('salvarProdutoFornecedor', dados);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao incluir o fornecedor.'); return; }
+      ['pecaPfCodigo', 'pecaPfDescricao'].forEach(elId => { const el = document.getElementById(elId); if (el) el.value = ''; });
+      await carregarFornecedoresPecaUI();
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      if (typeof fecharModal === 'function') fecharModal('processando');
+    }
+  }
+
+  async function excluirFornecedorPecaUI(id) {
+    if (!(await confirmarModal('Excluir este fornecedor do item (a relação e o código)?', { titulo: 'Excluir fornecedor do item', confirmar: 'Excluir' }))) return;
+    try {
+      const r = await runServerFunction('excluirProdutoFornecedor', id);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }
+      await carregarFornecedoresPecaUI();
+    } catch (e) { alert('Erro ao conectar com o servidor.'); }
   }
 
   function limparFormAquisicaoPeca() {
@@ -357,6 +444,8 @@
 
   function renderAquisicoesPeca(lista) {
     const tbody = document.getElementById('pecaAquisicoesLista');
+    const cont = document.getElementById('pecaAquisicoesContador');
+    if (cont) cont.textContent = lista.length ? '(' + lista.length + ')' : '';
     if (!tbody) return;
     const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     tbody.innerHTML = lista.length ? lista.map(a => `

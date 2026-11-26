@@ -164,11 +164,20 @@
       </fieldset>
 
       <!-- ============================================= -->
-      <!-- AQUISIÇÕES (notas fiscais) -- gravadas na hora, só com o item salvo.
-           Campos com data-ignorar-alteracao: não contam no "sair sem salvar". -->
+      <!-- ABAS: AQUISIÇÕES e FORNECEDORES -- gravadas na hora, só com o item
+           salvo. Campos com data-ignorar-alteracao: não contam no "sair sem salvar". -->
       <!-- ============================================= -->
-      <fieldset class="fieldset-principal" id="pecaAquisicoesSecao">
-        <legend class="fieldset-legend">Aquisições (notas fiscais)</legend>
+      <fieldset class="fieldset-abas" id="pecaAquisicoesSecao">
+        <legend class="fieldset-legend">Compras e fornecedores</legend>
+
+        <div class="tabs-nav">
+          <button type="button" class="tab-btn active" data-tab="peca-aquisicoes">🧾 Aquisições <span class="peca-aba-contador" id="pecaAquisicoesContador"></span></button>
+          <button type="button" class="tab-btn" data-tab="peca-fornecedores">🏭 Fornecedores <span class="peca-aba-contador" id="pecaFornecedoresContador"></span></button>
+        </div>
+
+        <div class="tabs-content">
+        <!-- ABA: AQUISIÇÕES (notas fiscais) -->
+        <div class="tab-panel active" id="tab-peca-aquisicoes">
         <p class="peca-aquisicoes-ajuda">O mesmo item pode ter sido comprado em épocas e de fornecedores diferentes. As notas daqui são sugeridas no e-mail de garantia (as 5 mais recentes).</p>
         <p class="peca-aquisicoes-ajuda" id="pecaAquisicoesAviso">Salve o item para incluir aquisições.</p>
         <div class="peca-aquisicoes-form" id="pecaAquisicoesForm" style="display:none;">
@@ -195,6 +204,35 @@
             <thead><tr><th>Nº da nota</th><th>Fornecedor</th><th>Data de aquisição</th><th>Arquivo</th><th>Ações</th></tr></thead>
             <tbody id="pecaAquisicoesLista"><tr><td colspan="5" style="text-align:center;">Nenhuma aquisição.</td></tr></tbody>
           </table>
+        </div>
+        </div>
+
+        <!-- ABA: FORNECEDORES (relação produto x fornecedor e o código do item em cada um) -->
+        <div class="tab-panel" id="tab-peca-fornecedores">
+          <p class="peca-aquisicoes-ajuda">Fornecedores deste item e o código que cada um usa para ele. É a mesma relação de Compras → Produtos x fornecedores, usada para relacionar sozinho os itens do XML da NF-e.</p>
+          <p class="peca-aquisicoes-ajuda" id="pecaFornecedoresAviso">Salve o item para incluir fornecedores.</p>
+          <div class="peca-aquisicoes-form peca-fornecedores-form" id="pecaFornecedoresForm" style="display:none;">
+            <div class="field">
+              <label class="field__label" for="pecaPfFornecedor">Fornecedor *</label>
+              <select class="field__select" id="pecaPfFornecedor" data-ignorar-alteracao></select>
+            </div>
+            <div class="field">
+              <label class="field__label" for="pecaPfCodigo">Código no fornecedor *</label>
+              <input class="field__input" type="text" id="pecaPfCodigo" placeholder="Ex: CP-12" data-ignorar-alteracao>
+            </div>
+            <div class="field">
+              <label class="field__label" for="pecaPfDescricao">Descrição no fornecedor</label>
+              <input class="field__input" type="text" id="pecaPfDescricao" placeholder="Como aparece na nota" data-ignorar-alteracao>
+            </div>
+            <button type="button" class="btn-secondary" style="width:auto;" onclick="incluirFornecedorPecaUI()">Incluir</button>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Fornecedor</th><th>CNPJ</th><th>Código no fornecedor</th><th>Descrição</th><th>Ações</th></tr></thead>
+              <tbody id="pecaFornecedoresLista"><tr><td colspan="5" style="text-align:center;">Nenhum fornecedor.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
         </div>
       </fieldset>
 

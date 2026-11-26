@@ -229,6 +229,7 @@ function relacionarItensNotaFiscal(cnpj, fornecedor, itens) {
 function listarProdutoFornecedor(filtros) {
   try {
     const texto = String((filtros && filtros.texto) || '').trim().toLowerCase();
+    const pecaId = Number(filtros && filtros.pecaId) || 0;   // só as relações deste item (aba Fornecedores do cadastro)
     const pecas = mapaPecasNF_();
     const lista = ReadProdutoFornecedor()
       .filter(function (l) { return String(l[pfIdCol] || '').trim() !== '' && !String(l[pfDtExclusaoCol] || '').trim(); })
@@ -241,6 +242,7 @@ function listarProdutoFornecedor(filtros) {
         };
       })
       .filter(function (r) {
+        if (pecaId && r.pecaId !== pecaId) return false;
         return !texto || [r.pecaNome, r.fornecedor, r.cnpj, r.codigo, r.descricao].join(' ').toLowerCase().indexOf(texto) !== -1;
       })
       .sort(function (a, b) { return a.pecaNome.localeCompare(b.pecaNome, 'pt-BR') || a.fornecedor.localeCompare(b.fornecedor, 'pt-BR'); });
