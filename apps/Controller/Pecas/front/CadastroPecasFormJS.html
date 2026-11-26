@@ -120,6 +120,12 @@
       }
       if (typeof fecharModal === 'function') fecharModal('modalCadastroMarcaRapida');
 
+      // nota fiscal: campo com lista (datalist) em cada item, não select
+      if (contextoCadastroRapido === 'notas' && typeof nfMarcaCadastradaRapida === 'function') {
+        await nfMarcaCadastradaRapida(nome);
+        return;
+      }
+
       const selectId = (SELECTS_CADASTRO_RAPIDO.marca[contextoCadastroRapido]) || 'marcaSelect';
       const opcoesMarca = await loadBrands();
       preencherSelect(selectId, opcoesMarca, 'Selecione a Marca');

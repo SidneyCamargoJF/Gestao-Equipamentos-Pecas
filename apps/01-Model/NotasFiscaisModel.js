@@ -34,7 +34,7 @@ const CABECALHO_NOTAS_FISCAIS = ['ID', 'NUMERO', 'SERIE', 'CHAVE', 'FORNECEDOR',
 // ===== tbl_notas_fiscais_itens: itens (produtos) da nota =====
 let nfItensTableName = 'tbl_notas_fiscais_itens'
 let firstLineNfItens = 3
-let numColumnsNfItens = 15
+let numColumnsNfItens = 16
 
 let nfItemIdCol = 0
 let nfItemNfIdCol = 1
@@ -51,9 +51,10 @@ let nfItemGarantiaMesesCol = 11    // garantia do produto (quando a nota é "por
 let nfItemGarantiaAteCol = 12
 let nfItemDtExclusaoCol = 13
 let nfItemDescontoCol = 14         // O -- desconto do item (o VALOR_TOTAL já vem descontado)
+let nfItemMarcaCol = 15            // P -- marca do item (nome, como no cadastro de marcas)
 
 const CABECALHO_NF_ITENS = ['ID', 'NF_ID', 'ITEM', 'CODIGO_FORNECEDOR', 'DESCRICAO', 'NCM', 'UNIDADE', 'QUANTIDADE',
-  'VALOR_UNITARIO', 'VALOR_TOTAL', 'PECA_ID', 'GARANTIA_MESES', 'GARANTIA_ATE', 'DATA_EXCLUSAO', 'DESCONTO']
+  'VALOR_UNITARIO', 'VALOR_TOTAL', 'PECA_ID', 'GARANTIA_MESES', 'GARANTIA_ATE', 'DATA_EXCLUSAO', 'DESCONTO', 'MARCA']
 
 // ===== tbl_notas_fiscais_anexos (formato dos anexos genéricos) =====
 let nfAnexosTableName = 'tbl_notas_fiscais_anexos'

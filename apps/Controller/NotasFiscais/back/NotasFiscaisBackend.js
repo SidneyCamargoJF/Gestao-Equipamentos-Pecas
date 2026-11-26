@@ -76,6 +76,14 @@ function garantiaAteNF_(emissao, meses, ate) {
 // ===== FORNECEDORES E ITENS DO ESTOQUE =====
 
 /** Fornecedores ativos para o campo da nota: [{ nome, fantasia, cnpj }] */
+/** Marcas ativas (nomes), para o campo Marca dos itens da nota. */
+function listarMarcasNF() {
+  return ReadSheetSeExistir(brandTableName, firstLineBrands, numColumnsBrands)
+    .filter(function (l) { return String(l[brandNameCol] || '').trim() && !String(l[brandDtExclusaoCol] || '').trim(); })
+    .map(function (l) { return String(l[brandNameCol]).trim(); })
+    .sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); });
+}
+
 function listarFornecedoresNF() {
   return ReadSuppliers()
     .filter(function (l) { return String(l[supplierStatusCol - 1] || '').trim().toLowerCase() !== 'inativo'; })
@@ -159,7 +167,7 @@ function criarItemEstoqueDaNota(dados) {
     if (!nome) return { sucesso: false, mensagem: 'Informe o nome do item.' };
     const dataNF = parseDataFlex(d.dataNF);
     const r = salvarPeca({
-      nome: nome, tipo: tipoItemEstoque_(d.tipo), modelo: String(d.modelo || '').trim(), marca: '', capacidade: '', numero_serie: '',
+      nome: nome, tipo: tipoItemEstoque_(d.tipo), modelo: String(d.modelo || '').trim(), marca: String(d.marca || '').trim(), capacidade: '', numero_serie: '',
       local: '', fornecedor: String(d.fornecedor || '').trim(), notaFiscal: String(d.numeroNF || '').trim(),
       dataNotaFiscal: dataNF ? Utilities.formatDate(dataNF, 'GMT-3', 'yyyy-MM-dd') : '', garantia: '', dtGarantia: '',
       modalidade: 'compra', valor: '', seiNum: ''
@@ -382,6 +390,7 @@ function buscarNotaFiscal(idInput) {
         descricao: String(i[nfItemDescricaoCol] || ''), ncm: String(i[nfItemNcmCol] || ''), unidade: String(i[nfItemUnidadeCol] || ''),
         quantidade: i[nfItemQuantidadeCol], valorUnitario: i[nfItemValorUnitCol], valorTotal: i[nfItemValorTotalCol],
         desconto: i[nfItemDescontoCol] === undefined ? '' : i[nfItemDescontoCol],
+        marca: String(i[nfItemMarcaCol] || ''),
         pecaId: p ? p.id : null, pecaNome: p ? p.nome : '', pecaTipo: p ? p.tipo : '',
         garantiaMeses: meses, garantiaAte: String(i[nfItemGarantiaAteCol] || ''),
         garantiaEfetiva: ateProprio || String(l[nfGarantiaAteCol] || '')
@@ -471,6 +480,7 @@ function salvarNotaFiscal_(d) {
     itens.push({
       itemNum: it.itemNum || (i + 1), codigo: String(it.codigo || '').trim(), descricao: descricao, ncm: String(it.ncm || '').trim(),
       unidade: String(it.unidade || '').trim(), quantidade: quantidade, valorUnitario: valorUnitario, valorTotal: valorTotal, desconto: descontoItem,
+      marca: String(it.marca || '').trim(),
       pecaId: pecaId, garantiaMeses: meses, garantiaAte: ateTexto,
       garantiaEfetiva: (tipo === 'produto' ? garantiaAteNF_(emissao, meses, ateTexto) : '') || ateGeral
     });
@@ -540,7 +550,7 @@ function salvarNotaFiscal_(d) {
   const posItem = proximoIdTabela(abaItens, firstLineNfItens);
   abaItens.getRange(posItem.proximaLinha, 1, itens.length, numColumnsNfItens).setValues(itens.map(function (it, k) {
     return [posItem.novoId + k, nfId, it.itemNum, it.codigo, it.descricao, it.ncm, it.unidade, it.quantidade,
-      it.valorUnitario, it.valorTotal, it.pecaId, it.garantiaMeses, it.garantiaAte, '', it.desconto];
+      it.valorUnitario, it.valorTotal, it.pecaId, it.garantiaMeses, it.garantiaAte, '', it.desconto, it.marca];
   }));
 
   // ----- anexos enviados (nota escaneada, XML...)
@@ -570,7 +580,7 @@ function salvarNotaFiscal_(d) {
   if (semRelacao) mensagem += '\n' + semRelacao + ' item(ns) sem relação com o cadastro de peças/produtos.';
   if (relacoesNovas) mensagem += '\n' + relacoesNovas + ' relação(ões) produto x fornecedor gravada(s).';
   if (entradasEstoque) mensagem += '\n' + entradasEstoque + ' entrada(s) no estoque.';
-  if (pecasAtualizadas) mensagem += '\n' + pecasAtualizadas + ' peça(s)/produto(s) atualizados (valor, garantia ou nota desta compra).';
+  if (pecasAtualizadas) mensagem += '\n' + pecasAtualizadas + ' peça(s)/produto(s) atualizados (valor, marca, garantia ou nota desta compra).';
   if (nomesAnexos.length) mensagem += '\n' + nomesAnexos.length + ' anexo(s) incluído(s).';
   return { sucesso: true, id: nfId, mensagem: mensagem };
 }
@@ -677,6 +687,12 @@ function completarPecasComNota_(nfId) {
       mudou = true;
     }
     valorAtualizado[it.pecaId] = true;
+    // marca: peça sem marca recebe a do item da nota
+    if (!String(l[partsBrandCol] || '').trim() && String(it.marca || '').trim()) {
+      aba.getRange(linha, partsBrandCol + 1).setValue(String(it.marca).trim());
+      pecas[idx][partsBrandCol] = String(it.marca).trim();
+      mudou = true;
+    }
     if (!String(l[partsDtGarantiaCol] || '').trim() && it.garantiaEfetiva) {
       const fim = parseDataFlex(it.garantiaEfetiva);
       aba.getRange(linha, partsDtGarantiaCol + 1).setValue(Utilities.formatDate(fim, 'GMT-3', 'yyyy-MM-dd'));

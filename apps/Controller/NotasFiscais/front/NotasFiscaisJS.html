@@ -78,6 +78,57 @@
     });
   }
 
+  // ----- marcas (campo Marca dos itens, com + para incluir no cadastro)
+  let nfMarcas = [];
+  let nfItemMarcaPendente = null;
+
+  async function nfCarregarMarcas() {
+    try { nfMarcas = await runServerFunction('listarMarcasNF') || []; } catch (e) { nfMarcas = []; }
+    const dl = document.getElementById('nfMarcasLista');
+    if (dl) dl.innerHTML = nfMarcas.map(m => `<option value="${nfEsc(m)}"></option>`).join('');
+  }
+
+  // nome da marca como está no cadastro (sem diferenciar maiúsculas), ou null
+  function nfMarcaDoCadastro(nome) {
+    const n = String(nome || '').trim().toLowerCase();
+    return n ? (nfMarcas.find(m => m.toLowerCase() === n) || null) : null;
+  }
+
+  // marca digitada: ajusta para o nome do cadastro e marca as que não existem
+  function nfMarcaDigitada(i, el) {
+    const it = nfItens[i];
+    if (!it) return;
+    const doCadastro = nfMarcaDoCadastro(el.value);
+    it.marca = doCadastro || el.value.trim();
+    if (doCadastro && el.value !== doCadastro) el.value = doCadastro;
+    nfDestacarMarca(el, it.marca);
+  }
+
+  function nfDestacarMarca(el, marca) {
+    const nova = !!String(marca || '').trim() && !nfMarcaDoCadastro(marca);
+    el.classList.toggle('nf-marca-nova', nova);
+    el.title = nova ? 'Marca não cadastrada: clique em + para incluir no cadastro' : '';
+  }
+
+  // + da marca: abre o cadastro rápido de marca (o mesmo de peças) com o nome digitado
+  function nfAbrirCadastroMarca(i) {
+    if (typeof abrirModalCadastroMarca !== 'function') return;
+    nfItemMarcaPendente = i;
+    abrirModalCadastroMarca('notas');
+    const it = nfItens[i];
+    const input = document.getElementById('novaMarcaRapidaNome');
+    if (input && it && it.marca && !nfMarcaDoCadastro(it.marca)) input.value = it.marca;
+  }
+
+  // chamado pelo cadastro rápido depois de gravar a marca
+  async function nfMarcaCadastradaRapida(nome) {
+    await nfCarregarMarcas();
+    const it = nfItens[nfItemMarcaPendente];
+    if (it) it.marca = nfMarcaDoCadastro(nome) || nome;
+    nfItemMarcaPendente = null;
+    renderItensNota();
+  }
+
   async function nfCarregarEstoque(forcar) {
     if (nfEstoqueCache && !forcar) return nfEstoqueCache;
     try {
@@ -183,7 +234,7 @@
     nfDefinirTipoGarantia('geral');
     renderItensNota();
     renderAnexosNota([]);
-    await nfCarregarFornecedores();
+    await Promise.all([nfCarregarFornecedores(), nfCarregarMarcas()]);
     if (!id) return;
 
     exibirModal('processando');
@@ -203,6 +254,7 @@
     nfItens = n.itens.map(i => ({
       itemNum: i.itemNum, codigo: i.codigo, descricao: i.descricao, ncm: i.ncm, unidade: i.unidade,
       quantidade: i.quantidade, valorUnitario: i.valorUnitario, valorTotal: i.valorTotal, desconto: i.desconto === undefined ? '' : i.desconto,
+      marca: i.marca || '',
       pecaId: i.pecaId, pecaNome: i.pecaNome, pecaTipo: i.pecaTipo, relacaoAuto: false,
       garantiaMeses: i.garantiaMeses, garantiaAte: nfDataInput(i.garantiaAte)
     }));
@@ -278,7 +330,7 @@
 
   // ----- itens
   function incluirItemNotaUI() {
-    nfItens.push({ itemNum: nfItens.length + 1, codigo: '', descricao: '', ncm: '', unidade: '', quantidade: 1, valorUnitario: '', valorTotal: '', desconto: '',
+    nfItens.push({ itemNum: nfItens.length + 1, codigo: '', descricao: '', ncm: '', unidade: '', quantidade: 1, valorUnitario: '', valorTotal: '', desconto: '', marca: '',
       pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false, garantiaMeses: '', garantiaAte: '' });
     renderItensNota();
     const linhas = document.querySelectorAll('#nfItensLista tr');
@@ -344,7 +396,7 @@
     if (!tbody) return;
     const porProduto = nfTipoGarantia() === 'produto';
     if (!nfItens.length) {
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Nenhum item. Importe o XML da NF-e ou clique em "+ Incluir item".</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">Nenhum item. Importe o XML da NF-e ou clique em "+ Incluir item".</td></tr>';
       if (resumo) resumo.textContent = '';
       nfAtualizarTotais();
       return;
@@ -365,6 +417,13 @@
           <td>${i + 1}</td>
           <td>${inp(i, 'codigo', it.codigo, 'placeholder="Código"')}</td>
           <td>${inp(i, 'descricao', it.descricao, 'placeholder="Descrição *"')}${it.ncm ? '<small class="nf-ncm">NCM ' + nfEsc(it.ncm) + '</small>' : ''}</td>
+          <td><div class="nf-marca-campo">
+            <input class="field__input nf-input${it.marca && !nfMarcaDoCadastro(it.marca) ? ' nf-marca-nova' : ''}" data-campo="marca" list="nfMarcasLista" value="${nfEsc(it.marca || '')}" placeholder="Marca"
+              ${it.marca && !nfMarcaDoCadastro(it.marca) ? 'title="Marca não cadastrada: clique em + para incluir no cadastro"' : ''} onchange="nfMarcaDigitada(${i}, this)" oninput="nfItens[${i}].marca = this.value">
+            <button type="button" class="btn-plus nf-btn-plus-item" title="Cadastrar nova marca" onclick="nfAbrirCadastroMarca(${i})">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div></td>
           <td>${inp(i, 'quantidade', it.quantidade, 'inputmode="decimal" style="width:5rem;"')}</td>
           <td>${moeda(i, 'valorUnitario', it.valorUnitario, 'style="width:7rem;"')}</td>
           <td>${moeda(i, 'desconto', it.desconto, 'style="width:6rem;"')}</td>
@@ -431,6 +490,7 @@
       nome: document.getElementById('nfRelNovoNome').value.trim(),
       tipo: document.getElementById('nfRelNovoTipo').value,
       modelo: document.getElementById('nfRelNovoModelo').value.trim(),
+      marca: nfMarcaDoCadastro(it.marca) || '',
       fornecedor: document.getElementById('nfFornecedor').value.trim(),
       numeroNF: document.getElementById('nfNumero').value.trim(),
       dataNF: document.getElementById('nfDataEmissao').value
@@ -615,7 +675,7 @@
     setV('nfDesconto', x.desconto); setV('nfAdicional', x.adicional);
     set('nfFornecedor', fornecedor ? fornecedor.nome : x.fornecedorNome);
     set('nfFornecedorCnpj', nfFormatarCnpj(x.fornecedorCnpj));
-    nfItens = x.itens.map(it => Object.assign({ desconto: '' }, it, { pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false, garantiaMeses: '', garantiaAte: '' }));
+    nfItens = x.itens.map(it => Object.assign({ desconto: '', marca: '' }, it, { pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false, garantiaMeses: '', garantiaAte: '' }));
     let relacionados = 0;
     p.relacoes.forEach(rel => {
       const it = nfItens[rel.indice];
@@ -698,7 +758,7 @@
       itens: nfItens.map(it => ({
         itemNum: it.itemNum, codigo: it.codigo, descricao: String(it.descricao || '').trim(), ncm: it.ncm, unidade: it.unidade,
         quantidade: it.quantidade, valorUnitario: it.valorUnitario, desconto: it.desconto === undefined ? '' : it.desconto,
-        valorTotal: it.valorTotal, pecaId: it.pecaId || '',
+        valorTotal: it.valorTotal, pecaId: it.pecaId || '', marca: String(it.marca || '').trim(),
         garantiaMeses: tipo === 'produto' ? it.garantiaMeses : '', garantiaAte: tipo === 'produto' ? it.garantiaAte : ''
       })),
       arquivos: nfAnexosPendentes
@@ -713,6 +773,21 @@
       const el = document.getElementById('nfGarantiaMeses'); if (el) el.focus();
       return;
     }
+    // marcas digitadas que não estão no cadastro: pergunta antes de incluir
+    const marcasNovas = Array.from(new Set(dados.itens.map(it => it.marca).filter(m => m && !nfMarcaDoCadastro(m))));
+    if (marcasNovas.length) {
+      if (!(await confirmarModal((marcasNovas.length === 1 ? 'A marca "' + marcasNovas[0] + '" não está' : 'As marcas ' + marcasNovas.map(m => '"' + m + '"').join(', ') + ' não estão') +
+          ' no cadastro de marcas.\n\nIncluir no cadastro e salvar a nota?', { titulo: marcasNovas.length === 1 ? 'Marca nova' : 'Marcas novas', confirmar: 'Incluir e salvar' }))) {
+        alert('A nota não foi salva. Escolha uma marca da lista, use o + para cadastrar ou confirme a inclusão.');
+        return;
+      }
+      for (const m of marcasNovas) {
+        const rm = await runServerFunction('cadastrarMarca', m);
+        if (rm && rm.sucesso === false && !/já existe|já está cadastrad|já cadastrad/i.test(rm.mensagem || '')) { alert(rm.mensagem || 'Não foi possível incluir a marca ' + m + '.'); return; }
+      }
+      await nfCarregarMarcas();
+    }
+
     // valor total x soma dos itens: se não bate, confirma
     const totais = nfAtualizarTotais();
     if (!totais.confere && !(await confirmarModal(

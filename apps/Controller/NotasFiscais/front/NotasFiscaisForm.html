@@ -74,6 +74,7 @@
         <form id="formNotaFiscal" autocomplete="off" onsubmit="return false;">
           <input type="hidden" id="nfId" value="">
           <datalist id="nfFornecedoresLista"></datalist>
+          <datalist id="nfMarcasLista"></datalist>
 
           <div class="nf-importar">
             <button type="button" class="btn-primary" style="width:auto;" onclick="document.getElementById('nfXmlArquivo').click()">📥 Importar XML da NF-e</button>
@@ -159,7 +160,7 @@
             <div class="table-wrapper">
               <table class="data-table nf-itens-tabela">
                 <thead>
-                  <tr><th>#</th><th>Código no fornecedor</th><th>Descrição *</th><th>Qtd</th><th>Valor unit.</th><th>Desconto</th><th>Total</th>
+                  <tr><th>#</th><th>Código no fornecedor</th><th>Descrição *</th><th>Marca</th><th>Qtd</th><th>Valor unit.</th><th>Desconto</th><th>Total</th>
                     <th>Relação com o cadastro</th><th class="nf-col-garantia" style="display:none;">Garantia do produto (meses / até)</th><th></th></tr>
                 </thead>
                 <tbody id="nfItensLista"></tbody>
