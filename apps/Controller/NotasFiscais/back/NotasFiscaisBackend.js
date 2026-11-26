@@ -7,6 +7,8 @@
 // - Cada item pode ser relacionado a uma peça/produto do cadastro. A
 //   relação fica em tbl_produto_fornecedor (fornecedor + código do item na
 //   nota -> peça), usada para relacionar sozinho o próximo XML.
+// - Item relacionado entra no estoque com a quantidade da nota
+//   (sincronizarEntradasNota_, EstoqueBackend).
 // - Item relacionado vira uma aquisição da peça (tbl_pecas_aquisicoes,
 //   coluna NF_ID), com o arquivo da nota escaneada -- aparece no cadastro
 //   do item e é sugerida no e-mail de garantia. Se a peça não tiver
@@ -535,12 +537,14 @@ function salvarNotaFiscal_(d) {
     if (it.pecaId && gravarRelacaoProdutoFornecedor_(it.pecaId, fornecedor, cnpj, it.codigo, it.descricao)) relacoesNovas++;
   });
   sincronizarAquisicoesNota_(nfId);
+  const entradasEstoque = sincronizarEntradasNota_(nfId);
   const pecasAtualizadas = completarPecasComNota_(nfId);
 
   const semRelacao = itens.filter(function (it) { return !it.pecaId; }).length;
   let mensagem = 'Nota fiscal ' + numero + (id ? ' alterada' : ' cadastrada') + ' com sucesso!';
   if (semRelacao) mensagem += '\n' + semRelacao + ' item(ns) sem relação com o cadastro de peças/produtos.';
   if (relacoesNovas) mensagem += '\n' + relacoesNovas + ' relação(ões) produto x fornecedor gravada(s).';
+  if (entradasEstoque) mensagem += '\n' + entradasEstoque + ' entrada(s) no estoque.';
   if (pecasAtualizadas) mensagem += '\n' + pecasAtualizadas + ' peça(s)/produto(s) receberam a garantia/nota desta compra.';
   if (nomesAnexos.length) mensagem += '\n' + nomesAnexos.length + ' anexo(s) incluído(s).';
   return { sucesso: true, id: nfId, mensagem: mensagem };
@@ -629,6 +633,7 @@ function alterarSituacaoNotaFiscal_(idInput, desativar) {
       if (idx === -1) return { sucesso: false, mensagem: 'Nota fiscal não encontrada.' };
       aba.getRange(idx + firstLineNotasFiscais, nfDtExclusaoCol + 1).setValue(desativar ? hojeNF_() : '');
       sincronizarAquisicoesNota_(id);
+      sincronizarEntradasNota_(id);   // desativada: as entradas dela saem do estoque
       return { sucesso: true, mensagem: desativar ? 'Nota fiscal desativada.' : 'Nota fiscal reativada.' };
     });
   } catch (e) {

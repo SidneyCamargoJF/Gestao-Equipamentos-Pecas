@@ -324,6 +324,28 @@ Cabeçalho da nota (Compras → Notas fiscais). As quatro abas de Compras são c
 
 **tbl_produto_fornecedor** (0-based): ID, ID da peça/produto, fornecedor, CNPJ, código no fornecedor, descrição no fornecedor, data de cadastro, data de exclusão. Usada para relacionar sozinho os itens do XML (fornecedor + código).
 
+## tbl_estoque_movimentos — [EstoqueModel.js](../apps/01-Model/EstoqueModel.js) (0-based)
+
+Movimentações do estoque; o saldo de cada item é a soma das ativas (entrada +, saída −, ajuste com sinal). Criada sozinha no primeiro uso (ou por `criarTabelasNovasSeNecessario()`), junto com `tbl_estoque_parametros`.
+
+| Col | Conteúdo |
+|---|---|
+| A | ID |
+| B | ID da peça/produto (`tbl_pecas`) |
+| C | Tipo: `entrada`, `saida` ou `ajuste` |
+| D | Quantidade (entrada/saída positiva; ajuste = diferença, com sinal) |
+| E | Data |
+| F | Origem: `nota_fiscal`, `manual`, `chamado` ou `equipamento` |
+| G | ID de origem (nota, chamado ou equipamento) |
+| H | Documento (ex.: "NF 77/1 — Fornecedor", "Chamado #12 · Patrimônio P100") |
+| I | Valor unitário |
+| J | Observação (no estorno, recebe o motivo) |
+| K | Usuário |
+| L | Data de cadastro |
+| M | Data de exclusão (estorno; nas entradas de nota, quando a nota muda ou é desativada) |
+
+**tbl_estoque_parametros** (0-based): ID, ID da peça/produto, estoque mínimo (vazio = sem mínimo), unidade, data de alteração.
+
 ## tbl_fornecedor — [FornecedorModel.js](../apps/01-Model/FornecedorModel.js) (1-based)
 
 | Col | Conteúdo |

@@ -117,7 +117,9 @@ function buscarIndicadoresPecas() {
     porLocalizacao: paraRankingOrdenado_(porLocalizacao).slice(0, 8),
     vencendoLista: vencendoLista.sort((a, b) => a.dias - b.dias).slice(0, 8),
     // acionamentos de garantia em andamento (GarantiasBackend)
-    acionamentos: indicadoresGarantias_()
+    acionamentos: indicadoresGarantias_(),
+    // estoque: itens abaixo do mínimo e zerados (EstoqueBackend)
+    estoque: indicadoresEstoque_()
   };
 }
 

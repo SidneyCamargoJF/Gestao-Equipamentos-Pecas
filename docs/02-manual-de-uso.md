@@ -1,6 +1,6 @@
 # 02 — Manual de uso
 
-Navegação: o menu superior troca de página sem recarregar. O botão **Voltar** retorna à página anterior.
+Navegação: o menu superior troca de página sem recarregar. O botão **Voltar** retorna à página anterior. Ordem do menu: Dashboard, Chamados, Estoque, Garantias, Compras, Agenda, Relatórios, Cadastros e Configuração.
 
 **Sair sem salvar:** nos cadastros e edições (chamado, contrato, equipamento, fornecedor e peça), se você alterou algum dado e tenta sair sem salvar (menu, Voltar, Cancelar ou fechar a aba), o sistema avisa e pergunta: **Continuar editando** mantém você na tela com o que digitou; **Sair sem salvar** descarta as alterações. Campos de busca não contam como alteração. Depois de salvar, a saída é direta.
 
@@ -25,7 +25,7 @@ Padrões das consultas:
 
 ## Peças e produtos
 
-O cadastro de **Peças e Estoque** guarda peças e produtos adquiridos que ficam no estoque. O campo **Tipo** (Peça / Produto) separa os dois; itens antigos, sem tipo, contam como peça.
+O cadastro **Cadastros → Peças e Produtos** guarda peças e produtos adquiridos. O saldo de cada item fica no menu [Estoque](#estoque). O campo **Tipo** (Peça / Produto) separa os dois; itens antigos, sem tipo, contam como peça.
 
 **Campos:**
 - tipo, nome, marca, modelo, capacidade e número de série;
@@ -93,6 +93,7 @@ Menu **Compras** na barra principal, com **Notas fiscais** e **Produtos x fornec
 **Ao salvar:**
 - não aceita nota repetida (mesma chave, ou mesmo número/série do mesmo fornecedor);
 - grava a relação **produto x fornecedor** de cada item relacionado: o próximo XML desse fornecedor já vem relacionado;
+- cada item relacionado **entra no estoque** com a quantidade da nota (alterar a nota refaz as entradas; desativar tira);
 - cada item relacionado vira uma **aquisição** da peça/produto (com a nota escaneada), sugerida no e-mail de garantia;
 - a peça/produto sem data de garantia ou sem nota cadastradas recebe as desta compra.
 
@@ -101,6 +102,23 @@ Desativar a nota tira as aquisições que ela gerou; reativar devolve.
 ### Produtos x fornecedores
 
 Lista como cada fornecedor identifica as peças/produtos do cadastro (código e descrição na nota). As relações são gravadas ao salvar as notas; dá também para incluir à mão (peça/produto, fornecedor, CNPJ, código e descrição) e excluir. Se o mesmo fornecedor e código forem relacionados a outra peça, a relação é trocada.
+
+## Estoque
+
+Menu **Estoque**, com **Saldo de estoque** e **Movimentações**. O saldo de cada peça/produto do cadastro é a soma das movimentações.
+
+**Saldo de estoque:**
+- Cartões com os itens com saldo, abaixo do mínimo e zerados (clique para filtrar).
+- Filtros: busca, tipo (peça/produto) e situação (com movimentação, com saldo, abaixo do mínimo, zerados).
+- A lista mostra saldo e unidade, estoque mínimo, situação (OK, Abaixo do mínimo, Zerado; "Sem movimentação" para itens que nunca entraram) e a última movimentação. Abaixo do mínimo e zerados vêm primeiro.
+- Ações de cada item: **➕ Entrada**, **➖ Saída**, **⚖️ Ajuste de inventário**, **📜 Movimentações do item** e **⚙️ Estoque mínimo e unidade**.
+
+**Movimentações:**
+- **Entradas das notas fiscais:** automáticas, pelos itens relacionados ao cadastro em Compras → Notas fiscais. Para corrigir, altere ou desative a nota. O botão **↻ Atualizar entradas das notas** refaz as entradas de todas as notas (por exemplo, das notas lançadas antes do estoque existir).
+- **Entrada sem nota:** quantidade, valor unitário (opcional) e origem obrigatória (devolução, doação, transferência...).
+- **Saída:** quantidade e destino: **chamado** (nº), **patrimônio** do equipamento ou observação. Não pode ser maior que o saldo. Saída para um chamado fica registrada nas Movimentações do chamado.
+- **Ajuste de inventário:** informe a quantidade contada e o motivo; o sistema lança a diferença.
+- A lista tem filtros por item, tipo, origem, período e busca. **↩️ Estornar** (com motivo) desfaz entradas sem nota, saídas e ajustes; o estorno não pode deixar o saldo negativo.
 
 ## Marcas e Localizações
 
@@ -278,7 +296,7 @@ As seções têm botão de exportação em CSV.
 
 ### Demais seções
 
-Chamados, Contratos (vigentes, vencendo em 30 dias, vencidos, encerrados), Equipamentos, Peças e Fornecedores. Em Peças, os indicadores **Garantias em andamento** e **Garantias com prazo vencido** e a lista das garantias em andamento levam à tela de Garantias.
+Chamados, Contratos (vigentes, vencendo em 30 dias, vencidos, encerrados), Equipamentos, Peças e Fornecedores. Em Peças, o indicador **Estoque abaixo do mínimo** leva ao Saldo de estoque filtrado, e os indicadores **Garantias em andamento** e **Garantias com prazo vencido** e a lista das garantias em andamento levam à tela de Garantias.
 
 ## Relatórios
 

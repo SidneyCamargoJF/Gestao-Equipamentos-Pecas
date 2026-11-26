@@ -40,6 +40,10 @@ Depois de publicar, cada usuário precisa **autorizar de novo** o app (envio de 
 
 A aba `tbl_modelos_email` é criada sozinha ao abrir **Configuração → Modelos de e-mail**, e a `tbl_chamado_emails` no primeiro envio (ou as duas com `criarTabelasNovasSeNecessario()`).
 
+### Estoque
+
+As abas `tbl_estoque_movimentos` e `tbl_estoque_parametros` são criadas sozinhas no primeiro uso (ou com `criarTabelasNovasSeNecessario()`). As notas fiscais lançadas antes do estoque não têm entradas: use o botão **↻ Atualizar entradas das notas** (Estoque → Movimentações) uma vez.
+
 ### Compras
 
 As abas `tbl_notas_fiscais`, `tbl_notas_fiscais_itens`, `tbl_notas_fiscais_anexos` e `tbl_produto_fornecedor` são criadas sozinhas na primeira nota salva ou relação incluída (ou com `criarTabelasNovasSeNecessario()`). Na aba `tbl_pecas_aquisicoes` já existente, o cabeçalho da coluna K (NF_ID) é criado no mesmo momento. O XML da NF-e é lido no navegador; os arquivos vão para a pasta de anexos do Drive.

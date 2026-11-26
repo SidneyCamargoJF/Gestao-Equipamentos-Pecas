@@ -1,0 +1,260 @@
+<script>
+  // =====================================================
+  // ESTOQUE -- Saldo (#page-estoque-view) e Movimentações
+  // (#page-estoque-movimentos-view); modais #modalMovimentoEstoque e
+  // #modalParametrosEstoque. Backend: apps/Controller/Estoque/back.
+  // =====================================================
+
+  let estoqueItens = [];          // saldo por item (última consulta)
+  let estoqueMovs = [];
+  let estoqueMovPeca = null;      // item do formulário de movimentação
+  let estoqueParamPeca = null;
+
+  const ESTOQUE_SITUACAO = { ok: 'OK', abaixo: 'Abaixo do mínimo', zerado: 'Zerado' };
+  const ESTOQUE_TIPO_MOV = { entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste de inventário' };
+
+  function estEsc(s) {
+    return String(s === undefined || s === null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function estQtd(n) {
+    const v = Number(n) || 0;
+    return v.toLocaleString('pt-BR', { maximumFractionDigits: 4 });
+  }
+
+  function estHojeISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  // ===================================================
+  // SALDO
+  // ===================================================
+  // situacao (do menu/dashboard): 'abaixo' | 'zerado' | ...
+  async function renderEstoque(situacao) {
+    if (situacao !== undefined) {
+      const sel = document.getElementById('estFiltroSituacao');
+      if (sel) sel.value = typeof situacao === 'string' ? situacao : '';
+    }
+    await consultarEstoque();
+  }
+
+  async function consultarEstoque() {
+    const tbody = document.getElementById('estoqueTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    const v = id => (document.getElementById(id) || {}).value || '';
+    try {
+      const r = await runServerFunction('listarEstoque', { texto: v('estFiltroTexto').trim(), tipo: v('estFiltroTipo'), situacao: v('estFiltroSituacao') });
+      if (r && r.sucesso === false) throw new Error(r.mensagem);
+      estoqueItens = (r && r.itens) || [];
+      const res = (r && r.resumo) || {};
+      const set = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n || 0; };
+      set('estResumoComSaldo', res.comSaldo); set('estResumoAbaixo', res.abaixo); set('estResumoZerados', res.zerados);
+      renderTabelaEstoque();
+    } catch (e) {
+      console.error('Erro ao consultar o estoque:', e);
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Erro ao buscar o estoque.</td></tr>';
+    }
+  }
+
+  function limparFiltrosEstoque() {
+    ['estFiltroTexto', 'estFiltroTipo', 'estFiltroSituacao'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    consultarEstoque();
+  }
+
+  function filtrarEstoquePorSituacao(situacao) {
+    const sel = document.getElementById('estFiltroSituacao');
+    if (sel) sel.value = situacao;
+    consultarEstoque();
+  }
+
+  function renderTabelaEstoque() {
+    const tbody = document.getElementById('estoqueTableBody');
+    if (!tbody) return;
+    if (!estoqueItens.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Nenhum item encontrado.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = estoqueItens.map(it => {
+      const controlado = it.movimentado || it.minimo !== '';
+      const badge = controlado ? `<span class="est-situacao est-situacao--${it.situacao}">${ESTOQUE_SITUACAO[it.situacao]}</span>` : '<span class="est-sem-controle">Sem movimentação</span>';
+      return `
+      <tr class="${it.situacao === 'abaixo' && controlado ? 'est-linha-abaixo' : ''}">
+        <td><strong>${estEsc(it.nome)}</strong>${it.numeroSerie ? '<br><small>NS ' + estEsc(it.numeroSerie) + '</small>' : ''}</td>
+        <td>${it.tipo === 'produto' ? 'Produto' : 'Peça'}</td>
+        <td>${estEsc([it.marca, it.modelo].filter(Boolean).join(' / '))}</td>
+        <td class="est-num"><strong>${estQtd(it.saldo)}</strong> <small>${estEsc(it.unidade)}</small></td>
+        <td class="est-num">${it.minimo === '' ? '—' : estQtd(it.minimo)}</td>
+        <td>${badge}</td>
+        <td>${estEsc(it.ultimaMovimentacao)}</td>
+        <td class="acao-cell est-acoes">
+          <button class="btn-acao" title="Entrada" onclick="abrirMovimentoEstoqueUI('entrada', ${Number(it.id)})">➕</button>
+          <button class="btn-acao" title="Saída" onclick="abrirMovimentoEstoqueUI('saida', ${Number(it.id)})">➖</button>
+          <button class="btn-acao" title="Ajuste de inventário" onclick="abrirMovimentoEstoqueUI('ajuste', ${Number(it.id)})">⚖️</button>
+          <button class="btn-acao" title="Movimentações do item" onclick="trocarPagina('estoque-movimentos-view', ${Number(it.id)})">📜</button>
+          <button class="btn-acao" title="Estoque mínimo e unidade" onclick="abrirParametrosEstoqueUI(${Number(it.id)})">⚙️</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ===================================================
+  // MOVIMENTAÇÃO (entrada / saída / ajuste)
+  // ===================================================
+  async function estoqueItensParaEscolha() {
+    if (estoqueItens.length && !document.getElementById('estFiltroTexto')?.value && !document.getElementById('estFiltroSituacao')?.value && !document.getElementById('estFiltroTipo')?.value) return estoqueItens;
+    const r = await runServerFunction('listarEstoque', {});
+    return (r && r.itens) || [];
+  }
+
+  async function abrirMovimentoEstoqueUI(tipo, pecaId) {
+    const itens = await estoqueItensParaEscolha();
+    const sel = document.getElementById('estMovItem');
+    sel.innerHTML = '<option value="">Escolha a peça/produto...</option>' + itens.slice()
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+      .map(i => `<option value="${Number(i.id)}" data-saldo="${i.saldo}" data-unidade="${estEsc(i.unidade)}">${estEsc(i.nome)}${i.modelo ? ' — ' + estEsc(i.modelo) : ''}</option>`).join('');
+    sel.value = pecaId ? String(pecaId) : '';
+    document.getElementById('estMovTipo').value = tipo || 'saida';
+    ['estMovQuantidade', 'estMovContada', 'estMovValor', 'estMovChamado', 'estMovPatrimonio', 'estMovObservacao'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('estMovData').value = estHojeISO();
+    estAtualizarFormMovimento();
+    exibirModal('modalMovimentoEstoque');
+  }
+
+  // Mostra os campos do tipo escolhido e o saldo do item
+  function estAtualizarFormMovimento() {
+    const tipo = document.getElementById('estMovTipo').value;
+    const opt = document.getElementById('estMovItem').selectedOptions[0];
+    const saldo = opt && opt.value ? Number(opt.getAttribute('data-saldo')) : null;
+    const unidade = opt && opt.value ? opt.getAttribute('data-unidade') : '';
+    const mostra = (id, sim) => { const el = document.getElementById(id); if (el) el.style.display = sim ? '' : 'none'; };
+    mostra('estMovCampoQuantidade', tipo !== 'ajuste');
+    mostra('estMovCampoContada', tipo === 'ajuste');
+    mostra('estMovCampoValor', tipo === 'entrada');
+    mostra('estMovDestino', tipo === 'saida');
+    document.getElementById('estMovTitulo').textContent = '📦 ' + (ESTOQUE_TIPO_MOV[tipo] || 'Movimentação');
+    document.getElementById('estMovObsRotulo').textContent =
+      tipo === 'entrada' ? 'Origem da entrada * (ex.: devolução, doação, transferência)' :
+      tipo === 'ajuste' ? 'Motivo do ajuste *' : 'Observação (obrigatória se não houver chamado nem patrimônio)';
+    document.getElementById('estMovSaldo').textContent = saldo === null ? '' : 'Saldo atual: ' + estQtd(saldo) + ' ' + unidade;
+    document.getElementById('estMovAjuda').textContent = tipo === 'entrada'
+      ? 'Compras com nota fiscal entram sozinhas pelo menu Compras > Notas fiscais (itens relacionados ao cadastro).'
+      : tipo === 'ajuste' ? 'Informe a quantidade contada no inventário; o sistema lança a diferença.' : 'A saída não pode ser maior que o saldo.';
+  }
+
+  async function confirmarMovimentoEstoqueUI() {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const dados = {
+      tipo: v('estMovTipo'), pecaId: v('estMovItem'), quantidade: v('estMovQuantidade').trim(), novaQuantidade: v('estMovContada').trim(),
+      data: v('estMovData'), valorUnitario: v('estMovValor').trim(), chamadoId: v('estMovChamado').trim(), patrimonio: v('estMovPatrimonio').trim(),
+      observacao: v('estMovObservacao').trim()
+    };
+    if (!dados.pecaId) { alert('Escolha a peça/produto.'); return; }
+    if (dados.tipo === 'ajuste' ? dados.novaQuantidade === '' : !dados.quantidade) { alert('Informe a quantidade.'); return; }
+    exibirModal('processando');
+    try {
+      const r = await runServerFunction('registrarMovimentoEstoque', dados);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao registrar.'); return; }
+      fecharModal('modalMovimentoEstoque');
+      mostrarMensagem(r.mensagem, 'sucesso');
+      estAtualizarPaginaAtual();
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      fecharModal('processando');
+    }
+  }
+
+  function estAtualizarPaginaAtual() {
+    if (document.getElementById('page-estoque-view')?.classList.contains('active')) consultarEstoque();
+    if (document.getElementById('page-estoque-movimentos-view')?.classList.contains('active')) consultarMovimentosEstoque();
+  }
+
+  // ===== estoque mínimo e unidade =====
+  function abrirParametrosEstoqueUI(pecaId) {
+    const it = estoqueItens.find(i => Number(i.id) === Number(pecaId));
+    if (!it) return;
+    estoqueParamPeca = it.id;
+    document.getElementById('estParamItem').textContent = it.nome;
+    document.getElementById('estParamMinimo').value = it.minimo === '' ? '' : it.minimo;
+    document.getElementById('estParamUnidade').value = it.unidade || 'UN';
+    exibirModal('modalParametrosEstoque');
+  }
+
+  async function salvarParametrosEstoqueUI() {
+    const r = await runServerFunction('salvarParametrosEstoque', {
+      pecaId: estoqueParamPeca, estoqueMinimo: document.getElementById('estParamMinimo').value.trim(),
+      unidade: document.getElementById('estParamUnidade').value.trim()
+    });
+    if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao gravar.'); return; }
+    fecharModal('modalParametrosEstoque');
+    consultarEstoque();
+  }
+
+  // ===================================================
+  // MOVIMENTAÇÕES
+  // ===================================================
+  // pecaId: vindo do 📜 do saldo (filtra o item)
+  async function renderMovimentosEstoque(pecaId) {
+    const r = await runServerFunction('listarEstoque', {});
+    const sel = document.getElementById('estMovFiltroItem');
+    if (sel) {
+      sel.innerHTML = '<option value="">Todos os itens</option>' + ((r && r.itens) || []).filter(i => i.movimentado)
+        .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map(i => `<option value="${Number(i.id)}">${estEsc(i.nome)}</option>`).join('');
+      sel.value = pecaId ? String(pecaId) : '';
+    }
+    await consultarMovimentosEstoque();
+  }
+
+  async function consultarMovimentosEstoque() {
+    const tbody = document.getElementById('estMovTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const r = await runServerFunction('listarMovimentosEstoque', {
+      pecaId: v('estMovFiltroItem'), tipo: v('estMovFiltroTipo'), origem: v('estMovFiltroOrigem'), de: v('estMovFiltroDe'), ate: v('estMovFiltroAte'),
+      texto: v('estMovFiltroTexto').trim(), incluirEstornados: !!(document.getElementById('estMovFiltroEstornados') || {}).checked
+    });
+    estoqueMovs = (r && r.movimentos) || [];
+    if (!tbody) return;
+    tbody.innerHTML = estoqueMovs.length ? estoqueMovs.map(m => `
+      <tr class="${m.estornado ? 'linha-desativada' : ''}">
+        <td>${estEsc(m.data)}</td>
+        <td>${estEsc(m.item)}</td>
+        <td><span class="est-tipo est-tipo--${m.tipo}">${estEsc(m.tipoTexto)}</span>${m.estornado ? ' <span class="status-desativado">(Estornada)</span>' : ''}</td>
+        <td class="est-num ${m.efeito < 0 ? 'est-neg' : 'est-pos'}">${m.efeito > 0 ? '+' : ''}${estQtd(m.efeito)} <small>${estEsc(m.unidade)}</small></td>
+        <td>${estEsc(m.origemTexto)}${m.documento ? '<br><small>' + estEsc(m.documento) + '</small>' : ''}</td>
+        <td>${estEsc(m.observacao)}</td>
+        <td>${estEsc(m.usuario)}</td>
+        <td class="acao-cell">${m.podeEstornar ? `<button class="btn-acao" title="Estornar" onclick="estornarMovimentoEstoqueUI(${Number(m.id)})">↩️</button>` : ''}</td>
+      </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;">Nenhuma movimentação encontrada.</td></tr>';
+  }
+
+  function limparFiltrosMovimentosEstoque() {
+    ['estMovFiltroItem', 'estMovFiltroTipo', 'estMovFiltroOrigem', 'estMovFiltroDe', 'estMovFiltroAte', 'estMovFiltroTexto'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const est = document.getElementById('estMovFiltroEstornados'); if (est) est.checked = false;
+    consultarMovimentosEstoque();
+  }
+
+  async function estornarMovimentoEstoqueUI(id) {
+    const motivo = prompt('Motivo do estorno desta movimentação:');
+    if (motivo === null) return;
+    if (!motivo.trim()) { alert('Informe o motivo do estorno.'); return; }
+    const r = await runServerFunction('estornarMovimentoEstoque', id, motivo.trim());
+    if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao estornar.'); return; }
+    mostrarMensagem(r.mensagem, 'sucesso');
+    consultarMovimentosEstoque();
+  }
+
+  async function sincronizarEntradasNotasUI() {
+    if (!confirm('Refazer as entradas de estoque de todas as notas fiscais (itens relacionados ao cadastro)?')) return;
+    exibirModal('processando');
+    try {
+      const r = await runServerFunction('sincronizarEntradasTodasNotas');
+      alert(r.mensagem);
+      estAtualizarPaginaAtual();
+    } finally {
+      fecharModal('processando');
+    }
+  }
+</script>

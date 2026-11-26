@@ -391,6 +391,89 @@
       </div>
     </div>
 
+    <!-- MOVIMENTAÇÃO DE ESTOQUE: entrada / saída / ajuste (EstoqueJS) -->
+    <div class="modal-overlay" id="modalMovimentoEstoque">
+      <div class="modal modal-lg modal-email">
+        <div class="detalhe-chamado-cabecalho">
+          <h3 id="estMovTitulo">📦 Movimentação</h3>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalMovimentoEstoque')">✕</button>
+        </div>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalMovimentoEstoque')">Cancelar</button>
+          <button type="button" class="btn-success" style="width:auto;" onclick="confirmarMovimentoEstoqueUI()">Registrar</button>
+        </div>
+        <form autocomplete="off" onsubmit="return false;" class="est-mov-grid">
+          <div class="field">
+            <label class="field__label" for="estMovTipo">Tipo *</label>
+            <select class="field__select" id="estMovTipo" onchange="estAtualizarFormMovimento()">
+              <option value="saida">Saída</option>
+              <option value="entrada">Entrada (sem nota fiscal)</option>
+              <option value="ajuste">Ajuste de inventário</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="estMovData">Data *</label>
+            <input class="field__input" type="date" id="estMovData">
+          </div>
+          <div class="field est-mov-inteiro">
+            <label class="field__label" for="estMovItem">Peça/produto *</label>
+            <select class="field__select" id="estMovItem" onchange="estAtualizarFormMovimento()"></select>
+            <span class="est-mov-saldo" id="estMovSaldo"></span>
+          </div>
+          <div class="field" id="estMovCampoQuantidade">
+            <label class="field__label" for="estMovQuantidade">Quantidade *</label>
+            <input class="field__input" type="text" id="estMovQuantidade" inputmode="decimal">
+          </div>
+          <div class="field" id="estMovCampoContada">
+            <label class="field__label" for="estMovContada">Quantidade contada *</label>
+            <input class="field__input" type="text" id="estMovContada" inputmode="decimal">
+          </div>
+          <div class="field" id="estMovCampoValor">
+            <label class="field__label" for="estMovValor">Valor unitário (R$)</label>
+            <input class="field__input" type="text" id="estMovValor" inputmode="decimal">
+          </div>
+          <div class="est-mov-inteiro est-mov-grid" id="estMovDestino">
+            <div class="field">
+              <label class="field__label" for="estMovChamado">Chamado nº</label>
+              <input class="field__input" type="text" id="estMovChamado" inputmode="numeric" placeholder="Opcional">
+            </div>
+            <div class="field">
+              <label class="field__label" for="estMovPatrimonio">Patrimônio do equipamento</label>
+              <input class="field__input" type="text" id="estMovPatrimonio" placeholder="Opcional">
+            </div>
+          </div>
+          <div class="field est-mov-inteiro">
+            <label class="field__label" for="estMovObservacao" id="estMovObsRotulo">Observação</label>
+            <textarea class="field__input" id="estMovObservacao" rows="2"></textarea>
+          </div>
+          <p class="nf-ajuda est-mov-inteiro" id="estMovAjuda"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- ESTOQUE MÍNIMO E UNIDADE DO ITEM (EstoqueJS) -->
+    <div class="modal-overlay" id="modalParametrosEstoque">
+      <div class="modal">
+        <div class="detalhe-chamado-cabecalho">
+          <h3>⚙️ Estoque mínimo e unidade</h3>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalParametrosEstoque')">✕</button>
+        </div>
+        <p><strong id="estParamItem"></strong></p>
+        <div class="field">
+          <label class="field__label" for="estParamMinimo">Estoque mínimo (vazio = sem mínimo)</label>
+          <input class="field__input" type="text" id="estParamMinimo" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label class="field__label" for="estParamUnidade">Unidade</label>
+          <input class="field__input" type="text" id="estParamUnidade" placeholder="UN, CX, M, L...">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalParametrosEstoque')">Cancelar</button>
+          <button type="button" class="btn-success" style="width:auto;" onclick="salvarParametrosEstoqueUI()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- CONFIRMAÇÃO DA IMPORTAÇÃO DO XML DA NF-e (NotasFiscaisJS) -->
     <div class="modal-overlay" id="modalConfirmarXmlNF">
       <div class="modal modal-lg modal-email">

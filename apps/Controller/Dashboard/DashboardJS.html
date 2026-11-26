@@ -105,6 +105,10 @@ async function renderDashboardPecas() {
     }
     registrarExportDash('dashPecasVencendo', ['Peça', 'Dias até vencer'], dados.vencendoLista.map(p => [p.nome, p.dias]));
 
+    // Estoque abaixo do mínimo
+    const elEst = document.getElementById('dashEstoqueAbaixo');
+    if (elEst) elEst.textContent = (dados.estoque && dados.estoque.abaixo) || 0;
+
     // Acionamentos de garantia em andamento
     const ac = dados.acionamentos || { andamento: 0, atrasadas: 0, lista: [] };
     document.getElementById('dashGarantiasAndamento').textContent = ac.andamento;

@@ -1,0 +1,135 @@
+    <!-- ===================================================== -->
+    <!-- ESTOQUE > SALDO (EstoqueJS)                            -->
+    <!-- ===================================================== -->
+    <section id="page-estoque-view" class="spa-page">
+      <div class="page-header">
+        <div class="nf-cabecalho">
+          <h1>📦 Saldo de estoque</h1>
+          <div class="nf-cabecalho-botoes">
+            <button type="button" class="btn-secondary" onclick="limparFiltrosEstoque()">Limpar</button>
+            <button type="button" class="btn-success" onclick="abrirMovimentoEstoqueUI('saida')">+ Movimentação</button>
+            <button type="button" class="btn-primary" onclick="consultarEstoque()">Consultar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="metrics-grid est-resumo">
+        <div class="metric-card" style="cursor:pointer;" onclick="filtrarEstoquePorSituacao('com_saldo')" title="Ver os itens com saldo">
+          <div class="metric-label">Itens com saldo</div>
+          <div class="metric-value" id="estResumoComSaldo">—</div>
+        </div>
+        <div class="metric-card" style="cursor:pointer;" onclick="filtrarEstoquePorSituacao('abaixo')" title="Ver os itens abaixo do mínimo">
+          <div class="metric-label">Abaixo do mínimo</div>
+          <div class="metric-value" id="estResumoAbaixo">—</div>
+        </div>
+        <div class="metric-card" style="cursor:pointer;" onclick="filtrarEstoquePorSituacao('zerado')" title="Ver os itens zerados">
+          <div class="metric-label">Zerados</div>
+          <div class="metric-value" id="estResumoZerados">—</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <form autocomplete="off" onsubmit="consultarEstoque(); return false;" class="est-filtros">
+          <div class="field">
+            <label class="field__label" for="estFiltroTexto">Busca</label>
+            <input class="field__input" type="text" id="estFiltroTexto" placeholder="Nome, marca, modelo, nº de série...">
+          </div>
+          <div class="field">
+            <label class="field__label" for="estFiltroTipo">Tipo</label>
+            <select class="field__select" id="estFiltroTipo">
+              <option value="">Peças e produtos</option>
+              <option value="peca">Peças</option>
+              <option value="produto">Produtos</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="estFiltroSituacao">Situação</label>
+            <select class="field__select" id="estFiltroSituacao">
+              <option value="">Todos os itens</option>
+              <option value="movimentados">Com movimentação</option>
+              <option value="com_saldo">Com saldo</option>
+              <option value="abaixo">Abaixo do mínimo</option>
+              <option value="zerado">Zerados</option>
+            </select>
+          </div>
+          <button type="submit" style="display:none;"></button>
+        </form>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr><th>Item</th><th>Tipo</th><th>Marca / modelo</th><th>Saldo</th><th>Mínimo</th><th>Situação</th><th>Última movimentação</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="estoqueTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================== -->
+    <!-- ESTOQUE > MOVIMENTAÇÕES                                -->
+    <!-- ===================================================== -->
+    <section id="page-estoque-movimentos-view" class="spa-page">
+      <div class="page-header">
+        <div class="nf-cabecalho">
+          <h1>📜 Movimentações de estoque</h1>
+          <div class="nf-cabecalho-botoes">
+            <button type="button" class="btn-secondary" onclick="limparFiltrosMovimentosEstoque()">Limpar</button>
+            <button type="button" class="btn-secondary" title="Refaz as entradas de estoque de todas as notas fiscais" onclick="sincronizarEntradasNotasUI()">↻ Atualizar entradas das notas</button>
+            <button type="button" class="btn-success" onclick="abrirMovimentoEstoqueUI('saida')">+ Movimentação</button>
+            <button type="button" class="btn-primary" onclick="consultarMovimentosEstoque()">Consultar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <form autocomplete="off" onsubmit="consultarMovimentosEstoque(); return false;" class="est-filtros est-filtros--mov">
+          <div class="field">
+            <label class="field__label" for="estMovFiltroItem">Item</label>
+            <select class="field__select" id="estMovFiltroItem"></select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="estMovFiltroTipo">Tipo</label>
+            <select class="field__select" id="estMovFiltroTipo">
+              <option value="">Todos</option>
+              <option value="entrada">Entrada</option>
+              <option value="saida">Saída</option>
+              <option value="ajuste">Ajuste de inventário</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="estMovFiltroOrigem">Origem</label>
+            <select class="field__select" id="estMovFiltroOrigem">
+              <option value="">Todas</option>
+              <option value="nota_fiscal">Nota fiscal</option>
+              <option value="chamado">Chamado</option>
+              <option value="equipamento">Equipamento</option>
+              <option value="manual">Manual</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="estMovFiltroDe">De</label>
+            <input class="field__input" type="date" id="estMovFiltroDe">
+          </div>
+          <div class="field">
+            <label class="field__label" for="estMovFiltroAte">até</label>
+            <input class="field__input" type="date" id="estMovFiltroAte">
+          </div>
+          <div class="field">
+            <label class="field__label" for="estMovFiltroTexto">Busca</label>
+            <input class="field__input" type="text" id="estMovFiltroTexto" placeholder="Documento, observação...">
+          </div>
+          <label class="nf-filtro-check"><input type="checkbox" id="estMovFiltroEstornados"> Mostrar estornadas</label>
+          <button type="submit" style="display:none;"></button>
+        </form>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr><th>Data</th><th>Item</th><th>Tipo</th><th>Quantidade</th><th>Origem</th><th>Observação</th><th>Usuário</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="estMovTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
