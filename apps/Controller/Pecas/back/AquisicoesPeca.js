@@ -75,7 +75,7 @@ function salvarAquisicaoPeca(dados) {
       const hoje = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
       aba.getRange(pos.proximaLinha, 1, 1, numColumnsPecasAquisicoes).setValues([[
         pos.novoId, pecaId, numeroNF, fornecedor, Utilities.formatDate(data, 'GMT-3', 'dd/MM/yyyy'),
-        nomeArquivo, url, arquivoId, hoje, ''
+        nomeArquivo, url, arquivoId, hoje, '', ''
       ]]);
       return { sucesso: true, mensagem: 'Aquisição incluída.', id: pos.novoId };
     });

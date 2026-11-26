@@ -1,0 +1,234 @@
+    <!-- ===================================================== -->
+    <!-- COMPRAS > NOTAS FISCAIS: consulta (NotasFiscaisJS)    -->
+    <!-- ===================================================== -->
+    <section id="page-notas-view" class="spa-page">
+      <div class="page-header">
+        <div class="nf-cabecalho">
+          <h1>🧾 Notas fiscais</h1>
+          <div class="nf-cabecalho-botoes">
+            <button type="button" class="btn-secondary" onclick="limparFiltrosNotasFiscais()">Limpar</button>
+            <button type="button" class="btn-success" onclick="trocarPagina('notas-form')">+ Nova nota</button>
+            <button type="button" class="btn-primary" onclick="consultarNotasFiscais()">Consultar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <form autocomplete="off" onsubmit="consultarNotasFiscais(); return false;" class="nf-filtros">
+          <div class="field">
+            <label class="field__label" for="nfFiltroTexto">Busca</label>
+            <input class="field__input" type="text" id="nfFiltroTexto" placeholder="Número, chave, item, código...">
+          </div>
+          <div class="field">
+            <label class="field__label" for="nfFiltroFornecedor">Fornecedor</label>
+            <input class="field__input" type="text" id="nfFiltroFornecedor" placeholder="Nome do fornecedor...">
+          </div>
+          <div class="field">
+            <label class="field__label" for="nfFiltroDe">Emissão de</label>
+            <input class="field__input" type="date" id="nfFiltroDe">
+          </div>
+          <div class="field">
+            <label class="field__label" for="nfFiltroAte">até</label>
+            <input class="field__input" type="date" id="nfFiltroAte">
+          </div>
+          <div class="field">
+            <label class="field__label" for="nfFiltroSituacao">Situação</label>
+            <select class="field__select" id="nfFiltroSituacao">
+              <option value="ativas">Ativas</option>
+              <option value="desativadas">Desativadas</option>
+              <option value="todas">Todas</option>
+            </select>
+          </div>
+          <label class="nf-filtro-check"><input type="checkbox" id="nfFiltroSemRelacao"> Só com itens sem relação com o cadastro</label>
+          <button type="submit" style="display:none;"></button>
+        </form>
+
+        <div id="notasResumo" class="nf-resumo"></div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr><th>Número</th><th>Fornecedor</th><th>Emissão</th><th>Valor</th><th>Itens</th><th>Garantia</th><th>Anexos</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="notasTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================== -->
+    <!-- COMPRAS > NOTAS FISCAIS: cadastro / edição             -->
+    <!-- ===================================================== -->
+    <section id="page-notas-form" class="spa-page">
+      <div class="page-header">
+        <div class="nf-cabecalho">
+          <h1 id="nfFormTitulo">🧾 Nova nota fiscal</h1>
+          <div class="nf-cabecalho-botoes">
+            <button type="button" class="btn-secondary" onclick="trocarPagina('notas-view')">Cancelar</button>
+            <button type="button" class="btn-success" onclick="salvarNotaFiscalUI()">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <form id="formNotaFiscal" autocomplete="off" onsubmit="return false;">
+          <input type="hidden" id="nfId" value="">
+          <datalist id="nfFornecedoresLista"></datalist>
+
+          <div class="nf-importar">
+            <button type="button" class="btn-primary" style="width:auto;" onclick="document.getElementById('nfXmlArquivo').click()">📥 Importar XML da NF-e</button>
+            <input type="file" id="nfXmlArquivo" accept=".xml,text/xml,application/xml" style="display:none;" data-ignorar-alteracao onchange="importarXmlNotaUI()">
+            <span id="nfXmlStatus" class="nf-xml-status"></span>
+          </div>
+
+          <fieldset class="fieldset-principal">
+            <legend class="fieldset-legend">Dados da nota</legend>
+            <div class="nf-grid-dados">
+              <div class="field">
+                <label class="field__label" for="nfNumero">Número *</label>
+                <input class="field__input" type="text" id="nfNumero">
+              </div>
+              <div class="field">
+                <label class="field__label" for="nfSerie">Série</label>
+                <input class="field__input" type="text" id="nfSerie">
+              </div>
+              <div class="field">
+                <label class="field__label" for="nfDataEmissao">Data de emissão *</label>
+                <input class="field__input" type="date" id="nfDataEmissao" onchange="nfEmissaoMudou()">
+              </div>
+              <div class="field">
+                <label class="field__label" for="nfValorTotal">Valor total (R$)</label>
+                <input class="field__input" type="text" id="nfValorTotal" inputmode="decimal" placeholder="0,00">
+              </div>
+              <div class="field nf-campo-largo">
+                <label class="field__label" for="nfFornecedor">Fornecedor *</label>
+                <input class="field__input" type="text" id="nfFornecedor" list="nfFornecedoresLista" placeholder="Escolha da lista ou digite..." onchange="nfFornecedorEscolhido()">
+              </div>
+              <div class="field">
+                <label class="field__label" for="nfFornecedorCnpj">CNPJ do fornecedor</label>
+                <input class="field__input" type="text" id="nfFornecedorCnpj" placeholder="00.000.000/0000-00">
+              </div>
+              <div class="field nf-campo-largo">
+                <label class="field__label" for="nfChave">Chave de acesso</label>
+                <input class="field__input" type="text" id="nfChave" placeholder="44 dígitos">
+              </div>
+              <div class="field nf-campo-inteiro">
+                <label class="field__label" for="nfObservacao">Observação</label>
+                <textarea class="field__input" id="nfObservacao" rows="2"></textarea>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="fieldset-principal">
+            <legend class="fieldset-legend">Garantia</legend>
+            <div class="nf-garantia-tipo">
+              <label><input type="radio" name="nfGarantiaTipo" value="geral" checked onchange="nfMudouTipoGarantia()"> Geral (vale para todos os itens da nota)</label>
+              <label><input type="radio" name="nfGarantiaTipo" value="produto" onchange="nfMudouTipoGarantia()"> Por produto</label>
+            </div>
+            <p class="nf-ajuda" id="nfGarantiaAjuda"></p>
+            <div class="nf-garantia-geral">
+              <strong id="nfGarantiaGeralRotulo">Garantia geral *</strong>
+              <div class="field">
+                <label class="field__label" for="nfGarantiaMeses">Meses</label>
+                <input class="field__input" type="text" id="nfGarantiaMeses" inputmode="numeric" placeholder="Ex: 12" oninput="nfMesesGeralMudou()">
+              </div>
+              <div class="field">
+                <label class="field__label" for="nfGarantiaAte">Até (data final)</label>
+                <input class="field__input" type="date" id="nfGarantiaAte">
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="fieldset-principal">
+            <legend class="fieldset-legend">Itens da nota</legend>
+            <p class="nf-ajuda">Relacione cada item a uma peça/produto do cadastro (ou cadastre um novo). A relação fornecedor + código fica guardada e o próximo XML desse fornecedor já vem relacionado.</p>
+            <div id="nfItensResumo" class="nf-resumo"></div>
+            <div class="table-wrapper">
+              <table class="data-table nf-itens-tabela">
+                <thead>
+                  <tr><th>#</th><th>Código no fornecedor</th><th>Descrição *</th><th>Qtd</th><th>Valor unit.</th><th>Total</th>
+                    <th>Relação com o cadastro</th><th class="nf-col-garantia" style="display:none;">Garantia do produto (meses / até)</th><th></th></tr>
+                </thead>
+                <tbody id="nfItensLista"></tbody>
+              </table>
+            </div>
+            <button type="button" class="btn-secondary" style="width:auto; margin-top:0.75rem;" onclick="incluirItemNotaUI()">+ Incluir item</button>
+          </fieldset>
+
+          <fieldset class="fieldset-principal">
+            <legend class="fieldset-legend">Nota escaneada e anexos</legend>
+            <div id="nfAnexosLista"></div>
+            <div class="nf-anexo-novo">
+              <select class="field__select" id="nfAnexoTipo" data-ignorar-alteracao>
+                <option>Nota escaneada</option>
+                <option>XML</option>
+                <option>Outro</option>
+              </select>
+              <button type="button" class="btn-secondary" style="width:auto;" onclick="document.getElementById('nfAnexoArquivos').click()">📎 Incluir arquivo</button>
+              <input type="file" id="nfAnexoArquivos" multiple accept="application/pdf,image/*,.xml" style="display:none;" data-ignorar-alteracao onchange="incluirArquivosNotaUI()">
+              <small>PDF, imagem ou XML, até 3 MB cada. A nota escaneada vai também para as aquisições dos itens relacionados.</small>
+            </div>
+            <div id="nfAnexosPendentes" class="modal-email-anexos-selecionados"></div>
+          </fieldset>
+        </form>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="trocarPagina('notas-view')">Cancelar</button>
+          <button type="button" class="btn-success" onclick="salvarNotaFiscalUI()">Salvar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================== -->
+    <!-- COMPRAS > PRODUTOS x FORNECEDORES                      -->
+    <!-- ===================================================== -->
+    <section id="page-produto-fornecedor-view" class="spa-page">
+      <div class="page-header">
+        <div class="nf-cabecalho">
+          <h1>🔗 Produtos x fornecedores</h1>
+          <div class="nf-cabecalho-botoes">
+            <button type="button" class="btn-primary" onclick="consultarProdutoFornecedor()">Consultar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="nf-ajuda">Como cada fornecedor identifica as peças/produtos do cadastro (código e descrição na nota fiscal). As relações são gravadas ao salvar as notas e usadas para relacionar sozinho os itens do próximo XML.</p>
+        <form autocomplete="off" onsubmit="return false;" class="nf-pf-form">
+          <div class="field">
+            <label class="field__label" for="pfPeca">Peça/produto do cadastro *</label>
+            <select class="field__select" id="pfPeca"></select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="pfFornecedor">Fornecedor *</label>
+            <input class="field__input" type="text" id="pfFornecedor" list="nfFornecedoresLista" onchange="pfFornecedorEscolhido()">
+          </div>
+          <div class="field">
+            <label class="field__label" for="pfCnpj">CNPJ</label>
+            <input class="field__input" type="text" id="pfCnpj">
+          </div>
+          <div class="field">
+            <label class="field__label" for="pfCodigo">Código no fornecedor *</label>
+            <input class="field__input" type="text" id="pfCodigo">
+          </div>
+          <div class="field">
+            <label class="field__label" for="pfDescricao">Descrição no fornecedor</label>
+            <input class="field__input" type="text" id="pfDescricao">
+          </div>
+          <button type="button" class="btn-success" style="width:auto;" onclick="incluirProdutoFornecedorUI()">Incluir</button>
+        </form>
+
+        <div class="field" style="max-width:24rem; margin:1rem 0 0.75rem;">
+          <label class="field__label" for="pfFiltroTexto">Busca</label>
+          <input class="field__input" type="text" id="pfFiltroTexto" placeholder="Item, fornecedor, código..." oninput="consultarProdutoFornecedor()">
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr><th>Peça/produto</th><th>Tipo</th><th>Fornecedor</th><th>CNPJ</th><th>Código</th><th>Descrição no fornecedor</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="pfTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>

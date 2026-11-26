@@ -40,6 +40,10 @@ Depois de publicar, cada usuário precisa **autorizar de novo** o app (envio de 
 
 A aba `tbl_modelos_email` é criada sozinha ao abrir **Configuração → Modelos de e-mail**, e a `tbl_chamado_emails` no primeiro envio (ou as duas com `criarTabelasNovasSeNecessario()`).
 
+### Compras
+
+As abas `tbl_notas_fiscais`, `tbl_notas_fiscais_itens`, `tbl_notas_fiscais_anexos` e `tbl_produto_fornecedor` são criadas sozinhas na primeira nota salva ou relação incluída (ou com `criarTabelasNovasSeNecessario()`). Na aba `tbl_pecas_aquisicoes` já existente, o cabeçalho da coluna K (NF_ID) é criado no mesmo momento. O XML da NF-e é lido no navegador; os arquivos vão para a pasta de anexos do Drive.
+
 ### Garantias
 
 As abas `tbl_garantias`, `tbl_garantia_historico` e `tbl_garantia_anexos` são criadas sozinhas na primeira garantia aberta (ou com `criarTabelasNovasSeNecessario()`). A coluna **S (Tipo)** de `tbl_pecas` é preenchida ao salvar cada item; os itens antigos ficam vazios e contam como peça.

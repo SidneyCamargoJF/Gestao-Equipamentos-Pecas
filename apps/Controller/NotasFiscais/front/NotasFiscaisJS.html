@@ -1,0 +1,635 @@
+<script>
+  // =====================================================
+  // COMPRAS > NOTAS FISCAIS (consulta #page-notas-view, cadastro
+  // #page-notas-form) e PRODUTOS x FORNECEDORES (#page-produto-fornecedor-view)
+  // Backend: apps/Controller/NotasFiscais/back/NotasFiscaisBackend.js
+  // =====================================================
+
+  let nfLista = [];
+  let nfItens = [];                 // itens da nota em edição
+  let nfAnexosPendentes = [];       // [{ nome, tipo, base64, tipoAnexo }] -- vão no Salvar
+  let nfFornecedores = [];          // [{ nome, fantasia, cnpj }]
+  let nfEstoqueCache = null;        // itens do cadastro de peças/produtos (busca da relação)
+  let nfItemRelacionando = null;    // índice do item na modal de relação
+  let nfNotaAtual = null;
+
+  function nfEsc(s) {
+    return String(s === undefined || s === null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function nfMoeda(v) {
+    if (v === '' || v === null || v === undefined || isNaN(Number(v))) return '';
+    return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  // "1.234,56" | "1234.56" | 1234.56 -> número ('' se vazio/inválido)
+  function nfNumero(v) {
+    if (v === '' || v === null || v === undefined) return '';
+    if (typeof v === 'number') return v;
+    const s = String(v).trim();
+    if (!s) return '';
+    const n = Number(/,\d+$/.test(s) ? s.replace(/\./g, '').replace(',', '.') : s);
+    return isFinite(n) ? n : '';
+  }
+
+  // 'dd/MM/yyyy' -> 'yyyy-MM-dd' (input date); já ISO fica igual
+  function nfDataInput(t) {
+    const s = String(t || '');
+    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    return m ? `${m[3]}-${m[2]}-${m[1]}` : (/^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : '');
+  }
+
+  // emissão ('yyyy-MM-dd') + meses -> 'yyyy-MM-dd'
+  function nfSomarMeses(isoData, meses) {
+    const m = String(isoData || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const n = Number(meses);
+    if (!m || meses === '' || !isFinite(n) || n < 0) return '';
+    const base = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    const d = new Date(base.getFullYear(), base.getMonth() + n, base.getDate());
+    if (d.getDate() !== base.getDate()) d.setDate(0);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  function nfFormatarCnpj(c) {
+    const d = String(c || '').replace(/\D/g, '');
+    return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : d;
+  }
+
+  async function nfCarregarFornecedores() {
+    try { nfFornecedores = await runServerFunction('listarFornecedoresNF') || []; } catch (e) { nfFornecedores = []; }
+    ['nfFornecedoresLista'].forEach(id => {
+      const dl = document.getElementById(id);
+      if (dl) dl.innerHTML = nfFornecedores.map(f => `<option value="${nfEsc(f.nome)}">${nfEsc(f.fantasia || '')} ${nfEsc(nfFormatarCnpj(f.cnpj))}</option>`).join('');
+    });
+  }
+
+  async function nfCarregarEstoque(forcar) {
+    if (nfEstoqueCache && !forcar) return nfEstoqueCache;
+    try {
+      const lista = await runServerFunction('FiltrarPecas', {});
+      nfEstoqueCache = Array.isArray(lista) ? lista.filter(p => !p.desativada) : [];
+    } catch (e) { nfEstoqueCache = []; }
+    return nfEstoqueCache;
+  }
+
+  // ===================================================
+  // CONSULTA
+  // ===================================================
+  async function renderNotasFiscais() {
+    await consultarNotasFiscais();
+  }
+
+  function filtrosNotasFiscais() {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    return {
+      texto: v('nfFiltroTexto').trim(), fornecedor: v('nfFiltroFornecedor').trim(),
+      de: v('nfFiltroDe'), ate: v('nfFiltroAte'), situacao: v('nfFiltroSituacao') || 'ativas',
+      semRelacao: !!(document.getElementById('nfFiltroSemRelacao') || {}).checked
+    };
+  }
+
+  async function consultarNotasFiscais() {
+    const tbody = document.getElementById('notasTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    try {
+      const r = await runServerFunction('listarNotasFiscais', filtrosNotasFiscais());
+      if (r && r.sucesso === false) throw new Error(r.mensagem);
+      nfLista = (r && r.notas) || [];
+      renderTabelaNotasFiscais();
+    } catch (e) {
+      console.error('Erro ao consultar notas fiscais:', e);
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Erro ao buscar as notas fiscais.</td></tr>';
+    }
+  }
+
+  function limparFiltrosNotasFiscais() {
+    ['nfFiltroTexto', 'nfFiltroFornecedor', 'nfFiltroDe', 'nfFiltroAte'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const sit = document.getElementById('nfFiltroSituacao'); if (sit) sit.value = 'ativas';
+    const sem = document.getElementById('nfFiltroSemRelacao'); if (sem) sem.checked = false;
+    consultarNotasFiscais();
+  }
+
+  function renderTabelaNotasFiscais() {
+    const tbody = document.getElementById('notasTableBody');
+    const resumo = document.getElementById('notasResumo');
+    if (!tbody) return;
+    if (resumo) {
+      const semRel = nfLista.filter(n => n.qtdSemRelacao).length;
+      resumo.textContent = nfLista.length ? `${nfLista.length} nota${nfLista.length === 1 ? '' : 's'}${semRel ? ` — ${semRel} com itens sem relação com o cadastro` : ''}` : '';
+    }
+    if (!nfLista.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Nenhuma nota fiscal encontrada.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = nfLista.map(n => `
+      <tr class="${n.desativada ? 'linha-desativada' : ''}">
+        <td><strong>${nfEsc(n.numero)}</strong>${n.serie ? ' <small>série ' + nfEsc(n.serie) + '</small>' : ''}${n.desativada ? ' <span class="status-desativado">(Desativada)</span>' : ''}</td>
+        <td>${nfEsc(n.fornecedor)}${n.fornecedorCnpj ? '<br><small>' + nfEsc(nfFormatarCnpj(n.fornecedorCnpj)) + '</small>' : ''}</td>
+        <td>${nfEsc(n.dataEmissao)}</td>
+        <td>${nfMoeda(n.valorTotal)}</td>
+        <td>${n.qtdItens}${n.qtdSemRelacao ? ` <span class="nf-alerta" title="Itens sem relação com o cadastro de peças/produtos">${n.qtdSemRelacao} sem relação</span>` : ''}</td>
+        <td>${nfEsc(n.garantiaResumo)}</td>
+        <td>${n.qtdAnexos ? '📎 ' + n.qtdAnexos : '<span class="nf-alerta" title="Sem nota escaneada">sem anexo</span>'}</td>
+        <td class="acao-cell">
+          ${n.desativada
+            ? `<button class="btn-acao" title="Reativar" onclick="reativarNotaFiscalUI(${Number(n.id)})">♻️</button>`
+            : `<button class="btn-acao" title="Editar" onclick="trocarPagina('notas-form', ${Number(n.id)})">✏️</button>
+               <button class="btn-acao" title="Desativar" onclick="desativarNotaFiscalUI(${Number(n.id)})">🗑️</button>`}
+        </td>
+      </tr>`).join('');
+  }
+
+  async function desativarNotaFiscalUI(id) {
+    if (!confirm('Desativar esta nota fiscal? As aquisições que ela gerou nos itens também saem.')) return;
+    const r = await runServerFunction('desativarNotaFiscal', id);
+    alert(r.mensagem);
+    if (r.sucesso) consultarNotasFiscais();
+  }
+
+  async function reativarNotaFiscalUI(id) {
+    const r = await runServerFunction('reativarNotaFiscal', id);
+    alert(r.mensagem);
+    if (r.sucesso) consultarNotasFiscais();
+  }
+
+  // ===================================================
+  // CADASTRO / EDIÇÃO
+  // ===================================================
+  async function renderNotasForm(id) {
+    nfItens = [];
+    nfAnexosPendentes = [];
+    nfNotaAtual = null;
+    const form = document.getElementById('formNotaFiscal');
+    if (form) form.reset();
+    document.getElementById('nfId').value = id || '';
+    document.getElementById('nfFormTitulo').textContent = id ? '✏️ Editar nota fiscal' : '🧾 Nova nota fiscal';
+    const xmlStatus = document.getElementById('nfXmlStatus');
+    if (xmlStatus) xmlStatus.textContent = '';
+    nfDefinirTipoGarantia('geral');
+    renderItensNota();
+    renderAnexosNota([]);
+    await nfCarregarFornecedores();
+    if (!id) return;
+
+    exibirModal('processando');
+    let r;
+    try { r = await runServerFunction('buscarNotaFiscal', id); } catch (e) { r = { sucesso: false, mensagem: 'Erro ao conectar com o servidor.' }; }
+    finally { fecharModal('processando'); }
+    if (!r || !r.sucesso) { alert((r && r.mensagem) || 'Nota não encontrada.'); return; }
+    const n = r.nota;
+    nfNotaAtual = n;
+    const set = (idCampo, v) => { const el = document.getElementById(idCampo); if (el) el.value = v === undefined || v === null ? '' : v; };
+    set('nfNumero', n.numero); set('nfSerie', n.serie); set('nfChave', n.chave);
+    set('nfDataEmissao', nfDataInput(n.dataEmissao)); set('nfValorTotal', n.valorTotal === '' ? '' : String(n.valorTotal).replace('.', ','));
+    set('nfFornecedor', n.fornecedor); set('nfFornecedorCnpj', nfFormatarCnpj(n.fornecedorCnpj)); set('nfObservacao', n.observacao);
+    set('nfGarantiaMeses', n.garantiaMeses); set('nfGarantiaAte', nfDataInput(n.garantiaAte));
+    nfDefinirTipoGarantia(n.garantiaTipo);
+    nfItens = n.itens.map(i => ({
+      itemNum: i.itemNum, codigo: i.codigo, descricao: i.descricao, ncm: i.ncm, unidade: i.unidade,
+      quantidade: i.quantidade, valorUnitario: i.valorUnitario, valorTotal: i.valorTotal,
+      pecaId: i.pecaId, pecaNome: i.pecaNome, pecaTipo: i.pecaTipo, relacaoAuto: false,
+      garantiaMeses: i.garantiaMeses, garantiaAte: nfDataInput(i.garantiaAte)
+    }));
+    renderItensNota();
+    renderAnexosNota(n.anexos || []);
+  }
+
+  // ----- fornecedor: escolhido da lista preenche o CNPJ
+  function nfFornecedorEscolhido() {
+    const nome = (document.getElementById('nfFornecedor').value || '').trim().toLowerCase();
+    const f = nfFornecedores.find(x => x.nome.toLowerCase() === nome || (x.fantasia && x.fantasia.toLowerCase() === nome));
+    if (f) {
+      document.getElementById('nfFornecedor').value = f.nome;
+      document.getElementById('nfFornecedorCnpj').value = nfFormatarCnpj(f.cnpj);
+    }
+  }
+
+  // ----- garantia: geral ou por produto
+  function nfTipoGarantia() {
+    const marcado = document.querySelector('input[name="nfGarantiaTipo"]:checked');
+    return marcado ? marcado.value : 'geral';
+  }
+
+  function nfDefinirTipoGarantia(tipo) {
+    const t = tipo === 'produto' ? 'produto' : 'geral';
+    document.querySelectorAll('input[name="nfGarantiaTipo"]').forEach(r => { r.checked = r.value === t; });
+    const ajuda = document.getElementById('nfGarantiaAjuda');
+    if (ajuda) {
+      ajuda.textContent = t === 'produto'
+        ? 'Informe a garantia de cada produto na lista de itens. Os itens sem garantia própria usam a garantia geral abaixo (se não houver nenhuma das duas, o sistema pede).'
+        : 'A garantia geral vale para todos os itens da nota. Ela é obrigatória.';
+    }
+    const rotulo = document.getElementById('nfGarantiaGeralRotulo');
+    if (rotulo) rotulo.textContent = t === 'produto' ? 'Garantia geral (para itens sem garantia própria)' : 'Garantia geral *';
+    document.querySelectorAll('#page-notas-form .nf-col-garantia').forEach(el => { el.style.display = t === 'produto' ? '' : 'none'; });
+  }
+
+  function nfMudouTipoGarantia() { nfDefinirTipoGarantia(nfTipoGarantia()); }
+
+  // meses -> data final (a partir da emissão)
+  function nfMesesGeralMudou() {
+    const ate = nfSomarMeses(document.getElementById('nfDataEmissao').value, document.getElementById('nfGarantiaMeses').value.trim());
+    if (ate) document.getElementById('nfGarantiaAte').value = ate;
+  }
+
+  function nfEmissaoMudou() {
+    if (document.getElementById('nfGarantiaMeses').value.trim()) nfMesesGeralMudou();
+    nfItens.forEach(it => { if (it.garantiaMeses !== '' && it.garantiaMeses !== undefined) it.garantiaAte = nfSomarMeses(document.getElementById('nfDataEmissao').value, it.garantiaMeses) || it.garantiaAte; });
+    renderItensNota();
+  }
+
+  // ----- itens
+  function incluirItemNotaUI() {
+    nfItens.push({ itemNum: nfItens.length + 1, codigo: '', descricao: '', ncm: '', unidade: '', quantidade: 1, valorUnitario: '', valorTotal: '',
+      pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false, garantiaMeses: '', garantiaAte: '' });
+    renderItensNota();
+    const linhas = document.querySelectorAll('#nfItensLista tr');
+    const ult = linhas[linhas.length - 1];
+    const campo = ult && ult.querySelector('input[data-campo="descricao"]');
+    if (campo) campo.focus();
+  }
+
+  function removerItemNotaUI(i) {
+    nfItens.splice(i, 1);
+    renderItensNota();
+  }
+
+  function nfAtualizarItem(i, campo, valor) {
+    const it = nfItens[i];
+    if (!it) return;
+    it[campo] = valor;
+    if (campo === 'quantidade' || campo === 'valorUnitario') {
+      const q = nfNumero(it.quantidade), u = nfNumero(it.valorUnitario);
+      if (q !== '' && u !== '') {
+        it.valorTotal = Math.round(q * u * 100) / 100;
+        const tot = document.querySelector(`#nfItensLista tr[data-i="${i}"] .nf-item-total`);
+        if (tot) tot.textContent = nfMoeda(it.valorTotal);
+      }
+    }
+    if (campo === 'garantiaMeses') {
+      const ate = nfSomarMeses(document.getElementById('nfDataEmissao').value, String(valor).trim());
+      if (ate) {
+        it.garantiaAte = ate;
+        const el = document.querySelector(`#nfItensLista tr[data-i="${i}"] input[data-campo="garantiaAte"]`);
+        if (el) el.value = ate;
+      }
+    }
+  }
+
+  function renderItensNota() {
+    const tbody = document.getElementById('nfItensLista');
+    const resumo = document.getElementById('nfItensResumo');
+    if (!tbody) return;
+    const porProduto = nfTipoGarantia() === 'produto';
+    if (!nfItens.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Nenhum item. Importe o XML da NF-e ou clique em "+ Incluir item".</td></tr>';
+      if (resumo) resumo.textContent = '';
+      return;
+    }
+    const inp = (i, campo, valor, extra) => `<input class="field__input nf-input" data-campo="${campo}" value="${nfEsc(valor)}" ${extra || ''} oninput="nfAtualizarItem(${i}, '${campo}', this.value)">`;
+    tbody.innerHTML = nfItens.map((it, i) => {
+      const relacao = it.pecaId
+        ? `<span class="nf-relacao">🔗 <strong>${nfEsc(it.pecaNome)}</strong> <small>(${it.pecaTipo === 'produto' ? 'Produto' : 'Peça'}${it.relacaoAuto ? ', pelo código do fornecedor' : ''})</small></span>
+           <span class="nf-relacao-botoes"><button type="button" class="btn-link" onclick="abrirRelacaoItemNotaUI(${i})">Trocar</button>
+           <button type="button" class="btn-link" onclick="desfazerRelacaoItemNotaUI(${i})">Desfazer</button></span>`
+        : `<span class="nf-sem-relacao">Sem relação</span>
+           <span class="nf-relacao-botoes"><button type="button" class="btn-link" onclick="abrirRelacaoItemNotaUI(${i})">Escolher do cadastro</button>
+           <button type="button" class="btn-link" onclick="abrirRelacaoItemNotaUI(${i}, true)">Cadastrar novo</button></span>`;
+      return `
+        <tr data-i="${i}">
+          <td>${i + 1}</td>
+          <td>${inp(i, 'codigo', it.codigo, 'placeholder="Código"')}</td>
+          <td>${inp(i, 'descricao', it.descricao, 'placeholder="Descrição *"')}${it.ncm ? '<small class="nf-ncm">NCM ' + nfEsc(it.ncm) + '</small>' : ''}</td>
+          <td>${inp(i, 'quantidade', it.quantidade, 'inputmode="decimal" style="width:5rem;"')}</td>
+          <td>${inp(i, 'valorUnitario', it.valorUnitario === '' ? '' : String(it.valorUnitario).replace('.', ','), 'inputmode="decimal" style="width:7rem;"')}</td>
+          <td class="nf-item-total">${nfMoeda(it.valorTotal)}</td>
+          <td class="nf-col-relacao">${relacao}</td>
+          <td class="nf-col-garantia" style="${porProduto ? '' : 'display:none;'}">
+            ${inp(i, 'garantiaMeses', it.garantiaMeses === undefined ? '' : it.garantiaMeses, 'inputmode="numeric" placeholder="Meses" style="width:5rem;"')}
+            <input class="field__input nf-input" type="date" data-campo="garantiaAte" value="${nfEsc(it.garantiaAte || '')}" onchange="nfAtualizarItem(${i}, 'garantiaAte', this.value)">
+          </td>
+          <td><button type="button" class="btn-acao" title="Remover item" onclick="removerItemNotaUI(${i})">✕</button></td>
+        </tr>`;
+    }).join('');
+    if (resumo) {
+      const sem = nfItens.filter(it => !it.pecaId).length;
+      resumo.textContent = `${nfItens.length} ite${nfItens.length === 1 ? 'm' : 'ns'}` + (sem ? ` — ${sem} sem relação com o cadastro` : ' — todos relacionados ao cadastro');
+    }
+  }
+
+  // ----- relação do item com o cadastro (#modalRelacionarItemNF)
+  async function abrirRelacaoItemNotaUI(i, cadastrarNovo) {
+    const it = nfItens[i];
+    if (!it) return;
+    nfItemRelacionando = i;
+    document.getElementById('nfRelItemDescricao').textContent = (it.descricao || '(sem descrição)') + (it.codigo ? ' — código ' + it.codigo : '');
+    document.getElementById('nfRelBusca').value = '';
+    document.getElementById('nfRelNovoNome').value = it.descricao || '';
+    document.getElementById('nfRelNovoModelo').value = '';
+    document.getElementById('nfRelNovoTipo').value = 'produto';
+    document.getElementById('nfRelResultados').innerHTML = '<span class="spinner"></span>Carregando o cadastro...';
+    exibirModal('modalRelacionarItemNF');
+    await nfCarregarEstoque();
+    // sugestão: busca pelas primeiras palavras da descrição
+    const termo = String(it.descricao || '').split(/\s+/).filter(p => p.length > 2).slice(0, 1).join(' ');
+    document.getElementById('nfRelBusca').value = cadastrarNovo ? '' : termo;
+    buscarRelacaoItemNotaUI();
+    setTimeout(() => { const el = document.getElementById(cadastrarNovo ? 'nfRelNovoNome' : 'nfRelBusca'); if (el) el.focus(); }, 50);
+  }
+
+  function buscarRelacaoItemNotaUI() {
+    const termo = (document.getElementById('nfRelBusca').value || '').trim().toLowerCase();
+    const box = document.getElementById('nfRelResultados');
+    const lista = (nfEstoqueCache || []).filter(p => !termo ||
+      [p.nome, p.modelo, p.numero_serie, p.marca].some(v => String(v || '').toLowerCase().includes(termo))).slice(0, 30);
+    box.innerHTML = lista.length ? lista.map(p => `
+      <button type="button" class="nf-rel-opcao" onclick="escolherRelacaoItemNotaUI(${Number(p.id)})">
+        <strong>${nfEsc(p.nome)}</strong> <small>${p.tipo === 'produto' ? 'Produto' : 'Peça'}${p.modelo ? ' · ' + nfEsc(p.modelo) : ''}${p.marca ? ' · ' + nfEsc(p.marca) : ''}${p.numero_serie ? ' · NS ' + nfEsc(p.numero_serie) : ''}</small>
+      </button>`).join('') : '<p class="nf-vazio">Nenhum item do cadastro encontrado. Use "Cadastrar novo" abaixo.</p>';
+  }
+
+  function escolherRelacaoItemNotaUI(pecaId) {
+    const p = (nfEstoqueCache || []).find(x => Number(x.id) === Number(pecaId));
+    const it = nfItens[nfItemRelacionando];
+    if (!p || !it) return;
+    Object.assign(it, { pecaId: Number(p.id), pecaNome: p.nome, pecaTipo: p.tipo || 'peca', relacaoAuto: false });
+    fecharModal('modalRelacionarItemNF');
+    renderItensNota();
+  }
+
+  async function cadastrarItemRelacaoNotaUI() {
+    const it = nfItens[nfItemRelacionando];
+    if (!it) return;
+    const dados = {
+      nome: document.getElementById('nfRelNovoNome').value.trim(),
+      tipo: document.getElementById('nfRelNovoTipo').value,
+      modelo: document.getElementById('nfRelNovoModelo').value.trim(),
+      fornecedor: document.getElementById('nfFornecedor').value.trim(),
+      numeroNF: document.getElementById('nfNumero').value.trim(),
+      dataNF: document.getElementById('nfDataEmissao').value
+    };
+    if (!dados.nome) { alert('Informe o nome do item.'); return; }
+    exibirModal('processando');
+    try {
+      const r = await runServerFunction('criarItemEstoqueDaNota', dados);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao cadastrar o item.'); return; }
+      Object.assign(it, { pecaId: r.item.id, pecaNome: r.item.nome, pecaTipo: r.item.tipo, relacaoAuto: false });
+      if (nfEstoqueCache) nfEstoqueCache.push({ id: r.item.id, nome: r.item.nome, tipo: r.item.tipo });
+      fecharModal('modalRelacionarItemNF');
+      renderItensNota();
+      mostrarMensagem(r.item.tipo === 'produto' ? 'Produto cadastrado e relacionado ao item.' : 'Peça cadastrada e relacionada ao item.', 'sucesso');
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      fecharModal('processando');
+    }
+  }
+
+  function desfazerRelacaoItemNotaUI(i) {
+    const it = nfItens[i];
+    if (!it) return;
+    Object.assign(it, { pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false });
+    renderItensNota();
+  }
+
+  // ----- importação do XML da NF-e
+  function nfTexto(el, tag) {
+    const n = el && el.getElementsByTagName(tag)[0];
+    return n ? String(n.textContent || '').trim() : '';
+  }
+
+  /** Lê o XML da NF-e (nfeProc ou NFe). Erro se não for uma NF-e. */
+  function parsearXmlNotaFiscal(texto) {
+    const doc = new DOMParser().parseFromString(String(texto || ''), 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length) throw new Error('O arquivo não é um XML válido.');
+    const inf = doc.getElementsByTagName('infNFe')[0];
+    if (!inf) throw new Error('O XML não é de uma NF-e (não tem a tag infNFe).');
+    const ide = inf.getElementsByTagName('ide')[0];
+    const emit = inf.getElementsByTagName('emit')[0];
+    const tot = inf.getElementsByTagName('ICMSTot')[0];
+    const chave = String(inf.getAttribute('Id') || '').replace(/\D/g, '') || nfTexto(doc, 'chNFe');
+    const itens = Array.from(inf.getElementsByTagName('det')).map((det, k) => {
+      const prod = det.getElementsByTagName('prod')[0];
+      return {
+        itemNum: Number(det.getAttribute('nItem')) || k + 1,
+        codigo: nfTexto(prod, 'cProd'), descricao: nfTexto(prod, 'xProd'), ncm: nfTexto(prod, 'NCM'), unidade: nfTexto(prod, 'uCom'),
+        quantidade: nfNumero(nfTexto(prod, 'qCom')), valorUnitario: nfNumero(nfTexto(prod, 'vUnCom')), valorTotal: nfNumero(nfTexto(prod, 'vProd'))
+      };
+    });
+    return {
+      numero: nfTexto(ide, 'nNF'), serie: nfTexto(ide, 'serie'), chave: chave,
+      dataEmissao: (nfTexto(ide, 'dhEmi') || nfTexto(ide, 'dEmi')).slice(0, 10),
+      fornecedorCnpj: nfTexto(emit, 'CNPJ') || nfTexto(emit, 'CPF'), fornecedorNome: nfTexto(emit, 'xNome'),
+      fornecedorFantasia: nfTexto(emit, 'xFant'), valorTotal: nfNumero(nfTexto(tot, 'vNF')), itens: itens
+    };
+  }
+
+  function nfLerArquivo(arquivo, comoTexto) {
+    return new Promise((resolve, reject) => {
+      const leitor = new FileReader();
+      leitor.onload = () => resolve(leitor.result);
+      leitor.onerror = () => reject(new Error('Erro ao ler o arquivo "' + arquivo.name + '".'));
+      if (comoTexto) leitor.readAsText(arquivo); else leitor.readAsDataURL(arquivo);
+    });
+  }
+
+  async function importarXmlNotaUI() {
+    const input = document.getElementById('nfXmlArquivo');
+    const arquivo = input && input.files && input.files[0];
+    if (!arquivo) return;
+    input.value = '';
+    const status = document.getElementById('nfXmlStatus');
+    let x;
+    try { x = parsearXmlNotaFiscal(await nfLerArquivo(arquivo, true)); }
+    catch (e) { alert(e.message); return; }
+    if (nfItens.length && !confirm('Trocar os itens atuais pelos ' + x.itens.length + ' itens do XML?')) return;
+
+    const set = (id, v) => { const el = document.getElementById(id); if (el && v !== '' && v !== undefined) el.value = v; };
+    set('nfNumero', x.numero); set('nfSerie', x.serie); set('nfChave', x.chave); set('nfDataEmissao', x.dataEmissao);
+    set('nfValorTotal', x.valorTotal === '' ? '' : String(x.valorTotal).replace('.', ','));
+    // fornecedor: o do cadastro com o mesmo CNPJ; sem cadastro, o nome do XML
+    const f = nfFornecedores.find(z => z.cnpj && z.cnpj === String(x.fornecedorCnpj).replace(/\D/g, ''));
+    set('nfFornecedor', f ? f.nome : x.fornecedorNome);
+    set('nfFornecedorCnpj', nfFormatarCnpj(x.fornecedorCnpj));
+    nfItens = x.itens.map(it => Object.assign(it, { pecaId: null, pecaNome: '', pecaTipo: '', relacaoAuto: false, garantiaMeses: '', garantiaAte: '' }));
+
+    // guarda o XML como anexo da nota
+    try {
+      const base64 = String(await nfLerArquivo(arquivo, false)).split(',')[1] || '';
+      nfAnexosPendentes = nfAnexosPendentes.filter(a => a.tipoAnexo !== 'XML');
+      nfAnexosPendentes.push({ nome: arquivo.name, tipo: 'text/xml', base64: base64, tipoAnexo: 'XML' });
+    } catch (e) { /* o XML só não fica anexado */ }
+
+    // relação automática pelo código do produto no fornecedor
+    let relacionados = 0;
+    try {
+      const r = await runServerFunction('relacionarItensNotaFiscal', x.fornecedorCnpj, f ? f.nome : x.fornecedorNome, nfItens.map(it => ({ codigo: it.codigo })));
+      ((r && r.relacoes) || []).forEach(rel => {
+        const it = nfItens[rel.indice];
+        if (it && rel.pecaId) { Object.assign(it, { pecaId: rel.pecaId, pecaNome: rel.pecaNome, pecaTipo: rel.pecaTipo, relacaoAuto: true }); relacionados++; }
+      });
+    } catch (e) { /* segue sem relação automática */ }
+
+    renderItensNota();
+    renderAnexosPendentesNota();
+    if (status) {
+      status.textContent = `XML importado: nota ${x.numero}, ${x.itens.length} ite${x.itens.length === 1 ? 'm' : 'ns'}, ${relacionados} relacionado${relacionados === 1 ? '' : 's'} pelo código.` +
+        (f ? '' : ' Fornecedor (CNPJ ' + nfFormatarCnpj(x.fornecedorCnpj) + ') não está no cadastro de fornecedores.');
+    }
+  }
+
+  // ----- anexos (nota escaneada, XML, outros)
+  function renderAnexosNota(lista) {
+    const box = document.getElementById('nfAnexosLista');
+    if (!box) return;
+    const nome = n => typeof nomeArquivoSemData === 'function' ? nomeArquivoSemData(n) : n;
+    box.innerHTML = lista.length ? '<div class="anexo-lista">' + lista.map(a => `
+      <div class="anexo-card-wrapper">
+        <a href="${nfEsc(a.url)}" target="_blank" rel="noopener" class="anexo-card" title="${nfEsc(nome(a.nomeArquivo))}">
+          <div class="anexo-card-icone">${a.tipo === 'XML' ? '🧾' : '📄'}</div><span class="anexo-card-nome">${nfEsc(a.tipo)}: ${nfEsc(nome(a.nomeArquivo))}</span>
+        </a>
+        <button type="button" class="anexo-card-excluir" title="Excluir anexo" onclick="excluirAnexoNotaUI(${Number(a.id)})">✕</button>
+      </div>`).join('') + '</div>' : '<p class="nf-vazio">Nenhum arquivo guardado ainda.</p>';
+    renderAnexosPendentesNota();
+  }
+
+  function renderAnexosPendentesNota() {
+    const box = document.getElementById('nfAnexosPendentes');
+    if (!box) return;
+    box.innerHTML = nfAnexosPendentes.map((a, i) =>
+      `<span class="modal-email-anexo-chip">${a.tipoAnexo === 'XML' ? '🧾' : '📎'} ${nfEsc(a.tipoAnexo)}: ${nfEsc(a.nome)} <button type="button" title="Remover" onclick="removerAnexoPendenteNotaUI(${i})">✕</button></span>`
+    ).join('') + (nfAnexosPendentes.length ? ' <small>(vão ser guardados ao salvar)</small>' : '');
+  }
+
+  async function incluirArquivosNotaUI() {
+    const input = document.getElementById('nfAnexoArquivos');
+    const tipoAnexo = (document.getElementById('nfAnexoTipo') || {}).value || 'Nota escaneada';
+    const limite = typeof ANEXO_CADASTRO_TAMANHO_MAX !== 'undefined' ? ANEXO_CADASTRO_TAMANHO_MAX : 3 * 1024 * 1024;
+    const arquivos = Array.from((input && input.files) || []);
+    if (input) input.value = '';
+    for (const f of arquivos) {
+      if (f.size > limite) { alert('O arquivo "' + f.name + '" passa de 3MB.'); continue; }
+      const base64 = String(await nfLerArquivo(f, false)).split(',')[1] || '';
+      nfAnexosPendentes.push({ nome: f.name, tipo: f.type || 'application/octet-stream', base64: base64, tipoAnexo: tipoAnexo });
+    }
+    renderAnexosPendentesNota();
+  }
+
+  function removerAnexoPendenteNotaUI(i) {
+    nfAnexosPendentes.splice(i, 1);
+    renderAnexosPendentesNota();
+  }
+
+  async function excluirAnexoNotaUI(anexoId) {
+    if (!confirm('Excluir este arquivo da nota?')) return;
+    const r = await runServerFunction('excluirAnexoNotaFiscal', anexoId);
+    if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }
+    const id = document.getElementById('nfId').value;
+    const det = await runServerFunction('buscarNotaFiscal', id);
+    renderAnexosNota((det && det.nota && det.nota.anexos) || []);
+  }
+
+  // ----- salvar
+  async function salvarNotaFiscalUI() {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const tipo = nfTipoGarantia();
+    const dados = {
+      id: v('nfId'), numero: v('nfNumero').trim(), serie: v('nfSerie').trim(), chave: v('nfChave').trim(),
+      fornecedor: v('nfFornecedor').trim(), fornecedorCnpj: v('nfFornecedorCnpj').trim(), dataEmissao: v('nfDataEmissao'),
+      valorTotal: v('nfValorTotal').trim(), observacao: v('nfObservacao').trim(),
+      garantiaTipo: tipo, garantiaMeses: v('nfGarantiaMeses').trim(), garantiaAte: v('nfGarantiaAte'),
+      itens: nfItens.map(it => ({
+        itemNum: it.itemNum, codigo: it.codigo, descricao: String(it.descricao || '').trim(), ncm: it.ncm, unidade: it.unidade,
+        quantidade: it.quantidade, valorUnitario: it.valorUnitario, valorTotal: it.valorTotal, pecaId: it.pecaId || '',
+        garantiaMeses: tipo === 'produto' ? it.garantiaMeses : '', garantiaAte: tipo === 'produto' ? it.garantiaAte : ''
+      })),
+      arquivos: nfAnexosPendentes
+    };
+    if (!dados.numero) { alert('Informe o número da nota.'); return; }
+    if (!dados.fornecedor) { alert('Informe o fornecedor.'); return; }
+    if (!dados.dataEmissao) { alert('Informe a data de emissão.'); return; }
+    if (!dados.itens.length) { alert('Inclua pelo menos um item (ou importe o XML da NF-e).'); return; }
+    if (dados.itens.some(it => !it.descricao)) { alert('Todos os itens precisam de descrição.'); return; }
+    if (tipo === 'geral' && !dados.garantiaMeses && !dados.garantiaAte) {
+      alert('Informe a garantia geral da nota (meses ou data final). Se cada produto tiver a sua, escolha "Por produto".');
+      const el = document.getElementById('nfGarantiaMeses'); if (el) el.focus();
+      return;
+    }
+
+    exibirModal('processando');
+    try {
+      const r = await runServerFunction('salvarNotaFiscal', dados);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao salvar a nota.'); return; }
+      if (typeof marcarFormularioSalvo === 'function') marcarFormularioSalvo();
+      nfEstoqueCache = null;
+      alert(r.mensagem);
+      trocarPagina('notas-view');
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      fecharModal('processando');
+    }
+  }
+
+  // ===================================================
+  // PRODUTOS x FORNECEDORES
+  // ===================================================
+  let pfLista = [];
+
+  async function renderProdutoFornecedor() {
+    await nfCarregarFornecedores();
+    const estoque = await nfCarregarEstoque(true);
+    const sel = document.getElementById('pfPeca');
+    if (sel) {
+      sel.innerHTML = '<option value="">Escolha a peça/produto...</option>' + estoque
+        .slice().sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'))
+        .map(p => `<option value="${Number(p.id)}">${nfEsc(p.nome)}${p.modelo ? ' — ' + nfEsc(p.modelo) : ''} (${p.tipo === 'produto' ? 'Produto' : 'Peça'})</option>`).join('');
+    }
+    await consultarProdutoFornecedor();
+  }
+
+  async function consultarProdutoFornecedor() {
+    const tbody = document.getElementById('pfTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    const r = await runServerFunction('listarProdutoFornecedor', { texto: ((document.getElementById('pfFiltroTexto') || {}).value || '').trim() });
+    pfLista = (r && r.relacoes) || [];
+    if (!tbody) return;
+    tbody.innerHTML = pfLista.length ? pfLista.map(x => `
+      <tr>
+        <td>${nfEsc(x.pecaNome)}</td>
+        <td>${x.pecaTipo === 'produto' ? 'Produto' : 'Peça'}</td>
+        <td>${nfEsc(x.fornecedor)}</td>
+        <td>${nfEsc(nfFormatarCnpj(x.cnpj))}</td>
+        <td><strong>${nfEsc(x.codigo)}</strong></td>
+        <td>${nfEsc(x.descricao)}</td>
+        <td class="acao-cell"><button class="btn-acao" title="Excluir" onclick="excluirProdutoFornecedorUI(${Number(x.id)})">🗑️</button></td>
+      </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;">Nenhuma relação encontrada.</td></tr>';
+  }
+
+  function pfFornecedorEscolhido() {
+    const nome = (document.getElementById('pfFornecedor').value || '').trim().toLowerCase();
+    const f = nfFornecedores.find(x => x.nome.toLowerCase() === nome || (x.fantasia && x.fantasia.toLowerCase() === nome));
+    if (f) { document.getElementById('pfFornecedor').value = f.nome; document.getElementById('pfCnpj').value = nfFormatarCnpj(f.cnpj); }
+  }
+
+  async function incluirProdutoFornecedorUI() {
+    const v = id => ((document.getElementById(id) || {}).value || '').trim();
+    const dados = { pecaId: v('pfPeca'), fornecedor: v('pfFornecedor'), cnpj: v('pfCnpj'), codigo: v('pfCodigo'), descricao: v('pfDescricao') };
+    if (!dados.pecaId) { alert('Escolha a peça/produto.'); return; }
+    if (!dados.fornecedor) { alert('Informe o fornecedor.'); return; }
+    if (!dados.codigo) { alert('Informe o código do produto no fornecedor.'); return; }
+    const r = await runServerFunction('salvarProdutoFornecedor', dados);
+    if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao gravar.'); return; }
+    mostrarMensagem(r.mensagem, 'sucesso');
+    ['pfCodigo', 'pfDescricao'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    consultarProdutoFornecedor();
+  }
+
+  async function excluirProdutoFornecedorUI(id) {
+    if (!confirm('Excluir esta relação produto x fornecedor?')) return;
+    const r = await runServerFunction('excluirProdutoFornecedor', id);
+    if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }
+    consultarProdutoFornecedor();
+  }
+</script>

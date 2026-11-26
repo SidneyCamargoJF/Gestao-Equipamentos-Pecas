@@ -294,6 +294,35 @@ Aquisições (compras) de uma peça/produto, com a nota fiscal. Criada sozinha n
 | H | ID do arquivo no Drive (usado para anexar no e-mail) |
 | I | Data de cadastro |
 | J | Data de exclusão |
+| K | ID da nota fiscal de origem (`tbl_notas_fiscais`), quando veio de Compras |
+
+## tbl_notas_fiscais — [NotasFiscaisModel.js](../apps/01-Model/NotasFiscaisModel.js) (0-based)
+
+Cabeçalho da nota (Compras → Notas fiscais). As quatro abas de Compras são criadas sozinhas no primeiro uso (ou por `criarTabelasNovasSeNecessario()`).
+
+| Col | Conteúdo |
+|---|---|
+| A | ID |
+| B | Número |
+| C | Série |
+| D | Chave de acesso (44 dígitos) |
+| E | Fornecedor (nome) |
+| F | CNPJ do fornecedor (só dígitos) |
+| G | Data de emissão |
+| H | Valor total |
+| I | Tipo de garantia: `geral` ou `produto` |
+| J | Garantia geral (meses) |
+| K | Garantia geral (data final) |
+| L | Observação |
+| M | Data de cadastro |
+| N | Data de alteração |
+| O | Data de exclusão |
+
+**tbl_notas_fiscais_itens** (0-based): ID, ID da nota, nº do item, código no fornecedor, descrição, NCM, unidade, quantidade, valor unitário, valor total, ID da peça/produto relacionado (vazio = sem relação), garantia do produto (meses), garantia do produto (data final), data de exclusão. Ao alterar a nota, os itens anteriores recebem a data de exclusão e os atuais são gravados de novo.
+
+**tbl_notas_fiscais_anexos** (0-based): formato das outras tabelas de anexo; tipos Nota escaneada, XML e Outro.
+
+**tbl_produto_fornecedor** (0-based): ID, ID da peça/produto, fornecedor, CNPJ, código no fornecedor, descrição no fornecedor, data de cadastro, data de exclusão. Usada para relacionar sozinho os itens do XML (fornecedor + código).
 
 ## tbl_fornecedor — [FornecedorModel.js](../apps/01-Model/FornecedorModel.js) (1-based)
 

@@ -35,7 +35,7 @@ O cadastro de **Peças e Estoque** guarda peças e produtos adquiridos que ficam
 
 As peças com garantia vencendo aparecem na **Agenda**.
 
-**Aquisições (notas fiscais):** na edição do item, a seção **Aquisições** guarda cada compra do mesmo item, que pode ter sido adquirido em épocas e de fornecedores diferentes: **nº da nota**, **fornecedor**, **data de aquisição** e o **arquivo da nota** (PDF ou imagem, até 3 MB). Inclua e exclua na própria lista; a gravação é na hora (não precisa clicar em Salvar). Num item novo, salve primeiro.
+**Aquisições (notas fiscais):** as notas lançadas em **Compras → Notas fiscais** entram aqui sozinhas para os itens relacionados. Na edição do item, a seção **Aquisições** guarda cada compra do mesmo item, que pode ter sido adquirido em épocas e de fornecedores diferentes: **nº da nota**, **fornecedor**, **data de aquisição** e o **arquivo da nota** (PDF ou imagem, até 3 MB). Inclua e exclua na própria lista; a gravação é na hora (não precisa clicar em Salvar). Num item novo, salve primeiro.
 
 **Consulta:** filtro e coluna **Tipo**. Em cada linha, o botão 🛡️ abre a garantia do item (veja [Garantias](#garantias)): fica ativo quando a garantia está vigente; com uma garantia em andamento, ele abre essa garantia; com a garantia vencida, sem data ou item desativado, fica apagado.
 
@@ -69,6 +69,37 @@ Item **Garantias** na barra de menu principal. Controla o acionamento da garanti
 - **E-mail ao fornecedor:** a mesma tela de e-mail do chamado, com o e-mail do fornecedor do item e os modelos de garantia. Os **Documentos anexados** funcionam como no e-mail do chamado (veja [E-mail para a empresa](#e-mail-para-a-empresa)); aqui as notas sugeridas são as 5 aquisições mais recentes do item (incluindo a nota do próprio cadastro) e os anexos são os da garantia.
 
 **Consulta:** busca (nº, item, número de série, defeito, protocolo), situação (em andamento, prazo vencido, encerradas, todas), status, tipo e fornecedor. Canceladas só aparecem filtrando pelo status Cancelada.
+
+## Compras
+
+Menu **Compras** na barra principal, com **Notas fiscais** e **Produtos x fornecedores**.
+
+### Notas fiscais
+
+**Consulta:** busca (número, chave, item, código), fornecedor, período de emissão, situação (ativas, desativadas, todas) e "só com itens sem relação com o cadastro". A lista mostra número/série, fornecedor, emissão, valor, itens (com quantos estão sem relação), garantia e anexos, com **✏️ Editar** e **🗑️ Desativar** (♻️ reativa).
+
+**Cadastro (+ Nova nota):**
+- **📥 Importar XML da NF-e:** preenche número, série, chave, emissão, valor, fornecedor (o do cadastro com o mesmo CNPJ; sem cadastro, o nome do XML) e os itens (código no fornecedor, descrição, NCM, quantidade e valores). O XML também fica guardado como anexo da nota.
+- **Dados da nota:** número *, série, data de emissão *, valor total, fornecedor * (da lista de fornecedores ou digitado), CNPJ, chave de acesso (44 dígitos) e observação.
+- **Garantia:**
+  - **Geral:** vale para todos os itens; é obrigatória (meses ou data final; ao digitar os meses, a data final é calculada pela emissão).
+  - **Por produto:** cada item ganha os campos de garantia (meses / até). Item sem garantia própria usa a garantia geral; se não houver nenhuma das duas, o sistema pede antes de salvar.
+- **Itens:** podem vir do XML ou ser incluídos à mão (**+ Incluir item**). Na coluna **Relação com o cadastro**:
+  - **🔗 relacionado** mostra a peça/produto do cadastro (com "pelo código do fornecedor" quando a relação veio sozinha), com **Trocar** e **Desfazer**;
+  - **Sem relação** oferece **Escolher do cadastro** (busca por nome, modelo, marca ou nº de série) e **Cadastrar novo** (cria a peça/produto com o nome do item, o fornecedor e a nota).
+- **Nota escaneada e anexos:** escolha o tipo (Nota escaneada, XML, Outro) e clique em **📎 Incluir arquivo** (PDF, imagem ou XML, até 3 MB). Os arquivos são guardados ao salvar.
+
+**Ao salvar:**
+- não aceita nota repetida (mesma chave, ou mesmo número/série do mesmo fornecedor);
+- grava a relação **produto x fornecedor** de cada item relacionado: o próximo XML desse fornecedor já vem relacionado;
+- cada item relacionado vira uma **aquisição** da peça/produto (com a nota escaneada), sugerida no e-mail de garantia;
+- a peça/produto sem data de garantia ou sem nota cadastradas recebe as desta compra.
+
+Desativar a nota tira as aquisições que ela gerou; reativar devolve.
+
+### Produtos x fornecedores
+
+Lista como cada fornecedor identifica as peças/produtos do cadastro (código e descrição na nota). As relações são gravadas ao salvar as notas; dá também para incluir à mão (peça/produto, fornecedor, CNPJ, código e descrição) e excluir. Se o mesmo fornecedor e código forem relacionados a outra peça, a relação é trocada.
 
 ## Marcas e Localizações
 

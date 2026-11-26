@@ -12,13 +12,17 @@
   // preenchimento automático da edição (que acontece antes) não conta como
   // alteração. Ao sair (menu, Voltar, Cancelar...), se o estado mudou,
   // pergunta antes. Depois de salvar, a tela chama marcarFormularioSalvo().
-  const PAGINAS_FORMULARIO = ['chamado-form', 'contratos-form', 'equipments-form', 'fornecedor-form', 'pecas-form'];
+  const PAGINAS_FORMULARIO = ['chamado-form', 'contratos-form', 'equipments-form', 'fornecedor-form', 'pecas-form', 'notas-form'];
 
   // Listas mantidas em memória pelos formulários (não são campos da tela)
   const ESTADO_EXTRA_FORMULARIO = {
     'contratos-form': function () {
       return [typeof equipamentos !== 'undefined' ? equipamentos : null, typeof servicos !== 'undefined' ? servicos : null,
         typeof produtos !== 'undefined' ? produtos : null, typeof checklist !== 'undefined' ? checklist : null];
+    },
+    'notas-form': function () {
+      return [typeof nfItens !== 'undefined' ? nfItens : null,
+        typeof nfAnexosPendentes !== 'undefined' ? nfAnexosPendentes.map(function (a) { return a.tipoAnexo + ':' + a.nome; }) : null];
     },
     'chamado-form': function () {
       return typeof equipamentosChamado !== 'undefined' ? equipamentosChamado : null;
@@ -174,6 +178,9 @@
     if (paginaId === 'pecas-form') renderCadastroPecas(param);
     if (paginaId === 'garantias-view') renderGarantias(param);
     if (paginaId === 'marcas-view') renderMarcasLocalizacoes(param);
+    if (paginaId === 'notas-view') renderNotasFiscais();
+    if (paginaId === 'notas-form') renderNotasForm(param);
+    if (paginaId === 'produto-fornecedor-view') renderProdutoFornecedor();
 
     if (paginaId === 'contratos-form') renderContratosForm(param);
 

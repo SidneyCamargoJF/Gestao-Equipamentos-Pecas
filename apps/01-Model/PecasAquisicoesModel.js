@@ -8,7 +8,7 @@
 // =====================================================
 let pecasAquisicoesTableName = 'tbl_pecas_aquisicoes'
 let firstLinePecasAquisicoes = 3
-let numColumnsPecasAquisicoes = 10
+let numColumnsPecasAquisicoes = 11
 
 let aquisicaoIdCol = 0
 let aquisicaoPecaIdCol = 1
@@ -20,9 +20,10 @@ let aquisicaoArquivoUrlCol = 6
 let aquisicaoArquivoIdCol = 7         // id do arquivo no Drive (para anexar no e-mail)
 let aquisicaoDtCadastroCol = 8
 let aquisicaoDtExclusaoCol = 9
+let aquisicaoNfIdCol = 10          // K -- nota fiscal de origem (Compras), coluna nova no fim
 
 const CABECALHO_PECAS_AQUISICOES = ['ID', 'PECA_ID', 'NUMERO_NF', 'FORNECEDOR', 'DATA_AQUISICAO', 'ARQUIVO_NOME',
-  'ARQUIVO_URL', 'ARQUIVO_ID', 'DATA_CADASTRO', 'DATA_EXCLUSAO']
+  'ARQUIVO_URL', 'ARQUIVO_ID', 'DATA_CADASTRO', 'DATA_EXCLUSAO', 'NF_ID']
 
 function ReadPecasAquisicoes() {
   return ReadSheetSeExistir(pecasAquisicoesTableName, firstLinePecasAquisicoes, numColumnsPecasAquisicoes).map(linha =>

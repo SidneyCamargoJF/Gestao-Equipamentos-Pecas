@@ -34,6 +34,9 @@ function criarTabelasNovasSeNecessario() {
     garantirAbasGarantias_(),
     // aquisições (notas fiscais) das peças/produtos
     criarAbaSeNaoExistir_(pecasAquisicoesTableName, CABECALHO_PECAS_AQUISICOES)
+  ).concat(
+    // Compras: notas fiscais, itens, anexos e produto x fornecedor
+    garantirAbasNotasFiscais_()
   );
 
   resultado.forEach(function (r) { Logger.log(r.mensagem); });

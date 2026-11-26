@@ -391,6 +391,41 @@
       </div>
     </div>
 
+    <!-- RELAÇÃO DO ITEM DA NOTA FISCAL COM O CADASTRO (NotasFiscaisJS) -->
+    <div class="modal-overlay" id="modalRelacionarItemNF">
+      <div class="modal modal-lg modal-email">
+        <div class="detalhe-chamado-cabecalho">
+          <h3>🔗 Relacionar item da nota</h3>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalRelacionarItemNF')">✕</button>
+        </div>
+        <p class="nf-rel-item">Item da nota: <strong id="nfRelItemDescricao"></strong></p>
+        <div class="field">
+          <label class="field__label" for="nfRelBusca">Escolher do cadastro de peças/produtos</label>
+          <input class="field__input" type="text" id="nfRelBusca" placeholder="Nome, modelo, marca ou nº de série..." oninput="buscarRelacaoItemNotaUI()">
+        </div>
+        <div class="nf-rel-resultados" id="nfRelResultados"></div>
+        <span class="field__label">Ou cadastrar novo (com os dados desta nota)</span>
+        <div class="nf-rel-novo">
+          <div class="field">
+            <label class="field__label" for="nfRelNovoNome">Nome *</label>
+            <input class="field__input" type="text" id="nfRelNovoNome">
+          </div>
+          <div class="field">
+            <label class="field__label" for="nfRelNovoModelo">Modelo</label>
+            <input class="field__input" type="text" id="nfRelNovoModelo">
+          </div>
+          <div class="field">
+            <label class="field__label" for="nfRelNovoTipo">Tipo</label>
+            <select class="field__select" id="nfRelNovoTipo">
+              <option value="produto">Produto</option>
+              <option value="peca">Peça</option>
+            </select>
+          </div>
+          <button type="button" class="btn-success" style="width:auto;" onclick="cadastrarItemRelacaoNotaUI()">Cadastrar e relacionar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- CHAMADO SALVO: oferece o envio de e-mail para a empresa (ModelosEmailJS) -->
     <div class="modal-overlay" id="modalChamadoSalvo">
       <div class="modal">
