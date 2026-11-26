@@ -65,6 +65,27 @@
             <div id="dashManutRanking" class="dash-painel-corpo">Carregando...</div>
           </div>
         </div>
+
+        <!-- Próximas manutenções: o que precisa de chamado e o que precisa de agendamento -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2>📅 Próximas manutenções <span id="dashProxCompetencias" class="dash-secao-sub"></span></h2>
+            <button type="button" class="dash-export-btn" title="Exportar CSV" onclick="exportarPainelCSV('dashProximas','proximas_manutencoes.csv')">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              CSV
+            </button>
+          </div>
+          <div id="dashProximas" class="dash-proximas">
+            <div class="dash-proximas-col">
+              <h3>📝 Abrir chamado <small>(preventivas previstas sem chamado)</small></h3>
+              <div id="dashProxAbrir" class="dash-painel-corpo">Carregando...</div>
+            </div>
+            <div class="dash-proximas-col">
+              <h3>📞 Agendar com a empresa <small>(preventivas abertas, ainda sem atendimento)</small></h3>
+              <div id="dashProxAgendar" class="dash-painel-corpo">Carregando...</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ===== CHAMADOS ===== -->

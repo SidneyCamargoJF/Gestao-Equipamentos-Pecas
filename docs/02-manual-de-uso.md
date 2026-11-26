@@ -293,6 +293,9 @@ As seções têm botão de exportação em CSV.
   - lista das corretivas com SLA vencido;
   - ranking dos equipamentos com mais corretivas nos últimos 12 meses.
 - **Atalhos:** clicar num indicador abre a Consulta de Chamados já filtrada. Clicar num item da lista abre o chamado.
+- **📅 Próximas manutenções** (mês atual e o seguinte), em duas colunas:
+  - **Abrir chamado:** preventivas previstas que ainda não têm chamado (mesmas regras da geração automática: contrato vigente, serviço Preventiva, itens do checklist devidos no mês e equipamentos ativos), por mês, com contrato, empresa, quantidade de equipamentos e data prevista. Administradores têm o botão **Gerar chamados** do mês (o mesmo de "Gerar preventivas do mês").
+  - **Agendar com a empresa:** chamados preventivos ainda **Abertos** com data prevista até o fim do mês seguinte, com o último e-mail enviado à empresa (ou "sem contato com a empresa"); atrasados ficam marcados. **📧** abre o e-mail já com o modelo de agendamento; **👁️** abre o chamado. Ao passar para Em andamento, o chamado sai da lista.
 
 ### Demais seções
 

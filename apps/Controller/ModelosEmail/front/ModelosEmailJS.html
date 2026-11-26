@@ -259,6 +259,15 @@
     }
     popularSelectModelosEmail('');
     renderAnexosEmail(r, contexto);
+    // opcoes.modeloNome: já escolhe o modelo cujo nome contém o texto (ex.: 'agendamento')
+    if (opcoes && opcoes.modeloNome && !ultimo) {
+      const alvo = String(opcoes.modeloNome).toLowerCase();
+      const m = modelosEmailCache.find(x => String(x.nome || '').toLowerCase().indexOf(alvo) !== -1);
+      if (m) {
+        document.getElementById('emailChamadoModelo').value = String(m.id);
+        aplicarModeloEmailChamado();
+      }
+    }
     exibirModal('modalEmailChamado');
   }
 

@@ -319,6 +319,33 @@ tbody td {
    align-items: flex-start faz cada <li> ficar do tamanho do próprio texto
    em vez de esticar pra largura inteira da lista (comportamento padrão de
    item de flex-column é "stretch"). */
+/* próximas manutenções */
+.dash-proximas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 64rem) {
+  .dash-proximas { grid-template-columns: 1fr; }
+}
+
+.dash-proximas-col h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-slate-700, #334155);
+}
+
+.dash-proximas-col h3 small { font-weight: 400; color: var(--color-slate-500, #64748b); }
+.dash-prox-grupo { margin-bottom: 0.75rem; }
+.dash-prox-grupo-cab { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.25rem; font-size: 0.8125rem; }
+.dash-prox-btn { width: auto; padding: 0.25rem 0.625rem; font-size: 0.75rem; margin-left: auto; }
+.dash-prox-lista li { display: flex; align-items: center; gap: 0.5rem; cursor: default; }
+.dash-prox-texto { flex: 1; }
+.dash-prox-acoes { display: flex; gap: 0.25rem; white-space: nowrap; }
+.dash-prox-atrasado { border-left: 0.1875rem solid #dc2626; }
+.dash-prox-alerta { color: #b91c1c; }
+
 .dash-lista-simples {
   list-style: none;
   display: flex;

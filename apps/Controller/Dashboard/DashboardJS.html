@@ -6,6 +6,7 @@ function renderDashboard() {
   });
 
   renderDashboardManutencao();
+  renderDashboardProximasManutencoes();
   renderDashboardChamados();
   renderDashboardContratos();
   renderDashboardEquipamentos();
@@ -250,6 +251,73 @@ async function renderDashboardManutencao() {
     console.error('Erro ao buscar indicadores de manutenção:', error);
     document.getElementById('dashManutSituacao').innerHTML = '<p class="dash-vazio">Erro ao carregar.</p>';
   }
+}
+
+// ===== PRÓXIMAS MANUTENÇÕES =====
+function competenciaTextoDash(c) { const [a, m] = String(c || '').split('-'); return m && a ? m + '/' + a : c; }
+
+async function renderDashboardProximasManutencoes() {
+  const abrirEl = document.getElementById('dashProxAbrir');
+  const agendarEl = document.getElementById('dashProxAgendar');
+  if (!abrirEl || !agendarEl) return;
+  try {
+    const d = await runServerFunction('buscarProximasManutencoes');
+    if (!d || d.sucesso === false) throw new Error(d ? d.mensagem : 'sem resposta');
+    const comps = d.competencias || [];
+    const sub = document.getElementById('dashProxCompetencias');
+    if (sub) sub.textContent = comps.length ? '(' + comps.map(competenciaTextoDash).join(' e ') + ')' : '';
+
+    // abrir chamado: agrupado por competência, com o botão de gerar
+    abrirEl.innerHTML = d.abrir.length ? comps.map(comp => {
+      const lista = d.abrir.filter(p => p.competencia === comp);
+      if (!lista.length) return '';
+      return '<div class="dash-prox-grupo"><div class="dash-prox-grupo-cab"><strong>' + competenciaTextoDash(comp) + '</strong> — ' +
+        lista.length + ' contrato' + (lista.length === 1 ? '' : 's') +
+        (d.admin ? ' <button type="button" class="btn-secondary dash-prox-btn" onclick="gerarPreventivasDash(\'' + comp + '\')">Gerar chamados</button>' : '') +
+        '</div><ul class="dash-lista-simples">' + lista.map(p =>
+          '<li>Contrato <strong>' + escapeHtml(p.numero) + '</strong> — ' + escapeHtml(p.empresa) + ' · ' + p.equipamentos + ' equipamento' +
+          (p.equipamentos === 1 ? '' : 's') + ' · prevista até ' + escapeHtml(p.dataPrevista) + '</li>').join('') + '</ul></div>';
+    }).join('') : '<p class="dash-vazio">Nenhuma preventiva prevista sem chamado.</p>';
+    registrarExportDash('dashProximas', ['Ação', 'Competência / Chamado', 'Contrato', 'Empresa', 'Data prevista', 'Situação'],
+      d.abrir.map(p => ['Abrir chamado', competenciaTextoDash(p.competencia), p.numero, p.empresa, p.dataPrevista, p.equipamentos + ' equipamento(s)'])
+        .concat(d.agendar.map(c => ['Agendar com a empresa', '#' + c.id, c.contrato, c.empresa, c.dataPrevista,
+          (c.atrasado ? 'Atrasada; ' : '') + (c.ultimoEmail ? 'e-mail enviado em ' + c.ultimoEmail.enviadoEm : 'sem contato')])));
+
+    // agendar: cada chamado aberto, com o último contato e os botões
+    agendarEl.innerHTML = d.agendar.length ? '<ul class="dash-lista-simples dash-prox-lista">' + d.agendar.map(c =>
+      '<li class="' + (c.atrasado ? 'dash-prox-atrasado' : '') + '">' +
+        '<span class="dash-prox-texto"><strong>#' + Number(c.id) + '</strong> ' + escapeHtml(c.assunto) +
+        (c.empresa ? ' — ' + escapeHtml(c.empresa) : '') + '<br><small>' +
+        (c.dataPrevista ? 'Prevista até ' + escapeHtml(c.dataPrevista) + (c.atrasado ? ' <strong class="dash-prox-alerta">atrasada</strong>' : '') : 'Sem data prevista') +
+        ' · ' + (c.ultimoEmail ? '📧 e-mail enviado em ' + escapeHtml(c.ultimoEmail.enviadoEm) : '<span class="dash-prox-alerta">sem contato com a empresa</span>') +
+        '</small></span>' +
+        '<span class="dash-prox-acoes">' +
+          '<button type="button" class="btn-acao" title="E-mail de agendamento para a empresa" onclick="agendarManutencaoDash(' + Number(c.id) + ')">📧</button>' +
+          '<button type="button" class="btn-acao" title="Ver o chamado" onclick="irParaChamadoDash(' + Number(c.id) + ')">👁️</button>' +
+        '</span></li>').join('') + '</ul>'
+      : '<p class="dash-vazio">Nenhuma preventiva aberta aguardando agendamento.</p>';
+  } catch (error) {
+    console.error('Erro ao buscar as próximas manutenções:', error);
+    abrirEl.innerHTML = agendarEl.innerHTML = '<p class="dash-vazio">Erro ao carregar.</p>';
+  }
+}
+
+// Gera as OS de preventiva da competência (mesma rotina do botão da consulta de chamados)
+async function gerarPreventivasDash(competencia) {
+  if (!confirm('Gerar os chamados de preventiva de ' + competenciaTextoDash(competencia) + ' para os contratos previstos?')) return;
+  try {
+    const r = await runServerFunction('gerarPreventivasDoMesManual', competencia);
+    alert((r && r.mensagem) || 'Concluído.');
+  } catch (e) {
+    alert('Erro ao conectar com o servidor.');
+  }
+  renderDashboardManutencao();
+  renderDashboardProximasManutencoes();
+}
+
+// E-mail para a empresa já com o modelo de agendamento
+function agendarManutencaoDash(chamadoId) {
+  if (typeof abrirEmailChamado === 'function') abrirEmailChamado(chamadoId, { modeloNome: 'agendamento' });
 }
 
 // Drill-down: abre a Consulta de Chamados já filtrada.
