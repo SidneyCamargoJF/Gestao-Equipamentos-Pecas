@@ -15,6 +15,8 @@
           <div class="agenda-controles-acoes">
             <!-- Período mostrado: só o dia, a semana, o mês ou o ano -->
             <div class="tabs-nav agenda-modo agenda-periodo">
+              <!-- Hoje: volta para a data de hoje no período escolhido -->
+              <button type="button" class="tab-btn agenda-btn-hoje" title="Voltar para hoje" onclick="irParaHojeAgenda()">Hoje</button>
               <button type="button" class="tab-btn" id="agendaPeriodo-dia" onclick="mudarPeriodoAgenda('dia')">Dia</button>
               <button type="button" class="tab-btn" id="agendaPeriodo-semana" onclick="mudarPeriodoAgenda('semana')">Semana</button>
               <button type="button" class="tab-btn active" id="agendaPeriodo-mes" onclick="mudarPeriodoAgenda('mes')">Mês</button>
@@ -24,7 +26,6 @@
               <button type="button" class="tab-btn active" id="agendaModoCalendario" onclick="mudarModoAgenda('calendario')">📅 Calendário</button>
               <button type="button" class="tab-btn" id="agendaModoLista" onclick="mudarModoAgenda('lista')">📋 Lista por dia</button>
             </div>
-            <button type="button" class="btn-secondary" style="width:auto;" onclick="irParaHojeAgenda()">Hoje</button>
           </div>
         </div>
 
