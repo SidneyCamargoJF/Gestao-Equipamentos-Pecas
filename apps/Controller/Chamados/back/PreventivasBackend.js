@@ -65,10 +65,12 @@ function itensDevidosNoMes(itens, m) {
  * Também é o handler do gatilho diário (que passa um objeto de evento no
  * lugar da competência -- tratado como "mês atual").
  */
-function gerarPreventivasDoMes(competencia) {
+// contratoIds (opcional): gera só para estes contratos. O gatilho diário chama
+// sem ele (recebe o objeto do evento no 1º parâmetro) e gera para todos.
+function gerarPreventivasDoMes(competencia, contratoIds) {
   try {
     return executarComLock(function () {
-      return gerarPreventivasDoMes_(typeof competencia === 'string' ? competencia : '');
+      return gerarPreventivasDoMes_(typeof competencia === 'string' ? competencia : '', contratoIds);
     }, 60000);
   } catch (e) {
     console.error('gerarPreventivasDoMes: ' + e.message);
@@ -89,10 +91,14 @@ function itemChecklistValeParaEquipamento_(item, equip) {
   return true;
 }
 
-function gerarPreventivasDoMes_(competenciaInformada) {
+function gerarPreventivasDoMes_(competenciaInformada, contratoIds) {
   const competencia = competenciaInformada ? String(competenciaInformada).trim() : competenciaAtual_();
   const comp = parseCompetencia_(competencia);
   if (!comp) return { sucesso: false, mensagem: 'Competência inválida (use AAAA-MM): ' + competencia };
+  const somenteContratos = Array.isArray(contratoIds)
+    ? new Set(contratoIds.map(Number).filter(function (n) { return n > 0; }))
+    : null;
+  if (somenteContratos && !somenteContratos.size) return { sucesso: false, mensagem: 'Selecione ao menos um contrato.' };
 
   const primeiroDia = new Date(comp.ano, comp.mes - 1, 1);
   const ultimoDia = new Date(comp.ano, comp.mes, 0);
@@ -146,6 +152,7 @@ function gerarPreventivasDoMes_(competenciaInformada) {
   contratos.forEach(function (c) {
     const contratoId = Number(c[contractIdCol]);
     if (!contratoId || !contratoAtivoSemEncerramento_(c)) return;
+    if (somenteContratos && !somenteContratos.has(contratoId)) return;
 
     const ini = parseDataFlex(c[contractDataInicialCol]);
     const fim = parseDataFlex(c[contractDataFinalCol]);
@@ -270,7 +277,7 @@ function usuarioEhAdmin() {
   return lista.indexOf(emailUsuarioLogado_()) !== -1;
 }
 
-function gerarPreventivasDoMesManual(competencia) {
+function gerarPreventivasDoMesManual(competencia, contratoIds) {
   if (!usuarioEhAdmin()) return { sucesso: false, mensagem: 'Somente administradores podem gerar as preventivas.' };
-  return gerarPreventivasDoMes(typeof competencia === 'string' ? competencia : '');
+  return gerarPreventivasDoMes(typeof competencia === 'string' ? competencia : '', Array.isArray(contratoIds) ? contratoIds : undefined);
 }

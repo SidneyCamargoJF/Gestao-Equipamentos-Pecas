@@ -275,11 +275,18 @@ async function renderDashboardProximasManutencoes() {
       const atrasada = lista.some(p => p.atrasado);
       return '<div class="dash-prox-grupo' + (atrasada ? ' dash-prox-atrasado' : '') + '"><div class="dash-prox-grupo-cab"><strong>' + competenciaTextoDash(comp) + '</strong> — ' +
         lista.length + ' contrato' + (lista.length === 1 ? '' : 's') + (atrasada ? ' <strong class="dash-prox-alerta">atrasada</strong>' : '') +
-        (d.admin ? ' <button type="button" class="btn-secondary dash-prox-btn" onclick="gerarPreventivasDash(\'' + comp + '\')">Gerar chamados</button>' : '') +
-        '</div><ul class="dash-lista-simples">' + lista.map(p =>
-          '<li>Contrato <strong>' + escapeHtml(p.numero) + '</strong> — ' + escapeHtml(p.empresa) + ' · ' + p.equipamentos + ' equipamento' +
-          (p.equipamentos === 1 ? '' : 's') + ' · prevista ' + (p.prazo === 'data_base' ? 'para ' : 'até ') + escapeHtml(p.dataPrevista) +
-          (p.atrasado ? ' <strong class="dash-prox-alerta">sem chamado</strong>' : '') + '</li>').join('') + '</ul></div>';
+        (d.admin ? ' <label class="dash-prox-todos" title="Marcar/desmarcar todos"><input type="checkbox" checked data-todos="' + comp + '" onchange="marcarTodosPreventivasDash(\'' + comp + '\', this.checked)"> todos</label>' +
+          '<button type="button" class="btn-secondary dash-prox-btn" data-gerar="' + comp + '" onclick="gerarPreventivasDash(\'' + comp + '\')">Gerar chamados (' + lista.length + ')</button>' : '') +
+        '</div><ul class="dash-lista-simples' + (d.admin ? ' dash-prox-lista' : '') + '">' + lista.map(p => {
+          const texto = 'Contrato <strong>' + escapeHtml(p.numero) + '</strong> — ' + escapeHtml(p.empresa) + ' · ' + p.equipamentos + ' equipamento' +
+            (p.equipamentos === 1 ? '' : 's') + ' · prevista ' + (p.prazo === 'data_base' ? 'para ' : 'até ') + escapeHtml(p.dataPrevista) +
+            (p.atrasado ? ' <strong class="dash-prox-alerta">sem chamado</strong>' : '');
+          // administrador escolhe para quais contratos gerar
+          return d.admin
+            ? '<li><label class="dash-prox-sel"><input type="checkbox" checked data-comp="' + comp + '" value="' + Number(p.contratoId) + '" data-numero="' +
+              escapeHtml(p.numero) + '" onchange="atualizarSelecaoPreventivasDash(\'' + comp + '\')"> <span>' + texto + '</span></label></li>'
+            : '<li>' + texto + '</li>';
+        }).join('') + '</ul></div>';
     }).join('') : '<p class="dash-vazio">Nenhuma preventiva prevista sem chamado.</p>';
     registrarExportDash('dashProximas', ['Ação', 'Competência / Chamado', 'Contrato', 'Empresa', 'Data prevista', 'Situação'],
       d.abrir.map(p => ['Abrir chamado', competenciaTextoDash(p.competencia), p.numero, p.empresa, p.dataPrevista, p.equipamentos + ' equipamento(s)'])
@@ -306,11 +313,35 @@ async function renderDashboardProximasManutencoes() {
   }
 }
 
-// Gera as OS de preventiva da competência (mesma rotina do botão da consulta de chamados)
+function checkboxesPreventivasDash(competencia) {
+  return Array.from(document.querySelectorAll('#dashProxAbrir input[data-comp="' + competencia + '"]'));
+}
+
+function marcarTodosPreventivasDash(competencia, marcado) {
+  checkboxesPreventivasDash(competencia).forEach(cb => { cb.checked = marcado; });
+  atualizarSelecaoPreventivasDash(competencia);
+}
+
+// Atualiza o "todos" e o botão com a quantidade escolhida
+function atualizarSelecaoPreventivasDash(competencia) {
+  const caixas = checkboxesPreventivasDash(competencia);
+  const marcadas = caixas.filter(cb => cb.checked).length;
+  const todos = document.querySelector('#dashProxAbrir input[data-todos="' + competencia + '"]');
+  if (todos) { todos.checked = marcadas === caixas.length; todos.indeterminate = marcadas > 0 && marcadas < caixas.length; }
+  const btn = document.querySelector('#dashProxAbrir button[data-gerar="' + competencia + '"]');
+  if (btn) { btn.textContent = 'Gerar chamados (' + marcadas + ')'; btn.disabled = !marcadas; }
+}
+
+// Gera as OS de preventiva da competência só para os contratos marcados
+// (mesma rotina do botão da consulta de chamados)
 async function gerarPreventivasDash(competencia) {
-  if (!confirm('Gerar os chamados de preventiva de ' + competenciaTextoDash(competencia) + ' para os contratos previstos?')) return;
+  const escolhidas = checkboxesPreventivasDash(competencia).filter(cb => cb.checked);
+  if (!escolhidas.length) { alert('Selecione ao menos um contrato.'); return; }
+  const numeros = escolhidas.map(cb => cb.getAttribute('data-numero')).join(', ');
+  if (!confirm('Gerar os chamados de preventiva de ' + competenciaTextoDash(competencia) + ' para ' +
+    (escolhidas.length === 1 ? 'o contrato ' : 'os ' + escolhidas.length + ' contratos ') + numeros + '?')) return;
   try {
-    const r = await runServerFunction('gerarPreventivasDoMesManual', competencia);
+    const r = await runServerFunction('gerarPreventivasDoMesManual', competencia, escolhidas.map(cb => Number(cb.value)));
     alert((r && r.mensagem) || 'Concluído.');
   } catch (e) {
     alert('Erro ao conectar com o servidor.');
