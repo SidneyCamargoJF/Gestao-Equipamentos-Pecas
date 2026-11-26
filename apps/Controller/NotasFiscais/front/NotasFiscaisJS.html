@@ -141,7 +141,7 @@
   }
 
   async function desativarNotaFiscalUI(id) {
-    if (!confirm('Desativar esta nota fiscal? As aquisições que ela gerou nos itens também saem.')) return;
+    if (!(await confirmarModal('Desativar esta nota fiscal? As aquisições que ela gerou nos itens também saem.', { titulo: 'Desativar nota fiscal', confirmar: 'Desativar' }))) return;
     const r = await runServerFunction('desativarNotaFiscal', id);
     alert(r.mensagem);
     if (r.sucesso) consultarNotasFiscais();
@@ -600,7 +600,7 @@
   }
 
   async function excluirAnexoNotaUI(anexoId) {
-    if (!confirm('Excluir este arquivo da nota?')) return;
+    if (!(await confirmarModal('Excluir este arquivo da nota?', { titulo: 'Excluir arquivo', confirmar: 'Excluir' }))) return;
     const r = await runServerFunction('excluirAnexoNotaFiscal', anexoId);
     if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }
     const id = document.getElementById('nfId').value;
@@ -637,8 +637,8 @@
 
     // fornecedor que não está no cadastro: pergunta antes de incluir
     if (!nfFornecedorDoCadastro(dados.fornecedorCnpj, dados.fornecedor)) {
-      if (!confirm('O fornecedor "' + dados.fornecedor + '"' + (dados.fornecedorCnpj ? ' (CNPJ ' + dados.fornecedorCnpj + ')' : '') +
-          ' não está no cadastro de fornecedores.\n\nIncluir no cadastro e salvar a nota?')) {
+      if (!(await confirmarModal('O fornecedor "' + dados.fornecedor + '"' + (dados.fornecedorCnpj ? ' (CNPJ ' + dados.fornecedorCnpj + ')' : '') +
+          ' não está no cadastro de fornecedores.\n\nIncluir no cadastro e salvar a nota?', { titulo: 'Fornecedor novo', confirmar: 'Incluir e salvar' }))) {
         alert('A nota não foi salva. Escolha um fornecedor da lista ou confirme a inclusão.');
         return;
       }
@@ -717,7 +717,7 @@
   }
 
   async function excluirProdutoFornecedorUI(id) {
-    if (!confirm('Excluir esta relação produto x fornecedor?')) return;
+    if (!(await confirmarModal('Excluir esta relação produto x fornecedor?', { titulo: 'Excluir relação', confirmar: 'Excluir' }))) return;
     const r = await runServerFunction('excluirProdutoFornecedor', id);
     if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }
     consultarProdutoFornecedor();

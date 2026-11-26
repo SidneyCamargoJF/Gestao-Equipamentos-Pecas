@@ -382,7 +382,7 @@
   // ==== REATIVAR FORNECEDOR ====
   async function reativarFornecedorUI(id) {
     if (!id) return;
-    if (!confirm('Deseja reativar este fornecedor?')) return;
+    if (!(await confirmarModal('Deseja reativar este fornecedor?', { titulo: 'Reativar fornecedor', confirmar: 'Reativar' }))) return;
 
     if (typeof exibirModal === 'function') exibirModal('processando');
 

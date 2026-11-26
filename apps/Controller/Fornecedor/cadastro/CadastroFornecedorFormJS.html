@@ -130,9 +130,10 @@
     }
 
     google.script.run
-      .withSuccessHandler(function (resultado) {
+      .withSuccessHandler(async function (resultado) {
         if (resultado && resultado.existe) {
-          const querEditar = confirm('AVISO DE CADASTRO\n\nJá existe um fornecedor com esse CNPJ. Deseja carregar os dados dele para edição?');
+          const querEditar = await confirmarModal('Já existe um fornecedor com esse CNPJ. Deseja carregar os dados dele para edição?',
+            { titulo: 'Aviso de cadastro', confirmar: 'Carregar para edição', cancelar: 'Continuar o cadastro' });
           if (querEditar) {
             buscarFornecedorPorCnpj(cnpj);
           } else {
@@ -172,10 +173,11 @@
         if (!resp.ok) throw { naoExiste: false };
         return resp.json();
       })
-      .then(dados => {
-        const querPreencher = confirm(
+      .then(async dados => {
+        const querPreencher = await confirmarModal(
           'CNPJ encontrado na Receita Federal:\n' + (dados.razao_social || '(nome não informado)') +
-          '\n\nDeseja preencher automaticamente os dados da empresa?'
+          '\n\nDeseja preencher automaticamente os dados da empresa?',
+          { titulo: 'CNPJ encontrado', confirmar: 'Preencher', cancelar: 'Não preencher' }
         );
         if (querPreencher) preencherComDadosReceita(dados);
       })

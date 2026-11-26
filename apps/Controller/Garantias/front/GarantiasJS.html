@@ -298,12 +298,12 @@
   }
 
   // Formulário da ação escolhida (abaixo dos botões)
-  function acaoGarantiaUI(acao) {
+  async function acaoGarantiaUI(acao) {
     const g = garantiaDetalheAtual;
     const box = document.getElementById('garantiaAcaoForm');
     if (!g || !box) return;
     if (acao === 'analise') {
-      if (!confirm('Marcar a garantia como em análise pelo fornecedor?')) return;
+      if (!(await confirmarModal('Marcar a garantia como em análise pelo fornecedor?', { titulo: 'Em análise', confirmar: 'Marcar' }))) return;
       executarAcaoGarantia({ acao: 'analise' });
       return;
     }
@@ -434,7 +434,7 @@
 
   async function excluirAnexoGarantiaUI(anexoId) {
     const g = garantiaDetalheAtual;
-    if (!g || !confirm('Excluir este anexo?')) return;
+    if (!g || !(await confirmarModal('Excluir este anexo?', { titulo: 'Excluir anexo', confirmar: 'Excluir' }))) return;
     try {
       const r = await runServerFunction('excluirAnexoGarantia', anexoId);
       if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }

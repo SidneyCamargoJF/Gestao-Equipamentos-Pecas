@@ -300,7 +300,7 @@
 
   async function reativarEquipamentoUI(id) {
     if (!id) return;
-    if (!confirm('Deseja reativar este equipamento?')) return;
+    if (!(await confirmarModal('Deseja reativar este equipamento?', { titulo: 'Reativar equipamento', confirmar: 'Reativar' }))) return;
 
     try {
       const resposta = await runServerFunction('reativarEquipamento', id);

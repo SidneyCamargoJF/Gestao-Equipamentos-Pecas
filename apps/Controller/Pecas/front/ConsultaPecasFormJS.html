@@ -402,7 +402,7 @@
       // ==== REATIVAR PEÇA ====
       async function reativarPecaUI(id) {
         if (!id) return;
-        if (!confirm('Deseja reativar esta peça?')) return;
+        if (!(await confirmarModal('Deseja reativar esta peça?', { titulo: 'Reativar peça', confirmar: 'Reativar' }))) return;
 
         if (typeof exibirModal === 'function') exibirModal('processando');
 

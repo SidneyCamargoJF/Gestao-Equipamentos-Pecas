@@ -317,7 +317,7 @@ class MarcaController {
 
   // ===== REATIVAR =====
   async reativar(id) {
-    if (!id || !confirm('Deseja reativar esta marca?')) return;
+    if (!id || !(await confirmarModal('Deseja reativar esta marca?', { titulo: 'Reativar marca', confirmar: 'Reativar' }))) return;
     try {
       const resposta = await runServerFunction('reativarMarca', id);
       if (resposta && resposta.sucesso === false) {
@@ -639,7 +639,7 @@ class LocalizacaoController {
 
   // ===== REATIVAR =====
   async reativar(id) {
-    if (!id || !confirm('Deseja reativar esta localização?')) return;
+    if (!id || !(await confirmarModal('Deseja reativar esta localização?', { titulo: 'Reativar localização', confirmar: 'Reativar' }))) return;
     try {
       const resposta = await runServerFunction('reativarLocalizacao', id);
       if (resposta && resposta.sucesso === false) {

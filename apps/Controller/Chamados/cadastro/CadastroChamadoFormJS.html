@@ -495,9 +495,9 @@
     renderizarEquipamentosChamado();
   }
 
-  function removerTodosEquipamentosChamado() {
+  async function removerTodosEquipamentosChamado() {
     if (!equipamentosChamado.length) return;
-    if (!confirm('Remover todos os ' + equipamentosChamado.length + ' equipamentos do chamado?')) return;
+    if (!(await confirmarModal('Remover todos os ' + equipamentosChamado.length + ' equipamentos do chamado?', { titulo: 'Remover equipamentos', confirmar: 'Remover' }))) return;
     equipamentosChamado = [];
     renderizarEquipamentosChamado();
   }
@@ -877,11 +877,11 @@
 
   // Edição: abre a tela de e-mail com o último e-mail enviado à empresa
   // (para conferir/alterar e enviar de novo). Usa os dados já salvos.
-  function reenviarEmailChamadoForm() {
+  async function reenviarEmailChamadoForm() {
     const id = document.getElementById('chamadoId')?.value || '';
     if (!id) return;
     if (typeof formularioAlterado === 'function' && formularioAlterado() &&
-        !confirm('Há alterações não salvas neste chamado. O e-mail usa os dados já salvos. Continuar mesmo assim?')) return;
+        !(await confirmarModal('Há alterações não salvas neste chamado. O e-mail usa os dados já salvos. Continuar mesmo assim?', { titulo: 'Alterações não salvas', confirmar: 'Continuar' }))) return;
     if (typeof abrirEmailChamado === 'function') abrirEmailChamado(id, { reenviar: true });
   }
 

@@ -890,7 +890,7 @@ async function reabrirChamadoComMotivoUI(motivo) {
 
 
 async function excluirAnotacaoChamadoUI(historicoId) {
-    if (!confirm('Excluir essa anotação?')) return;
+    if (!(await confirmarModal('Excluir essa anotação?', { titulo: 'Excluir anotação', confirmar: 'Excluir' }))) return;
 
     try {
         const resposta = await runServerFunction('excluirAnotacaoChamado', historicoId);
@@ -1124,7 +1124,7 @@ async function salvarChecklistChamadoUI() {
 }
 
 async function abrirCorretivaItemChecklistUI(itemId) {
-    if (!confirm('Abrir um chamado corretivo para este equipamento, ligado ao mesmo contrato deste chamado?')) return;
+    if (!(await confirmarModal('Abrir um chamado corretivo para este equipamento, ligado ao mesmo contrato deste chamado?', { titulo: 'Abrir chamado corretivo', confirmar: 'Abrir chamado' }))) return;
     try {
         const resposta = await runServerFunction('abrirCorretivaItemChecklist', itemId);
         alert(resposta ? resposta.mensagem : 'Sem resposta do servidor.');

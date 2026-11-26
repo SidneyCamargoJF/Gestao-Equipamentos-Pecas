@@ -247,7 +247,7 @@
   }
 
   async function sincronizarEntradasNotasUI() {
-    if (!confirm('Refazer as entradas de estoque de todas as notas fiscais (itens relacionados ao cadastro)?')) return;
+    if (!(await confirmarModal('Refazer as entradas de estoque de todas as notas fiscais (itens relacionados ao cadastro)?', { titulo: 'Refazer entradas das notas', confirmar: 'Refazer' }))) return;
     exibirModal('processando');
     try {
       const r = await runServerFunction('sincronizarEntradasTodasNotas');

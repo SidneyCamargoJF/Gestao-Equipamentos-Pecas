@@ -405,7 +405,7 @@
   }
 
   async function excluirAquisicaoPecaUI(id) {
-    if (!confirm('Excluir esta aquisição?')) return;
+    if (!(await confirmarModal('Excluir esta aquisição?', { titulo: 'Excluir aquisição', confirmar: 'Excluir' }))) return;
     try {
       const r = await runServerFunction('excluirAquisicaoPeca', id);
       if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }

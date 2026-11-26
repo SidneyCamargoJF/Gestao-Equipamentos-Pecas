@@ -137,7 +137,7 @@ function cancelarEdicaoUsuarioUI() {
 }
 
 async function desativarUsuarioUI(id) {
-    if (!confirm('Desativar esse usuário?')) return;
+    if (!(await confirmarModal('Desativar esse usuário?', { titulo: 'Desativar usuário', confirmar: 'Desativar' }))) return;
 
     try {
         const resposta = await runServerFunction('desativarUsuario', id);

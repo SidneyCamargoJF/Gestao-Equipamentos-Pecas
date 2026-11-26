@@ -70,7 +70,7 @@
 
   async function excluirModeloEmailUI(id) {
     const m = modelosEmailCache.find(x => Number(x.id) === Number(id));
-    if (!window.confirm('Excluir o modelo "' + (m ? m.nome : id) + '"?')) return;
+    if (!(await confirmarModal('Excluir o modelo "' + (m ? m.nome : id) + '"?', { titulo: 'Excluir modelo', confirmar: 'Excluir' }))) return;
     exibirModal('processando');
     try {
       const r = await runServerFunction('excluirModeloEmail', id);
@@ -417,14 +417,14 @@
   }
 
   // Escolheu um modelo: assunto e texto vêm com os dados do chamado (editáveis)
-  function aplicarModeloEmailChamado() {
+  async function aplicarModeloEmailChamado() {
     const sel = document.getElementById('emailChamadoModelo');
     const m = modelosEmailCache.find(x => String(x.id) === String(sel ? sel.value : ''));
     if (!m || !emailChamadoAtual) return;
     const assuntoEl = document.getElementById('emailChamadoAssunto');
     const corpoEl = document.getElementById('emailChamadoCorpo');
     if ((assuntoEl.value.trim() || corpoEl.value.trim()) &&
-        !window.confirm('Trocar o assunto e o texto já digitados pelos do modelo "' + m.nome + '"?')) {
+        !(await confirmarModal('Trocar o assunto e o texto já digitados pelos do modelo "' + m.nome + '"?', { titulo: 'Usar o modelo', confirmar: 'Trocar' }))) {
       sel.value = '';
       return;
     }
