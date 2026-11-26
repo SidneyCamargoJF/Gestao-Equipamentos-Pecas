@@ -122,7 +122,7 @@ Menu **Estoque**, com **Saldo de estoque** e **Movimentações**. O saldo de cad
 
 ## Marcas e Localizações
 
-Ficam em **Configuração → Marcas** e **Configuração → Localizações** (cada item abre só a sua lista). Cadastro simples (nome), usado nos cadastros de equipamentos e peças.
+Ficam em **Cadastros → Marcas** e **Cadastros → Localizações** (cada item abre só a sua lista). Cadastro simples (nome), usado nos cadastros de equipamentos e peças.
 
 ## Fornecedores
 
@@ -319,7 +319,7 @@ Use **Imprimir** para gerar a versão em papel ou PDF. As regras estão no docum
 
 ## Configuração
 
-O menu **Configuração** tem os itens **Usuários**, **Modelos de e-mail**, **Marcas**, **Localizações** (veja [Marcas e Localizações](#marcas-e-localizações)) e **Migrações da planilha**.
+O menu **Configuração** tem os itens **Usuários**, **Modelos de e-mail** e **Migrações da planilha**.
 
 ### Configuração → Migrações da planilha
 
