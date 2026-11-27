@@ -122,6 +122,7 @@
     document.getElementById('estMovData').value = estHojeISO();
     estAtualizarFormMovimento();
     exibirModal('modalMovimentoEstoque');
+    if (typeof marcarEstadoModal === 'function') marcarEstadoModal('modalMovimentoEstoque');   // aviso ao sair sem salvar
   }
 
   // dd/MM/yyyy -> yyyy-MM-dd
@@ -150,6 +151,7 @@
     if (m.tipo === 'entrada') set('estMovValor', m.valorUnitario === '' || m.valorUnitario === null || m.valorUnitario === undefined ? '' : String(m.valorUnitario).replace('.', ','));
     if (m.tipo === 'saida') { set('estMovChamado', m.chamadoId); set('estMovPatrimonio', m.patrimonio); }
     estAtualizarFormMovimento();
+    if (typeof marcarEstadoModal === 'function') marcarEstadoModal('modalMovimentoEstoque');   // já preenchido
   }
 
   // Mostra os campos do tipo escolhido e o saldo do item
@@ -213,6 +215,7 @@
     document.getElementById('estParamMinimo').value = it.minimo === '' ? '' : it.minimo;
     document.getElementById('estParamUnidade').value = it.unidade || 'UN';
     exibirModal('modalParametrosEstoque');
+    if (typeof marcarEstadoModal === 'function') marcarEstadoModal('modalParametrosEstoque');
   }
 
   async function salvarParametrosEstoqueUI() {

@@ -396,10 +396,10 @@
       <div class="modal modal-lg modal-email">
         <div class="detalhe-chamado-cabecalho">
           <h3 id="estMovTitulo">📦 Movimentação</h3>
-          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalMovimentoEstoque')">✕</button>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModalComAviso('modalMovimentoEstoque')">✕</button>
         </div>
         <div class="modal-actions modal-acoes-topo">
-          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalMovimentoEstoque')">Cancelar</button>
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModalComAviso('modalMovimentoEstoque')">Cancelar</button>
           <button type="button" class="btn-success" style="width:auto;" onclick="confirmarMovimentoEstoqueUI()">Salvar</button>
         </div>
         <form autocomplete="off" onsubmit="return false;" class="est-mov-grid">
@@ -457,10 +457,10 @@
       <div class="modal">
         <div class="detalhe-chamado-cabecalho">
           <h3>⚙️ Estoque mínimo e unidade</h3>
-          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalParametrosEstoque')">✕</button>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModalComAviso('modalParametrosEstoque')">✕</button>
         </div>
         <div class="modal-actions modal-acoes-topo">
-          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalParametrosEstoque')">Cancelar</button>
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModalComAviso('modalParametrosEstoque')">Cancelar</button>
           <button type="button" class="btn-success" style="width:auto;" onclick="salvarParametrosEstoqueUI()">Salvar</button>
         </div>
         <p><strong id="estParamItem"></strong></p>

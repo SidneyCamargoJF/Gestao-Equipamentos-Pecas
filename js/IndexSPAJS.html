@@ -31,6 +31,7 @@
 
   let baseFormulario = null;        // { pagina, estado }
   let acaoSaidaPendente = null;
+  let saidaPendenteDeModal = false;  // o aviso veio de um modal: não zera o controle da página
 
   function paginaAtivaId_() {
     const ativa = document.querySelector('.spa-page.active');
@@ -87,8 +88,9 @@
     baseFormulario = null;
   }
 
-  function confirmarSaidaSemSalvar(acao) {
+  function confirmarSaidaSemSalvar(acao, deModal) {
     acaoSaidaPendente = acao;
+    saidaPendenteDeModal = !!deModal;
     if (typeof exibirModal === 'function') exibirModal('modalSairSemSalvar');
     else if (window.confirm('Você alterou este cadastro e não salvou. Sair sem salvar?')) sairSemSalvarConfirmado();
   }
@@ -96,14 +98,45 @@
   function sairSemSalvarConfirmado() {
     const acao = acaoSaidaPendente;
     acaoSaidaPendente = null;
-    baseFormulario = null;
+    if (!saidaPendenteDeModal) baseFormulario = null;
+    saidaPendenteDeModal = false;
     if (typeof fecharModal === 'function') fecharModal('modalSairSemSalvar');
     if (acao) acao();
   }
 
   function continuarEditandoFormulario() {
     acaoSaidaPendente = null;
+    saidaPendenteDeModal = false;
     if (typeof fecharModal === 'function') fecharModal('modalSairSemSalvar');
+  }
+
+  // ----- o mesmo aviso nos modais de formulário -----
+  // marcarEstadoModal(id): chamar depois de abrir e preencher o modal.
+  // fecharModalComAviso(id): no ✕ e no Cancelar; com alteração, pergunta
+  // ("Continuar editando" / "Sair sem salvar"). Ao salvar, fechar com
+  // fecharModal(id) normalmente.
+  const estadosModais = {};
+
+  function estadoModal_(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return '';
+    return JSON.stringify(Array.from(modal.querySelectorAll('input, select, textarea'))
+      .filter(function (el) { return !campoIgnoradoFormulario_(el) && el.type !== 'file'; })
+      .map(function (el, i) { return (el.id || el.name || i) + '=' + ((el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value); }));
+  }
+
+  function marcarEstadoModal(id) {
+    estadosModais[id] = estadoModal_(id);
+  }
+
+  function modalAlterado(id) {
+    return estadosModais[id] !== undefined && estadoModal_(id) !== estadosModais[id];
+  }
+
+  function fecharModalComAviso(id) {
+    const fechar = function () { delete estadosModais[id]; if (typeof fecharModal === 'function') fecharModal(id); };
+    if (modalAlterado(id)) { confirmarSaidaSemSalvar(fechar, true); return; }
+    fechar();
   }
 
   // Fechar/recarregar a aba do navegador com alteração não salva
