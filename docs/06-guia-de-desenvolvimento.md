@@ -55,7 +55,6 @@ Antes de mexer em colunas, confira qual convenção o arquivo usa.
 
 ## Armadilhas conhecidas
 
-- **Classes duplicadas:** `01-SheetModel.js` declara `class SheetModel` e `02-SheetModel.js` declara `class SheetModel2`. Os métodos estáticos de `SheetModel2` (`registerModel`, `getModel`, `readById`, `readContext`) ainda usam `SheetModel.modelsRegistry`, que não existe em `SheetModel`, e falham se forem chamados.
 - **Numeração no `SheetModel`:** a classe base trabalha com colunas 1-based. Subclasses com constantes 0-based (caso do `EquipmentsModel`) precisam ligar `this.colunasBaseZero = true` no construtor. A classe base converte com `colunaPlanilha(col)` ao filtrar os excluídos e ao gravar a exclusão. Sem isso, ela confere a coluna errada: no `EquipmentsModel`, conferia a R (data de alteração) no lugar da S (data de exclusão).
 - **Arquivos fora do servidor:** o `clasp push` envia **todo** `.js`/`.html` da pasta. Arquivos auxiliares locais (scripts Node, backups) precisam ir para o `.claspignore` ou sair da pasta.
 - **Ordem dos `include()`:** em `index.html`, uma função de cliente declarada depois sobrescreve a homônima declarada antes.

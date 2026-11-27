@@ -32,7 +32,6 @@ apps/
   01-Model/                                      acesso à planilha: constantes de colunas e Read*()
     Model.js                                     ReadSheet, ReadSheetSeExistir, FindContext...
     01-SheetModel.js                             classe base SheetModel (usada por EquipmentsModel)
-    02-SheetModel.js                             SheetModel2 (versão nova, em desenvolvimento)
     <Entidade>Model.js                           um arquivo por aba
   Controller/<Modulo>/
     back/*.js                                    funções de servidor do módulo
