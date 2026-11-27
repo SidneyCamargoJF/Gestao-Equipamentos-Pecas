@@ -60,7 +60,8 @@ function esquemaTabelas_() {
       'DT_CADASTRO', 'DT_ALTERACAO', 'DT_EXCLUSAO', 'ESTADO', 'PATRIMONIO_ANTERIOR'] },
     // ----- peças e produtos, aquisições, garantias
     { aba: PartsTableName, colunas: ['ID', 'NOME', 'MARCA', 'MODELO', 'CAPACIDADE', 'NUMERO_SERIE', 'LOCAL', 'FORNECEDOR', 'NUMERO_NF',
-      'DATA_NF', 'GARANTIA', 'DATA_GARANTIA', 'MODALIDADE', 'VALOR', 'SEI', 'DATA_CADASTRO', 'DATA_ALTERACAO', 'DATA_EXCLUSAO', 'TIPO'] },
+      'DATA_NF', 'GARANTIA', 'DATA_GARANTIA', 'MODALIDADE', 'VALOR', 'SEI', 'DATA_CADASTRO', 'DATA_ALTERACAO', 'DATA_EXCLUSAO', 'TIPO', 'CATEGORIA'] },
+    { aba: categoriaPecaTableName, colunas: ['ID', 'NOME', 'DATA_CADASTRO', 'DATA_EXCLUSAO', 'DATA_ALTERACAO'] },
     { aba: pecasAquisicoesTableName, colunas: CABECALHO_PECAS_AQUISICOES },
     { aba: garantiasTableName, colunas: CABECALHO_GARANTIAS },
     { aba: garantiaHistTableName, colunas: CABECALHO_GARANTIA_HIST },
@@ -72,6 +73,8 @@ function esquemaTabelas_() {
     { aba: produtoFornecedorTableName, colunas: CABECALHO_PRODUTO_FORNECEDOR },
     { aba: estoqueMovTableName, colunas: CABECALHO_ESTOQUE_MOV },
     { aba: estoqueParamTableName, colunas: CABECALHO_ESTOQUE_PARAM },
+    { aba: pedidosTableName, colunas: CABECALHO_PEDIDOS },
+    { aba: pedidoItensTableName, colunas: CABECALHO_PEDIDOS_ITENS },
     // ----- cadastros de apoio e configuração
     { aba: supplierTableName, colunas: ['ID', 'PRESTADOR_SERVICO', 'DISTRIBUIDOR_PRODUTOS', 'RAZAO_SOCIAL', 'NOME_FANTASIA', 'CNPJ',
       'INSCRICAO_ESTADUAL', 'INSCRICAO_MUNICIPAL', 'EMAIL', 'TELEFONE', 'CELULAR', 'WHATSAPP', 'CEP', 'LOGRADOURO', 'NUMERO', 'BAIRRO',

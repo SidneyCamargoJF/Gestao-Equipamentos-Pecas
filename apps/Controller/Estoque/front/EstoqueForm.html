@@ -9,6 +9,7 @@
             <button type="button" class="btn-secondary" onclick="limparFiltrosEstoque()">Limpar</button>
             <button type="button" class="btn-success" onclick="abrirMovimentoEstoqueUI('saida')">+ Movimentação</button>
             <button type="button" class="btn-primary" onclick="consultarEstoque()">Consultar</button>
+            <button type="button" class="btn-primary" onclick="abrirConfirmacaoGerarPedidoUI()">📝 Gerar lista de pedidos</button>
           </div>
         </div>
       </div>
@@ -25,6 +26,10 @@
         <div class="metric-card" style="cursor:pointer;" onclick="filtrarEstoquePorSituacao('zerado')" title="Ver os itens zerados">
           <div class="metric-label">Zerados</div>
           <div class="metric-value" id="estResumoZerados">—</div>
+        </div>
+        <div class="metric-card" style="cursor:pointer;" onclick="filtrarEstoquePorSituacao('alerta')" title="Ver os itens quase acabando">
+          <div class="metric-label">Quase acabando</div>
+          <div class="metric-value" id="estResumoAlerta">—</div>
         </div>
       </div>
 
@@ -50,6 +55,7 @@
               <option value="com_saldo">Com saldo</option>
               <option value="abaixo">Abaixo do mínimo</option>
               <option value="zerado">Zerados</option>
+              <option value="alerta">Quase acabando</option>
             </select>
           </div>
           <button type="submit" style="display:none;"></button>

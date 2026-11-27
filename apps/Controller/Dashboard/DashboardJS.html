@@ -275,8 +275,6 @@ async function renderDashboardProximasManutencoes() {
       const atrasada = lista.some(p => p.atrasado);
       return '<div class="dash-prox-grupo' + (atrasada ? ' dash-prox-atrasado' : '') + '"><div class="dash-prox-grupo-cab"><strong>' + competenciaTextoDash(comp) + '</strong> — ' +
         lista.length + ' contrato' + (lista.length === 1 ? '' : 's') + (atrasada ? ' <strong class="dash-prox-alerta">atrasada</strong>' : '') +
-        (d.admin ? ' <label class="dash-prox-todos" title="Marcar/desmarcar todos"><input type="checkbox" checked data-todos="' + comp + '" onchange="marcarTodosPreventivasDash(\'' + comp + '\', this.checked)"> todos</label>' +
-          '<button type="button" class="btn-secondary dash-prox-btn" data-gerar="' + comp + '" onclick="gerarPreventivasDash(\'' + comp + '\')">Gerar chamados (' + lista.length + ')</button>' : '') +
         '</div><ul class="dash-lista-simples' + (d.admin ? ' dash-prox-lista' : '') + '">' + lista.map(p => {
           const texto = 'Contrato <strong>' + escapeHtml(p.numero) + '</strong> — ' + escapeHtml(p.empresa) + ' · ' + p.equipamentos + ' equipamento' +
             (p.equipamentos === 1 ? '' : 's') + ' · prevista ' + (p.prazo === 'data_base' ? 'para ' : 'até ') + escapeHtml(p.dataPrevista) +
@@ -286,7 +284,12 @@ async function renderDashboardProximasManutencoes() {
             ? '<li><label class="dash-prox-sel"><input type="checkbox" checked data-comp="' + comp + '" value="' + Number(p.contratoId) + '" data-numero="' +
               escapeHtml(p.numero) + '" onchange="atualizarSelecaoPreventivasDash(\'' + comp + '\')"> <span>' + texto + '</span></label></li>'
             : '<li>' + texto + '</li>';
-        }).join('') + '</ul></div>';
+        }).join('') + '</ul>' +
+        (d.admin ? '<div class="dash-prox-rodape">' +
+          '<label class="dash-prox-todos" title="Marcar/desmarcar todos"><input type="checkbox" checked data-todos="' + comp + '" onchange="marcarTodosPreventivasDash(\'' + comp + '\', this.checked)"> todos</label>' +
+          '<button type="button" class="btn-secondary dash-prox-btn" data-gerar="' + comp + '" onclick="gerarPreventivasDash(\'' + comp + '\')">Gerar chamados (' + lista.length + ')</button>' +
+        '</div>' : '') +
+        '</div>';
     }).join('') : '<p class="dash-vazio">Nenhuma preventiva prevista sem chamado.</p>';
     registrarExportDash('dashProximas', ['Ação', 'Competência / Chamado', 'Contrato', 'Empresa', 'Data prevista', 'Situação'],
       d.abrir.map(p => ['Abrir chamado', competenciaTextoDash(p.competencia), p.numero, p.empresa, p.dataPrevista, p.equipamentos + ' equipamento(s)'])

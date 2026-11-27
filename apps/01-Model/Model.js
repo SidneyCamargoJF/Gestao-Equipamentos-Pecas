@@ -84,6 +84,9 @@ function ExcluirRegistro( table, id ) {
   if (table === 'tbl_localizacao') {
     return (desativarLocalizacao(id))
   }
+  if (table === 'tbl_categoria_peca') {
+    return (desativarCategoriaPeca(id))
+  }
   if (table === 'tbl_equipment') {
     return deleteEquipment(id)
   }

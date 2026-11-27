@@ -10,7 +10,7 @@
   let estoqueMovPeca = null;      // item do formulário de movimentação
   let estoqueParamPeca = null;
 
-  const ESTOQUE_SITUACAO = { ok: 'OK', abaixo: 'Abaixo do mínimo', zerado: 'Zerado' };
+  const ESTOQUE_SITUACAO = { ok: 'OK', alerta: 'Vai acabar', abaixo: 'Abaixo do mínimo', zerado: 'Zerado' };
   const ESTOQUE_TIPO_MOV = { entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste de inventário' };
 
   function estEsc(s) {
@@ -50,7 +50,7 @@
       estoqueItens = (r && r.itens) || [];
       const res = (r && r.resumo) || {};
       const set = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n || 0; };
-      set('estResumoComSaldo', res.comSaldo); set('estResumoAbaixo', res.abaixo); set('estResumoZerados', res.zerados);
+      set('estResumoComSaldo', res.comSaldo); set('estResumoAbaixo', res.abaixo); set('estResumoZerados', res.zerados); set('estResumoAlerta', res.alerta);
       renderTabelaEstoque();
     } catch (e) {
       console.error('Erro ao consultar o estoque:', e);
@@ -79,8 +79,9 @@
     tbody.innerHTML = estoqueItens.map(it => {
       const controlado = it.movimentado || it.minimo !== '';
       const badge = controlado ? `<span class="est-situacao est-situacao--${it.situacao}">${ESTOQUE_SITUACAO[it.situacao]}</span>` : '<span class="est-sem-controle">Sem movimentação</span>';
+      const linha = controlado && (it.situacao === 'abaixo' || it.situacao === 'zerado') ? 'est-linha-critico' : controlado && it.situacao === 'alerta' ? 'est-linha-alerta' : '';
       return `
-      <tr class="${it.situacao === 'abaixo' && controlado ? 'est-linha-abaixo' : ''}">
+      <tr class="${linha}">
         <td><strong>${estEsc(it.nome)}</strong>${it.numeroSerie ? '<br><small>NS ' + estEsc(it.numeroSerie) + '</small>' : ''}</td>
         <td>${it.tipo === 'produto' ? 'Produto' : 'Peça'}</td>
         <td>${estEsc([it.marca, it.modelo].filter(Boolean).join(' / '))}</td>
@@ -285,6 +286,33 @@
     if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }
     mostrarMensagem(r.mensagem, 'sucesso');
     consultarMovimentosEstoque();
+  }
+
+  // ===================================================
+  // "GERAR LISTA DE PEDIDOS" -- confirma com a pessoa quais itens (e a
+  // quantidade atual deles) vão entrar no pedido antes de redirecionar.
+  // ===================================================
+  async function abrirConfirmacaoGerarPedidoUI() {
+    exibirModal('processando');
+    let r;
+    try {
+      r = await runServerFunction('gerarSugestaoPedido');
+    } finally {
+      fecharModal('processando');
+    }
+    const itens = (r && r.itens) || [];
+    if (!itens.length) {
+      alert('Nenhum item está abaixo do mínimo no momento.');
+      return;
+    }
+    const texto = 'Estes itens vão entrar no pedido, com a quantidade sugerida pra voltar ao mínimo:\n\n' +
+      itens.map(it => '• ' + it.nome + (it.marca ? ' (' + [it.marca, it.modelo].filter(Boolean).join(' ') + ')' : '') +
+        ' — atual: ' + estQtd(it.saldoAtual) + ' ' + (it.unidade || 'UN') + ', sugestão: ' + estQtd(it.quantidade) + ' ' + (it.unidade || 'UN')).join('\n') +
+      '\n\nPode ajustar quantidade, preço e incluir outros produtos direto no cadastro do pedido.';
+    const ok = await confirmarModal(texto, { titulo: '📝 Gerar lista de pedidos', confirmar: 'Seguir', cancelar: 'Cancelar' });
+    if (!ok) return;
+    pedidoSugestaoPendente = itens;
+    trocarPagina('pedido-form', 'gerar');
   }
 
   // ↻ Atualizar entradas das notas: abre o modal com os filtros (período,
