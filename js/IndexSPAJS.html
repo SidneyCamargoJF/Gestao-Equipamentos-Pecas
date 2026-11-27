@@ -159,6 +159,12 @@
 
   // SPA View Switcher
   function trocarPagina(paginaId, param) {
+    // tela que o grupo do usuário não tem (login: paginaPermitidaSessao)
+    if (typeof paginaPermitidaSessao === 'function' && !paginaPermitidaSessao(paginaId, param)) {
+      if (typeof mostrarMensagem === 'function') mostrarMensagem('Você não tem acesso a esta tela.', 'aviso');
+      if (paginaId !== 'dashboard' && paginaPermitidaSessao('dashboard')) trocarPagina('dashboard');
+      return;
+    }
     // cadastro/edição alterado e não salvo: pergunta antes de sair
     if (formularioAlterado()) {
       confirmarSaidaSemSalvar(function () { trocarPagina(paginaId, param); });

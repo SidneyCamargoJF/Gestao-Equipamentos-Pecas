@@ -45,9 +45,16 @@ O resultado de cada execução aparece em **Registro de execução** (log). `cri
 
 A aba legada `tab_materiais` (cadastro de materiais antigo, fora do menu) não entra nas migrações.
 
-### Administradores
+### Administradores e login
 
-Em **Configurações do projeto → Propriedades do script**, crie a propriedade `ADMINS` com os e-mails separados por vírgula. Só esses usuários poderão usar o botão **Gerar preventivas**. Se a propriedade estiver vazia, todos podem.
+O sistema tem login próprio (usuário e senha) e grupos: Administrador, Diretor e Usuário (manual, documento [02](02-manual-de-uso.md)). O web app continua rodando como quem acessa (`USER_ACCESSING`): o login controla menus e telas, mas quem tem acesso à planilha ainda consegue editá-la direto.
+
+1. Em **Configurações do projeto → Propriedades do script**, crie a propriedade `ADMINS` com os e-mails (ou logins) dos administradores, separados por vírgula. Quem está nela e ainda não tem grupo definido entra como **Administrador**; os demais usuários já cadastrados, como **Usuário**.
+2. Rode **Configuração → Migrações da planilha** para criar as colunas novas de `tbl_usuarios` (K a Q). Sem elas o login também grava, mas os cabeçalhos ficam em branco.
+3. Cada administrador entra na tela de login, usa **Esqueci minha senha** e define a senha com o código recebido por e-mail (vai para o e-mail do cadastro; sem e-mail, para a conta Google da própria pessoa).
+4. Sem nenhum administrador (propriedade vazia e ninguém com grupo Administrador), a tela de login oferece o cadastro do primeiro administrador.
+
+Os e-mails do login (código, liberação, aviso de pedido de acesso) usam o `MailApp` e saem da conta de quem está usando o sistema naquele momento.
 
 ### E-mail
 

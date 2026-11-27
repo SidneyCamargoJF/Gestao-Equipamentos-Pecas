@@ -267,14 +267,15 @@ function instalarGatilhoPreventivas() {
   }
 }
 
-// ===== BOTÃO NA CONSULTA DE CHAMADOS =====
-// Script Property ADMINS = e-mails separados por vírgula. Vazia = sem
-// restrição (o sistema ainda não tem perfis de acesso).
+// ===== PERMISSÕES (grupos do login: LoginBackend) =====
+// Administrador: tudo (inclusive as migrações). Gerar preventivas:
+// administrador e diretor.
 function usuarioEhAdmin() {
-  const lista = String(PropertiesService.getScriptProperties().getProperty('ADMINS') || '')
-    .split(/[,;\s]+/).map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
-  if (!lista.length) return true;
-  return lista.indexOf(emailUsuarioLogado_()) !== -1;
+  return nivelUsuarioLogado_() >= GRUPOS_USUARIO.administrador;
+}
+
+function podeGerarPreventivas() {
+  return nivelUsuarioLogado_() >= GRUPOS_USUARIO.diretor;
 }
 
 const PREVENTIVAS_PERIODO_MAX_MESES = 24;
@@ -286,7 +287,7 @@ const PREVENTIVAS_PERIODO_MAX_MESES = 24;
  * pula o contrato que já tem o chamado do mês), numa trava só.
  */
 function gerarPreventivasPeriodoManual(filtros) {
-  if (!usuarioEhAdmin()) return { sucesso: false, mensagem: 'Somente administradores podem gerar as preventivas.' };
+  if (!podeGerarPreventivas()) return { sucesso: false, mensagem: 'Somente administradores e diretores podem gerar as preventivas.' };
   try {
     const f = filtros || {};
     const de = String(f.de || '').trim(), ate = String(f.ate || '').trim() || de;
@@ -324,6 +325,6 @@ function gerarPreventivasPeriodoManual(filtros) {
 }
 
 function gerarPreventivasDoMesManual(competencia, contratoIds) {
-  if (!usuarioEhAdmin()) return { sucesso: false, mensagem: 'Somente administradores podem gerar as preventivas.' };
+  if (!podeGerarPreventivas()) return { sucesso: false, mensagem: 'Somente administradores e diretores podem gerar as preventivas.' };
   return gerarPreventivasDoMes(typeof competencia === 'string' ? competencia : '', Array.isArray(contratoIds) ? contratoIds : undefined);
 }

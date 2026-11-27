@@ -42,10 +42,14 @@
     <?!= include('apps/Controller/Relatorios/front/RelatorioChecklistCSS'); ?>
     <?!= include('apps/Controller/Relatorios/front/RelatorioManutencaoCSS'); ?>
     <?!= include('apps/AgendaCSS'); ?>
+    <?!= include('apps/Controller/Login/front/LoginCSS'); ?>
 
   </style>
 </head>
-<body>
+<body class="sem-sessao">
+
+  <!-- login: cobre o sistema até haver sessão (apps/Controller/Login) -->
+  <?!= include('apps/Controller/Login/front/LoginHtml'); ?>
 
   <?!= include('MainMenu'); ?>
 
@@ -147,6 +151,7 @@
 
 
   <?!= include("js/IndexPagesJS") ?>
+  <?!= include("apps/Controller/Login/front/LoginJS") ?>
   <?!= include("js/IndexJS") ?>  
 
 

@@ -83,7 +83,7 @@ function esquemaTabelas_() {
     { aba: LocalTableName, colunas: ['ID', 'NOME', 'OBSERVACAO', 'DATA_CADASTRO', 'DATA_EXCLUSAO', 'DATA_ALTERACAO'] },
     { aba: employeeTableName, colunas: ['ID', 'NOME'] },
     { aba: userTableName, colunas: ['ID', 'MATRICULA', 'USUARIO', 'NOME', 'LOTACAO', 'SETOR', 'DATA_CADASTRO', 'DATA_EXCLUSAO',
-      'EMAIL', 'TELEFONE_RAMAL'] },
+      'EMAIL', 'TELEFONE_RAMAL', 'SENHA_HASH', 'SENHA_SAL', 'GRUPO', 'ATIVO', 'CODIGO_SENHA', 'CODIGO_EXPIRA', 'ULTIMO_ACESSO'] },
     // modelos de e-mail: criada por garantirAbaModelosEmail_ (vem com os modelos iniciais)
     { aba: modelosEmailTableName, colunas: CABECALHO_MODELOS_EMAIL, criar: garantirAbaModelosEmail_ }
   ];

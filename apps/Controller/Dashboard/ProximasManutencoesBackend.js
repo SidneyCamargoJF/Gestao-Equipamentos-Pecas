@@ -144,7 +144,7 @@ function buscarProximasManutencoes() {
     return {
       sucesso: true, competencias: competencias, competenciasAnalisadas: analisadas, abrir: abrir, agendar: agendar,
       atrasadas: abrir.filter(function (p) { return p.atrasado; }).length + agendar.filter(function (a) { return a.atrasado; }).length,
-      admin: usuarioEhAdmin()
+      admin: podeGerarPreventivas()
     };
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message, abrir: [], agendar: [] };

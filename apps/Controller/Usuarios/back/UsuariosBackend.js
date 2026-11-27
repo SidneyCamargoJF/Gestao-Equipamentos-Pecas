@@ -1,4 +1,17 @@
+// Gestão de usuários: só administrador e diretor (LoginBackend). Ninguém
+// mexe em quem está num nível acima do seu.
+function gestorUsuarios_() {
+  const s = sessaoAtual_();
+  return s && s.nivel >= 2 ? s : null;
+}
+
+function alvoAcimaDoGestor_(linha, gestor) {
+  return GRUPOS_USUARIO[grupoUsuarioLinha_(linha)] > gestor.nivel;
+}
+
 function filtrarUsuarios(criterios) {
+  const gestor = gestorUsuarios_();
+  if (!gestor) return [];
   const dados = ReadUsers();
   const busca = (criterios && criterios.nome) ? criterios.nome.trim().toLowerCase() : "";
   const res = [];
@@ -18,19 +31,32 @@ function filtrarUsuarios(criterios) {
       setor: dados[i][userSetorCol] ? String(dados[i][userSetorCol]).trim() : "",
       email: dados[i][userEmailCol] ? String(dados[i][userEmailCol]).trim() : "",
       telefone: dados[i][userTelefoneCol] ? String(dados[i][userTelefoneCol]).trim() : "",
-      desativado: String(dados[i][userDtExclusaoCol] || "").trim() !== ""
+      desativado: String(dados[i][userDtExclusaoCol] || "").trim() !== "",
+      grupo: grupoUsuarioLinha_(dados[i]),
+      ativo: String(dados[i][userAtivoCol] || "S").trim().toUpperCase() !== "N",
+      temSenha: String(dados[i][userSenhaHashCol] || "") !== "",
+      ultimoAcesso: String(dados[i][userUltimoAcessoCol] || ""),
+      voceMesmo: Number(dados[i][userIdCol]) === gestor.id,
+      podeGerenciar: Number(dados[i][userIdCol]) !== gestor.id && GRUPOS_USUARIO[grupoUsuarioLinha_(dados[i])] <= gestor.nivel
     });
   }
 
-  res.sort((a, b) => (a.desativado ? 1 : 0) - (b.desativado ? 1 : 0));
+  // aguardando liberação primeiro; desativados por último
+  const ordem = u => u.desativado ? 2 : (u.ativo ? 1 : 0);
+  res.sort((a, b) => ordem(a) - ordem(b));
 
   return res;
 }
 
-function cadastrarUsuario(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput) {
+function cadastrarUsuario(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput, grupoInput) {
   try {
+    const gestor = gestorUsuarios_();
+    if (!gestor) return { sucesso: false, mensagem: "Somente administradores e diretores podem cadastrar usuários." };
+    const grupo = String(grupoInput || "usuario").toLowerCase();
+    if (!GRUPOS_USUARIO[grupo]) return { sucesso: false, mensagem: "Grupo inválido." };
+    if (GRUPOS_USUARIO[grupo] > gestor.nivel) return { sucesso: false, mensagem: "Você não pode dar um nível acima do seu." };
     return executarComLock(function () {
-      return cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput);
+      return cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput, grupo);
     });
   } catch (e) {
     return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
@@ -53,7 +79,7 @@ function validarCamposUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoI
     telefone: (telefoneInput || "").toString().trim()
   };
   if (d.matricula === "") return { mensagem: "Digite a matrícula." };
-  if (d.usuario === "") return { mensagem: "Digite o usuário (login Google)." };
+  if (d.usuario === "") return { mensagem: "Digite o usuário." };
   if (d.nome === "") return { mensagem: "Digite o nome do usuário." };
   if (d.lotacao === "") return { mensagem: "Digite a lotação." };
   if (d.setor === "") return { mensagem: "Digite o setor." };
@@ -67,6 +93,8 @@ function validarCamposUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoI
  */
 function alterarUsuario(idInput, dadosInput) {
   try {
+    const gestor = gestorUsuarios_();
+    if (!gestor) return { sucesso: false, mensagem: "Somente administradores e diretores podem alterar usuários." };
     return executarComLock(function () {
       const id = Number(idInput);
       if (!id) return { sucesso: false, mensagem: "ID do usuário inválido." };
@@ -82,6 +110,7 @@ function alterarUsuario(idInput, dadosInput) {
       const idx = lista.findIndex(function (l) { return Number(l[userIdCol]) === id; });
       if (idx === -1) return { sucesso: false, mensagem: "Usuário não encontrado." };
       if (String(lista[idx][userDtExclusaoCol] || "").trim()) return { sucesso: false, mensagem: "Usuário desativado: reative antes de alterar." };
+      if (alvoAcimaDoGestor_(lista[idx], gestor)) return { sucesso: false, mensagem: "Você não pode alterar um usuário de nível acima do seu." };
 
       const repetido = lista.some(function (l) {
         return Number(l[userIdCol]) !== id && !String(l[userDtExclusaoCol] || "").trim() &&
@@ -99,7 +128,7 @@ function alterarUsuario(idInput, dadosInput) {
   }
 }
 
-function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput) {
+function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput, grupoInput) {
   try {
     const v = validarCamposUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput, setorInput, emailInput, telefoneInput);
     if (v.mensagem) return { sucesso: false, mensagem: v.mensagem };
@@ -123,11 +152,13 @@ function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput
     const dataHoje = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
     const pos = proximoIdTabela(aba, firstLineUsers);
 
-    // [ID, Matrícula, Usuário, Nome, Lotação, Setor, Data Cadastro, Data Exclusão, E-mail, Telefone/ramal]
-    const linha = [pos.novoId, matricula, usuario, nome, lotacao, setor, dataHoje, "", email, telefone];
+    // [ID, Matrícula, Usuário, Nome, Lotação, Setor, Data Cadastro, Data Exclusão, E-mail, Telefone/ramal,
+    //  senha (vazia: a pessoa define em "Esqueci minha senha"), sal, grupo, ativo, código, validade, último acesso]
+    const linha = [pos.novoId, matricula, usuario, nome, lotacao, setor, dataHoje, "", email || (/@/.test(usuario) ? usuario : ""), telefone,
+      "", "", grupoInput || "usuario", "S", "", "", ""];
     aba.getRange(pos.proximaLinha, 1, 1, numColumnsUsers).setValues([linha]);
 
-    return { sucesso: true, mensagem: "Usuário cadastrado com sucesso!" };
+    return { sucesso: true, mensagem: "Usuário cadastrado com sucesso! Para entrar, ele define a senha em \"Esqueci minha senha\" na tela de login." };
 
   } catch (e) {
     return { sucesso: false, mensagem: "Erro no servidor: " + e.message };
@@ -136,10 +167,13 @@ function cadastrarUsuario_(matriculaInput, usuarioInput, nomeInput, lotacaoInput
 
 function desativarUsuario(idInput) {
   try {
+    const gestor = gestorUsuarios_();
+    if (!gestor) return { sucesso: false, mensagem: "Somente administradores e diretores podem desativar usuários." };
     const id = Number(idInput);
     if (!id) {
       return { sucesso: false, mensagem: "ID do usuário inválido." };
     }
+    if (id === gestor.id) return { sucesso: false, mensagem: "Você não pode desativar o seu próprio usuário." };
 
     const planilha = SpreadsheetApp.getActiveSpreadsheet();
     const aba = planilha.getSheetByName(userTableName);
@@ -155,6 +189,7 @@ function desativarUsuario(idInput) {
     if (linha === -1) {
       return { sucesso: false, mensagem: "Usuário não encontrado." };
     }
+    if (alvoAcimaDoGestor_(dados[linha - firstLineUsers], gestor)) return { sucesso: false, mensagem: "Você não pode desativar um usuário de nível acima do seu." };
 
     const dataHoje = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
     aba.getRange(linha, userDtExclusaoCol + 1).setValue(dataHoje);
@@ -168,6 +203,8 @@ function desativarUsuario(idInput) {
 
 function reativarUsuario(idInput) {
   try {
+    const gestor = gestorUsuarios_();
+    if (!gestor) return { sucesso: false, mensagem: "Somente administradores e diretores podem reativar usuários." };
     const id = Number(idInput);
     if (!id) {
       return { sucesso: false, mensagem: "ID do usuário inválido." };
@@ -188,6 +225,7 @@ function reativarUsuario(idInput) {
       return { sucesso: false, mensagem: "Usuário não encontrado." };
     }
 
+    if (alvoAcimaDoGestor_(dados[linha - firstLineUsers], gestor)) return { sucesso: false, mensagem: "Você não pode reativar um usuário de nível acima do seu." };
     aba.getRange(linha, userDtExclusaoCol + 1).clearContent();
 
     return { sucesso: true, mensagem: "Usuário reativado com sucesso!" };
@@ -222,6 +260,11 @@ function emailUsuarioLogado_() {
  * emailContato é o e-mail do cadastro ou, vazio, o da conta Google.
  */
 function buscarUsuarioLogado() {
+  const s = typeof sessaoAtual_ === 'function' ? sessaoAtual_() : null;
+  if (s) {
+    return { email: s.email || emailUsuarioLogado_(), nome: s.nome, encontrado: true, setor: s.setor, lotacao: s.lotacao,
+      emailContato: s.email || emailUsuarioLogado_(), telefone: s.telefone || '', grupo: s.grupo, grupoTexto: NOMES_GRUPOS[s.grupo], usuario: s.usuario };
+  }
   const email = emailUsuarioLogado_();
   if (!email) return { email: '', nome: '', encontrado: false, setor: '', lotacao: '', emailContato: '', telefone: '' };
 

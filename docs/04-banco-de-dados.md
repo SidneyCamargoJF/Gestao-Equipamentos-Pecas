@@ -403,6 +403,15 @@ Movimentações do estoque; o saldo de cada item é a soma das ativas (entrada +
 | H | Data de exclusão |
 | I | E-mail de contato (opcional; coluna incluída depois, no fim da aba) |
 | J | Telefone / ramal (opcional; coluna incluída depois, no fim da aba) |
+| K | Hash da senha (SHA-256 com sal, várias rodadas; a senha não é guardada) |
+| L | Sal da senha |
+| M | Grupo: `administrador`, `diretor` ou `usuario` (vazio: `administrador` se estiver na propriedade `ADMINS`, senão `usuario`) |
+| N | Ativo: `S` ou `N` (vazio = `S`); o pedido de acesso pela tela de login entra `N` |
+| O | Hash do código de "Esqueci minha senha" |
+| P | Validade do código (milissegundos) |
+| Q | Último acesso (dd/MM/yyyy HH:mm) |
+
+As permissões de menu dos grupos Diretor e Usuário ficam na propriedade do script `PERMISSOES_MENUS` (JSON); a sessão de login, no cache do Apps Script (por conta Google, 6 horas).
 
 Linhas cadastradas antes da coluna **Usuário** existir precisam ser corrigidas à mão: até a correção, as colunas ficam deslocadas.
 

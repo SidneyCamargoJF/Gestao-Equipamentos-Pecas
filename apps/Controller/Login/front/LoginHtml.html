@@ -1,0 +1,152 @@
+<!-- TELA DE LOGIN (LoginJS): cobre o sistema até haver sessão.
+     Vistas: carregando, entrar, primeiro (cadastro do administrador),
+     cadastro (não tenho conta), esqueci (pedir código) e redefinir (código + nova senha). -->
+<div id="telaLogin" class="login-tela" role="dialog" aria-modal="true" aria-labelledby="loginTitulo">
+  <div class="login-cartao">
+    <div class="login-marca">
+      <span class="login-marca-icone" aria-hidden="true">⚙️</span>
+      <div>
+        <h1 id="loginTitulo">Gestão de Equipamentos e Peças</h1>
+        <p class="login-subtitulo" id="loginSubtitulo">Entre com seu usuário e senha</p>
+      </div>
+    </div>
+
+    <p class="login-mensagem" id="loginMensagem" role="alert"></p>
+
+    <!-- carregando -->
+    <div class="login-vista" data-vista="carregando">
+      <p class="login-carregando"><span class="spinner"></span> Verificando o acesso...</p>
+    </div>
+
+    <!-- entrar -->
+    <form class="login-vista" data-vista="entrar" autocomplete="on" onsubmit="entrarSistemaUI(); return false;">
+      <div class="field">
+        <label class="field__label" for="loginUsuario">Usuário</label>
+        <input class="field__input" type="text" id="loginUsuario" autocomplete="username" placeholder="Usuário ou e-mail" data-ignorar-alteracao>
+      </div>
+      <div class="field">
+        <label class="field__label" for="loginSenha">Senha</label>
+        <input class="field__input" type="password" id="loginSenha" autocomplete="current-password" data-ignorar-alteracao>
+      </div>
+      <button type="submit" class="btn-primary login-botao" id="loginBtnEntrar">Entrar</button>
+      <div class="login-links">
+        <button type="button" class="btn-link" onclick="loginVista('esqueci')">Esqueci minha senha</button>
+        <button type="button" class="btn-link" onclick="loginVista('cadastro')">Não tenho conta</button>
+      </div>
+    </form>
+
+    <!-- primeiro uso: cadastro do administrador -->
+    <form class="login-vista" data-vista="primeiro" autocomplete="off" onsubmit="cadastrarPrimeiroAdministradorUI(); return false;">
+      <p class="login-ajuda">Primeiro acesso ao sistema: cadastre o <strong>administrador</strong>. Ele terá acesso a tudo e libera os demais usuários.</p>
+      <div class="login-grade">
+        <div class="field login-inteiro">
+          <label class="field__label" for="primUsuario">Usuário * <em>(pode ser o e-mail)</em></label>
+          <input class="field__input" type="text" id="primUsuario" oninput="loginCopiarEmail('prim')" data-ignorar-alteracao>
+        </div>
+        <div class="field login-inteiro">
+          <label class="field__label" for="primNome">Nome *</label>
+          <input class="field__input" type="text" id="primNome" data-ignorar-alteracao>
+        </div>
+        <div class="field login-inteiro">
+          <label class="field__label" for="primEmail">E-mail *</label>
+          <input class="field__input" type="email" id="primEmail" data-ignorar-alteracao>
+        </div>
+        <div class="field">
+          <label class="field__label" for="primSenha">Senha *</label>
+          <input class="field__input" type="password" id="primSenha" autocomplete="new-password" data-ignorar-alteracao>
+        </div>
+        <div class="field">
+          <label class="field__label" for="primConfirmacao">Confirmar senha *</label>
+          <input class="field__input" type="password" id="primConfirmacao" autocomplete="new-password" data-ignorar-alteracao>
+        </div>
+      </div>
+      <p class="login-ajuda">A senha precisa ter pelo menos 8 caracteres, com letras e números.</p>
+      <button type="submit" class="btn-primary login-botao">Cadastrar administrador</button>
+    </form>
+
+    <!-- não tenho conta -->
+    <form class="login-vista" data-vista="cadastro" autocomplete="off" onsubmit="solicitarCadastroUI(); return false;">
+      <p class="login-ajuda">Preencha seus dados. O acesso é liberado por um administrador ou diretor, e você recebe um e-mail quando isso acontecer.</p>
+      <div class="login-grade">
+        <div class="field login-inteiro">
+          <label class="field__label" for="cadUsuario">Usuário * <em>(pode ser o e-mail)</em></label>
+          <input class="field__input" type="text" id="cadUsuario" oninput="loginCopiarEmail('cad')" data-ignorar-alteracao>
+        </div>
+        <div class="field login-inteiro">
+          <label class="field__label" for="cadNome">Nome *</label>
+          <input class="field__input" type="text" id="cadNome" data-ignorar-alteracao>
+        </div>
+        <div class="field login-inteiro">
+          <label class="field__label" for="cadEmail">E-mail *</label>
+          <input class="field__input" type="email" id="cadEmail" data-ignorar-alteracao>
+        </div>
+        <div class="field">
+          <label class="field__label" for="cadMatricula">Matrícula</label>
+          <input class="field__input" type="text" id="cadMatricula" data-ignorar-alteracao>
+        </div>
+        <div class="field">
+          <label class="field__label" for="cadTelefone">Telefone / ramal</label>
+          <input class="field__input" type="text" id="cadTelefone" data-ignorar-alteracao>
+        </div>
+        <div class="field">
+          <label class="field__label" for="cadLotacao">Lotação</label>
+          <input class="field__input" type="text" id="cadLotacao" data-ignorar-alteracao>
+        </div>
+        <div class="field">
+          <label class="field__label" for="cadSetor">Setor</label>
+          <input class="field__input" type="text" id="cadSetor" data-ignorar-alteracao>
+        </div>
+        <div class="field">
+          <label class="field__label" for="cadSenha">Senha *</label>
+          <input class="field__input" type="password" id="cadSenha" autocomplete="new-password" data-ignorar-alteracao>
+        </div>
+        <div class="field">
+          <label class="field__label" for="cadConfirmacao">Confirmar senha *</label>
+          <input class="field__input" type="password" id="cadConfirmacao" autocomplete="new-password" data-ignorar-alteracao>
+        </div>
+      </div>
+      <p class="login-ajuda">A senha precisa ter pelo menos 8 caracteres, com letras e números.</p>
+      <button type="submit" class="btn-primary login-botao">Enviar cadastro</button>
+      <div class="login-links"><button type="button" class="btn-link" onclick="loginVista('entrar')">Voltar para o login</button></div>
+    </form>
+
+    <!-- esqueci minha senha: pede o código -->
+    <form class="login-vista" data-vista="esqueci" autocomplete="off" onsubmit="enviarCodigoSenhaUI(); return false;">
+      <p class="login-ajuda">Informe seu usuário. Enviamos um código para o e-mail do seu cadastro para você definir uma nova senha (também vale para definir a senha pela primeira vez).</p>
+      <div class="field">
+        <label class="field__label" for="esqUsuario">Usuário</label>
+        <input class="field__input" type="text" id="esqUsuario" data-ignorar-alteracao>
+      </div>
+      <button type="submit" class="btn-primary login-botao">Enviar código</button>
+      <div class="login-links">
+        <button type="button" class="btn-link" onclick="loginVista('redefinir')">Já tenho o código</button>
+        <button type="button" class="btn-link" onclick="loginVista('entrar')">Voltar para o login</button>
+      </div>
+    </form>
+
+    <!-- redefinir: código + nova senha -->
+    <form class="login-vista" data-vista="redefinir" autocomplete="off" onsubmit="redefinirSenhaUI(); return false;">
+      <div class="login-grade">
+        <div class="field login-inteiro">
+          <label class="field__label" for="redUsuario">Usuário</label>
+          <input class="field__input" type="text" id="redUsuario" data-ignorar-alteracao>
+        </div>
+        <div class="field login-inteiro">
+          <label class="field__label" for="redCodigo">Código recebido por e-mail</label>
+          <input class="field__input" type="text" id="redCodigo" inputmode="numeric" maxlength="6" placeholder="000000" data-ignorar-alteracao>
+        </div>
+        <div class="field">
+          <label class="field__label" for="redSenha">Nova senha</label>
+          <input class="field__input" type="password" id="redSenha" autocomplete="new-password" data-ignorar-alteracao>
+        </div>
+        <div class="field">
+          <label class="field__label" for="redConfirmacao">Confirmar nova senha</label>
+          <input class="field__input" type="password" id="redConfirmacao" autocomplete="new-password" data-ignorar-alteracao>
+        </div>
+      </div>
+      <p class="login-ajuda">A senha precisa ter pelo menos 8 caracteres, com letras e números.</p>
+      <button type="submit" class="btn-primary login-botao">Definir nova senha</button>
+      <div class="login-links"><button type="button" class="btn-link" onclick="loginVista('entrar')">Voltar para o login</button></div>
+    </form>
+  </div>
+</div>

@@ -37,7 +37,7 @@ async function mostrarBotaoGerarPreventivas() {
     const btn = document.getElementById('btnGerarPreventivas');
     if (!btn) return;
     try {
-        btn.style.display = (await runServerFunction('usuarioEhAdmin')) ? '' : 'none';
+        btn.style.display = (await runServerFunction('podeGerarPreventivas')) ? '' : 'none';
     } catch (e) {
         btn.style.display = 'none';
     }

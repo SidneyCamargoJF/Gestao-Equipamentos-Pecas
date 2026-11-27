@@ -2,13 +2,14 @@
 
 // secao: 'usuarios' (padrão), 'modelos-email' ou 'migracoes' -- itens do submenu Configuração
 async function renderConfiguracoes(secao) {
-    const atual = ['modelos-email', 'migracoes'].indexOf(secao) !== -1 ? secao : 'usuarios';
+    const atual = ['modelos-email', 'migracoes', 'permissoes'].indexOf(secao) !== -1 ? secao : 'usuarios';
     document.querySelectorAll('#page-configuracoes .config-secao').forEach(el => {
         el.style.display = el.id === 'config-secao-' + atual ? '' : 'none';
     });
     if (atual === 'modelos-email') await consultarModelosEmail();
     else if (atual === 'migracoes') await carregarPainelMigracoes();
-    else await consultarUsuarios();
+    else if (atual === 'permissoes') await carregarPermissoesUI();
+    else { preencherGruposUsuarioForm(); await consultarUsuarios(); }
 }
 
 let usuariosLista = [];
@@ -17,12 +18,29 @@ let usuarioEditandoId = null;     // preenchido quando o formulário está alter
 const CAMPOS_USUARIO_FORM = {
     matricula: 'usuarioMatriculaInput', usuario: 'usuarioLoginInput', nome: 'usuarioNomeInput',
     lotacao: 'usuarioLotacaoInput', setor: 'usuarioSetorInput', email: 'usuarioEmailInput',
-    telefone: 'usuarioTelefoneInput'
+    telefone: 'usuarioTelefoneInput', grupo: 'usuarioGrupoInput'
 };
+
+const GRUPOS_TELA = { administrador: { nivel: 3, nome: 'Administrador' }, diretor: { nivel: 2, nome: 'Diretor' }, usuario: { nivel: 1, nome: 'Usuário' } };
+
+function nivelSessaoTela() {
+    const g = (typeof grupoSessaoUsuario === 'function' && grupoSessaoUsuario()) || 'usuario';
+    return (GRUPOS_TELA[g] || GRUPOS_TELA.usuario).nivel;
+}
+
+// Só os grupos até o nível de quem está logado
+function preencherGruposUsuarioForm() {
+    const sel = document.getElementById('usuarioGrupoInput');
+    if (!sel) return;
+    const atual = sel.value || 'usuario';
+    sel.innerHTML = Object.keys(GRUPOS_TELA).filter(g => GRUPOS_TELA[g].nivel <= nivelSessaoTela())
+        .map(g => '<option value="' + g + '">' + GRUPOS_TELA[g].nome + '</option>').join('');
+    sel.value = Array.from(sel.options).some(o => o.value === atual) ? atual : 'usuario';
+}
 
 async function consultarUsuarios() {
     const tbody = document.getElementById('usuariosTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;"><span class="spinner"></span>Carregando...</td></tr>';
 
     try {
         const usuarios = await runServerFunction('filtrarUsuarios', {});
@@ -30,7 +48,7 @@ async function consultarUsuarios() {
         renderTabelaUsuarios(usuarios);
     } catch (error) {
         console.error('Erro ao consultar usuários:', error);
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Erro ao buscar usuários.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Erro ao buscar usuários.</td></tr>';
     }
 }
 
@@ -39,7 +57,7 @@ function renderTabelaUsuarios(lista) {
     if (!tbody) return;
 
     if (!Array.isArray(lista) || lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Nenhum usuário cadastrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Nenhum usuário cadastrado.</td></tr>';
         return;
     }
 
@@ -52,11 +70,17 @@ function renderTabelaUsuarios(lista) {
             <td>${escapeHtml(u.setor)}</td>
             <td>${escapeHtml(u.email || '')}</td>
             <td>${escapeHtml(u.telefone || '')}</td>
-            <td class="acao-cell">
+            <td><span class="usu-grupo usu-grupo--${escapeHtml(u.grupo || 'usuario')}">${escapeHtml((GRUPOS_TELA[u.grupo] || GRUPOS_TELA.usuario).nome)}</span></td>
+            <td>${u.desativado ? 'Desativado'
+                : (!u.ativo ? '<span class="usu-situacao--pendente">Aguardando liberação</span>'
+                : 'Ativo' + (u.temSenha ? '' : '<br><small>sem senha definida</small>'))}${u.voceMesmo ? '<br><small>(você)</small>' : ''}</td>
+            <td class="acao-cell">${u.podeGerenciar ? `
+                ${!u.desativado && !u.ativo ? `<button class="btn-acao" title="Liberar acesso" onclick="liberarUsuarioUI('${u.id}')">✅</button>` : ''}
+                ${!u.desativado && u.ativo ? `<button class="btn-acao" title="Bloquear acesso" onclick="bloquearUsuarioUI('${u.id}')">⛔</button>` : ''}
                 ${u.desativado ? '' : `<button class="btn-acao" title="Editar" onclick="editarUsuarioUI('${u.id}')">✏️</button>`}
                 ${u.desativado
                     ? `<button class="btn-acao" title="Reativar" onclick="reativarUsuarioUI('${u.id}')">♻️</button>`
-                    : `<button class="btn-acao" title="Desativar" onclick="desativarUsuarioUI('${u.id}')">🗑️</button>`}
+                    : `<button class="btn-acao" title="Desativar" onclick="desativarUsuarioUI('${u.id}')">🗑️</button>`}` : ''}
             </td>
         </tr>
     `).join('');
@@ -74,7 +98,7 @@ function lerFormUsuario() {
 function limparFormUsuario() {
     Object.keys(CAMPOS_USUARIO_FORM).forEach(k => {
         const el = document.getElementById(CAMPOS_USUARIO_FORM[k]);
-        if (el) el.value = '';
+        if (el) el.value = k === 'grupo' ? 'usuario' : '';
     });
     usuarioEditandoId = null;
     const btn = document.getElementById('usuarioBtnSalvar');
@@ -97,13 +121,20 @@ async function cadastrarUsuarioUI() {
     }
 
     try {
+        const antes = usuarioEditandoId ? usuariosLista.find(x => String(x.id) === String(usuarioEditandoId)) : null;
         const resposta = usuarioEditandoId
             ? await runServerFunction('alterarUsuario', usuarioEditandoId, d)
-            : await runServerFunction('cadastrarUsuario', d.matricula, d.usuario, d.nome, d.lotacao, d.setor, d.email, d.telefone);
+            : await runServerFunction('cadastrarUsuario', d.matricula, d.usuario, d.nome, d.lotacao, d.setor, d.email, d.telefone, d.grupo || 'usuario');
         if (resposta && resposta.sucesso === false) {
             alert(resposta.mensagem);
             return;
         }
+        // grupo alterado na edição
+        if (antes && d.grupo && d.grupo !== antes.grupo) {
+            const rg = await runServerFunction('alterarAcessoUsuario', usuarioEditandoId, { grupo: d.grupo });
+            if (rg && rg.sucesso === false) { alert(rg.mensagem); return; }
+        }
+        if (!usuarioEditandoId && resposta && resposta.mensagem) mostrarMensagem(resposta.mensagem, 'sucesso');
         if (usuarioEditandoId && resposta && resposta.mensagem) mostrarMensagem(resposta.mensagem, 'sucesso');
         limparFormUsuario();
         consultarUsuarios();
@@ -121,7 +152,7 @@ function editarUsuarioUI(id) {
     if (!u) return;
     Object.keys(CAMPOS_USUARIO_FORM).forEach(k => {
         const el = document.getElementById(CAMPOS_USUARIO_FORM[k]);
-        if (el) el.value = u[k] || '';
+        if (el) el.value = u[k] || (k === 'grupo' ? 'usuario' : '');
     });
     usuarioEditandoId = u.id;
     const btn = document.getElementById('usuarioBtnSalvar');
@@ -150,6 +181,67 @@ async function desativarUsuarioUI(id) {
         console.error('Erro ao desativar usuário:', error);
         alert('Erro ao desativar usuário.');
     }
+}
+
+// ✅ Liberar: ativa o acesso no grupo escolhido (nunca acima do seu); o usuário recebe um e-mail
+async function liberarUsuarioUI(id) {
+    const u = usuariosLista.find(x => String(x.id) === String(id));
+    if (!u) return;
+    const opcoes = Object.keys(GRUPOS_TELA).filter(g => GRUPOS_TELA[g].nivel <= nivelSessaoTela()).map(g => ({ valor: g, texto: GRUPOS_TELA[g].nome }));
+    const grupo = await pedirEscolhaModal('Liberar o acesso de ' + u.nome + ' (' + u.usuario + ')? Ele recebe um e-mail avisando.',
+        { titulo: 'Liberar acesso', confirmar: 'Liberar', rotulo: 'Grupo', valor: u.grupo || 'usuario', opcoes: opcoes });
+    if (grupo === null) return;
+    const r = await runServerFunction('alterarAcessoUsuario', id, { ativo: true, grupo: grupo });
+    if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao liberar.'); return; }
+    mostrarMensagem(r.mensagem, 'sucesso');
+    consultarUsuarios();
+}
+
+// ⛔ Bloquear: o usuário não entra mais (sem apagar o cadastro)
+async function bloquearUsuarioUI(id) {
+    const u = usuariosLista.find(x => String(x.id) === String(id));
+    if (!u || !(await confirmarModal('Bloquear o acesso de ' + u.nome + '? Ele sai do sistema e não consegue entrar até ser liberado de novo.', { titulo: 'Bloquear acesso', confirmar: 'Bloquear' }))) return;
+    const r = await runServerFunction('alterarAcessoUsuario', id, { ativo: false });
+    if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao bloquear.'); return; }
+    mostrarMensagem(r.mensagem, 'sucesso');
+    consultarUsuarios();
+}
+
+// ===== PERMISSÕES DOS GRUPOS =====
+let permissoesTela = null;
+
+async function carregarPermissoesUI() {
+    const box = document.getElementById('permGrupos');
+    if (!box) return;
+    box.innerHTML = '<p><span class="spinner"></span>Carregando...</p>';
+    let r = null;
+    try { r = await runServerFunction('listarPermissoesMenus'); } catch (e) { r = null; }
+    if (!r || r.sucesso === false) { box.innerHTML = '<p>' + escapeHtml((r && r.mensagem) || 'Erro ao carregar as permissões.') + '</p>'; return; }
+    permissoesTela = r;
+    box.innerHTML = ['diretor', 'usuario'].map(grupo => {
+        const info = r.grupos[grupo];
+        let secaoAtual = null;
+        const itens = r.menus.map(m => {
+            let cab = '';
+            if (m.secao !== secaoAtual) { secaoAtual = m.secao; cab = '<div class="perm-secao">' + escapeHtml(m.secao || 'Principal') + '</div>'; }
+            const marcado = info.liberados.indexOf(m.id) !== -1;
+            const editavel = info.editavel && info.podeLiberar.indexOf(m.id) !== -1;
+            const nota = m.fixo ? 'sempre liberado' : (m.sistema ? 'só administrador' : (m.gestao ? (grupo === 'diretor' ? 'sempre do diretor' : 'só administrador e diretor') : (!editavel && info.editavel ? 'o diretor não tem' : '')));
+            return cab + '<label class="perm-item"><input type="checkbox" data-grupo="' + grupo + '" value="' + escapeHtml(m.id) + '"' + (marcado ? ' checked' : '') +
+                (editavel ? '' : ' disabled') + '> ' + escapeHtml(m.rotulo) + (nota ? ' <small>(' + nota + ')</small>' : '') + '</label>';
+        }).join('');
+        return '<div class="perm-grupo"><h3>' + GRUPOS_TELA[grupo].nome + '</h3>' +
+            '<p class="perm-nota">' + (info.editavel ? (grupo === 'diretor' ? 'Definido pelo administrador.' : 'Definido pelo administrador ou pelo diretor.') : 'Só o administrador altera.') + '</p>' +
+            itens + (info.editavel ? '<button type="button" class="btn-primary" onclick="salvarPermissoesUI(\'' + grupo + '\')">Salvar ' + GRUPOS_TELA[grupo].nome + '</button>' : '') + '</div>';
+    }).join('');
+}
+
+async function salvarPermissoesUI(grupo) {
+    const ids = Array.from(document.querySelectorAll('#permGrupos input[data-grupo="' + grupo + '"]:checked:not(:disabled)')).map(cb => cb.value);
+    const r = await runServerFunction('salvarPermissoesMenus', grupo, ids);
+    if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao salvar.'); return; }
+    mostrarMensagem(r.mensagem, 'sucesso');
+    await carregarPermissoesUI();
 }
 
 async function reativarUsuarioUI(id) {

@@ -1,7 +1,10 @@
 <script>
 
     // Initialize Application
+    // Primeiro confere o login (apps/Controller/Login/front/LoginJS): com
+    // sessão, abre o Dashboard e o usuário na barra; sem, mostra o login.
     document.addEventListener('DOMContentLoaded', () => {
+      if (typeof iniciarSessaoUI === 'function') { iniciarSessaoUI(); return; }
       trocarPagina('dashboard');
       carregarUsuarioMenu();
     });
@@ -22,7 +25,7 @@
         return;
       }
       const nome = u.nome || u.email;
-      const setor = u.encontrado ? (u.setor || '') : 'Não cadastrado em Usuários';
+      const setor = u.encontrado ? [u.setor || '', u.grupoTexto || ''].filter(Boolean).join(' · ') : 'Não cadastrado em Usuários';
       if (nomeEl) nomeEl.textContent = nome;
       if (setorEl) setorEl.textContent = setor;
       if (avatarEl) avatarEl.textContent = iniciaisUsuarioMenu(u.encontrado ? nome : String(u.email || '').split('@')[0]);

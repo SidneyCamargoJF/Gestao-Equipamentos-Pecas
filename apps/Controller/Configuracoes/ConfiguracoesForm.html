@@ -28,7 +28,7 @@
             <input class="field__input" type="text" id="usuarioMatriculaInput" placeholder="Matrícula...">
           </div>
           <div class="field" style="flex:2; min-width:12rem;">
-            <label class="field__label" for="usuarioLoginInput">Usuário (login Google)</label>
+            <label class="field__label" for="usuarioLoginInput">Usuário (pode ser o e-mail)</label>
             <input class="field__input" type="text" id="usuarioLoginInput" placeholder="fulano@dominio...">
           </div>
           <div class="field" style="flex:2; min-width:12rem;">
@@ -51,6 +51,10 @@
             <label class="field__label" for="usuarioTelefoneInput">Telefone / ramal</label>
             <input class="field__input" type="text" id="usuarioTelefoneInput" placeholder="(41) 3210-0000 / 1234">
           </div>
+          <div class="field" style="flex:1; min-width:9rem;">
+            <label class="field__label" for="usuarioGrupoInput">Grupo</label>
+            <select class="field__select" id="usuarioGrupoInput"></select>
+          </div>
           <button type="button" class="btn-primary" style="width:auto;" id="usuarioBtnSalvar" onclick="cadastrarUsuarioUI()">Adicionar</button>
           <button type="button" class="btn-secondary" style="width:auto; display:none;" id="usuarioBtnCancelar" onclick="cancelarEdicaoUsuarioUI()">Cancelar</button>
         </form>
@@ -58,11 +62,20 @@
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
-              <tr><th>Matrícula</th><th>Usuário</th><th>Nome</th><th>Lotação</th><th>Setor</th><th>E-mail</th><th>Telefone / ramal</th><th>Ações</th></tr>
+              <tr><th>Matrícula</th><th>Usuário</th><th>Nome</th><th>Lotação</th><th>Setor</th><th>E-mail</th><th>Telefone / ramal</th><th>Grupo</th><th>Situação</th><th>Ações</th></tr>
             </thead>
             <tbody id="usuariosTableBody"></tbody>
           </table>
         </div>
+      </div>
+
+      <!-- Permissões dos grupos (UsuariosJS: carregarPermissoesUI) -->
+      <div class="panel config-secao" id="config-secao-permissoes" style="display:none;">
+        <h2 style="font-size:1.0625rem; font-weight:700; margin-bottom:0.5rem; color:#0f172a;">Permissões dos grupos</h2>
+        <p style="font-size:0.8125rem; color:#64748b; margin-bottom:1rem;">
+          O <strong>Administrador</strong> acessa tudo. Os menus do <strong>Diretor</strong> são definidos pelo administrador (nunca as configurações de sistema, como as migrações). Os do <strong>Usuário</strong> são definidos pelo administrador ou pelo diretor, só entre os menus do diretor. O Dashboard é sempre liberado; Usuários e Permissões são só de administradores e diretores.
+        </p>
+        <div class="perm-grupos" id="permGrupos"></div>
       </div>
 
       <div class="panel config-secao" id="config-secao-modelos-email" style="display:none;">

@@ -357,13 +357,45 @@ Lista os modelos usados no [e-mail para a empresa](#e-mail-para-a-empresa) e no 
 - Campos do **remetente** (quem envia), nos dois tipos: `{{usuario}}` (nome), `{{usuario_email}}` (e-mail do cadastro em Usuários ou, vazio, o da conta Google), `{{usuario_telefone}}` (telefone / ramal) e `{{usuario_setor}}`. Vêm do cadastro em **Configuração → Usuários**; se estiverem vazios lá, saem em branco.
 - Na primeira vez, o sistema cria cinco modelos de chamado (solicitação de atendimento, cobrança de prazo de atendimento, cobrança de prazo de solução, agendamento e solicitação de atualização) e dois de garantia (acionamento de garantia e cobrança de resposta).
 
+### Login e grupos de usuários
+
+O sistema abre na **tela de login** (usuário e senha); o resto só aparece depois de entrar. O botão **Sair** fica ao lado do nome, na barra de menu. A sessão vale por 6 horas; usuário bloqueado ou desativado sai na hora.
+
+- **Senha incorreta:** a mensagem é sempre "Senha incorreta.", exista ou não o usuário. Depois de 5 tentativas erradas, o login daquele usuário fica bloqueado por 15 minutos.
+- **Senha:** pelo menos 8 caracteres, com letras e números. Fica guardada só como código criptografado (hash), nunca a senha.
+- **Esqueci minha senha:** informe o usuário; o sistema envia um código de 6 dígitos para o e-mail do cadastro (vale 30 minutos) e, em **Definir nova senha**, você informa o código e a nova senha. A resposta é a mesma exista ou não o usuário. É também o caminho para **definir a senha pela primeira vez** (usuários cadastrados antes do login ou pela tela de Usuários).
+- **Não tenho conta:** pedido de acesso com usuário * (pode ser o e-mail — quando for, ele é repetido no campo e-mail), nome *, e-mail *, matrícula, lotação, setor, telefone e senha *. O cadastro fica **aguardando liberação**; administradores e diretores recebem um e-mail. Ao ser liberado, o usuário recebe um e-mail.
+- **Primeiro uso:** enquanto não houver nenhum administrador ativo, a tela de login oferece o **cadastro do administrador**.
+
+**Grupos:**
+
+| Grupo | Acesso |
+|---|---|
+| Administrador | Tudo, inclusive as configurações de sistema (Migrações da planilha) e os menus do diretor |
+| Diretor | Tudo menos as configurações de sistema; os menus são definidos pelo administrador. Libera usuários e define os menus do grupo Usuário |
+| Usuário | Os menus definidos pelo administrador ou pelo diretor (por padrão, tudo menos Configuração) |
+
+- Quem libera um usuário (administrador ou diretor) escolhe o grupo, **nunca acima do próprio**, e não mexe em quem está acima nem no próprio acesso.
+- Gerar preventivas: administrador e diretor.
+- Usuários que já existiam: quem está na propriedade `ADMINS` é **Administrador**; os demais, **Usuário** (todos ativos). Veja o documento [07](07-implantacao-e-operacao.md).
+
+### Configuração → Permissões dos grupos
+
+Só administradores e diretores. Para cada grupo, os menus liberados, com caixas de marcar e **Salvar**:
+- **Diretor:** só o administrador altera.
+- **Usuário:** o administrador ou o diretor, só entre os menus que o diretor tem (tirar um menu do diretor tira do usuário também).
+- O Dashboard é sempre liberado; Usuários e Permissões são só de administradores e diretores; Migrações, só do administrador.
+- Menu não liberado some da barra (e o submenu que ficar vazio também); abrir a tela por um atalho mostra "Você não tem acesso a esta tela."
+
 ### Configuração → Usuários
 
-**Campos:** matrícula, **usuário** (login Google, a parte antes do `@`), nome, lotação, setor, **e-mail** e **telefone / ramal** (os dois opcionais, para contato; aparecem nos e-mails pelos campos do remetente).
+Só administradores e diretores. **Campos:** matrícula, **usuário** (pode ser o e-mail), nome, lotação, setor, **e-mail** e **telefone / ramal** (os dois opcionais, para contato; aparecem nos e-mails pelos campos do remetente) e **grupo** (até o nível de quem está cadastrando).
+
+- A lista mostra o **grupo** e a **situação** (Aguardando liberação, que vem primeiro; Ativo, com "sem senha definida" quando for o caso; Desativado). **✅ Liberar acesso** pede o grupo numa lista e envia o e-mail de liberação; **⛔ Bloquear acesso** impede o login sem apagar o cadastro. Usuário cadastrado por aqui entra ativo e define a senha em "Esqueci minha senha".
 
 - Na lista, o ✏️ carrega o usuário no formulário de cima; o botão passa a ser **Salvar alteração** (e **Cancelar** desfaz). Usuário desativado precisa ser reativado antes de alterar.
 
 - O login não pode se repetir.
-- O sistema identifica quem está usando pelo e-mail da conta Google. O **nome** cadastrado é o que aparece em "Aberto por" e no registro do checklist.
+- O sistema identifica quem está usando pelo **login**. O **nome** cadastrado é o que aparece em "Aberto por" e no registro do checklist.
 - Quem não está cadastrado aparece como "Desconhecido".
 - O **nome** e o **setor** do usuário aparecem no canto direito da barra de menu, com as iniciais. Passando o mouse, aparecem a lotação e o e-mail. Sem cadastro, aparecem o e-mail e o aviso "Não cadastrado em Usuários".

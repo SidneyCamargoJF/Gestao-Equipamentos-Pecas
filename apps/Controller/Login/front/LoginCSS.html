@@ -1,0 +1,84 @@
+<style>
+/* ===== TELA DE LOGIN (apps/Controller/Login) ===== */
+/* sem sessão: o sistema fica escondido atrás do login */
+body.sem-sessao > nav,
+body.sem-sessao .main-container,
+body.sem-sessao #btnVoltarGlobal { display: none !important; }
+
+.login-tela {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  overflow-y: auto;
+}
+.login-tela[hidden] { display: none; }
+
+.login-cartao {
+  width: 100%;
+  max-width: 28rem;
+  background: #fff;
+  border-radius: 0.875rem;
+  box-shadow: 0 25px 50px rgba(15, 23, 42, 0.35);
+  padding: 1.75rem;
+  margin: auto;
+}
+.login-cartao:has(.login-vista[data-vista="cadastro"]:not([hidden])) { max-width: 34rem; }
+
+.login-marca { display: flex; align-items: center; gap: 0.875rem; margin-bottom: 1.25rem; }
+.login-marca-icone { font-size: 2rem; }
+.login-marca h1 { font-size: 1.125rem; font-weight: 800; color: #0f172a; margin: 0; }
+.login-subtitulo { font-size: 0.8125rem; color: var(--color-slate-500, #64748b); margin: 0.125rem 0 0; }
+
+.login-vista { display: flex; flex-direction: column; gap: 0.875rem; }
+.login-vista[hidden] { display: none; }
+.login-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.login-inteiro { grid-column: 1 / -1; }
+@media (max-width: 520px) { .login-grade { grid-template-columns: 1fr; } }
+
+.login-botao { width: 100%; padding: 0.7rem; font-size: 0.9375rem; }
+.login-links { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.login-links .btn-link { font-size: 0.8125rem; }
+.login-ajuda { font-size: 0.8125rem; color: var(--color-slate-600, #475569); margin: 0; }
+.login-carregando { text-align: center; color: var(--color-slate-500, #64748b); padding: 1rem 0; }
+
+.login-mensagem { margin: 0 0 1rem; padding: 0.6rem 0.75rem; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 600; }
+.login-mensagem:empty { display: none; }
+.login-mensagem--erro { background: #fee2e2; color: #b91c1c; }
+.login-mensagem--sucesso { background: #dcfce7; color: #166534; }
+.login-mensagem--info { background: #e0e7ff; color: #3730a3; }
+
+/* botão Sair na barra do usuário */
+.menu-user-sair {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  color: #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.menu-user-sair:hover { background: rgba(148, 163, 184, 0.18); }
+
+/* Configuração > Permissões dos grupos */
+.perm-grupos { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; }
+.perm-grupo { border: 1px solid var(--color-slate-200, #e2e8f0); border-radius: 0.625rem; padding: 1rem; }
+.perm-grupo h3 { font-size: 0.9375rem; margin: 0 0 0.25rem; }
+.perm-grupo .perm-nota { font-size: 0.75rem; color: var(--color-slate-500, #64748b); margin: 0 0 0.75rem; }
+.perm-secao { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; color: var(--color-slate-500, #64748b); margin: 0.75rem 0 0.25rem; }
+.perm-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; padding: 0.2rem 0; }
+.perm-item small { color: var(--color-slate-400, #94a3b8); }
+.perm-grupo .btn-primary { margin-top: 0.75rem; width: auto; }
+
+/* Usuários: grupo e situação */
+.usu-grupo { display: inline-block; padding: 0.0625rem 0.5rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 700; background: #e0e7ff; color: #3730a3; }
+.usu-grupo--administrador { background: #fee2e2; color: #991b1b; }
+.usu-grupo--diretor { background: #fef3c7; color: #92400e; }
+.usu-situacao--pendente { color: #b45309; font-weight: 700; }
+.usu-situacao--inativo { color: #b91c1c; font-weight: 700; }
+</style>
