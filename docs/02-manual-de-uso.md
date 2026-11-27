@@ -4,6 +4,8 @@ Navegação: o menu superior troca de página sem recarregar. O botão **Voltar*
 
 **Sair sem salvar:** nos cadastros e edições (chamado, contrato, equipamento, fornecedor e peça), se você alterou algum dado e tenta sair sem salvar (menu, Voltar, Cancelar ou fechar a aba), o sistema avisa e pergunta: **Continuar editando** mantém você na tela com o que digitou; **Sair sem salvar** descarta as alterações. Campos de busca não contam como alteração. Depois de salvar, a saída é direta.
 
+**Caixas de seleção com busca:** nas caixas de seleção com muitas opções (fornecedor, marca, localização, item, contrato...), ao clicar na seta abre uma lista com **campo de busca** (sem diferenciar acentos e maiúsculas). Use ↑/↓ e Enter para escolher e Esc para fechar.
+
 Padrões das consultas:
 
 - **Filtros e lista:** cada consulta tem filtros no topo e a lista de resultados abaixo. Os registros desativados aparecem por último, com fundo vermelho.

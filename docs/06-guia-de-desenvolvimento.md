@@ -26,6 +26,8 @@ Regras que todo código novo deve seguir. Antes de mudar qualquer coisa, leia o 
   - `alert()` é redirecionado para esse modal, com o tipo deduzido do texto. Diferente do alert do navegador, ele **não bloqueia**: o código depois dele continua rodando.
   - O alert original fica em `window.alertNativo`.
 - **Confirmações e perguntas:** não use `confirm()` nem `prompt()` do navegador. Use `await confirmarModal(texto, { titulo, confirmar, cancelar })` (devolve `true`/`false`) e `await pedirTextoModal(texto, { titulo, confirmar, rotulo, valor, obrigatorio })` (devolve o texto ou `null`), em `apps/Modal/ModalJS.html`.
+- **Busca nas caixas de seleção:** `apps/Helper/SelectBuscaJS.html` abre um painel com busca no clique de todo `<select>` com 8 opções ou mais. O select continua sendo o controle real (a escolha dispara `input` e `change`). `data-busca` força e `data-sem-busca` desliga.
+- **Paginação das consultas:** `apps/Helper/PaginacaoJS.html`; para uma lista nova, inclua o id do corpo (tbody/`.gtable-body`) em `PAGINACAO_LISTAS`.
 - **Arquivos de template:** os `*JS.html` envolvem o código em `<script>`. Os `*CSS.html` contêm CSS puro, sem `<style>`.
 
 ## Planilha

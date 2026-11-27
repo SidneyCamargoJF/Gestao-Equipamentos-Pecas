@@ -87,4 +87,25 @@
   flex: 1;
 }
 
+/* ===== BUSCA NAS CAIXAS DE SELEÇÃO (apps/Helper/SelectBuscaJS) ===== */
+.select-busca-painel {
+  position: fixed;
+  z-index: 350; /* acima dos modais; abaixo só do Processando/mensagens quando abertos depois */
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--color-slate-300, #cbd5e1);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+.select-busca-input { margin: 0.5rem; width: auto; flex: none; }
+.select-busca-lista { list-style: none; margin: 0; padding: 0 0 0.25rem; overflow-y: auto; flex: 1; }
+.select-busca-lista li { padding: 0.4rem 0.75rem; font-size: 0.875rem; cursor: pointer; }
+.select-busca-lista .select-busca-ativa { background: var(--color-slate-100, #f1f5f9); }
+.select-busca-lista .select-busca-selecionada { font-weight: 600; color: var(--color-indigo, #4f46e5); }
+.select-busca-lista .select-busca-desabilitado { color: var(--color-slate-400, #94a3b8); cursor: default; }
+.select-busca-lista .select-busca-grupo { font-size: 0.75rem; font-weight: 700; color: var(--color-slate-500, #64748b); cursor: default; text-transform: uppercase; }
+.select-busca-lista .select-busca-vazio { color: var(--color-slate-500, #64748b); cursor: default; font-style: italic; }
+
 </style>

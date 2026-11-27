@@ -1,0 +1,185 @@
+<script>
+  // ===== BUSCA NAS CAIXAS DE SELEÇÃO =====
+  // Ao clicar na seta de um <select> com muitas opções (as que vêm do
+  // cadastro: fornecedor, marca, localização, item, contrato...), abre um
+  // painel com campo de busca no lugar da lista do navegador. O <select>
+  // continua sendo o controle real: a escolha grava select.value e dispara
+  // 'input' e 'change' (os onchange das telas rodam normalmente), e quem
+  // preenche/lê o select por código não muda nada.
+  // - Usa a busca: select com SELECT_BUSCA_MINIMO opções ou mais, ou com o
+  //   atributo data-busca. data-sem-busca desliga. Múltiplo/desabilitado: nativo.
+  // - Teclado: no select, Espaço/Enter/F4/Alt+↓ abrem; no campo de busca,
+  //   ↑/↓ navegam, Enter escolhe, Esc fecha.
+  const SELECT_BUSCA_MINIMO = 8;
+  let selectBusca = null;   // { select, painel, input, lista, itens, ativo }
+
+  function selectUsaBusca(sel) {
+    if (!sel || sel.tagName !== 'SELECT' || sel.disabled || sel.multiple) return false;
+    if (sel.hasAttribute('data-sem-busca')) return false;
+    if (sel.hasAttribute('data-busca')) return true;
+    return sel.options.length >= SELECT_BUSCA_MINIMO;
+  }
+
+  // sem acento e minúsculo, para a busca
+  function normalizarBusca(s) {
+    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  }
+
+  function abrirSelectBusca(sel) {
+    fecharSelectBusca(false);
+    const painel = document.createElement('div');
+    painel.className = 'select-busca-painel';
+    painel.setAttribute('role', 'listbox');
+    painel.innerHTML = '<input type="text" class="field__input select-busca-input" placeholder="Buscar..." autocomplete="off" aria-label="Buscar na lista">' +
+      '<ul class="select-busca-lista"></ul>';
+    document.body.appendChild(painel);
+    const input = painel.querySelector('.select-busca-input');
+    const lista = painel.querySelector('.select-busca-lista');
+    selectBusca = { select: sel, painel: painel, input: input, lista: lista, itens: [], ativo: -1 };
+
+    input.addEventListener('input', () => renderSelectBusca());
+    input.addEventListener('keydown', teclaSelectBusca);
+    lista.addEventListener('mousedown', e => e.preventDefault());   // não tira o foco do campo
+    lista.addEventListener('click', e => {
+      const li = e.target.closest('li[data-indice]');
+      if (li && !li.classList.contains('select-busca-desabilitado')) escolherSelectBusca(Number(li.getAttribute('data-indice')));
+    });
+
+    renderSelectBusca();
+    posicionarSelectBusca();
+    setTimeout(() => input.focus(), 0);
+  }
+
+  function posicionarSelectBusca() {
+    if (!selectBusca) return;
+    const r = selectBusca.select.getBoundingClientRect();
+    const p = selectBusca.painel;
+    const largura = Math.max(r.width, 240);
+    p.style.width = largura + 'px';
+    p.style.left = Math.max(4, Math.min(r.left, window.innerWidth - largura - 4)) + 'px';
+    const alturaMax = 320;
+    const abaixo = window.innerHeight - r.bottom;
+    if (abaixo < alturaMax && r.top > abaixo) {   // pouco espaço embaixo: abre para cima
+      p.style.top = '';
+      p.style.bottom = (window.innerHeight - r.top + 2) + 'px';
+      p.style.maxHeight = Math.min(alturaMax, r.top - 8) + 'px';
+    } else {
+      p.style.bottom = '';
+      p.style.top = (r.bottom + 2) + 'px';
+      p.style.maxHeight = Math.min(alturaMax, Math.max(abaixo - 8, 160)) + 'px';
+    }
+  }
+
+  function renderSelectBusca() {
+    const b = selectBusca;
+    if (!b) return;
+    const termo = normalizarBusca(b.input.value);
+    const opcoes = Array.from(b.select.options);
+    b.itens = [];
+    let html = '', grupoAtual = null;
+    opcoes.forEach((o, i) => {
+      if (o.hidden) return;
+      if (termo && normalizarBusca(o.textContent).indexOf(termo) === -1) return;
+      const grupo = o.parentElement && o.parentElement.tagName === 'OPTGROUP' ? o.parentElement.label : null;
+      if (grupo !== grupoAtual) { grupoAtual = grupo; if (grupo) html += '<li class="select-busca-grupo">' + escHtmlSelectBusca(grupo) + '</li>'; }
+      const pos = b.itens.length;
+      b.itens.push(i);
+      const classes = ['select-busca-opcao'];
+      if (i === b.select.selectedIndex) classes.push('select-busca-selecionada');
+      if (o.disabled) classes.push('select-busca-desabilitado');
+      html += '<li class="' + classes.join(' ') + '" data-indice="' + i + '" data-pos="' + pos + '" role="option">' +
+        (o.textContent.trim() ? escHtmlSelectBusca(o.textContent) : '&nbsp;') + '</li>';
+    });
+    b.lista.innerHTML = html || '<li class="select-busca-vazio">Nenhum resultado</li>';
+    // destaque inicial: a opção escolhida (sem busca) ou a primeira encontrada
+    const atual = b.itens.indexOf(b.select.selectedIndex);
+    b.ativo = termo ? (b.itens.length ? 0 : -1) : (atual >= 0 ? atual : 0);
+    destacarSelectBusca(true);
+  }
+
+  function escHtmlSelectBusca(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function destacarSelectBusca(rolar) {
+    const b = selectBusca;
+    if (!b) return;
+    b.lista.querySelectorAll('.select-busca-ativa').forEach(li => li.classList.remove('select-busca-ativa'));
+    const li = b.lista.querySelector('li[data-pos="' + b.ativo + '"]');
+    if (li) {
+      li.classList.add('select-busca-ativa');
+      if (rolar && li.scrollIntoView) li.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function teclaSelectBusca(e) {
+    const b = selectBusca;
+    if (!b) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!b.itens.length) return;
+      b.ativo = Math.max(0, Math.min(b.itens.length - 1, b.ativo + (e.key === 'ArrowDown' ? 1 : -1)));
+      destacarSelectBusca(true);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (b.ativo >= 0 && b.itens[b.ativo] !== undefined && !b.select.options[b.itens[b.ativo]].disabled) escolherSelectBusca(b.itens[b.ativo]);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();   // não fecha o modal que está por trás
+      fecharSelectBusca(true);
+    } else if (e.key === 'Tab') {
+      fecharSelectBusca(false);
+    }
+  }
+
+  function escolherSelectBusca(indice) {
+    const b = selectBusca;
+    if (!b) return;
+    const sel = b.select;
+    const mudou = sel.selectedIndex !== indice;
+    sel.selectedIndex = indice;
+    fecharSelectBusca(true);
+    if (mudou) {
+      sel.dispatchEvent(new Event('input', { bubbles: true }));
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  function fecharSelectBusca(focarSelect) {
+    const b = selectBusca;
+    if (!b) return;
+    selectBusca = null;
+    if (b.painel.parentNode) b.painel.parentNode.removeChild(b.painel);
+    if (focarSelect && b.select.focus) b.select.focus();
+  }
+
+  // Clique na seta/no select: abre o painel no lugar da lista do navegador
+  document.addEventListener('mousedown', e => {
+    const alvo = e.target;
+    if (selectBusca && alvo && alvo.closest && alvo.closest('.select-busca-painel')) return;
+    const sel = alvo && alvo.closest ? alvo.closest('select') : null;
+    if (selectBusca && sel === selectBusca.select) { e.preventDefault(); fecharSelectBusca(true); return; }
+    if (selectBusca) fecharSelectBusca(false);   // clique fora fecha
+    if (!selectUsaBusca(sel) || e.button !== 0) return;
+    e.preventDefault();
+    sel.focus();
+    abrirSelectBusca(sel);
+  }, true);
+
+  // Teclado no select: as teclas que abririam a lista nativa abrem a busca
+  document.addEventListener('keydown', e => {
+    const sel = e.target;
+    if (!selectUsaBusca(sel) || selectBusca) return;
+    if (e.key === ' ' || e.key === 'Enter' || e.key === 'F4' || (e.altKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp'))) {
+      e.preventDefault();
+      abrirSelectBusca(sel);
+    }
+  }, true);
+
+  // Rolar a página ou redimensionar: fecha (a posição ficaria errada)
+  window.addEventListener('scroll', e => {
+    if (selectBusca && !(e.target && e.target.closest && e.target.closest('.select-busca-painel'))) fecharSelectBusca(false);
+  }, true);
+  window.addEventListener('resize', () => fecharSelectBusca(false));
+</script>
