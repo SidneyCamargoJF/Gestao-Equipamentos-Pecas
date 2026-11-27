@@ -475,6 +475,40 @@
       </div>
     </div>
 
+    <!-- ATUALIZAR ENTRADAS DAS NOTAS, COM FILTROS (EstoqueJS) -->
+    <div class="modal-overlay" id="modalAtualizarEntradasNotas">
+      <div class="modal">
+        <div class="detalhe-chamado-cabecalho">
+          <h3>↻ Atualizar entradas das notas</h3>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalAtualizarEntradasNotas')">✕</button>
+        </div>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalAtualizarEntradasNotas')">Cancelar</button>
+          <button type="button" class="btn-success" style="width:auto;" onclick="confirmarAtualizarEntradasNotasUI()">Atualizar</button>
+        </div>
+        <p class="nf-ajuda">Refaz as entradas de estoque das notas fiscais (itens relacionados ao cadastro). Deixe os filtros vazios para todas as notas.</p>
+        <form autocomplete="off" onsubmit="return false;" class="est-mov-grid">
+          <div class="field">
+            <label class="field__label" for="estSyncDe">Emissão de</label>
+            <input class="field__input" type="date" id="estSyncDe">
+          </div>
+          <div class="field">
+            <label class="field__label" for="estSyncAte">até</label>
+            <input class="field__input" type="date" id="estSyncAte">
+          </div>
+          <div class="field">
+            <label class="field__label" for="estSyncNumero">Nº da nota</label>
+            <input class="field__input" type="text" id="estSyncNumero" placeholder="Ex: 1001">
+          </div>
+          <div class="field">
+            <label class="field__label" for="estSyncItem">Item</label>
+            <select class="field__select" id="estSyncItem"></select>
+          </div>
+        </form>
+        <p class="nf-ajuda">Com o filtro de item, cada nota que tem o item é refeita inteira (todos os itens dela).</p>
+      </div>
+    </div>
+
     <!-- CONFIRMAÇÃO DA IMPORTAÇÃO DO XML DA NF-e (NotasFiscaisJS) -->
     <div class="modal-overlay" id="modalConfirmarXmlNF">
       <div class="modal modal-lg modal-email">

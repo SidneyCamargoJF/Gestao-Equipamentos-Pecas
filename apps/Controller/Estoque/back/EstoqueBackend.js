@@ -407,17 +407,44 @@ function sincronizarEntradasNota_(nfId) {
   return linhas.length;
 }
 
-/** Botão "Atualizar entradas das notas": refaz as entradas de todas as notas. */
-function sincronizarEntradasTodasNotas() {
+/**
+ * Botão "Atualizar entradas das notas": refaz as entradas das notas.
+ * filtros (opcional; vazio = todas): { de, ate } (data de emissão),
+ * numero (nº da nota, com ou sem zeros à esquerda), pecaId (notas que
+ * têm o item). Cada nota escolhida é refeita inteira (todos os itens dela).
+ */
+function sincronizarEntradasTodasNotas(filtros) {
   try {
     return executarComLock(function () {
+      const f = (filtros && typeof filtros === 'object') ? filtros : {};
+      const de = f.de ? parseDataFlex(f.de) : null, ate = f.ate ? parseDataFlex(f.ate) : null;
+      if ((f.de && !de) || (f.ate && !ate)) return { sucesso: false, mensagem: 'Período inválido.' };
+      if (de && ate && de > ate) return { sucesso: false, mensagem: 'A data inicial do período é maior que a final.' };
+      const semZeros = function (s) { return String(s || '').trim().replace(/^0+(?=\d)/, '').toLowerCase(); };
+      const numero = semZeros(f.numero);
+      const pecaId = Number(f.pecaId) || 0;
+      const notasDoItem = {};
+      if (pecaId) {
+        ReadNfItens().forEach(function (i) {
+          if (Number(i[nfItemPecaIdCol]) === pecaId && !String(i[nfItemDtExclusaoCol] || '').trim()) notasDoItem[Number(i[nfItemNfIdCol])] = true;
+        });
+      }
       let notas = 0, itens = 0;
       ReadNotasFiscais().forEach(function (l) {
         if (!String(l[nfIdCol] || '').trim()) return;
+        const id = Number(l[nfIdCol]);
+        if (numero && semZeros(l[nfNumeroCol]) !== numero) return;
+        if (pecaId && !notasDoItem[id]) return;
+        if (de || ate) {
+          const d = parseDataFlex(l[nfDataEmissaoCol]);
+          if (!d || (de && d < de) || (ate && d > ate)) return;
+        }
         notas++;
-        itens += sincronizarEntradasNota_(Number(l[nfIdCol]));
+        itens += sincronizarEntradasNota_(id);
       });
-      return { sucesso: true, mensagem: notas + ' nota(s) conferida(s); ' + itens + ' entrada(s) de itens relacionados no estoque.' };
+      const filtrado = !!(de || ate || numero || pecaId);
+      if (!notas) return { sucesso: true, notas: 0, itens: 0, mensagem: filtrado ? 'Nenhuma nota fiscal encontrada com esses filtros.' : 'Nenhuma nota fiscal cadastrada.' };
+      return { sucesso: true, notas: notas, itens: itens, mensagem: notas + ' nota(s) conferida(s); ' + itens + ' entrada(s) de itens relacionados no estoque.' };
     });
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };

@@ -284,13 +284,42 @@
     consultarMovimentosEstoque();
   }
 
+  // ↻ Atualizar entradas das notas: abre o modal com os filtros (período,
+  // nº da nota e item); o item já vem do filtro da lista, se houver
   async function sincronizarEntradasNotasUI() {
-    if (!(await confirmarModal('Refazer as entradas de estoque de todas as notas fiscais (itens relacionados ao cadastro)?', { titulo: 'Refazer entradas das notas', confirmar: 'Refazer' }))) return;
+    ['estSyncDe', 'estSyncAte', 'estSyncNumero'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const sel = document.getElementById('estSyncItem');
+    if (sel) {
+      const itens = await estoqueItensParaEscolha();
+      sel.innerHTML = '<option value="">Todos os itens</option>' + itens.slice()
+        .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+        .map(i => `<option value="${Number(i.id)}">${estEsc(i.nome)}${i.modelo ? ' — ' + estEsc(i.modelo) : ''}</option>`).join('');
+      sel.value = (document.getElementById('estMovFiltroItem') || {}).value || '';
+    }
+    exibirModal('modalAtualizarEntradasNotas');
+  }
+
+  async function confirmarAtualizarEntradasNotasUI() {
+    const v = id => ((document.getElementById(id) || {}).value || '').trim();
+    const filtros = { de: v('estSyncDe'), ate: v('estSyncAte'), numero: v('estSyncNumero'), pecaId: v('estSyncItem') };
+    if (filtros.de && filtros.ate && filtros.de > filtros.ate) { alert('A data inicial do período é maior que a final.'); return; }
+    const sel = document.getElementById('estSyncItem');
+    const partes = [];
+    if (filtros.de || filtros.ate) partes.push('emissão ' + (filtros.de ? 'de ' + filtros.de.split('-').reverse().join('/') : '') + (filtros.ate ? ' até ' + filtros.ate.split('-').reverse().join('/') : ''));
+    if (filtros.numero) partes.push('nota nº ' + filtros.numero);
+    if (filtros.pecaId && sel && sel.selectedOptions[0]) partes.push('notas com o item ' + sel.selectedOptions[0].textContent);
+    if (!(await confirmarModal('Refazer as entradas de estoque ' + (partes.length ? 'das notas fiscais com ' + partes.join(', ') : 'de todas as notas fiscais') + '?',
+      { titulo: 'Atualizar entradas das notas', confirmar: 'Atualizar' }))) return;
     exibirModal('processando');
     try {
-      const r = await runServerFunction('sincronizarEntradasTodasNotas');
-      alert(r.mensagem);
+      const r = await runServerFunction('sincronizarEntradasTodasNotas', filtros);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao atualizar.'); return; }
+      fecharModal('modalAtualizarEntradasNotas');
+      mostrarMensagem(r.mensagem, r.notas ? 'sucesso' : 'aviso');
       estAtualizarPaginaAtual();
+      if (document.getElementById('page-estoque-movimentos-view')?.classList.contains('active')) consultarMovimentosEstoque();
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
     } finally {
       fecharModal('processando');
     }

@@ -121,7 +121,7 @@ Menu **Estoque**, com **Saldo de estoque** e **Movimentações**. O saldo de cad
 - Ações de cada item: **➕ Entrada**, **➖ Saída**, **⚖️ Ajuste de inventário**, **📜 Movimentações do item** e **⚙️ Estoque mínimo e unidade**.
 
 **Movimentações:**
-- **Entradas das notas fiscais:** automáticas, pelos itens relacionados ao cadastro em Compras → Notas fiscais. Para corrigir, altere ou desative a nota. O botão **↻ Atualizar entradas das notas** refaz as entradas de todas as notas (por exemplo, das notas lançadas antes do estoque existir).
+- **Entradas das notas fiscais:** automáticas, pelos itens relacionados ao cadastro em Compras → Notas fiscais. Para corrigir, altere ou desative a nota. O botão **↻ Atualizar entradas das notas** abre um modal com filtros (**período de emissão**, **nº da nota** e **item**; vazios = todas as notas; o item já vem do filtro da lista) e refaz as entradas das notas escolhidas — com o filtro de item, cada nota que tem o item é refeita inteira. Sem filtros, refaz as entradas de todas as notas (por exemplo, das notas lançadas antes do estoque existir).
 - **Entrada sem nota:** quantidade, valor unitário (opcional) e origem obrigatória (devolução, doação, transferência...).
 - **Saída:** quantidade e destino: **chamado** (nº), **patrimônio** do equipamento ou observação. Não pode ser maior que o saldo. Saída para um chamado fica registrada nas Movimentações do chamado.
 - **Ajuste de inventário:** informe a quantidade contada e o motivo; o sistema lança a diferença.
