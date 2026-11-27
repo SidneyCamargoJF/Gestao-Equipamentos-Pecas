@@ -227,7 +227,7 @@ Nas **preventivas**, as colunas Equipamento e Localização mostram **Diversos**
 
 Os chamados atrasados recebem o selo **Atrasado**. Ao passar o mouse sobre ele, aparece o motivo do atraso.
 
-O botão **Gerar preventivas do mês** gera manualmente os chamados preventivos da competência atual. Se a propriedade `ADMINS` estiver configurada, só os administradores podem usá-lo. Veja o documento [07](07-implantacao-e-operacao.md).
+O botão **🗓️ Gerar preventivas** abre um modal com **contrato** (todos os vigentes ou um; já vem o do filtro da consulta) e **período** (mês/ano **de** e **até**, já no mês atual; para um mês só, deixe os dois iguais; até 24 meses por vez). Depois de confirmar, gera os chamados preventivos de cada mês do período; contratos que já têm o chamado do mês são pulados, e o resumo mostra quantos foram criados por mês e o motivo dos contratos sem chamado novo. Se a propriedade `ADMINS` estiver configurada, só os administradores podem usá-lo. Veja o documento [07](07-implantacao-e-operacao.md).
 
 ### Detalhes do chamado (modal)
 

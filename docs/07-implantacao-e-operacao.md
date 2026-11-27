@@ -47,7 +47,7 @@ A aba legada `tab_materiais` (cadastro de materiais antigo, fora do menu) não e
 
 ### Administradores
 
-Em **Configurações do projeto → Propriedades do script**, crie a propriedade `ADMINS` com os e-mails separados por vírgula. Só esses usuários poderão usar o botão **Gerar preventivas do mês**. Se a propriedade estiver vazia, todos podem.
+Em **Configurações do projeto → Propriedades do script**, crie a propriedade `ADMINS` com os e-mails separados por vírgula. Só esses usuários poderão usar o botão **Gerar preventivas**. Se a propriedade estiver vazia, todos podem.
 
 ### E-mail
 
@@ -81,7 +81,7 @@ Cadastre cada pessoa em **Configuração → Usuários**. O campo **Usuário** �
 |---|---|
 | Todo dia, 06h (automático) | `gerarPreventivasDoMes()` cria as OS do mês corrente que ainda não existam. Na prática, gera no dia 1 e, nos outros dias, só cria o que surgir depois (contrato novo, item novo) |
 | Ao cadastrar um contrato | Preencher a data base preventiva, os serviços (com um do tipo **Preventiva**), o checklist com periodicidade, os equipamentos e o SLA |
-| Ao gerar fora de hora | Botão **Gerar preventivas do mês** na Consulta de Chamados, ou `gerarPreventivasDoMes('AAAA-MM')` no editor para outra competência |
+| Ao gerar fora de hora | Botão **Gerar preventivas** na Consulta de Chamados (período e contrato), ou `gerarPreventivasDoMes('AAAA-MM')` no editor para outra competência |
 
 ## Diagnóstico
 

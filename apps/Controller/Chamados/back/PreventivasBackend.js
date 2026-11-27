@@ -277,6 +277,52 @@ function usuarioEhAdmin() {
   return lista.indexOf(emailUsuarioLogado_()) !== -1;
 }
 
+const PREVENTIVAS_PERIODO_MAX_MESES = 24;
+
+/**
+ * Botão "Gerar preventivas" da consulta de chamados, com filtros:
+ * filtros: { de: 'AAAA-MM', ate: 'AAAA-MM' (vazio = só o de), contratoId ('' = todos) }.
+ * Gera competência por competência (a mesma rotina do gatilho diário, que
+ * pula o contrato que já tem o chamado do mês), numa trava só.
+ */
+function gerarPreventivasPeriodoManual(filtros) {
+  if (!usuarioEhAdmin()) return { sucesso: false, mensagem: 'Somente administradores podem gerar as preventivas.' };
+  try {
+    const f = filtros || {};
+    const de = String(f.de || '').trim(), ate = String(f.ate || '').trim() || de;
+    if (!parseCompetencia_(de) || !parseCompetencia_(ate)) return { sucesso: false, mensagem: 'Informe o mês e o ano do período.' };
+    if (de > ate) return { sucesso: false, mensagem: 'O mês inicial do período é depois do final.' };
+    const competencias = [];
+    for (let c = de; c <= ate; c = competenciaSomarMeses_(c, 1)) {
+      competencias.push(c);
+      if (competencias.length > PREVENTIVAS_PERIODO_MAX_MESES) {
+        return { sucesso: false, mensagem: 'Período grande demais: até ' + PREVENTIVAS_PERIODO_MAX_MESES + ' meses por vez.' };
+      }
+    }
+    const contratoId = Number(f.contratoId) || 0;
+    if (contratoId && !ReadContracts().some(function (l) { return Number(l[contractIdCol]) === contratoId; })) {
+      return { sucesso: false, mensagem: 'Contrato não encontrado.' };
+    }
+    return executarComLock(function () {
+      let os = 0, itens = 0;
+      const porCompetencia = [];
+      for (let k = 0; k < competencias.length; k++) {
+        const r = gerarPreventivasDoMes_(competencias[k], contratoId ? [contratoId] : undefined);
+        if (!r.sucesso) return r;
+        os += r.osCriadas; itens += r.itensCriados;
+        porCompetencia.push({ competencia: r.competencia, osCriadas: r.osCriadas, itensCriados: r.itensCriados, detalhes: r.detalhes });
+      }
+      const periodo = de === ate ? 'Competência ' + de : 'Período ' + de + ' a ' + ate;
+      return {
+        sucesso: true, osCriadas: os, itensCriados: itens, competencias: porCompetencia,
+        mensagem: periodo + ': ' + os + ' chamado(s) e ' + itens + ' itens de checklist criados.'
+      };
+    }, 120000);
+  } catch (e) {
+    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+  }
+}
+
 function gerarPreventivasDoMesManual(competencia, contratoIds) {
   if (!usuarioEhAdmin()) return { sucesso: false, mensagem: 'Somente administradores podem gerar as preventivas.' };
   return gerarPreventivasDoMes(typeof competencia === 'string' ? competencia : '', Array.isArray(contratoIds) ? contratoIds : undefined);

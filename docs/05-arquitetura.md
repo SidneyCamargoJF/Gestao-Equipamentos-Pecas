@@ -53,7 +53,7 @@ xOld-Apps/                                       código antigo, não usado
 | | `ConsultaChamadoBackend.js` | `filtrarChamados`, `buscarChamadoDetalhado`, `alterarStatusChamado`, `desativarChamado`, `reativarChamado`, anotações |
 | | `ChamadoContratoBackend.js` | `buscarContratoVigentePorEquipamento`, `calcularPrazosChamado`, `avaliarAtrasoChamado`, `listarEquipamentosPorLocalizacao`, `verificarPatrimonioChamado`, `listarContratosParaFiltro` |
 | | `ChamadoChecklistBackend.js` | `buscarChecklistChamado`, `salvarChecklistChamado`, `contarPendentesChecklistChamado`, `abrirCorretivaItemChecklist` |
-| | `PreventivasBackend.js` | `gerarPreventivasDoMes`, `gerarPreventivasDoMesManual`, `instalarGatilhoPreventivas`, `usuarioEhAdmin` |
+| | `PreventivasBackend.js` | `gerarPreventivasDoMes`, `gerarPreventivasDoMesManual`, `gerarPreventivasPeriodoManual`, `instalarGatilhoPreventivas`, `usuarioEhAdmin` |
 | | `MigracaoChamadosBackend.js` | `preencherCamposNovosChamados` (rotina de uso único) |
 | Contratos | `CadastroContratoBackend.js` | `salvarContratoBackend`, `buscarContratoParaEdicao`, `salvar{Equipamentos,Servicos,Produtos,Checklist,Sla}Contrato`, `proximoIdTabela` |
 | | `ConsultaContratoBackend.js` | `filtrarContratos`, `desativarContrato`, `reativarContrato` |

@@ -475,6 +475,42 @@
       </div>
     </div>
 
+    <!-- GERAR PREVENTIVAS: PERÍODO E CONTRATO (ConsultaChamadoFormJS) -->
+    <div class="modal-overlay" id="modalGerarPreventivas">
+      <div class="modal">
+        <div class="detalhe-chamado-cabecalho">
+          <h3>🗓️ Gerar preventivas</h3>
+          <button type="button" class="btn-modal-fechar" title="Fechar" onclick="fecharModal('modalGerarPreventivas')">✕</button>
+        </div>
+        <div class="modal-actions modal-acoes-topo">
+          <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalGerarPreventivas')">Cancelar</button>
+          <button type="button" class="btn-success" style="width:auto;" onclick="confirmarGerarPreventivasUI()">Gerar</button>
+        </div>
+        <p class="nf-ajuda">Cria os chamados de preventiva de cada mês do período para os contratos vigentes com serviço de preventiva. Contratos que já têm o chamado do mês são pulados.</p>
+        <form autocomplete="off" onsubmit="return false;" class="prev-gerar-grid">
+          <div class="field prev-gerar-inteiro">
+            <label class="field__label" for="prevGerarContrato">Contrato</label>
+            <select class="field__select" id="prevGerarContrato"></select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="prevGerarDeMes">De (mês / ano) *</label>
+            <div class="prev-gerar-mesano">
+              <select class="field__select" id="prevGerarDeMes" data-sem-busca></select>
+              <select class="field__select" id="prevGerarDeAno" data-sem-busca></select>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="prevGerarAteMes">Até (mês / ano) *</label>
+            <div class="prev-gerar-mesano">
+              <select class="field__select" id="prevGerarAteMes" data-sem-busca></select>
+              <select class="field__select" id="prevGerarAteAno" data-sem-busca></select>
+            </div>
+          </div>
+        </form>
+        <p class="nf-ajuda">Para um só mês, deixe "De" e "Até" iguais. Até 24 meses por vez.</p>
+      </div>
+    </div>
+
     <!-- ATUALIZAR ENTRADAS DAS NOTAS, COM FILTROS (EstoqueJS) -->
     <div class="modal-overlay" id="modalAtualizarEntradasNotas">
       <div class="modal">

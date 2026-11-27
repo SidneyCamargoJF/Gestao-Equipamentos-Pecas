@@ -43,29 +43,60 @@ async function mostrarBotaoGerarPreventivas() {
     }
 }
 
+// Abre o modal com contrato e período (mês/ano de / até), no mês atual
+const MESES_PREVENTIVA = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
 async function gerarPreventivasDoMesUI() {
     const hoje = new Date();
-    const padrao = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
-    const competencia = prompt('Gerar as preventivas de qual mês? (AAAA-MM)\nContratos que já têm o chamado do mês são pulados.', padrao);
-    if (competencia === null) return;
-    if (!/^\d{4}-\d{2}$/.test(competencia.trim())) {
-        alert('Informe o mês no formato AAAA-MM (ex.: ' + padrao + ').');
-        return;
-    }
+    const anoAtual = hoje.getFullYear();
+    const opMeses = MESES_PREVENTIVA.map((m, i) => '<option value="' + String(i + 1).padStart(2, '0') + '">' + m + '</option>').join('');
+    let opAnos = '';
+    for (let a = anoAtual - 3; a <= anoAtual + 2; a++) opAnos += '<option value="' + a + '">' + a + '</option>';
+    ['prevGerarDeMes', 'prevGerarAteMes'].forEach(id => { const el = document.getElementById(id); el.innerHTML = opMeses; el.value = String(hoje.getMonth() + 1).padStart(2, '0'); });
+    ['prevGerarDeAno', 'prevGerarAteAno'].forEach(id => { const el = document.getElementById(id); el.innerHTML = opAnos; el.value = String(anoAtual); });
+    const sel = document.getElementById('prevGerarContrato');
+    sel.innerHTML = '<option value="">Todos os contratos vigentes</option>';
+    // contrato: o do filtro da consulta, se houver
+    try {
+        const contratos = await runServerFunction('listarContratosParaFiltro');
+        sel.innerHTML += (contratos || []).map(c =>
+            '<option value="' + escapeHtml(String(c.id)) + '">' + escapeHtml(c.numero) + (c.empresa ? ' — ' + escapeHtml(c.empresa) : '') + '</option>').join('');
+    } catch (e) { /* fica só "Todos" */ }
+    sel.value = (document.getElementById('filtro-chamado-contrato') || {}).value || '';
+    exibirModal('modalGerarPreventivas');
+}
+
+async function confirmarGerarPreventivasUI() {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const de = v('prevGerarDeAno') + '-' + v('prevGerarDeMes');
+    const ate = v('prevGerarAteAno') + '-' + v('prevGerarAteMes');
+    if (de > ate) { alert('O mês inicial do período é depois do final.'); return; }
+    const sel = document.getElementById('prevGerarContrato');
+    const contratoId = v('prevGerarContrato');
+    const mesAno = c => c.slice(5) + '/' + c.slice(0, 4);
+    const periodo = de === ate ? 'de ' + mesAno(de) : 'de ' + mesAno(de) + ' a ' + mesAno(ate);
+    const alvo = contratoId && sel.selectedOptions[0] ? 'o contrato ' + sel.selectedOptions[0].textContent : 'todos os contratos vigentes';
+    if (!(await confirmarModal('Gerar os chamados de preventiva ' + periodo + ' para ' + alvo + '?\n\nContratos que já têm o chamado do mês são pulados.',
+        { titulo: 'Gerar preventivas', confirmar: 'Gerar' }))) return;
 
     const btn = document.getElementById('btnGerarPreventivas');
     if (btn) btn.disabled = true;
     if (typeof exibirModal === 'function') exibirModal('processando');
     try {
-        const r = await runServerFunction('gerarPreventivasDoMesManual', competencia.trim());
+        const r = await runServerFunction('gerarPreventivasPeriodoManual', { de: de, ate: ate, contratoId: contratoId });
         if (!r || r.sucesso === false) {
             alert((r && r.mensagem) || 'Não foi possível gerar as preventivas.');
             return;
         }
-        const pulados = (r.detalhes || []).filter(d => d.situacao.indexOf('gerada:') !== 0);
-        alert(r.mensagem + (pulados.length
-            ? '\n\nContratos sem chamado novo:\n' + pulados.map(d => '• ' + d.numero + ': ' + d.situacao).join('\n')
-            : ''));
+        fecharModal('modalGerarPreventivas');
+        // por mês: quantos criados; e os contratos sem chamado novo (com o motivo)
+        const linhas = [];
+        (r.competencias || []).forEach(c => {
+            const pulados = (c.detalhes || []).filter(d => d.situacao.indexOf('gerada:') !== 0);
+            if ((r.competencias || []).length > 1) linhas.push(mesAno(c.competencia) + ': ' + c.osCriadas + ' chamado(s)');
+            pulados.forEach(d => linhas.push('  • ' + d.numero + ': ' + d.situacao));
+        });
+        mostrarMensagem(r.mensagem + (linhas.length ? '\n\n' + linhas.slice(0, 40).join('\n') + (linhas.length > 40 ? '\n...' : '') : ''), r.osCriadas ? 'sucesso' : 'info');
         consultarChamados();
     } catch (error) {
         console.error('Erro ao gerar preventivas:', error);
