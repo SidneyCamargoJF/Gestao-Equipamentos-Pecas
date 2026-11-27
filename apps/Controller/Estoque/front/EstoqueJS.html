@@ -116,10 +116,40 @@
       .map(i => `<option value="${Number(i.id)}" data-saldo="${i.saldo}" data-unidade="${estEsc(i.unidade)}">${estEsc(i.nome)}${i.modelo ? ' — ' + estEsc(i.modelo) : ''}</option>`).join('');
     sel.value = pecaId ? String(pecaId) : '';
     document.getElementById('estMovTipo').value = tipo || 'saida';
+    document.getElementById('estMovTipo').disabled = false;
+    document.getElementById('estMovEditId').value = '';
     ['estMovQuantidade', 'estMovContada', 'estMovValor', 'estMovChamado', 'estMovPatrimonio', 'estMovObservacao'].forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('estMovData').value = estHojeISO();
     estAtualizarFormMovimento();
     exibirModal('modalMovimentoEstoque');
+  }
+
+  // dd/MM/yyyy -> yyyy-MM-dd
+  function estDataISO(t) {
+    const m = String(t || '').match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    return m ? m[3] + '-' + m[2] + '-' + m[1] : String(t || '');
+  }
+
+  // ✏️ Editar: o mesmo modal, preenchido; o tipo não muda
+  async function editarMovimentoEstoqueUI(id) {
+    const m = estoqueMovs.find(x => Number(x.id) === Number(id));
+    if (!m) return;
+    await abrirMovimentoEstoqueUI(m.tipo, m.pecaId);
+    const set = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v === undefined || v === null ? '' : v; };
+    set('estMovEditId', m.id);
+    document.getElementById('estMovTipo').disabled = true;
+    set('estMovData', estDataISO(m.data));
+    set('estMovObservacao', m.observacao);
+    if (m.tipo === 'ajuste') {
+      // contada = o saldo que fica com este ajuste (o saldo atual do item)
+      const opt = document.getElementById('estMovItem').selectedOptions[0];
+      set('estMovContada', opt && opt.value ? String(opt.getAttribute('data-saldo')).replace('.', ',') : '');
+    } else {
+      set('estMovQuantidade', String(Math.abs(m.quantidade)).replace('.', ','));
+    }
+    if (m.tipo === 'entrada') set('estMovValor', m.valorUnitario === '' || m.valorUnitario === null || m.valorUnitario === undefined ? '' : String(m.valorUnitario).replace('.', ','));
+    if (m.tipo === 'saida') { set('estMovChamado', m.chamadoId); set('estMovPatrimonio', m.patrimonio); }
+    estAtualizarFormMovimento();
   }
 
   // Mostra os campos do tipo escolhido e o saldo do item
@@ -133,7 +163,8 @@
     mostra('estMovCampoContada', tipo === 'ajuste');
     mostra('estMovCampoValor', tipo === 'entrada');
     mostra('estMovDestino', tipo === 'saida');
-    document.getElementById('estMovTitulo').textContent = '📦 ' + (ESTOQUE_TIPO_MOV[tipo] || 'Movimentação');
+    const editando = !!(document.getElementById('estMovEditId') || {}).value;
+    document.getElementById('estMovTitulo').textContent = (editando ? '✏️ Editar: ' : '📦 ') + (ESTOQUE_TIPO_MOV[tipo] || 'Movimentação');
     document.getElementById('estMovObsRotulo').textContent =
       tipo === 'entrada' ? 'Origem da entrada * (ex.: devolução, doação, transferência)' :
       tipo === 'ajuste' ? 'Motivo do ajuste *' : 'Observação (obrigatória se não houver chamado nem patrimônio)';
@@ -152,10 +183,12 @@
     };
     if (!dados.pecaId) { alert('Escolha a peça/produto.'); return; }
     if (dados.tipo === 'ajuste' ? dados.novaQuantidade === '' : !dados.quantidade) { alert('Informe a quantidade.'); return; }
+    const editId = v('estMovEditId');
     exibirModal('processando');
     try {
-      const r = await runServerFunction('registrarMovimentoEstoque', dados);
-      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao registrar.'); return; }
+      const r = editId ? await runServerFunction('alterarMovimentoEstoque', Number(editId), dados)
+        : await runServerFunction('registrarMovimentoEstoque', dados);
+      if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao salvar.'); return; }
       fecharModal('modalMovimentoEstoque');
       mostrarMensagem(r.mensagem, 'sucesso');
       estAtualizarPaginaAtual();
@@ -221,12 +254,14 @@
       <tr class="${m.estornado ? 'linha-desativada' : ''}">
         <td>${estEsc(m.data)}</td>
         <td>${estEsc(m.item)}</td>
-        <td><span class="est-tipo est-tipo--${m.tipo}">${estEsc(m.tipoTexto)}</span>${m.estornado ? ' <span class="status-desativado">(Estornada)</span>' : ''}</td>
+        <td><span class="est-tipo est-tipo--${m.tipo}">${estEsc(m.tipoTexto)}</span>${m.estornado ? ' <span class="status-desativado">(Excluída)</span>' : ''}</td>
         <td class="est-num ${m.efeito < 0 ? 'est-neg' : 'est-pos'}">${m.efeito > 0 ? '+' : ''}${estQtd(m.efeito)} <small>${estEsc(m.unidade)}</small></td>
         <td>${estEsc(m.origemTexto)}${m.documento ? '<br><small>' + estEsc(m.documento) + '</small>' : ''}</td>
         <td>${estEsc(m.observacao)}</td>
         <td>${estEsc(m.usuario)}</td>
-        <td class="acao-cell">${m.podeEstornar ? `<button class="btn-acao" title="Estornar" onclick="estornarMovimentoEstoqueUI(${Number(m.id)})">↩️</button>` : ''}</td>
+        <td class="acao-cell">${m.podeEstornar
+          ? `<button class="btn-acao" title="Editar" onclick="editarMovimentoEstoqueUI(${Number(m.id)})">✏️</button><button class="btn-acao" title="Excluir" onclick="estornarMovimentoEstoqueUI(${Number(m.id)})">🗑️</button>`
+          : (m.origem === 'nota_fiscal' && !m.estornado ? '<span class="est-acao-nf" title="Altere ou desative a nota em Compras > Notas fiscais">pela nota</span>' : '')}</td>
       </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;">Nenhuma movimentação encontrada.</td></tr>';
   }
 
@@ -236,12 +271,15 @@
     consultarMovimentosEstoque();
   }
 
+  // 🗑️ Excluir: exclusão lógica (estorno), com o motivo pedido no modal
   async function estornarMovimentoEstoqueUI(id) {
-    const motivo = prompt('Motivo do estorno desta movimentação:');
+    const m = estoqueMovs.find(x => Number(x.id) === Number(id));
+    const motivo = await pedirTextoModal('Excluir esta movimentação' + (m ? ' (' + m.tipoTexto + ' de ' + estQtd(Math.abs(m.efeito)) + ' × ' + m.item + ', ' + m.data + ')' : '') +
+      '? O saldo do item é recalculado. Ela continua na lista com "Mostrar excluídas".',
+      { titulo: 'Excluir movimentação', confirmar: 'Excluir', rotulo: 'Motivo da exclusão *', obrigatorio: true });
     if (motivo === null) return;
-    if (!motivo.trim()) { alert('Informe o motivo do estorno.'); return; }
-    const r = await runServerFunction('estornarMovimentoEstoque', id, motivo.trim());
-    if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao estornar.'); return; }
+    const r = await runServerFunction('estornarMovimentoEstoque', id, motivo);
+    if (!r || r.sucesso === false) { alert(r ? r.mensagem : 'Erro ao excluir.'); return; }
     mostrarMensagem(r.mensagem, 'sucesso');
     consultarMovimentosEstoque();
   }

@@ -400,9 +400,10 @@
         </div>
         <div class="modal-actions modal-acoes-topo">
           <button type="button" class="btn-secondary" style="width:auto;" onclick="fecharModal('modalMovimentoEstoque')">Cancelar</button>
-          <button type="button" class="btn-success" style="width:auto;" onclick="confirmarMovimentoEstoqueUI()">Registrar</button>
+          <button type="button" class="btn-success" style="width:auto;" onclick="confirmarMovimentoEstoqueUI()">Salvar</button>
         </div>
         <form autocomplete="off" onsubmit="return false;" class="est-mov-grid">
+          <input type="hidden" id="estMovEditId" value="">
           <div class="field">
             <label class="field__label" for="estMovTipo">Tipo *</label>
             <select class="field__select" id="estMovTipo" onchange="estAtualizarFormMovimento()">
@@ -658,6 +659,11 @@
           <h3 id="modalConfirmacaoTitulo">Confirmar</h3>
         </div>
         <p class="modal-mensagem-texto" id="modalConfirmacaoTexto"></p>
+        <div class="field modal-confirmacao-campo" id="modalConfirmacaoCampo" style="display:none;">
+          <label class="field__label" for="modalConfirmacaoResposta" id="modalConfirmacaoRotulo"></label>
+          <textarea class="field__input" id="modalConfirmacaoResposta" rows="2"></textarea>
+          <span class="field__error-msg" id="modalConfirmacaoErro"></span>
+        </div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="modalConfirmacaoCancelar" onclick="responderConfirmacao(false)">Cancelar</button>
           <button type="button" class="btn-primary" id="modalConfirmacaoOk" onclick="responderConfirmacao(true)">Confirmar</button>

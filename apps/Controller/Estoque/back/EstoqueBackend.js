@@ -145,7 +145,10 @@ function listarMovimentosEstoque(filtros) {
           observacao: String(l[movObservacaoCol] || ''), usuario: String(l[movUsuarioCol] || ''),
           unidade: (params[pecaId] && params[pecaId].unidade) || 'UN',
           estornado: String(l[movDtExclusaoCol] || '').trim() !== '',
-          podeEstornar: String(l[movOrigemCol]) !== 'nota_fiscal' && !String(l[movDtExclusaoCol] || '').trim()
+          podeEstornar: String(l[movOrigemCol]) !== 'nota_fiscal' && !String(l[movDtExclusaoCol] || '').trim(),
+          // para preencher a edição
+          chamadoId: String(l[movOrigemCol]) === 'chamado' ? Number(l[movOrigemIdCol]) || '' : '',
+          patrimonio: (String(l[movDocumentoCol] || '').match(/Patrimônio (.+)$/) || [])[1] || ''
         };
       })
       .filter(function (m) {
@@ -182,6 +185,66 @@ function gravarMovimento_(pecaId, tipo, quantidade, data, origem, origemId, docu
 }
 
 /**
+ * Valida os dados de uma movimentação manual e monta o que gravar.
+ * saldoBase: saldo do item SEM esta movimentação (na edição, o saldo atual
+ * menos o efeito da original). Devolve { erro } ou { pecaId, nome, tipo,
+ * quantidade, data, origem, origemId, documento, valorUnitario,
+ * observacao, chamadoId, patrimonio, saldoFinal }.
+ */
+function montarMovimentoManual_(d, saldoBase) {
+  const tipo = String(d.tipo || '');
+  if (!TIPOS_MOV_ESTOQUE[tipo]) return { erro: 'Escolha o tipo da movimentação.' };
+  const pecaId = Number(d.pecaId);
+  const peca = ReadParts().find(function (l) { return Number(l[partsIdCol]) === pecaId; });
+  if (!peca) return { erro: 'Escolha a peça/produto.' };
+  if (String(peca[partsDtExclusaoCol] || '').trim()) return { erro: 'Este item está desativado.' };
+  const dt = d.data ? parseDataFlex(d.data) : new Date();
+  if (!dt) return { erro: 'Data inválida.' };
+  const data = Utilities.formatDate(dt, 'GMT-3', 'dd/MM/yyyy');
+  const observacao = String(d.observacao || '').trim();
+  const nome = String(peca[partsNameCol] || '');
+  const r = function (n) { return Math.round(n * 10000) / 10000; };
+  const base = { pecaId: pecaId, nome: nome, tipo: tipo, data: data, observacao: observacao, origem: 'manual', origemId: '', valorUnitario: '', chamadoId: 0, patrimonio: '' };
+
+  if (tipo === 'ajuste') {
+    const contado = qtdEstoque_(d.novaQuantidade);
+    if (isNaN(contado) || contado < 0) return { erro: 'Informe a quantidade contada (zero ou mais).' };
+    if (!observacao) return { erro: 'Informe o motivo do ajuste.' };
+    const diferenca = r(contado - saldoBase);
+    if (diferenca === 0) return { erro: 'A quantidade contada é igual ao saldo (' + saldoBase + '). Nada a ajustar.' };
+    return Object.assign(base, { quantidade: diferenca, documento: 'Inventário', saldoFinal: contado, saldoAntes: saldoBase });
+  }
+
+  const qtd = qtdEstoque_(d.quantidade);
+  if (isNaN(qtd) || qtd <= 0) return { erro: 'Informe uma quantidade maior que zero.' };
+
+  if (tipo === 'entrada') {
+    if (!observacao) return { erro: 'Informe a origem da entrada (as compras com nota entram por Compras > Notas fiscais).' };
+    const valor = d.valorUnitario === '' || d.valorUnitario === undefined ? '' : qtdEstoque_(d.valorUnitario);
+    return Object.assign(base, { quantidade: qtd, documento: 'Entrada manual', valorUnitario: isNaN(valor) ? '' : valor, saldoFinal: r(saldoBase + qtd) });
+  }
+
+  // saída: destino (chamado, equipamento ou observação) e saldo suficiente
+  if (qtd > saldoBase) return { erro: 'Saldo insuficiente de ' + nome + ': há ' + saldoBase + ' e a saída é de ' + qtd + '.' };
+  let origem = 'manual', origemId = '', documento = '';
+  const chamadoId = Number(d.chamadoId) || 0;
+  const patrimonio = String(d.patrimonio || '').trim();
+  if (chamadoId) {
+    if (!ReadTickets().some(function (l) { return Number(l[0]) === chamadoId; })) return { erro: 'Chamado nº ' + chamadoId + ' não encontrado.' };
+    origem = 'chamado'; origemId = chamadoId; documento = 'Chamado #' + chamadoId;
+  }
+  if (patrimonio) {
+    const eq = ReadEquipments().find(function (e) { return String(e[5] || '').trim().toLowerCase() === patrimonio.toLowerCase(); });
+    if (!eq) return { erro: 'Patrimônio ' + patrimonio + ' não encontrado no cadastro de equipamentos.' };
+    documento = (documento ? documento + ' · ' : '') + 'Patrimônio ' + patrimonio;
+    if (!chamadoId) { origem = 'equipamento'; origemId = Number(eq[0]); }
+  }
+  if (!chamadoId && !patrimonio && !observacao) return { erro: 'Informe o destino da saída: chamado, patrimônio do equipamento ou observação.' };
+  return Object.assign(base, { quantidade: qtd, origem: origem, origemId: origemId, documento: documento || 'Saída manual',
+    chamadoId: chamadoId, patrimonio: patrimonio, saldoFinal: r(saldoBase - qtd) });
+}
+
+/**
  * dados: { tipo ('entrada'|'saida'|'ajuste'), pecaId, quantidade (entrada/
  * saída), novaQuantidade (ajuste: o que foi contado), data, valorUnitario,
  * chamadoId, patrimonio, observacao }
@@ -191,90 +254,90 @@ function registrarMovimentoEstoque(dados) {
     return executarComLock(function () {
       garantirAbasEstoque_();
       const d = dados || {};
-      const tipo = String(d.tipo || '');
-      if (!TIPOS_MOV_ESTOQUE[tipo]) return { sucesso: false, mensagem: 'Escolha o tipo da movimentação.' };
-      const pecaId = Number(d.pecaId);
-      const peca = ReadParts().find(function (l) { return Number(l[partsIdCol]) === pecaId; });
-      if (!peca) return { sucesso: false, mensagem: 'Escolha a peça/produto.' };
-      if (String(peca[partsDtExclusaoCol] || '').trim()) return { sucesso: false, mensagem: 'Este item está desativado.' };
-      const dt = d.data ? parseDataFlex(d.data) : new Date();
-      if (!dt) return { sucesso: false, mensagem: 'Data inválida.' };
-      const data = Utilities.formatDate(dt, 'GMT-3', 'dd/MM/yyyy');
-      const observacao = String(d.observacao || '').trim();
-      const nome = String(peca[partsNameCol] || '');
-      const saldo = (saldosEstoque_()[pecaId] || { saldo: 0 }).saldo;
-
-      if (tipo === 'ajuste') {
-        const contado = qtdEstoque_(d.novaQuantidade);
-        if (isNaN(contado) || contado < 0) return { sucesso: false, mensagem: 'Informe a quantidade contada (zero ou mais).' };
-        if (!observacao) return { sucesso: false, mensagem: 'Informe o motivo do ajuste.' };
-        const diferenca = Math.round((contado - saldo) * 10000) / 10000;
-        if (diferenca === 0) return { sucesso: false, mensagem: 'A quantidade contada é igual ao saldo (' + saldo + '). Nada a ajustar.' };
-        gravarMovimento_(pecaId, 'ajuste', diferenca, data, 'manual', '', 'Inventário', '', observacao);
-        return { sucesso: true, mensagem: 'Ajuste registrado: ' + nome + ' passou de ' + saldo + ' para ' + contado + '.', saldo: contado };
+      const saldo = (saldosEstoque_()[Number(d.pecaId)] || { saldo: 0 }).saldo;
+      const m = montarMovimentoManual_(d, saldo);
+      if (m.erro) return { sucesso: false, mensagem: m.erro };
+      gravarMovimento_(m.pecaId, m.tipo, m.quantidade, m.data, m.origem, m.origemId, m.documento, m.valorUnitario, m.observacao);
+      if (m.tipo === 'saida' && m.chamadoId) {
+        adicionarHistoricoSistema(m.chamadoId, 'Saída de estoque: ' + m.quantidade + ' × ' + m.nome + (m.patrimonio ? ' (patrimônio ' + m.patrimonio + ')' : '') + (m.observacao ? '. ' + m.observacao : ''));
       }
-
-      const qtd = qtdEstoque_(d.quantidade);
-      if (isNaN(qtd) || qtd <= 0) return { sucesso: false, mensagem: 'Informe uma quantidade maior que zero.' };
-
-      if (tipo === 'entrada') {
-        if (!observacao) return { sucesso: false, mensagem: 'Informe a origem da entrada (as compras com nota entram por Compras > Notas fiscais).' };
-        const valor = d.valorUnitario === '' || d.valorUnitario === undefined ? '' : qtdEstoque_(d.valorUnitario);
-        gravarMovimento_(pecaId, 'entrada', qtd, data, 'manual', '', 'Entrada manual', isNaN(valor) ? '' : valor, observacao);
-        return { sucesso: true, mensagem: 'Entrada registrada: ' + qtd + ' × ' + nome + '. Saldo: ' + (Math.round((saldo + qtd) * 10000) / 10000) + '.', saldo: saldo + qtd };
-      }
-
-      // saída: destino (chamado, equipamento ou observação) e saldo suficiente
-      if (qtd > saldo) return { sucesso: false, mensagem: 'Saldo insuficiente de ' + nome + ': há ' + saldo + ' e a saída é de ' + qtd + '.' };
-      let origem = 'manual', origemId = '', documento = '';
-      const chamadoId = Number(d.chamadoId) || 0;
-      const patrimonio = String(d.patrimonio || '').trim();
-      if (chamadoId) {
-        if (!ReadTickets().some(function (l) { return Number(l[0]) === chamadoId; })) return { sucesso: false, mensagem: 'Chamado nº ' + chamadoId + ' não encontrado.' };
-        origem = 'chamado'; origemId = chamadoId; documento = 'Chamado #' + chamadoId;
-      }
-      if (patrimonio) {
-        const eq = ReadEquipments().find(function (e) { return String(e[5] || '').trim().toLowerCase() === patrimonio.toLowerCase(); });
-        if (!eq) return { sucesso: false, mensagem: 'Patrimônio ' + patrimonio + ' não encontrado no cadastro de equipamentos.' };
-        documento = (documento ? documento + ' · ' : '') + 'Patrimônio ' + patrimonio;
-        if (!chamadoId) { origem = 'equipamento'; origemId = Number(eq[0]); }
-      }
-      if (!chamadoId && !patrimonio && !observacao) return { sucesso: false, mensagem: 'Informe o destino da saída: chamado, patrimônio do equipamento ou observação.' };
-      gravarMovimento_(pecaId, 'saida', qtd, data, origem, origemId, documento || 'Saída manual', '', observacao);
-      if (chamadoId) {
-        adicionarHistoricoSistema(chamadoId, 'Saída de estoque: ' + qtd + ' × ' + nome + (patrimonio ? ' (patrimônio ' + patrimonio + ')' : '') + (observacao ? '. ' + observacao : ''));
-      }
-      return { sucesso: true, mensagem: 'Saída registrada: ' + qtd + ' × ' + nome + '. Saldo: ' + (Math.round((saldo - qtd) * 10000) / 10000) + '.', saldo: saldo - qtd };
+      const msg = m.tipo === 'ajuste' ? 'Ajuste salvo: ' + m.nome + ' passou de ' + m.saldoAntes + ' para ' + m.saldoFinal + '.'
+        : (m.tipo === 'entrada' ? 'Entrada salva: ' : 'Saída salva: ') + m.quantidade + ' × ' + m.nome + '. Saldo: ' + m.saldoFinal + '.';
+      return { sucesso: true, mensagem: msg, saldo: m.saldoFinal };
     });
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
   }
 }
 
-/** Estorno (exclusão lógica) de uma movimentação que não veio de nota fiscal. */
+/**
+ * Edição de uma movimentação manual (não vale para as de nota fiscal nem
+ * para as excluídas). O tipo não muda. Valida de novo com o saldo sem a
+ * própria movimentação e não deixa nenhum saldo negativo.
+ */
+function alterarMovimentoEstoque(idInput, dados) {
+  try {
+    return executarComLock(function () {
+      const id = Number(idInput);
+      const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(estoqueMovTableName);
+      const movs = ReadEstoqueMovimentos();
+      const idx = aba ? movs.findIndex(function (l) { return Number(l[movIdCol]) === id; }) : -1;
+      if (idx === -1) return { sucesso: false, mensagem: 'Movimentação não encontrada.' };
+      const orig = movs[idx];
+      if (String(orig[movDtExclusaoCol] || '').trim()) return { sucesso: false, mensagem: 'Esta movimentação foi excluída.' };
+      if (String(orig[movOrigemCol]) === 'nota_fiscal') return { sucesso: false, mensagem: 'Entrada de nota fiscal: altere a nota em Compras > Notas fiscais.' };
+      const d = Object.assign({}, dados || {}, { tipo: String(orig[movTipoCol]) });   // o tipo não muda
+      const saldos = saldosEstoque_();
+      const pecaOrig = Number(orig[movPecaIdCol]), pecaNova = Number(d.pecaId);
+      const efeitoOrig = efeitoMov_(orig);
+      const saldoNova = (saldos[pecaNova] || { saldo: 0 }).saldo - (pecaNova === pecaOrig ? efeitoOrig : 0);
+      const m = montarMovimentoManual_(d, Math.round(saldoNova * 10000) / 10000);
+      if (m.erro) return { sucesso: false, mensagem: m.erro };
+      if (m.saldoFinal < 0) return { sucesso: false, mensagem: 'A alteração deixaria o saldo de ' + m.nome + ' negativo (' + m.saldoFinal + ').' };
+      if (pecaNova !== pecaOrig) {
+        const restante = Math.round(((saldos[pecaOrig] || { saldo: 0 }).saldo - efeitoOrig) * 10000) / 10000;
+        if (restante < 0) return { sucesso: false, mensagem: 'Trocar o item deixaria o saldo do item anterior negativo (' + restante + ').' };
+      }
+      const linha = idx + firstLineEstoqueMov;
+      // PECA_ID .. OBSERVACAO; mantém ID, usuário e data de cadastro
+      aba.getRange(linha, movPecaIdCol + 1, 1, movObservacaoCol - movPecaIdCol + 1).setValues([[
+        m.pecaId, m.tipo, m.quantidade, m.data, m.origem, m.origemId, m.documento, m.valorUnitario, m.observacao
+      ]]);
+      const chamadoAntes = String(orig[movOrigemCol]) === 'chamado' ? Number(orig[movOrigemIdCol]) : 0;
+      const texto = 'Saída de estoque alterada por ' + nomeUsuarioLogado() + ': ' + m.quantidade + ' × ' + m.nome + (m.patrimonio ? ' (patrimônio ' + m.patrimonio + ')' : '');
+      if (m.chamadoId) adicionarHistoricoSistema(m.chamadoId, texto);
+      if (chamadoAntes && chamadoAntes !== m.chamadoId) adicionarHistoricoSistema(chamadoAntes, 'Saída de estoque desvinculada deste chamado (' + orig[movQuantidadeCol] + ' item(ns)).');
+      return { sucesso: true, mensagem: 'Movimentação alterada. Saldo de ' + m.nome + ': ' + m.saldoFinal + '.', saldo: m.saldoFinal };
+    });
+  } catch (e) {
+    return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };
+  }
+}
+
+/** Exclusão lógica (estorno) de uma movimentação que não veio de nota fiscal. */
 function estornarMovimentoEstoque(idInput, motivo) {
   try {
     return executarComLock(function () {
       const id = Number(idInput);
       const m = String(motivo || '').trim();
-      if (!m) return { sucesso: false, mensagem: 'Informe o motivo do estorno.' };
+      if (!m) return { sucesso: false, mensagem: 'Informe o motivo da exclusão.' };
       const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(estoqueMovTableName);
       const movs = ReadEstoqueMovimentos();
       const idx = aba ? movs.findIndex(function (l) { return Number(l[movIdCol]) === id; }) : -1;
       if (idx === -1) return { sucesso: false, mensagem: 'Movimentação não encontrada.' };
       const l = movs[idx];
-      if (String(l[movDtExclusaoCol] || '').trim()) return { sucesso: false, mensagem: 'Esta movimentação já foi estornada.' };
+      if (String(l[movDtExclusaoCol] || '').trim()) return { sucesso: false, mensagem: 'Esta movimentação já foi excluída.' };
       if (String(l[movOrigemCol]) === 'nota_fiscal') return { sucesso: false, mensagem: 'Entrada de nota fiscal: altere ou desative a nota em Compras > Notas fiscais.' };
       // estornar uma entrada/ajuste positivo não pode deixar o saldo negativo
       const saldo = (saldosEstoque_()[Number(l[movPecaIdCol])] || { saldo: 0 }).saldo;
-      if (saldo - efeitoMov_(l) < 0) return { sucesso: false, mensagem: 'O estorno deixaria o saldo negativo (saldo atual ' + saldo + ').' };
+      if (saldo - efeitoMov_(l) < 0) return { sucesso: false, mensagem: 'A exclusão deixaria o saldo negativo (saldo atual ' + saldo + ').' };
       const linha = idx + firstLineEstoqueMov;
       aba.getRange(linha, movDtExclusaoCol + 1).setValue(hojeEstoque_());
-      aba.getRange(linha, movObservacaoCol + 1).setValue(String(l[movObservacaoCol] || '') + ' [Estornado por ' + nomeUsuarioLogado() + ': ' + m + ']');
+      aba.getRange(linha, movObservacaoCol + 1).setValue(String(l[movObservacaoCol] || '') + ' [Excluído por ' + nomeUsuarioLogado() + ': ' + m + ']');
       if (String(l[movOrigemCol]) === 'chamado' && Number(l[movOrigemIdCol])) {
-        adicionarHistoricoSistema(Number(l[movOrigemIdCol]), 'Saída de estoque estornada (' + l[movQuantidadeCol] + ' item(ns)). Motivo: ' + m);
+        adicionarHistoricoSistema(Number(l[movOrigemIdCol]), 'Saída de estoque excluída (' + l[movQuantidadeCol] + ' item(ns)). Motivo: ' + m);
       }
-      return { sucesso: true, mensagem: 'Movimentação estornada.' };
+      return { sucesso: true, mensagem: 'Movimentação excluída.' };
     });
   } catch (e) {
     return { sucesso: false, mensagem: 'Erro no servidor: ' + e.message };

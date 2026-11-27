@@ -92,22 +92,60 @@
   let confirmacaoAtual = null;
   let confirmacaoAbertaEm = 0;
 
+  // Campo de texto da confirmação (pedirTextoModal); null = sem campo
+  let confirmacaoCampo = null;
+
   function confirmarModal(texto, opcoes) {
     const op = opcoes || {};
     const modal = document.getElementById('modalConfirmacao');
     if (!modal) return Promise.resolve(window.confirm(String(texto || '')));   // sem o markup: nativo
     if (confirmacaoAtual) confirmacaoAtual(false);   // uma por vez: a anterior conta como cancelada
+    const campo = document.getElementById('modalConfirmacaoCampo');
+    if (campo) campo.style.display = op.campo ? '' : 'none';
+    confirmacaoCampo = op.campo || null;
+    if (op.campo) {
+      document.getElementById('modalConfirmacaoRotulo').textContent = op.campo.rotulo || '';
+      const resp = document.getElementById('modalConfirmacaoResposta');
+      resp.value = op.campo.valor || '';
+      resp.classList.remove('is-invalid');
+      document.getElementById('modalConfirmacaoErro').textContent = '';
+    }
     document.getElementById('modalConfirmacaoTitulo').textContent = op.titulo || 'Confirmar';
     document.getElementById('modalConfirmacaoTexto').textContent = String(texto === undefined || texto === null ? '' : texto);
     document.getElementById('modalConfirmacaoOk').textContent = op.confirmar || 'Confirmar';
     document.getElementById('modalConfirmacaoCancelar').textContent = op.cancelar || 'Cancelar';
     modal.classList.add('aberto');
     confirmacaoAbertaEm = Date.now();
-    setTimeout(() => { const b = document.getElementById('modalConfirmacaoOk'); if (b) b.focus(); }, 0);
+    setTimeout(() => { const b = document.getElementById(op.campo ? 'modalConfirmacaoResposta' : 'modalConfirmacaoOk'); if (b) b.focus(); }, 0);
     return new Promise(resolve => { confirmacaoAtual = resolve; });
   }
 
+  // Como o prompt do navegador, mas no modal do sistema: devolve o texto
+  // digitado ou null (cancelou). opcoes: { titulo, confirmar, cancelar,
+  // rotulo, valor, obrigatorio }.
+  async function pedirTextoModal(texto, opcoes) {
+    const op = opcoes || {};
+    if (!document.getElementById('modalConfirmacaoCampo')) {   // sem o markup: nativo
+      const v = window.prompt(String(texto || ''), op.valor || '');
+      return v === null ? null : String(v);
+    }
+    const ok = await confirmarModal(texto, Object.assign({}, op, { campo: { rotulo: op.rotulo || '', valor: op.valor || '', obrigatorio: !!op.obrigatorio } }));
+    const resp = document.getElementById('modalConfirmacaoResposta');
+    return ok ? String(resp ? resp.value : '').trim() : null;
+  }
+
   function responderConfirmacao(sim) {
+    // campo obrigatório vazio: não fecha
+    if (sim && confirmacaoCampo && confirmacaoCampo.obrigatorio) {
+      const resp = document.getElementById('modalConfirmacaoResposta');
+      if (resp && !resp.value.trim()) {
+        resp.classList.add('is-invalid');
+        document.getElementById('modalConfirmacaoErro').textContent = 'Preencha este campo.';
+        resp.focus();
+        return;
+      }
+    }
+    confirmacaoCampo = null;
     const resolver = confirmacaoAtual;
     confirmacaoAtual = null;
     const modal = document.getElementById('modalConfirmacao');
@@ -117,6 +155,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (!confirmacaoAtual || mensagemAtual) return;
+    if (e.key === 'Enter' && e.target && e.target.id === 'modalConfirmacaoResposta') return;
     if (e.key === 'Escape' || e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();

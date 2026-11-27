@@ -125,7 +125,11 @@ Menu **Estoque**, com **Saldo de estoque** e **Movimentações**. O saldo de cad
 - **Entrada sem nota:** quantidade, valor unitário (opcional) e origem obrigatória (devolução, doação, transferência...).
 - **Saída:** quantidade e destino: **chamado** (nº), **patrimônio** do equipamento ou observação. Não pode ser maior que o saldo. Saída para um chamado fica registrada nas Movimentações do chamado.
 - **Ajuste de inventário:** informe a quantidade contada e o motivo; o sistema lança a diferença.
-- A lista tem filtros por item, tipo, origem, período e busca. **↩️ Estornar** (com motivo) desfaz entradas sem nota, saídas e ajustes; o estorno não pode deixar o saldo negativo.
+- O botão do modal de movimentação é **Salvar**.
+- A lista tem filtros por item, tipo, origem, período e busca. Entradas sem nota, saídas e ajustes têm:
+  - **✏️ Editar:** abre o modal preenchido. O tipo não muda (para trocar, exclua e lance de novo). Vale a mesma validação da inclusão, com o saldo calculado sem a própria movimentação; nenhuma alteração pode deixar saldo negativo, nem no item anterior quando o item é trocado. No ajuste, a quantidade contada é o saldo que deve ficar. Saída ligada a chamado registra a alteração no histórico do chamado.
+  - **🗑️ Excluir:** pede o motivo (obrigatório) num modal; é exclusão lógica (a movimentação continua na lista com **Mostrar excluídas**) e não pode deixar o saldo negativo.
+- Entradas de nota fiscal mostram "pela nota": altere ou desative a nota em Compras.
 
 ## Marcas e Localizações
 
