@@ -1,0 +1,133 @@
+    <!-- ===================================================== -->
+    <!-- COMPRAS > PEDIDOS: consulta (PedidosJS)                -->
+    <!-- ===================================================== -->
+    <section id="page-pedidos-view" class="spa-page">
+      <div class="page-header">
+        <div class="nf-cabecalho">
+          <h1>📝 Pedidos</h1>
+          <div class="nf-cabecalho-botoes">
+            <button type="button" class="btn-secondary" onclick="limparFiltrosPedidos()">Limpar</button>
+            <button type="button" class="btn-success" onclick="trocarPagina('pedido-form')">+ Novo pedido</button>
+            <button type="button" class="btn-primary" onclick="consultarPedidos()">Consultar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <form autocomplete="off" onsubmit="consultarPedidos(); return false;" class="nf-filtros">
+          <div class="field">
+            <label class="field__label" for="pedFiltroTexto">Busca</label>
+            <input class="field__input" type="text" id="pedFiltroTexto" placeholder="Produto, fornecedor, observação...">
+          </div>
+          <div class="field">
+            <label class="field__label" for="pedFiltroStatus">Status</label>
+            <select class="field__select" id="pedFiltroStatus">
+              <option value="">Todos</option>
+              <option value="aberto">Aberto</option>
+              <option value="enviado">Enviado</option>
+              <option value="recebido">Recebido</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="pedFiltroDe">De</label>
+            <input class="field__input" type="date" id="pedFiltroDe">
+          </div>
+          <div class="field">
+            <label class="field__label" for="pedFiltroAte">até</label>
+            <input class="field__input" type="date" id="pedFiltroAte">
+          </div>
+          <button type="submit" style="display:none;"></button>
+        </form>
+
+        <div id="pedidosResumo" class="nf-resumo"></div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr><th>Data</th><th>Status</th><th>Itens</th><th>Fornecedor(es)</th><th>Valor total</th><th>Observação</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="pedidosTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================== -->
+    <!-- COMPRAS > PEDIDOS: gerar / cadastro / edição           -->
+    <!-- ===================================================== -->
+    <section id="page-pedido-form" class="spa-page">
+      <div class="page-header">
+        <div class="nf-cabecalho">
+          <h1 id="pedidoFormTitulo">📝 Novo pedido</h1>
+          <div class="nf-cabecalho-botoes">
+            <button type="button" class="btn-secondary" onclick="trocarPagina('pedidos-view')">Cancelar</button>
+            <button type="button" class="btn-success" onclick="salvarPedidoUI()">Salvar pedido</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <input type="hidden" id="pedidoId" value="">
+        <p class="servico-spec-ajuda">
+          Pedido é só o relatório/intenção de compra — não mexe no estoque sozinho. Quando a mercadoria chegar, lance a Nota Fiscal normalmente (Compras &gt; Notas fiscais) para dar entrada de verdade.
+        </p>
+
+        <div class="form-grid-3">
+          <div class="field">
+            <label class="field__label" for="pedidoData">Data do pedido</label>
+            <input class="field__input" type="date" id="pedidoData">
+          </div>
+          <div class="field">
+            <label class="field__label" for="pedidoStatus">Status</label>
+            <select class="field__select" id="pedidoStatus">
+              <option value="aberto">Aberto</option>
+              <option value="enviado">Enviado</option>
+              <option value="recebido">Recebido</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-3">
+          <div class="field" style="grid-column: 1 / -1;">
+            <label class="field__label" for="pedidoObservacao">Observação geral</label>
+            <textarea class="field__input" id="pedidoObservacao" rows="2" placeholder="Observações sobre este pedido..."></textarea>
+          </div>
+        </div>
+
+        <!-- Incluir produto manualmente -->
+        <div class="equip-busca-section" style="margin-top:1rem;">
+          <h4 class="sub-section-title">Incluir produto</h4>
+          <div class="form-grid-3">
+            <div class="field" style="grid-column: 1 / -1;">
+              <label class="field__label">Produto</label>
+              <div class="search-wrapper" id="pedidoItemBuscaWrapper">
+                <span class="search-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                </span>
+                <input class="search-input" type="text" id="pedidoItemBusca" placeholder="Digite o nome do produto/peça..." autocomplete="off">
+                <div class="search-dropdown" id="pedidoItemBuscaDropdown"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Itens do pedido -->
+        <div class="equip-list-section">
+          <h4 class="sub-section-title">Itens do pedido</h4>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr><th>Produto</th><th>Fornecedor</th><th>Saldo atual</th><th>Mínimo</th><th>Quantidade</th><th>Preço unitário</th><th>Total</th><th>Ações</th></tr>
+              </thead>
+              <tbody id="pedidoItensTableBody">
+                <tr class="empty-row"><td colspan="8">Nenhum item incluído ainda.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="servico-spec-ajuda" id="pedidoValorTotalTexto"></p>
+        </div>
+      </div>
+    </section>

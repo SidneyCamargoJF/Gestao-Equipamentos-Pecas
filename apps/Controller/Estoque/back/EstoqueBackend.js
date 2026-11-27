@@ -64,9 +64,15 @@ function parametrosEstoque_() {
   return mapa;
 }
 
+// 'zerado' e 'abaixo' (igual ou abaixo do mínimo) são críticos (vermelho);
+// 'alerta' é só aviso -- até 5 unidades acima do mínimo, "vai acabar" (amarelo).
 function situacaoEstoque_(saldo, minimo) {
   if (saldo <= 0) return 'zerado';
-  if (minimo !== '' && minimo !== undefined && saldo < Number(minimo)) return 'abaixo';
+  if (minimo !== '' && minimo !== undefined) {
+    const m = Number(minimo);
+    if (saldo <= m) return 'abaixo';
+    if (saldo <= m + 5) return 'alerta';
+  }
   return 'ok';
 }
 
@@ -100,12 +106,14 @@ function listarEstoque(filtros) {
         if (f.situacao === 'com_saldo' && it.saldo <= 0) return false;
         if (f.situacao === 'abaixo' && it.situacao !== 'abaixo') return false;
         if (f.situacao === 'zerado' && !(it.situacao === 'zerado' && (it.movimentado || it.minimo !== ''))) return false;
+        if (f.situacao === 'alerta' && it.situacao !== 'alerta') return false;
         if (f.situacao === 'movimentados' && !it.movimentado) return false;
         if (texto && [it.nome, it.marca, it.modelo, it.numeroSerie, it.localizacao].join(' ').toLowerCase().indexOf(texto) === -1) return false;
         return true;
       })
       .sort(function (a, b) {
-        const peso = { abaixo: 0, zerado: 1, ok: 2 };
+        // críticos (zerado/abaixo) no topo, depois alerta, depois ok, depois sem controle nenhum
+        const peso = { zerado: 0, abaixo: 0, alerta: 1, ok: 2 };
         const pa = a.movimentado || a.minimo !== '' ? peso[a.situacao] : 3, pb = b.movimentado || b.minimo !== '' ? peso[b.situacao] : 3;
         return (pa - pb) || a.nome.localeCompare(b.nome, 'pt-BR');
       });
@@ -115,7 +123,8 @@ function listarEstoque(filtros) {
       resumo: {
         comSaldo: lista.filter(function (i) { return i.saldo > 0; }).length,
         abaixo: lista.filter(function (i) { return i.situacao === 'abaixo'; }).length,
-        zerados: controlados.filter(function (i) { return i.situacao === 'zerado'; }).length
+        zerados: controlados.filter(function (i) { return i.situacao === 'zerado'; }).length,
+        alerta: lista.filter(function (i) { return i.situacao === 'alerta'; }).length
       }
     };
   } catch (e) {

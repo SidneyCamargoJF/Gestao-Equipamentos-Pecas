@@ -1,0 +1,305 @@
+<script>
+// =====================================================
+// PEDIDOS (Compras > Pedidos) -- relatório/intenção de compra, não mexe
+// no estoque sozinho (a entrada de verdade vem da Nota Fiscal).
+// =====================================================
+
+// false na primeira visualização (não dispara busca sozinha); depois de
+// voltar de um salvamento, já busca os dados atualizados sozinho.
+let pedidosJaVisualizado = false;
+
+async function renderPedidos() {
+  if (pedidosJaVisualizado) {
+    consultarPedidos();
+  } else {
+    pedidosJaVisualizado = true;
+  }
+}
+
+function limparFiltrosPedidos() {
+  document.getElementById('pedFiltroTexto').value = '';
+  document.getElementById('pedFiltroStatus').value = '';
+  document.getElementById('pedFiltroDe').value = '';
+  document.getElementById('pedFiltroAte').value = '';
+  consultarPedidos();
+}
+
+function rotuloStatusPedido(status) {
+  const map = { aberto: 'Aberto', enviado: 'Enviado', recebido: 'Recebido', cancelado: 'Cancelado' };
+  return map[status] || status;
+}
+
+function montarBadgeStatusPedido(status) {
+  return '<span class="pedido-status-badge ' + status + '">' + rotuloStatusPedido(status) + '</span>';
+}
+
+function formatarValorPedido(v) {
+  const n = Number(v) || 0;
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+async function consultarPedidos() {
+  const criterios = {
+    texto: document.getElementById('pedFiltroTexto')?.value.trim() || '',
+    status: document.getElementById('pedFiltroStatus')?.value || '',
+    de: document.getElementById('pedFiltroDe')?.value || '',
+    ate: document.getElementById('pedFiltroAte')?.value || ''
+  };
+  const tbody = document.getElementById('pedidosTableBody');
+  if (tbody) tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><span class="spinner"></span>Buscando pedidos...</td></tr>';
+
+  try {
+    const r = await runServerFunction('listarPedidos', criterios);
+    if (!r || r.sucesso === false) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7">Erro ao buscar pedidos.</td></tr>';
+      return;
+    }
+    renderTabelaPedidos(r.pedidos || []);
+  } catch (e) {
+    console.error('Erro ao consultar pedidos:', e);
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7">Erro ao conectar com o servidor.</td></tr>';
+  }
+}
+
+function renderTabelaPedidos(lista) {
+  const tbody = document.getElementById('pedidosTableBody');
+  const resumo = document.getElementById('pedidosResumo');
+  if (!tbody) return;
+
+  if (resumo) {
+    resumo.textContent = lista.length
+      ? lista.length + ' pedido' + (lista.length === 1 ? '' : 's') + ' encontrado' + (lista.length === 1 ? '' : 's')
+      : 'Nenhum pedido encontrado.';
+  }
+
+  if (!lista.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhum pedido encontrado.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lista.map(function (p) {
+    const btnEditar = '<button class="btn-acao btn-editar-linha" title="Editar" onclick="trocarPagina(\'pedido-form\', ' + p.id + ')">✏️</button>';
+    const btnExcluir = p.desativado
+      ? '<button class="btn-acao btn-reativar-linha" title="Reativar" onclick="reativarPedidoUI(' + p.id + ')">♻️</button>'
+      : '<button class="btn-acao btn-excluir-linha" title="Excluir" onclick="excluirPedidoUI(' + p.id + ')">🗑️</button>';
+    let btnAvancar = '';
+    if (!p.desativado) {
+      if (p.status === 'aberto') btnAvancar = '<button class="btn-acao" title="Marcar como enviado" onclick="mudarStatusPedidoUI(' + p.id + ', \'enviado\')">📤</button>';
+      else if (p.status === 'enviado') btnAvancar = '<button class="btn-acao" title="Marcar como recebido" onclick="mudarStatusPedidoUI(' + p.id + ', \'recebido\')">📥</button>';
+    }
+    return '<tr' + (p.desativado ? ' class="linha-desativada"' : '') + '>' +
+      '<td>' + escapeHtml(p.data) + '</td>' +
+      '<td>' + montarBadgeStatusPedido(p.status) + '</td>' +
+      '<td>' + p.qtdItens + '</td>' +
+      '<td>' + (p.fornecedores ? escapeHtml(p.fornecedores) : '--') + '</td>' +
+      '<td>' + formatarValorPedido(p.valorTotal) + '</td>' +
+      '<td>' + (p.observacao ? escapeHtml(p.observacao) : '--') + '</td>' +
+      '<td class="acao-cell">' + btnAvancar + btnEditar + btnExcluir + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function mudarStatusPedidoUI(id, status) {
+  if (!confirm('Marcar este pedido como "' + rotuloStatusPedido(status) + '"?')) return;
+  try {
+    const r = await runServerFunction('atualizarStatusPedido', id, status);
+    if (r && r.sucesso === false) { alert(r.mensagem); return; }
+    consultarPedidos();
+  } catch (e) {
+    alert('Erro ao conectar com o servidor.');
+  }
+}
+
+function excluirPedidoUI(id) {
+  if (!confirm('Tem certeza que deseja excluir este pedido? Essa ação não pode ser desfeita.')) return;
+  (async function () {
+    try {
+      const r = await runServerFunction('excluirPedido', id);
+      if (r && r.sucesso === false) { alert(r.mensagem); return; }
+      consultarPedidos();
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    }
+  })();
+}
+
+async function reativarPedidoUI(id) {
+  try {
+    const r = await runServerFunction('reativarPedido', id);
+    if (r && r.sucesso === false) { alert(r.mensagem); return; }
+    consultarPedidos();
+  } catch (e) {
+    alert('Erro ao conectar com o servidor.');
+  }
+}
+
+// ===== FORMULÁRIO (novo / gerar da sugestão / editar) =====
+
+// Lista de itens do pedido em edição -- { pecaId, nome, marca, modelo,
+// fornecedor, saldoAtual, estoqueMinimo, quantidade, precoUnitario }
+let pedidoItens = [];
+let mapaBuscaItemPedido = {};
+
+// Setado pela tela de Estoque (confirmação "Gerar lista de pedidos") com os
+// itens já mostrados pra pessoa antes do redirecionamento -- assim o pedido
+// vem com exatamente o que foi prometido no modal, sem buscar de novo.
+let pedidoSugestaoPendente = null;
+
+async function renderPedidoForm(param) {
+  document.getElementById('pedidoId').value = '';
+  document.getElementById('pedidoData').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('pedidoStatus').value = 'aberto';
+  document.getElementById('pedidoObservacao').value = '';
+  document.getElementById('pedidoItemBusca').value = '';
+  document.getElementById('pedidoFormTitulo').textContent = '📝 Novo pedido';
+  pedidoItens = [];
+
+  await carregarOpcoesItemPedido();
+
+  if (param === 'gerar') {
+    if (pedidoSugestaoPendente) {
+      pedidoItens = pedidoSugestaoPendente;
+      pedidoSugestaoPendente = null;
+    } else {
+      try {
+        const r = await runServerFunction('gerarSugestaoPedido');
+        pedidoItens = (r && r.itens) || [];
+        if (!pedidoItens.length) alert('Nenhum item está abaixo do mínimo no momento. Inclua produtos manualmente, se quiser mesmo assim gerar um pedido.');
+      } catch (e) {
+        console.error('Erro ao gerar sugestão de pedido:', e);
+      }
+    }
+  } else if (param && !isNaN(Number(param))) {
+    try {
+      const r = await runServerFunction('buscarPedidoDetalhado', param);
+      if (r && r.sucesso) {
+        const p = r.pedido;
+        document.getElementById('pedidoId').value = p.id;
+        document.getElementById('pedidoData').value = p.dataInput || '';
+        document.getElementById('pedidoStatus').value = p.status || 'aberto';
+        document.getElementById('pedidoObservacao').value = p.observacao || '';
+        document.getElementById('pedidoFormTitulo').textContent = '📝 Editar pedido #' + p.id;
+        pedidoItens = (p.itens || []).map(function (it) {
+          return {
+            pecaId: it.pecaId, nome: it.nome, marca: it.marca, modelo: it.modelo, fornecedor: it.fornecedor,
+            saldoAtual: it.saldoAtual, estoqueMinimo: it.estoqueMinimoNoMomento, quantidade: it.quantidade, precoUnitario: it.precoUnitario
+          };
+        });
+      } else {
+        alert((r && r.mensagem) || 'Pedido não encontrado.');
+      }
+    } catch (e) {
+      console.error('Erro ao carregar pedido:', e);
+      alert('Erro ao carregar pedido para edição.');
+    }
+  }
+
+  renderizarItensPedido();
+}
+
+async function carregarOpcoesItemPedido() {
+  try {
+    const r = await runServerFunction('buscarItensParaPedido', '');
+    const itens = (r && r.itens) || [];
+    mapaBuscaItemPedido = {};
+    const opcoes = itens.map(function (it) {
+      const rotulo = it.nome + (it.marca ? ' — ' + it.marca : '') + (it.modelo ? ' ' + it.modelo : '');
+      mapaBuscaItemPedido[rotulo] = it;
+      return rotulo;
+    });
+    initSearch('pedidoItemBusca', 'pedidoItemBuscaDropdown', 'pedidoItemBuscaWrapper', opcoes, function (rotulo) {
+      const item = mapaBuscaItemPedido[rotulo];
+      if (item) adicionarItemAoPedidoUI(item.id);
+      const inputEl = document.getElementById('pedidoItemBusca');
+      if (inputEl) inputEl.value = '';
+    });
+  } catch (e) {
+    console.error('Erro ao carregar produtos para o pedido:', e);
+  }
+}
+
+async function adicionarItemAoPedidoUI(pecaId) {
+  if (pedidoItens.some(function (i) { return Number(i.pecaId) === Number(pecaId); })) {
+    alert('Esse produto já está na lista.');
+    return;
+  }
+  try {
+    const r = await runServerFunction('montarItemParaAdicionarPedido', pecaId);
+    if (!r || r.sucesso === false) { alert((r && r.mensagem) || 'Erro ao adicionar produto.'); return; }
+    pedidoItens.push(r.item);
+    renderizarItensPedido();
+  } catch (e) {
+    console.error('Erro ao adicionar item ao pedido:', e);
+    alert('Erro ao conectar com o servidor.');
+  }
+}
+
+function renderizarItensPedido() {
+  const tbody = document.getElementById('pedidoItensTableBody');
+  if (!tbody) return;
+
+  if (!pedidoItens.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhum item incluído ainda.</td></tr>';
+    atualizarValorTotalPedido();
+    return;
+  }
+
+  tbody.innerHTML = pedidoItens.map(function (it, i) {
+    const temMinimo = it.estoqueMinimo !== '' && it.estoqueMinimo !== undefined;
+    const critico = Number(it.saldoAtual) <= 0 || (temMinimo && Number(it.saldoAtual) <= Number(it.estoqueMinimo));
+    const alerta = !critico && temMinimo && Number(it.saldoAtual) <= Number(it.estoqueMinimo) + 5;
+    const linhaClasse = critico ? ' style="background:#fef2f2;"' : (alerta ? ' style="background:#fffbeb;"' : '');
+    return '<tr' + linhaClasse + '>' +
+      '<td>' + escapeHtml(it.nome) + (it.marca ? ' <small>(' + escapeHtml(it.marca) + (it.modelo ? ' ' + escapeHtml(it.modelo) : '') + ')</small>' : '') + '</td>' +
+      '<td><input class="field__input" type="text" value="' + escapeHtml(it.fornecedor || '') + '" oninput="pedidoItens[' + i + '].fornecedor = this.value"></td>' +
+      '<td>' + (it.saldoAtual === '' || it.saldoAtual === undefined ? '--' : it.saldoAtual) + '</td>' +
+      '<td>' + (it.estoqueMinimo === '' || it.estoqueMinimo === undefined ? '--' : it.estoqueMinimo) + '</td>' +
+      '<td><input type="number" min="0.0001" step="0.0001" class="field__input" value="' + (it.quantidade === undefined ? 1 : it.quantidade) +
+        '" oninput="pedidoItens[' + i + '].quantidade = Number(this.value) || 0; atualizarValorTotalPedido();"></td>' +
+      '<td><input type="number" min="0" step="0.01" class="field__input" value="' + (it.precoUnitario === '' || it.precoUnitario === undefined ? '' : it.precoUnitario) +
+        '" placeholder="0,00" oninput="pedidoItens[' + i + '].precoUnitario = this.value === \'\' ? \'\' : (Number(this.value) || 0); atualizarValorTotalPedido();"></td>' +
+      '<td>' + formatarValorPedido((Number(it.quantidade) || 0) * (Number(it.precoUnitario) || 0)) + '</td>' +
+      '<td class="acao-cell"><button type="button" class="btn-acao btn-excluir-linha" title="Remover" onclick="removerItemPedido(' + i + ')">🗑️</button></td>' +
+      '</tr>';
+  }).join('');
+  atualizarValorTotalPedido();
+}
+
+function removerItemPedido(idx) {
+  pedidoItens.splice(idx, 1);
+  renderizarItensPedido();
+}
+
+function atualizarValorTotalPedido() {
+  const total = pedidoItens.reduce(function (s, it) { return s + (Number(it.quantidade) || 0) * (Number(it.precoUnitario) || 0); }, 0);
+  const el = document.getElementById('pedidoValorTotalTexto');
+  if (el) el.textContent = pedidoItens.length ? 'Valor total estimado: ' + formatarValorPedido(total) : '';
+}
+
+async function salvarPedidoUI() {
+  if (!pedidoItens.length) {
+    alert('Inclua pelo menos um produto no pedido.');
+    return;
+  }
+  const dados = {
+    id: document.getElementById('pedidoId')?.value || '',
+    data: document.getElementById('pedidoData')?.value || '',
+    status: document.getElementById('pedidoStatus')?.value || 'aberto',
+    observacao: document.getElementById('pedidoObservacao')?.value.trim() || '',
+    itens: pedidoItens.map(function (it) {
+      return { pecaId: it.pecaId, fornecedor: it.fornecedor || '', quantidade: it.quantidade, precoUnitario: it.precoUnitario };
+    })
+  };
+
+  try {
+    const r = await runServerFunction('salvarPedido', dados);
+    if (r && r.sucesso === false) { alert(r.mensagem); return; }
+    if (typeof marcarFormularioSalvo === 'function') marcarFormularioSalvo();
+    alert(r.mensagem);
+    trocarPagina('pedidos-view');
+  } catch (e) {
+    console.error('Erro ao salvar pedido:', e);
+    alert('Erro ao conectar com o servidor.');
+  }
+}
+</script>
